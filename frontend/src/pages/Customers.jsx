@@ -19,12 +19,28 @@ import { TOOLTIPS } from '../utils/tooltipContent';
 import { useUI } from '../context/UIContext';
 
 const customers = customersData.customers;
-const segmentsMeta = customersData.segments;
 const churnSummary = customersData.churn_summary;
 const customerMarginGaps = revenueMarginsDetail.customer_margin_gaps;
 
-// Total customer universe from segment counts
-const TOTAL_CUSTOMERS_UNIVERSE = segmentsMeta.reduce((s, seg) => s + seg.count, 0);
+// Derive segments meta from actual customers array so KPIs, scatter, risk matrix,
+// and the Customer Segments panel all stay in sync.
+const segmentsMeta = (() => {
+  const map = {};
+  customers.forEach((c) => {
+    if (!map[c.segment]) map[c.segment] = { segment: c.segment, count: 0, total_revenue: 0, marginSum: 0, marginN: 0 };
+    map[c.segment].count += 1;
+    map[c.segment].total_revenue += c.total_revenue_eur || 0;
+    if (c.avg_db2_margin != null) {
+      map[c.segment].marginSum += c.avg_db2_margin;
+      map[c.segment].marginN += 1;
+    }
+  });
+  return Object.values(map)
+    .map((s) => ({ segment: s.segment, count: s.count, total_revenue: s.total_revenue, avg_margin: s.marginN > 0 ? s.marginSum / s.marginN : 0 }))
+    .sort((a, b) => b.total_revenue - a.total_revenue);
+})();
+
+const TOTAL_CUSTOMERS_UNIVERSE = customers.length;
 
 // Risk tier definitions
 const HIGH_RISK_TIERS = ['high', 'critical'];
