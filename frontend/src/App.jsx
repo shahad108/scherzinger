@@ -1,0 +1,61 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { UserProvider } from './context/UserContext';
+import { UIProvider } from './context/UIContext';
+import { ChatProvider } from './context/ChatContext';
+import Layout from './components/Layout';
+import DashboardOverviewV2 from './pages/DashboardOverviewV2';
+import RevenueMargins from './pages/RevenueMargins';
+import ProductsSKUs from './pages/ProductsSKUs';
+import Customers from './pages/Customers';
+import Forecasting from './pages/Forecasting';
+import PricingFX from './pages/PricingFX';
+import CostIntelligence from './pages/CostIntelligence';
+import MLAnalytics from './pages/MLAnalytics';
+import AIInsights from './pages/AIInsights';
+import Login from './pages/Login';
+import AdminLayout from './components/admin/AdminLayout';
+import AdminCommandCenter from './pages/admin/AdminCommandCenter';
+import AdminPageAnalytics from './pages/admin/AdminPageAnalytics';
+import AdminInteractions from './pages/admin/AdminInteractions';
+import AdminChatIntel from './pages/admin/AdminChatIntel';
+import AdminSessions from './pages/admin/AdminSessions';
+import AdminHeatmaps from './pages/admin/AdminHeatmaps';
+import AdminAIInsights from './pages/admin/AdminAIInsights';
+
+export default function App() {
+  return (
+    <UserProvider>
+      <UIProvider>
+        <ChatProvider>
+          <BrowserRouter basename={import.meta.env.BASE_URL}>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminCommandCenter />} />
+                <Route path="pages" element={<AdminPageAnalytics />} />
+                <Route path="interactions" element={<AdminInteractions />} />
+                <Route path="chat" element={<AdminChatIntel />} />
+                <Route path="sessions" element={<AdminSessions />} />
+                <Route path="heatmaps" element={<AdminHeatmaps />} />
+                <Route path="insights" element={<AdminAIInsights />} />
+              </Route>
+              <Route element={<Layout />}>
+                <Route path="/" element={<DashboardOverviewV2 />} />
+                <Route path="/revenue" element={<RevenueMargins />} />
+                <Route path="/products" element={<ProductsSKUs />} />
+                <Route path="/customers" element={<Customers />} />
+                <Route path="/forecasting" element={<Forecasting />} />
+                <Route path="/pricing" element={<PricingFX />} />
+                <Route path="/pricing-fx" element={<Navigate to="/pricing" replace />} />
+                <Route path="/cost-intelligence" element={<CostIntelligence />} />
+                <Route path="/inventory" element={<Navigate to="/cost-intelligence" replace />} />
+                <Route path="/ml-analytics" element={<MLAnalytics />} />
+                <Route path="/ai-insights" element={<AIInsights />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </ChatProvider>
+      </UIProvider>
+    </UserProvider>
+  );
+}

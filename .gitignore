@@ -1,0 +1,53 @@
+# Dependencies & build
+**/node_modules/
+**/dist/
+**/build/
+**/.vite/
+
+# Environment & secrets
+*.pem
+*.key
+.env
+.env.*
+!.env.example
+!frontend/.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / tool state
+.claude/
+.qodo/
+.playwright-mcp/
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Office lock files
+.~lock.*#
+
+# All markdown files (per user request)
+*.md
+
+# Separate project (not included in this repo)
+scherzinger-platform/
+
+# Legacy code with embedded API keys — rotate and delete
+frontend/src_old/
+
+# Dev screenshots
+dashboard-*.png
+dashboard-*.jpeg
+revenue-*.png
+revenue-*.jpeg
+popup-*.png
+popup-*.jpeg
+page-*.png
+page-*.jpeg

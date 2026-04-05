@@ -1,0 +1,1501 @@
+\documentclass[11pt,a4paper]{article}
+
+% ── Packages ──────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{amsmath,amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{textcomp}
+\usepackage{eurosym}
+
+% ── Colors ────────────────────────────────────────────────────────────
+\definecolor{codeblue}{rgb}{0.13,0.13,0.70}
+\definecolor{codegray}{rgb}{0.95,0.95,0.95}
+\definecolor{codecomment}{rgb}{0.40,0.40,0.40}
+\definecolor{linkblue}{rgb}{0.0,0.27,0.53}
+
+% ── Hyperref setup ────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=linkblue,
+  urlcolor=linkblue,
+  citecolor=linkblue,
+  pdfauthor={SavSen},
+  pdftitle={Scherzinger Margin Intelligence Platform -- Complete Project Deep Dive},
+}
+
+% ── Code listing style ────────────────────────────────────────────────
+\lstset{
+  backgroundcolor=\color{codegray},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{codeblue}\bfseries,
+  commentstyle=\color{codecomment}\itshape,
+  breaklines=true,
+  frame=single,
+  framesep=6pt,
+  xleftmargin=6pt,
+  xrightmargin=6pt,
+  aboveskip=10pt,
+  belowskip=10pt,
+  showstringspaces=false,
+  tabsize=4,
+}
+
+% ── Header / Footer ──────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Scherzinger Margin Intelligence Platform}
+\fancyhead[R]{\small Deep Dive Document}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ── Section formatting ───────────────────────────────────────────────
+\titleformat{\section}{\Large\bfseries}{Section \thesection:~}{0pt}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection~}{0pt}{}
+
+% ── Convenience commands ──────────────────────────────────────────────
+\newcommand{\EUR}{\euro{}}
+\newcommand{\pp}{pp}
+\newcommand{\code}[1]{\texttt{#1}}
+
+% ======================================================================
+\begin{document}
+
+% ── Title Page ────────────────────────────────────────────────────────
+\begin{titlepage}
+\centering
+\vspace*{3cm}
+
+{\Huge\bfseries Scherzinger Margin Intelligence Platform}\\[0.8cm]
+{\LARGE Complete Project Deep Dive}\\[2cm]
+
+\begin{tabular}{rl}
+\textbf{Prepared for:} & Shahad (Client Demo Preparation) \\
+\textbf{Date:}         & April 1, 2026 \\
+\textbf{Status:}       & Phases 1--3 Complete $\vert$ Frontend + Backend Remaining Work $\vert$ Demo Ready \\
+\end{tabular}
+
+\vfill
+{\large SavSen}
+\end{titlepage}
+
+% ── Table of Contents ────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+% ======================================================================
+% SECTION 1
+% ======================================================================
+\section{What Is This Project?}
+
+Scherzinger GmbH is an industrial pump manufacturer. They have 4 years (2022--2025) of historical invoice and quotation data. Before this platform, all margin analysis was manual---spreadsheets, no forecasting, no risk awareness, no way to see which customers or products were silently losing them money.
+
+We built a \textbf{Margin Intelligence Platform} that:
+
+\begin{itemize}
+  \item \textbf{Phase 1:} Ingests their raw Excel data, cleans it, loads it into a PostgreSQL database, and provides 19 API endpoints for margin analysis, quote performance, and data quality reporting.
+  \item \textbf{Phase 2:} Adds predictive intelligence---4 forecasting models, a 5-component customer risk scoring system, Monte Carlo margin simulations, seasonal pattern detection, cost trend tracking, commodity benchmarking, and walk-forward backtest validation.
+  \item \textbf{Phase 3:} Builds a React frontend dashboard with 9 pages that visualize all of Phase 1 and 2's analytics---KPI cards, trend charts, customer/product tables, forecast comparison views, risk tier breakdowns, and more.
+\end{itemize}
+
+\subsection{Tech Stack}
+\begin{itemize}[nosep]
+  \item \textbf{Backend:} Python (FastAPI 0.109), PostgreSQL 15, SQLAlchemy 2.0
+  \item \textbf{Frontend:} React 19.2 + Vite 7, Recharts 3.7, Tailwind CSS 4.2, Framer Motion
+  \item \textbf{ML / Analytics:} NumPy, Pandas, SciPy, Statsmodels
+  \item \textbf{Data Pipeline:} Openpyxl (Excel reading), PyArrow (Parquet), Alembic (DB migrations)
+\end{itemize}
+
+% ======================================================================
+% SECTION 2
+% ======================================================================
+\section{Where Did the Data Come From?}
+
+Scherzinger provided \textbf{3 Excel files}:
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{\textwidth}{l X r l}
+\toprule
+\textbf{File} & \textbf{What It Contains} & \textbf{Records} & \textbf{Sheets} \\
+\midrule
+\code{Deckungsbeitragsliste\_2.xlsx} & Invoice / contribution margin data & \textbf{5{,}565} & 4 (2022--2025) \\
+\code{Angebotsstatistik\_3.xlsx} & Quotation statistics (won/lost) & \textbf{4{,}605} & 4 (2022--2025) \\
+\code{Quotation code interpretation.xlsx} & Rejection code reference table & \textbf{15} & 1 \\
+\bottomrule
+\end{tabularx}
+\caption{Source data files provided by Scherzinger.}
+\end{table}
+
+All data is in \textbf{German} (column names, rejection codes, product descriptions). We mapped everything to English for the platform.
+
+% ======================================================================
+% SECTION 3
+% ======================================================================
+\section{What Was in the Raw Data?}
+
+\subsection{Invoice Data (Deckungsbeitragsliste)}
+
+Each row = one line item on an invoice. Here is what Scherzinger tracks per invoice line:
+
+\begin{longtable}{p{3.5cm} p{4cm} p{2.5cm} p{4.5cm}}
+\toprule
+\textbf{German Column} & \textbf{English Meaning} & \textbf{Example} & \textbf{What It Tells Us} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{German Column} & \textbf{English Meaning} & \textbf{Example} & \textbf{What It Tells Us} \\
+\midrule
+\endhead
+Rechnung & Invoice number & 6009811 & Unique invoice ID \\
+Pos. & Line item position & 1, 2, 3 & Multiple items per invoice \\
+Datum & Invoice date & 2022-01-15 & When the sale happened \\
+Firma & Customer ID & 103459 & Which customer bought \\
+WG & Commodity group & BKAES & Product category (9 groups) \\
+Artikel & Article/SKU number & 202427 & Specific product \\
+Menge & Quantity & 1--1000+ & Units sold \\
+Umsatz & Revenue (EUR) & 10K--500K & Total sales value \\
+HKvoll / Stck. & Full mfg cost/unit & 100--5{,}000 & Total cost to make one unit \\
+HKvar / Stck. & Variable mfg cost/unit & 50--3{,}000 & Variable portion of cost \\
+MatAnteil / Stck. & Material cost/unit & 20--2{,}000 & Raw materials cost \\
+FEK / Stck. & Direct mfg cost/unit & 30--1{,}000 & Direct labor + machine cost \\
+davon FV / Stck. & Outsourcing cost/unit & 5--500 & External production cost \\
+DB I & Contribution Margin I & 5K--250K & Revenue $-$ variable costs \\
+DB II & Contribution Margin II & 2K--200K & Revenue $-$ ALL costs (key metric) \\
+DB I Marge & DB I as \% & 0.20--0.90 & Variable margin ratio \\
+DB II Marge & DB II as \% & $-$0.19 to 0.92 & \textbf{THE PRIMARY METRIC} \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{What DB I and DB II Mean (German Accounting)}
+
+\begin{itemize}
+  \item \textbf{DB I (Deckungsbeitrag I)} = Revenue $-$ Variable Costs. This tells you: ``after paying for materials and direct labor, how much is left?''
+  \item \textbf{DB II (Deckungsbeitrag II)} = Revenue $-$ ALL Costs (variable + fixed overhead). This is the \textbf{real profitability}---it accounts for factory overhead, salaries, depreciation, everything. \textbf{This is the metric the entire platform is built around.}
+\end{itemize}
+
+\subsection{Quote Data (Angebotsstatistik)}
+
+Each row = one line item on a quotation sent to a customer.
+
+\begin{longtable}{p{3cm} p{4cm} p{2.5cm} p{5cm}}
+\toprule
+\textbf{German Column} & \textbf{English Meaning} & \textbf{Example} & \textbf{What It Tells Us} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{German Column} & \textbf{English Meaning} & \textbf{Example} & \textbf{What It Tells Us} \\
+\midrule
+\endhead
+Angebot & Quote ID & AN102237 & Unique quote identifier \\
+Pos & Position & 1, 2 & Line item \\
+Datum & Quote date & 2022-03-20 & When quote was sent \\
+Firma & Customer ID & 103459 & Who we quoted \\
+Artikel & Article/SKU & 202427 & What product \\
+Menge & Quantity & 1--1000+ & How many they wanted \\
+Umsatz & Quoted revenue & 15K--600K & What we quoted them \\
+HKvoll & Total mfg cost & 5K--250K & Our cost (NOT per-unit!) \\
+DB2\% & DB II margin \% & 73.26 & \textbf{Stored as \% (73.26 = 73.26\%)} \\
+Status Code & 4=Won, 5=Lost & 4 or 5 & Did we win the deal? \\
+Auftrag & Order ID & 3013751 & Links to invoice (if won) \\
+Rejection Code & Loss reason & PA, PR, KA & Why we lost (if lost) \\
+\bottomrule
+\end{longtable}
+
+\textbf{Critical note:} Quote DB2\% is stored as a raw percentage (e.g., 73.26), while invoice DB2 Marge is stored as a decimal (e.g., 0.7326). Our cleaning script divides quote values by 100 to normalize.
+
+\subsection{Rejection Codes (15 Codes)}
+
+These explain WHY a quote was lost. Only reliable from 2025 onward (earlier years have incomplete codes).
+
+\begin{longtable}{l l l l l}
+\toprule
+\textbf{Code} & \textbf{German} & \textbf{English} & \textbf{Pricing?} & \textbf{Model Use} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Code} & \textbf{German} & \textbf{English} & \textbf{Pricing?} & \textbf{Model Use} \\
+\midrule
+\endhead
+PA & Parallelangebot & Competitor cheaper & \textbf{YES} & Risk scoring \\
+PR & Preis & Price too high & \textbf{YES} & Risk scoring \\
+KE & Keine Reaktion Endkunde & End cust.\ no response & Cautious & Weighted lower \\
+KN & Kundenprojekt n.\ realisiert & Project cancelled & Cautious & External factor \\
+KR & Keine Reaktion & No response & Cautious & Unknown cause \\
+QS & Qualit\"at & Quality concerns & Cautious & Perception \\
+AN & Anfrage & Inquiry only & Cautious & Low intent \\
+FI & Firmenimage & Company image & Cautious & Perception \\
+LZ & Lieferzeit & Delivery too long & Exclude & Supply chain \\
+DO & Dokumentation & Missing docs & Exclude & Regulatory \\
+TE & Techn.\ nicht passend & Technical mismatch & Exclude & Product fit \\
+RZ & Reaktionszeit & Slow response & Exclude & Internal \\
+SL & Systemlieferant & System supplier & Exclude & Relationship \\
+KA & Keine Angabe & No information & Exclude & Unknown \\
+KD & Kunde n.\ kontaktiert & No follow-up & Exclude & Internal \\
+\bottomrule
+\end{longtable}
+
+\textbf{Why this matters:} Codes PA and PR tell us ``we lost because of price.'' These feed into the risk scoring model's rejection component.
+
+\subsection{The 9 Commodity Groups}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{l X r r r l}
+\toprule
+\textbf{Group} & \textbf{Full Name} & \textbf{Revenue (4yr)} & \textbf{Invoices} & \textbf{Avg DB2} & \textbf{BCG} \\
+\midrule
+BKAES   & Gear pumps (Zahnradpumpen)    & \EUR16{,}706{,}796 & 2{,}819 & 66.8\% & \textbf{Star} (+2.7\%) \\
+BKAGG   & Internal gear ring pumps      & \EUR6{,}811{,}773  & 2{,}545 & 53.8\% & \textbf{Dog} ($-$9.6\%) \\
+BKAIZ   & Industrial gears              & \EUR811{,}613      & 159     & 56.1\% & \textbf{Question Mark} (+70.9\%) \\
+SOPU    & Special pumps                 & \EUR170{,}000      & 12      & 46.4\% & \textbf{Dog} ($-$96.2\%!) \\
+MBDIV   & Misc.\ components             & \EUR107{,}024      & 14      & 59.1\% & \textbf{Question Mark} (+21\%) \\
+SOPUZK  & Specialty units               & \EUR16{,}524       & 8       & 81.0\% & \textbf{Cash Cow} \\
+OFRSCR  & Frames/structures             & \EUR10{,}236       & 2       & 66.1\% & \textbf{Cash Cow} \\
+MBKUEHL & Cooling components            & \EUR4{,}062        & 2       & 9.8\%  & \textbf{Dog} (low margin!) \\
+OFRLMG  & Logistics/handling            & \EUR693            & 1       & 64.5\% & \textbf{Cash Cow} \\
+\bottomrule
+\end{tabularx}
+\caption{Commodity groups with revenue, margin, and BCG classification.}
+\end{table}
+
+\textbf{Key insight for demo:} BKAES is their bread and butter (68\% of all revenue, healthy margins). BKAGG is the second-largest but declining. BKAIZ is small but growing fast---a potential future star. SOPU has essentially collapsed ($-$96\% growth).
+
+% ======================================================================
+% SECTION 4
+% ======================================================================
+\section{How We Cleaned \& Prepared the Data}
+
+\subsection{The Cleaning Pipeline (\code{clean\_data.py})}
+
+\textbf{Step 1---Read Excel Sheets:} We read all 4 yearly sheets from both Excel files (2022, 2023, 2024, 2025) and concatenate them.
+
+\textbf{Step 2---Column Mapping:} All German column names mapped to English. Types converted: dates parsed, numbers coerced, strings stripped.
+
+\textbf{Step 3---Derived Fields Added:}
+\begin{itemize}[nosep]
+  \item \code{year}, \code{quarter}, \code{month} extracted from the date field
+  \item \code{business\_unit} set to ``BU001'' (single business unit)
+  \item Quote \code{db2\_margin} = \code{db2\_pct\_raw / 100.0}
+  \item Quote \code{is\_won} = True if \code{status\_code == 4}, False if 5
+\end{itemize}
+
+\textbf{Step 4---Data Quality Flags:}
+
+For invoices:
+\begin{lstlisting}
+dq_missing_margin  = TRUE if db2_margin is NULL     (20 records, 0.36%)
+dq_negative_margin = TRUE if db2_margin < 0          (13 records, 0.23%)
+dq_low_margin      = TRUE if 0 <= db2_margin < 0.10  (flagged but not excluded)
+dq_any_issue       = TRUE if any of the above is TRUE
+\end{lstlisting}
+
+For quotes:
+\begin{lstlisting}
+dq_100pct_margin = TRUE if db2_pct_raw == 100.0  (802 records, 17.4%)
+  -> These are quotes where HKvoll = 0, so DB2 = revenue, giving 100% "margin"
+  -> They are EXCLUDED from all model training
+dq_missing_cost  = TRUE if hkvoll is NULL or 0    (96 records)
+dq_any_issue     = TRUE if any of the above is TRUE
+\end{lstlisting}
+
+\textbf{Step 5---Rejection Code Normalization:}
+\begin{itemize}[nosep]
+  \item Mixed case codes normalized to uppercase (``ka'' $\to$ ``KA'', ``Pa'' $\to$ ``PA'')
+  \item Short codes mapped: ``P'' $\to$ ``PR'', ``T'' $\to$ ``TE''
+  \item Reliability flag: \code{rejection\_code\_reliable = TRUE} only for 2025 data
+\end{itemize}
+
+\textbf{Step 6---Deduplication:} Quotes deduplicated on (\code{quote\_id}, \code{position}), keeping the first occurrence.
+
+\textbf{Step 7---Output:} Clean data written to Parquet files:
+\begin{itemize}[nosep]
+  \item \code{invoices\_clean.parquet} (5{,}565 records)
+  \item \code{quotes\_clean.parquet} (4{,}539 records after dedup)
+  \item \code{customers.parquet} (967 unique)
+  \item \code{products.parquet} (1{,}223 unique)
+\end{itemize}
+
+\subsection{Data Loading (\code{load\_data.py})}
+
+Parquet files loaded into PostgreSQL via batch inserts (1{,}000 records per batch). Tables created via SQLAlchemy ORM + Alembic migrations.
+
+\subsection{Quote--Invoice Linkage (\code{link\_quotes\_invoices.py})}
+
+This is one of the most valuable data transformations. We link won quotes to their resulting invoices using the \code{order\_id} (Auftrag) field:
+
+\textbf{How it works:}
+\begin{enumerate}[nosep]
+  \item Take all won quotes that have an \code{order\_id}
+  \item Find all invoices with matching \code{order\_id}
+  \item Create a link record capturing: quoted margin, actual margin, the gap, and days between quote and invoice
+\end{enumerate}
+
+\textbf{Linkage Results:}
+\begin{itemize}[nosep]
+  \item Won quotes with \code{order\_id}: 1{,}724 (99.5\% of won quotes)
+  \item Successfully matched to invoices: 1{,}406 (89.3\%)
+  \item Unmatched: 169 (53 were service orders with ``S-'' prefix, 116 were recent/pending)
+  \item Total link records created: 1{,}957
+\end{itemize}
+
+\textbf{Margin Gap Calculation:}
+\begin{lstlisting}
+margin_gap = quoted_db2_margin - actual_db2_margin
+\end{lstlisting}
+
+\begin{itemize}[nosep]
+  \item \textbf{Positive gap} = we quoted higher than what we actually invoiced (margin erosion)
+  \item \textbf{Negative gap} = actual margin was better than quoted (favorable)
+\end{itemize}
+
+\textbf{Key Findings:}
+\begin{itemize}[nosep]
+  \item Mean margin gap: \textbf{+1.9\pp{}} (we consistently quote slightly higher than we deliver)
+  \item Gap by year: 2022: 2.3\pp{}, 2023: 1.9\pp{}, 2024: 2.1\pp{}, 2025: 1.4\pp{} (improving!)
+  \item Average days from quote to invoice: \textbf{$\sim$62 days} (median $\sim$46 days)
+\end{itemize}
+
+% ======================================================================
+% SECTION 5
+% ======================================================================
+\section{Database Schema---What We Built}
+
+\textbf{14 tables total across 2 phases:}
+
+\subsection{Phase 1 Tables (6)}
+
+\begin{enumerate}[nosep]
+  \item \textbf{customers}---967 records: \code{customer\_id}, \code{first\_seen\_date}
+  \item \textbf{products}---1{,}223 records: \code{article\_id}, description, \code{commodity\_group}, drawing
+  \item \textbf{invoices}---5{,}565 records: 26 columns covering revenue, costs (5 cost components), margins (DB1, DB2), quantities, dates, quality flags
+  \item \textbf{quotes}---4{,}539 records: 19 columns covering quoted values, win/loss status, rejection codes, quality flags
+  \item \textbf{quote\_invoice\_links}---1{,}957 records: the bridge between quotes and invoices with \code{margin\_gap}, \code{days\_to\_invoice}
+  \item \textbf{rejection\_codes}---15 records: code, German name, English name, pricing impact classification
+\end{enumerate}
+
+\subsection{Phase 2 Tables (7)}
+
+\begin{enumerate}[nosep,start=7]
+  \item \textbf{margin\_forecasts}---$\sim$1{,}500 records: predictions from 4 models at 1/3/6/12 month horizons
+  \item \textbf{customer\_risk\_scores}---$\sim$180 records: composite 0--1 risk score with 5 component breakdowns
+  \item \textbf{product\_cost\_trends}---$\sim$700 records: quarterly cost evolution per product
+  \item \textbf{seasonal\_patterns}---$\sim$300 records: monthly seasonal indices
+  \item \textbf{commodity\_benchmarks}---$\sim$80 records: benchmark margins per commodity group per year/quarter
+  \item \textbf{monte\_carlo\_results}---$\sim$130 records: stochastic simulation results with percentile distributions
+  \item \textbf{backtest\_results}---$\sim$40 records: walk-forward validation metrics by model type
+\end{enumerate}
+
+% ======================================================================
+% SECTION 6
+% ======================================================================
+\section{Phase 1---Core Margin Analytics}
+
+Phase 1 delivers \textbf{19 API endpoints} that answer fundamental business questions:
+
+\subsection{What Questions Can the Client Answer with Phase 1?}
+
+\textbf{Margin Analysis:}
+\begin{itemize}[nosep]
+  \item ``What's our overall margin?'' $\to$ \code{/margins/summary}
+  \item ``How has our margin changed year over year?'' $\to$ \code{/margins/by-year}
+  \item ``Who are our most profitable customers?'' $\to$ \code{/margins/by-customer}
+  \item ``Which products make us the most money?'' $\to$ \code{/margins/by-product}
+  \item ``How do our 9 commodity groups compare?'' $\to$ \code{/margins/by-commodity-group}
+  \item ``How much margin do we lose between quoting and invoicing?'' $\to$ \code{/margins/gap-analysis}
+  \item ``What's the trend---are we improving?'' $\to$ \code{/margins/trend}
+\end{itemize}
+
+\textbf{Quote Performance:}
+\begin{itemize}[nosep]
+  \item ``What's our win rate? Improving?'' $\to$ \code{/quotes/summary} + \code{/quotes/win-rate-by-year}
+  \item ``Do we win more on small or large deals?'' $\to$ \code{/quotes/win-rate-by-deal-size}
+  \item ``Why are we losing deals?'' $\to$ \code{/quotes/rejection-codes}
+  \item ``Are we pricing ourselves out?'' $\to$ \code{/quotes/price-sensitivity}
+\end{itemize}
+
+\subsection{Key Phase 1 Findings (Verified Numbers)}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total 4-year revenue     & \textbf{\EUR24{,}646{,}718} \\
+Total invoices           & \textbf{5{,}565} \\
+Total quotes             & \textbf{4{,}605} (4{,}539 after dedup) \\
+Overall DB2 margin (mean)& \textbf{64.78\%} \\
+Overall win rate         & \textbf{37.6\%} (1{,}733 won / 4{,}605 total) \\
+Unique customers         & \textbf{967} \\
+Unique products / SKUs   & \textbf{1{,}223} \\
+Commodity groups         & \textbf{9} \\
+Quote--invoice match rate& \textbf{89.3\%} \\
+Mean margin gap          & \textbf{+1.9\pp{}} \\
+\bottomrule
+\end{tabular}
+\caption{Phase 1 key metrics.}
+\end{table}
+
+\textbf{Win Rates by Year (improving trend):}
+\begin{itemize}[nosep]
+  \item 2022: 36.5\% (346 won / 947 total)
+  \item 2023: 34.3\% (408 won / 1{,}191 total)
+  \item 2024: 38.9\% (458 won / 1{,}176 total)
+  \item 2025: \textbf{40.4\%} (521 won / 1{,}291 total)
+\end{itemize}
+
+\textbf{Revenue by Year:}
+\begin{itemize}[nosep]
+  \item 2022: \EUR6{,}369{,}103 (1{,}500 invoices, 448 customers, avg margin 63.6\%)
+  \item 2023: \EUR6{,}233{,}961 (1{,}337 invoices, 440 customers, avg margin 63.8\%)
+  \item 2024: \EUR5{,}793{,}294 (1{,}320 invoices, 391 customers, avg margin 62.2\%)---dip year
+  \item 2025: \EUR6{,}250{,}360 (1{,}408 invoices, 411 customers, avg margin 61.0\%)---recovery
+\end{itemize}
+
+\textbf{Lost Revenue by Rejection Code (2025 data, reliable):}
+\begin{itemize}[nosep]
+  \item KA (No info): \EUR4{,}942{,}412---51.7\% of all losses
+  \item KR (No response): \EUR1{,}318{,}560---18.4\%
+  \item AN (Inquiry only): \EUR1{,}168{,}322---9.2\%
+  \item \textbf{PA (Competitor cheaper): \EUR793{,}893---5.8\%} $\leftarrow$ Price competition
+  \item KE (End customer silent): \EUR274{,}121---5.0\%
+  \item KD (We didn't follow up): \EUR369{,}629---4.0\% $\leftarrow$ Internal failure!
+  \item KN (Project cancelled): \EUR503{,}198---2.9\%
+  \item \textbf{PR (Our price too high): \EUR177{,}374---1.8\%}
+  \item TE (Technical mismatch): \EUR22{,}195---0.6\%
+  \item LZ (Delivery too slow): \EUR14{,}627---0.3\%
+\end{itemize}
+
+\textbf{Price Sensitivity Analysis (t-test):}
+\begin{itemize}[nosep]
+  \item Won quotes average margin: 70.6\%
+  \item Lost quotes average margin: 72.4\%
+  \item Difference: 1.8\pp{} (lost quotes were priced higher)
+  \item P-value: \textbf{0.006} (statistically significant!)
+  \item Meaning: There IS a measurable relationship between higher pricing and losing deals.
+\end{itemize}
+
+% ======================================================================
+% SECTION 7
+% ======================================================================
+\section{Phase 2---Forecasting, Risk \& ML Models}
+
+Phase 2 adds \textbf{predictive intelligence} via 9 additional API endpoints and 7 new database tables.
+
+\subsection{Margin Forecasting (4 Models)}
+
+We forecast DB2 margin forward at 1, 3, 6, and 12 month horizons for: Top 200 customers (by revenue), Top 300 products (by revenue), and all 9 commodity groups.
+
+\subsubsection{Model 1: Exponential Moving Average (EMA)}
+\begin{itemize}[nosep]
+  \item Requires: $\geq$12 months of data
+  \item How: Applies exponential weighted mean with span=6, giving more weight to recent months
+  \item Confidence interval: $\pm 1.645 \times \sigma_{\text{residuals}}$ (90\% CI)
+  \item Good for: Short-term smoothing, reacting to recent changes
+\end{itemize}
+
+\subsubsection{Model 2: Linear Trend}
+\begin{itemize}[nosep]
+  \item Requires: $\geq$18 months of data
+  \item How: Fits a straight-line regression (OLS) on monthly margin values over time
+  \item Formula: $\hat{m} = \beta_0 + \beta_1 \times t$
+  \item Reports $R^2$ (goodness of fit)
+  \item Good for: Detecting directional trends (is margin going up or down?)
+\end{itemize}
+
+\subsubsection{Model 3: Seasonal Decomposition}
+\begin{itemize}[nosep]
+  \item Requires: $\geq$24 months of data
+  \item How: Uses statsmodels additive seasonal decomposition with 12-month period
+  \item Separates margin into: trend + seasonal + residual
+  \item Prediction = extrapolated trend + seasonal factor for target month
+  \item Good for: Capturing repeating monthly patterns
+\end{itemize}
+
+\subsubsection{Model 4: Ensemble (Weighted Average)}
+\begin{itemize}[nosep]
+  \item Requires: $\geq$18 months of data
+  \item If seasonal available: \textbf{30\% EMA + 30\% Linear + 40\% Seasonal}
+  \item If seasonal unavailable: \textbf{50\% EMA + 50\% Linear}
+  \item Confidence interval: $[\min(\text{all lowers}),\; \max(\text{all uppers})]$
+  \item Good for: Robust predictions that balance multiple perspectives
+\end{itemize}
+
+\textbf{All predictions clipped to $[-1.0, 1.0]$ range.}
+
+\subsection{Customer Risk Scoring (5 Components)}
+
+Every qualifying customer ($\geq$5 invoices, $\geq$3 quote--invoice links, $\geq$5 quotes) gets a \textbf{composite risk score from 0.0 to 1.0}.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{l c X l}
+\toprule
+\textbf{Component} & \textbf{Weight} & \textbf{What It Measures} & \textbf{Formula} \\
+\midrule
+Margin Trend & 30\% & Is margin going up or down? & $\text{clip}\!\left(\frac{0.05 - \Delta}{0.15},\, 0,\, 1\right)$ \\[4pt]
+Margin Gap & 25\% & Quote-to-invoice erosion & $\text{clip}\!\left(\frac{\bar{g}}{0.15},\, 0,\, 1\right)$ \\[4pt]
+Volume Trend & 20\% & Purchase volume growth/decline & $\text{clip}\!\left(\frac{0.10 - \Delta_{\text{rev}}}{0.40},\, 0,\, 1\right)$ \\[4pt]
+Win Rate & 15\% & Are we winning their quotes? & $\text{clip}\!\left(\frac{0.50 - w_r}{0.35},\, 0,\, 1\right)$ \\[4pt]
+Rejection Pattern & 10\% & Price-driven losses (PA+PR) & $\text{clip}\!\left(\frac{r_p - 0.10}{0.40},\, 0,\, 1\right)$ \\
+\bottomrule
+\end{tabularx}
+\caption{Risk scoring components and formulas.}
+\end{table}
+
+\textbf{Risk Tiers:}
+\begin{table}[H]
+\centering
+\begin{tabular}{llrl}
+\toprule
+\textbf{Tier} & \textbf{Score Range} & \textbf{Count} & \textbf{Avg Score} \\
+\midrule
+Low      & 0.00--0.24 & 33 customers (18\%)   & 0.22 \\
+Medium   & 0.25--0.49 & 63 customers (34.5\%) & 0.52 \\
+High     & 0.50--0.74 & 65 customers (35.6\%) & 0.74 \\
+Critical & 0.75--1.00 & 22 customers (12\%)   & 0.91 \\
+\bottomrule
+\end{tabular}
+\caption{Customer risk tier distribution.}
+\end{table}
+
+\textbf{What this means:} 47.6\% of scored customers are at High or Critical risk.
+
+\subsection{Monte Carlo Simulations}
+
+We run stochastic simulations to model the probability distribution of future margins.
+
+\textbf{How it works (step by step):}
+\begin{enumerate}[nosep]
+  \item Take a customer/product/group's monthly margin history
+  \item Compute monthly returns: $r_t = m_t - m_{t-1}$
+  \item Calculate drift ($\mu = \bar{r}$) and volatility ($\sigma = \text{std}(r)$)
+  \item Simulate 10{,}000 paths (5{,}000 for customers): each month $m_{t+1} = \text{clip}(m_t + \mathcal{N}(\mu, \sigma),\; -1,\; 1)$
+  \item From 10{,}000 final margins, compute percentiles ($p_5, p_{25}, p_{50}, p_{75}, p_{95}$)
+  \item Compute $\Pr(\text{margin} < 50\%)$
+\end{enumerate}
+
+\textbf{Horizons:} 3, 6, and 12 months. \textbf{Random seed:} 42.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrrrl}
+\toprule
+\textbf{Entity} & \textbf{Mean} & \textbf{Median} & \textbf{P5} & \textbf{P95} & \textbf{Pr $<$ 50\%} \\
+\midrule
+\textbf{Overall} & 59.5\% & 59.4\% & 35.9\% & 83.0\% & \textbf{25.6\%} \\
+BKAES   & 64.9\% & 64.8\% & 39.4\% & 90.3\% & 16.9\% \\
+BKAGG   & 43.9\% & 43.7\% & 7.0\%  & 80.7\% & \textbf{61.0\%} \\
+BKAIZ   & 53.1\% & 55.8\% & $-$6.1\%  & 100\% & 43.4\% \\
+MBDIV   & 0.1\%  & 3.1\%  & $-$100\% & 100\% & \textbf{52.7\%} \\
+SOPU    & 2.2\%  & 5.0\%  & $-$100\% & 100\% & \textbf{72.5\%} \\
+SOPUZK  & 56.5\% & 64.8\% & $-$18.8\% & 100\% & 37.3\% \\
+\bottomrule
+\end{tabular}
+\caption{Monte Carlo simulation results (12-month horizon).}
+\end{table}
+
+\textbf{Key insight:} For BKAGG (second-largest group), there is a \textbf{61\% probability} that margins will fall below 50\% within 12 months.
+
+\subsection{Seasonal Pattern Analysis}
+
+Seasonal index for each month: $I_m = \bar{m}_{\text{month}} \;/\; \bar{m}_{\text{grand}}$.
+
+Three levels: (1) Overall, (2) By commodity group, (3) By qualifying customer ($\geq$48 invoices).
+
+Overall seasonal range: 0.962 (weakest) to 1.037 (strongest).
+
+\subsection{Commodity Benchmarks}
+
+For each commodity group, per year and quarter, we calculate: simple average DB2 margin, revenue-weighted DB2 margin, median/P25/P75 percentile margins, total revenue, record count, average win rate, and average margin gap.
+
+\subsection{Cost Trend Analysis}
+
+For products with $\geq$3 quarters of data and $\geq$2 invoices per quarter:
+\begin{itemize}[nosep]
+  \item Track quarterly quantity-weighted averages: HKvoll, material, FEK, FV costs per unit
+  \item Calculate: $\Delta_{\text{cost}} = (C_{\text{current}} - C_{\text{prior}}) \;/\; |C_{\text{prior}}|$
+  \item Flag warning if $|\Delta_{\text{cost}}| > 50\%$
+\end{itemize}
+
+\subsection{Walk-Forward Backtests}
+
+\begin{enumerate}[nosep]
+  \item Train on first $N$ months (min 12/18/24 depending on model)
+  \item Predict the next 3-month average
+  \item Expand window by 3 months, repeat
+  \item Compare predictions to actuals
+\end{enumerate}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrl}
+\toprule
+\textbf{Model} & \textbf{MAE} & \textbf{RMSE} & \textbf{Dir.\ Accuracy} \\
+\midrule
+\textbf{Linear Trend} & \textbf{0.024} & \textbf{0.028} & \textbf{54.5\%} \\
+Seasonal Decomp       & 0.032          & 0.037          & 9.1\% \\
+Ensemble              & 0.035          & 0.040          & 9.1\% \\
+EMA                   & 0.065          & 0.068          & 54.5\% \\
+\bottomrule
+\end{tabular}
+\caption{Backtest accuracy results.}
+\end{table}
+
+\textbf{MAE of 0.024} means predictions are off by $\sim$2.4\pp{} on average. \textbf{Directional accuracy of 54.5\%} means correct up/down prediction $\sim$55\% of the time.
+
+% ======================================================================
+% SECTION 8
+% ======================================================================
+\section{Phase 3---Frontend Dashboard}
+
+\subsection{Pages Built}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Page} & \textbf{Route} & \textbf{What It Shows} \\
+\midrule
+Dashboard        & \code{/}                & KPI cards, monthly trend, top customers, commodity breakdown \\
+Revenue \& Margins & \code{/revenue-margins} & Detailed margin trends, YoY comparisons, commodity performance \\
+Customers        & \code{/customers}       & Customer table with revenue, margin, win rate, risk tier \\
+Products         & \code{/products}        & SKU-level performance, cost breakdowns, at-risk flags \\
+Forecasting      & \code{/forecasting}     & Model comparison, forecast bands with 90\% CI, Monte Carlo \\
+Quality Metrics  & \code{/quality}         & Data quality dashboard, missing data, anomaly detection \\
+AI Insights      & \code{/ai-insights}     & BCG matrix, margin classification, customer risk predictions \\
+Pricing \& FX    & \code{/pricing}         & \textit{Stub for Phase 4} \\
+ML Analytics     & \code{/ml-analytics}    & \textit{Stub for Phase 5} \\
+\bottomrule
+\end{tabularx}
+\caption{Frontend pages.}
+\end{table}
+
+All charts built with \textbf{Recharts 3.7}. Animations via \textbf{Framer Motion}. Responsive via \textbf{Tailwind CSS 4.2}.
+
+% ======================================================================
+% SECTION 9
+% ======================================================================
+\section{Every Graph \& Plot Explained}
+
+\subsection{Dashboard KPI Cards (4 cards at top)}
+\begin{itemize}[nosep]
+  \item \textbf{Total Revenue:} Sum of all invoices. Currently \EUR24.6M (all time) or \EUR6.25M (2025).
+  \item \textbf{Average DB2 Margin:} Mean margin. Currently 64.78\% all-time, 61.0\% in 2025.
+  \item \textbf{Win Rate:} Won/total quotes. Currently 37.1\%.
+  \item \textbf{At-Risk Customers:} High + Critical tier. Currently 87 (65 high + 22 critical).
+\end{itemize}
+
+\subsection{Monthly Revenue \& Margin Trend (Line + Area Chart)}
+\begin{itemize}[nosep]
+  \item X-axis: Month (Jan 2022 $\to$ Dec 2025, 48 points)
+  \item Y-axis Left: Revenue in EUR (bars/area); Y-axis Right: DB2 margin \% (line)
+  \item Data source: \code{monthly\_detail.json}
+  \item Key: Revenue dipped mid-2024, recovered. Margin slight downward trend 63.6\% $\to$ 61.0\%.
+\end{itemize}
+
+\subsection{Revenue by Customer (Horizontal Bar Chart)}
+Top 20 customers ranked by total revenue. Customer 101690 leads at \EUR1.54M but only 53.3\% margin.
+
+\subsection{Revenue by Product (Horizontal Bar Chart)}
+Top 20 SKUs ranked by total revenue. Product 201924-F leads at \EUR580K with 71.7\% margin. Product 206028-01 has \EUR410K but only 9.8\% margin.
+
+\subsection{Commodity Group Performance (Bar + Pie Chart)}
+Revenue share and margin across 9 groups. Calculation: $\text{weighted margin} = \sum \text{db2\_total} \;/\; \sum \text{revenue}$. BKAES dominates (68\% revenue, 66.8\% margin).
+
+\subsection{Win Rate by Deal Size (Bar Chart)}
+Deal size bands: $<$\EUR1K, \EUR1--5K, \EUR5--10K, \EUR10--50K, $>$\EUR50K. Sweet spot is \EUR5--10K range.
+
+\subsection{Rejection Code Distribution (Horizontal Bar)}
+Count and revenue impact of each loss reason. KA (51.7\%) and KR (18.4\%) dominate. PA+PR = 7.6\% but \EUR971K.
+
+\subsection{Risk Tier Distribution (Pie / Stacked Bar)}
+Customer distribution across Low/Medium/High/Critical. Only 18\% are Low risk.
+
+\subsection{Forecast Model Comparison (Multi-Line Chart)}
+EMA, Linear, Seasonal, Ensemble predictions side by side with 90\% CI shaded bands.
+
+\subsection{Forecast Confidence Bands (Area Chart)}
+Central prediction with P5--P95 shaded area. Wider bands = more uncertainty.
+
+\subsection{Monte Carlo Distribution (Histogram / Box Plot)}
+Distribution of 10{,}000 simulated outcomes. Vertical line at 50\% threshold. Shaded area = probability below threshold.
+
+\subsection{Seasonal Pattern Heatmap}
+Month $\times$ Commodity group. Color: seasonal index (green $> 1.0$, red $< 1.0$).
+
+\subsection{Cost Trend Lines (Line Chart per Product)}
+Quarterly HKvoll per unit with material, FEK, FV breakout lines.
+
+\subsection{Backtest Accuracy Comparison (Bar Chart)}
+MAE and RMSE bars for each model type. Linear Trend wins with MAE 0.024.
+
+% ======================================================================
+% SECTION 10
+% ======================================================================
+\section{All Formulas \& Calculations}
+
+\subsection{Core Margin Formulas (German Accounting)}
+
+\begin{align}
+\text{DB I} &= \text{Revenue} - (\text{HKvar\_per\_unit} \times \text{Quantity}) \label{eq:db1} \\
+\text{DB II} &= \text{Revenue} - (\text{HKvoll\_per\_unit} \times \text{Quantity}) \label{eq:db2} \\
+\text{DB I Margin} &= \frac{\text{DB I Total}}{\text{Revenue}} \\
+\text{DB II Margin} &= \frac{\text{DB II Total}}{\text{Revenue}} \quad \leftarrow \text{THE KEY METRIC}
+\end{align}
+
+\subsection{Cost Component Breakdown}
+
+\begin{align}
+\text{Material \%} &= \frac{\text{material\_per\_unit}}{\text{hkvoll\_per\_unit}} \times 100 \\
+\text{Direct Mfg \%} &= \frac{\text{fek\_per\_unit}}{\text{hkvoll\_per\_unit}} \times 100 \\
+\text{Outsourcing \%} &= \frac{\text{fv\_per\_unit}}{\text{hkvoll\_per\_unit}} \times 100
+\end{align}
+
+\subsection{Quote--Invoice Margin Gap}
+
+\begin{align}
+\text{margin\_gap} &= \text{quoted\_db2\_margin} - \text{actual\_db2\_margin} \\
+\text{days\_to\_invoice} &= \text{invoice\_date} - \text{quote\_date} \;\text{(in days)}
+\end{align}
+
+\subsection{Revenue-Weighted Margin}
+
+\[
+\text{weighted\_margin} = \frac{\sum \text{db2\_total}}{\sum \text{revenue}}
+\]
+
+This is more accurate than simple averaging because a \EUR500K invoice at 70\% counts much more than a \EUR500 invoice at 90\%.
+
+\subsection{Win Rate}
+
+\[
+\text{win\_rate} = \frac{\text{COUNT}(\text{is\_won} = \text{TRUE})}{\text{COUNT}(\text{all quotes})}
+\]
+
+\subsection{Price Sensitivity T-Test}
+
+\begin{lstlisting}
+Group A: margins of all WON quotes (excluding dq_100pct_margin)
+Group B: margins of all LOST quotes (excluding dq_100pct_margin)
+Test: Independent samples t-test (scipy.stats.ttest_ind)
+Result: p-value = 0.006 (significant at alpha=0.05)
+Interpretation: Lost quotes had higher margins -> pricing affects win probability
+\end{lstlisting}
+
+\subsection{EMA Forecast Formula}
+
+\begin{lstlisting}[language=Python]
+ema = series.ewm(span=6, adjust=False).mean()
+predicted = ema.iloc[-1]  # last EMA value projected forward
+residuals = series - ema_fitted
+ci_width = 1.645 * residuals.std()  # 90% confidence
+lower = predicted - ci_width
+upper = predicted + ci_width
+\end{lstlisting}
+
+\subsection{Linear Trend Forecast Formula}
+
+\begin{lstlisting}[language=Python]
+from scipy.stats import linregress
+x = range(len(series))
+slope, intercept, r_value, p_value, std_err = linregress(x, series)
+r_squared = r_value ** 2
+predicted = intercept + slope * (len(series) + months_ahead - 1)
+ci_width = 1.645 * std(residuals)
+\end{lstlisting}
+
+\subsection{Seasonal Decomposition Forecast}
+
+\begin{lstlisting}[language=Python]
+from statsmodels.tsa.seasonal import seasonal_decompose
+result = seasonal_decompose(series, model='additive', period=12)
+# Extrapolate trend via linear regression on trend component
+# Add seasonal factor for the target month
+predicted = extrapolated_trend + seasonal_component[target_month]
+\end{lstlisting}
+
+\subsection{Ensemble Forecast}
+
+\begin{lstlisting}[language=Python]
+# With seasonal (requires >= 24 months):
+weights = [0.3, 0.3, 0.4]  # EMA, Linear, Seasonal
+predicted = 0.3 * ema_pred + 0.3 * linear_pred + 0.4 * seasonal_pred
+
+# Without seasonal (requires >= 18 months):
+weights = [0.5, 0.5]  # EMA, Linear
+predicted = 0.5 * ema_pred + 0.5 * linear_pred
+
+# Confidence interval spans the widest of all component intervals
+lower = min(ema_lower, linear_lower, seasonal_lower)
+upper = max(ema_upper, linear_upper, seasonal_upper)
+\end{lstlisting}
+
+\subsection{Risk Score Components}
+
+\begin{lstlisting}[language=Python]
+# Component 1: Margin Trend (30%)
+delta = mean(last 4 quarters) - mean(first 4 quarters)
+margin_trend_score = clip((0.05 - delta) / 0.15, 0, 1)
+
+# Component 2: Margin Gap (25%)
+gap_score = clip(avg_gap / 0.15, 0, 1)
+
+# Component 3: Volume Trend (20%)
+change = (recent_revenue - prior_avg) / prior_avg
+volume_score = clip((0.10 - change) / 0.40, 0, 1)
+
+# Component 4: Win Rate (15%)
+winrate_score = clip((0.50 - recent_win_rate) / 0.35, 0, 1)
+
+# Component 5: Rejection Pattern (10%)
+price_ratio = count(PA + PR) / count(all lost)
+rejection_score = clip((price_ratio - 0.10) / 0.40, 0, 1)
+
+# Composite Score
+composite = 0.30*margin_trend + 0.25*gap + 0.20*volume
+          + 0.15*winrate + 0.10*rejection
+\end{lstlisting}
+
+The composite score formula in mathematical notation:
+
+\[
+S = 0.30\,S_{\text{margin}} + 0.25\,S_{\text{gap}} + 0.20\,S_{\text{volume}} + 0.15\,S_{\text{winrate}} + 0.10\,S_{\text{rejection}}
+\]
+
+\subsection{Monte Carlo Simulation}
+
+\begin{lstlisting}[language=Python]
+returns = np.diff(margin_series)  # monthly changes
+mu = returns.mean()               # drift
+sigma = returns.std()             # volatility
+np.random.seed(42)
+
+for sim in range(10000):
+    margin = last_known_margin
+    for month in range(horizon):
+        shock = np.random.normal(mu, sigma)
+        margin = clip(margin + shock, -1.0, 1.0)
+    final_margins.append(margin)
+
+# Results
+p5  = np.percentile(final_margins, 5)
+p25 = np.percentile(final_margins, 25)
+p50 = np.median(final_margins)
+p75 = np.percentile(final_margins, 75)
+p95 = np.percentile(final_margins, 95)
+prob_below_threshold = np.mean(final_margins < 0.50)
+\end{lstlisting}
+
+\subsection{Seasonal Index}
+
+\[
+I_m = \frac{\bar{m}_{\text{month}}}{\bar{m}_{\text{grand}}}
+\]
+
+If sample count $<$ minimum threshold, index defaults to 1.0.
+
+\subsection{Cost Change Percentage}
+
+\[
+\bar{C} = \frac{\sum (\text{hkvoll\_per\_unit} \times \text{quantity})}{\sum \text{quantity}}
+\qquad
+\Delta_{\text{cost}} = \frac{\bar{C}_{\text{current}} - \bar{C}_{\text{prior}}}{|\bar{C}_{\text{prior}}|}
+\]
+
+Warning flag if $|\Delta_{\text{cost}}| > 0.50$ (50\% swing).
+
+\subsection{Backtest Metrics}
+
+\begin{align}
+\text{MAE}  &= \frac{1}{n}\sum_{i=1}^{n} |y_i - \hat{y}_i| \\
+\text{RMSE} &= \sqrt{\frac{1}{n}\sum_{i=1}^{n} (y_i - \hat{y}_i)^2} \\
+\text{MAPE} &= \frac{1}{n}\sum_{i=1}^{n} \frac{|y_i - \hat{y}_i|}{|y_i|} \\
+\text{Dir.\ Acc.} &= \frac{1}{n}\sum_{i=1}^{n} \mathbf{1}\!\left[\text{sign}(\Delta \hat{y}_i) = \text{sign}(\Delta y_i)\right]
+\end{align}
+
+% ======================================================================
+% SECTION 11
+% ======================================================================
+\section{ML Models---How They Work, Accuracy \& How We Got There}
+
+\subsection{Why These Models?}
+
+We chose \textbf{statistical / time-series models} rather than deep learning because:
+\begin{enumerate}[nosep]
+  \item \textbf{Limited data:} 48 months (4 years) per entity at most---not enough for neural networks
+  \item \textbf{Interpretability:} Scherzinger's management needs to understand and trust the predictions
+  \item \textbf{Robustness:} Classical models work well with small sample sizes
+  \item \textbf{Transparency:} Every coefficient and weight is explainable
+\end{enumerate}
+
+\subsection{Model Development Process}
+
+\begin{enumerate}[nosep]
+  \item \textbf{Data preparation:} Aggregated invoices into monthly margin series per entity
+  \item \textbf{Quality filtering:} Excluded records with \code{dq\_any\_issue = TRUE}
+  \item \textbf{Minimum data requirements:} Each model has minimum month thresholds (12/18/24)
+  \item \textbf{Training:} Models trained on full available history for each entity
+  \item \textbf{Validation:} Walk-forward backtesting with expanding window (never look-ahead bias)
+\end{enumerate}
+
+\subsection{Accuracy Summary}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrll}
+\toprule
+\textbf{Model} & \textbf{MAE} & \textbf{RMSE} & \textbf{Dir.\ Acc.} & \textbf{Best For} \\
+\midrule
+Linear Trend & \textbf{0.024 (2.4\pp{})} & 0.028 & 54.5\% & Trend detection \\
+Seasonal     & 0.032 (3.2\pp{})           & 0.037 & 9.1\%  & Monthly patterns \\
+Ensemble     & 0.035 (3.5\pp{})           & 0.040 & 9.1\%  & Balanced view \\
+EMA          & 0.065 (6.5\pp{})           & 0.068 & 54.5\% & Short-term reaction \\
+\bottomrule
+\end{tabular}
+\caption{Model accuracy summary.}
+\end{table}
+
+\textbf{What to tell the client:}
+\begin{itemize}[nosep]
+  \item ``Our best model predicts margin within 2.4 percentage points on average''
+  \item ``If we forecast 65\% margin, expect the actual to land between 62.6\% and 67.4\%''
+  \item ``The ensemble model balances stability and responsiveness---it's our recommended default''
+  \item ``Directional accuracy is modest (55\%) because month-to-month margin is inherently noisy, but the magnitude predictions are very accurate''
+\end{itemize}
+
+\subsection{Current Forecast Values}
+
+\textbf{Overall Portfolio:}
+\begin{itemize}[nosep]
+  \item Current margin: 59.7\%
+  \item 3-month forecast: 60.5\% (CI: 57.3\%--63.7\%)
+  \item 6-month forecast: 60.5\% (CI: 57.2\%--63.7\%)
+  \item 12-month forecast: 60.4\% (CI: 57.1\%--63.6\%)
+\end{itemize}
+
+\textbf{By Commodity Group (12-month forecast):}
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrl}
+\toprule
+\textbf{Group} & \textbf{Current} & \textbf{12m Forecast} & \textbf{Direction} \\
+\midrule
+BKAES  & 65.0\% & 63.2\%  & Slight decline \\
+BKAGG  & 45.7\% & 45.5\%  & Flat (but already low) \\
+BKAIZ  & 51.6\% & 56.4\%  & \textbf{Improving} \\
+MBDIV  & 41.7\% & 32.8\%  & \textbf{Declining fast} \\
+SOPU   & 58.2\% & $-$45.2\% & \textbf{Collapsing} \\
+SOPUZK & 80.4\% & 57.4\%  & Declining \\
+\bottomrule
+\end{tabular}
+\caption{12-month margin forecasts by commodity group.}
+\end{table}
+
+% ======================================================================
+% SECTION 12
+% ======================================================================
+\section{JSON Data Files---What They Contain}
+
+The frontend uses 12 JSON files in \code{/frontend/src/data/}:
+
+\begin{longtable}{l r p{8cm}}
+\toprule
+\textbf{File} & \textbf{Records} & \textbf{Key Contents} \\
+\midrule
+\endfirsthead
+\code{dashboard\_data.json}    & 1 obj  & Annual summaries (4 yrs), monthly revenue (48 pts), commodity breakdown, risk distribution, top 20 customers, quote summary \\
+\code{monthly\_detail.json}    & 48 obj & Per-month: revenue, DB1/DB2 margin, invoice count, customer count, avg invoice value \\
+\code{customers\_detail.json}  & 25 obj & Top 25 customers: segment, revenue by year, margin by year, top products, win rate, risk score, LTV \\
+\code{products.json}           & 50 obj & Top 50 SKUs: revenue/margin by year, cost breakdown, trend, at\_risk flag \\
+\code{forecasting.json}        & 1 obj  & Overall + 6 commodity forecasts, model accuracy, seasonal indices, Monte Carlo, backtests \\
+\code{pricing\_analysis.json}  & 1 obj  & Gap analysis, gap by year, catalog vs quoted, win rate by margin band, rejection codes, t-test \\
+\code{pipeline.json}           & 1 obj  & Pipeline stages, conversion funnel, quarterly pipeline, by-commodity pipeline \\
+\code{ml\_analytics.json}      & 1 obj  & Churn predictions, margin classification, anomaly detection (33), BCG matrix \\
+\code{sales\_transactions.json}& 60 obj & 30 recent invoices + 30 recent quotes \\
+\code{inventory\_detail.json}  & 1 obj  & Inventory metrics, warehouse data \\
+\code{cogs\_detail.json}       & 1 obj  & Cost of goods sold breakdowns \\
+\code{price\_governance.json}  & 1 obj  & Price approval workflows \\
+\bottomrule
+\end{longtable}
+
+% ======================================================================
+% SECTION 13
+% ======================================================================
+\section{Example SKU Scenario 1: Article 300143 (Declining Margin, At Risk)}
+
+\subsection{The Product}
+
+\begin{itemize}[nosep]
+  \item \textbf{Article ID:} 300143
+  \item \textbf{Description:} Innenzahnringpumpe (Internal Gear Ring Pump)
+  \item \textbf{Commodity Group:} BKAGG
+  \item \textbf{Total 4-Year Revenue:} \EUR447{,}901
+  \item \textbf{Total Units Sold:} 757
+  \item \textbf{Risk Status:} \textbf{AT RISK}
+\end{itemize}
+
+\subsection{Year-by-Year Performance}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Year} & \textbf{Revenue} & \textbf{Units} & \textbf{Avg Margin} & \textbf{Trend} \\
+\midrule
+2022 & \EUR148{,}912 & 256 & \textbf{57.0\%} & Baseline \\
+2023 & \EUR157{,}706 & 266 & \textbf{44.5\%} & $-$12.5\pp{} drop! \\
+2024 & \EUR79{,}831  & 133 & \textbf{45.5\%} & Flat but volume halved \\
+2025 & \EUR61{,}453  & 102 & \textbf{42.8\%} & Still declining \\
+\bottomrule
+\end{tabular}
+\caption{Article 300143 year-by-year performance.}
+\end{table}
+
+\subsection{What Happened?}
+
+This product shows a classic \textbf{margin erosion + volume decline pattern:}
+\begin{enumerate}[nosep]
+  \item \textbf{Margin dropped 14.2\pp{}} from 2022 (57.0\%) to 2025 (42.8\%)
+  \item \textbf{Volume dropped 60\%} from 256 units (2022) to 102 units (2025)
+  \item \textbf{Revenue dropped 59\%} from \EUR148K to \EUR61K
+\end{enumerate}
+
+\subsection{Cost Breakdown}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrl}
+\toprule
+\textbf{Component} & \textbf{Share} & \textbf{What It Means} \\
+\midrule
+Material               & \textbf{47.8\%} & Nearly half is raw materials \\
+Direct Mfg (FEK)       & \textbf{27.5\%} & Significant labor/machine cost \\
+Outsourcing (FV)       & 3.3\%            & Low outsourcing dependency \\
+Overhead               & 21.4\%           & Fixed cost allocation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Why It's At Risk}
+
+The BKAGG commodity group as a whole is struggling: group-wide margin only 53.8\%, growth rate $-$9.6\% (BCG: Dog), Monte Carlo probability below 50\%: \textbf{61\%}. The high material cost share (47.8\%) makes it vulnerable to raw material price increases.
+
+\subsection{What the Platform Tells Scherzinger to Do}
+
+\begin{itemize}[nosep]
+  \item \textbf{Phase 1 insight:} Product is below commodity group benchmark and declining.
+  \item \textbf{Phase 2 insight:} Forecast projects continued margin pressure.
+  \item \textbf{Phase 3 visibility:} ``AT RISK'' badge, red color, declining trend arrow.
+  \item \textbf{Potential action:} Re-negotiate material pricing, increase customer price, or consider discontinuing.
+\end{itemize}
+
+\subsection{Revenue Impact if Nothing Changes}
+
+If margin declines at $-$3.5\pp{}/year and volume drops $-$50\%/year:
+\begin{itemize}[nosep]
+  \item \textbf{2026 projected:} $\sim$51 units $\times$ \EUR480/unit = \EUR24{,}500 at 39\% margin $\to$ only \EUR9{,}555 DB2
+  \item \textbf{vs.\ 2022:} 256 units $\times$ \EUR582/unit = \EUR148{,}912 at 57\% $\to$ \EUR84{,}880 DB2
+  \item \textbf{Margin loss over time: \EUR75{,}325 per year on this single SKU}
+\end{itemize}
+
+% ======================================================================
+% SECTION 14
+% ======================================================================
+\section{Example SKU Scenario 2: Article 201885 (Healthy \& Growing)}
+
+\subsection{The Product}
+
+\begin{itemize}[nosep]
+  \item \textbf{Article ID:} 201885
+  \item \textbf{Description:} Elektro-Zahnradpumpe (Electric Gear Pump)
+  \item \textbf{Commodity Group:} BKAES
+  \item \textbf{Total 4-Year Revenue:} \EUR428{,}847
+  \item \textbf{Total Units Sold:} 224
+  \item \textbf{Risk Status:} \textbf{NOT AT RISK}---Margin trend: Rising
+\end{itemize}
+
+\subsection{Year-by-Year Performance}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Year} & \textbf{Revenue} & \textbf{Units} & \textbf{Avg Margin} & \textbf{Trend} \\
+\midrule
+2022 & \EUR89{,}561  & 62 & \textbf{72.1\%} & Baseline \\
+2023 & \EUR150{,}400 & 67 & \textbf{77.8\%} & +5.7\pp{} improvement \\
+2024 & \EUR42{,}208  & 20 & \textbf{74.1\%} & Volume dip (margin still good) \\
+2025 & \EUR146{,}678 & 75 & \textbf{74.5\%} & Strong recovery \\
+\bottomrule
+\end{tabular}
+\caption{Article 201885 year-by-year performance.}
+\end{table}
+
+\subsection{What's Going Right?}
+
+\begin{enumerate}[nosep]
+  \item \textbf{Margin improved 2.4\pp{}} from 72.1\% to 74.5\%, with a peak at 77.8\% in 2023
+  \item \textbf{Volume recovered strongly} to 75 units in 2025 after a dip in 2024
+  \item \textbf{Revenue bounced back} to \EUR147K---second-highest year
+  \item \textbf{High-value product:} Avg price/unit \EUR1{,}914 (vs.\ \EUR592 for article 300143)
+\end{enumerate}
+
+\subsection{Cost Breakdown}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrl}
+\toprule
+\textbf{Component} & \textbf{Share} & \textbf{What It Means} \\
+\midrule
+Material         & \textbf{52.3\%} & Higher but offset by pricing power \\
+Direct Mfg (FEK) & 21.0\%          & Moderate labor cost \\
+Outsourcing (FV) & 2.3\%            & Almost no outsourcing \\
+Overhead         & 24.4\%           & Standard allocation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Why It's Healthy}
+
+BKAES is the star performer: 66.8\% group margin, +2.7\% growth, Monte Carlo below-50\% probability only 16.9\%. This SKU outperforms its group by $\sim$8\pp{} (74.5\% vs 66.8\%).
+
+\subsection{Revenue Potential}
+
+\begin{itemize}[nosep]
+  \item Current trajectory: $\sim$\EUR150K/year at 74\% margin = \textbf{\EUR111K annual DB2}
+  \item 20\% volume increase: $\sim$\EUR180K/year = \textbf{\EUR133K annual DB2}
+  \item \textbf{\EUR22K additional annual profit from a single SKU}
+\end{itemize}
+
+\subsection{Comparison: SKU 300143 vs 201885}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Metric} & \textbf{300143 (At Risk)} & \textbf{201885 (Healthy)} \\
+\midrule
+Commodity Group  & BKAGG (Dog)     & BKAES (Star) \\
+2025 Margin      & 42.8\%          & 74.5\% \\
+Margin Trend     & $-$14.2\pp{}    & +2.4\pp{} \\
+Volume Trend     & $-$60\% decline & +21\% growth \\
+Avg Price/Unit   & \EUR602         & \EUR1{,}956 \\
+Risk Status      & AT RISK         & Safe \\
+Action           & Reprice/discontinue & Invest and grow \\
+\bottomrule
+\end{tabular}
+\caption{Head-to-head comparison of the two example SKUs.}
+\end{table}
+
+% ======================================================================
+% SECTION 15
+% ======================================================================
+\section{How Much Does This Save Them?}
+
+\subsection{Direct Savings from Margin Visibility}
+
+\textbf{Before the platform:} Scherzinger's management couldn't see which customers or products were silently eroding margin. They reviewed aggregate spreadsheets annually.
+
+\textbf{Margin Gap Recovery:} The platform identified a consistent 1.9\pp{} gap between quoted and actual margins. On \EUR6.25M annual revenue, closing even half = \textbf{\EUR59{,}375/year}.
+
+\textbf{At-Risk Product Identification:} 13 products have negative margins. Fixing or discontinuing the worst 5: estimated \textbf{\EUR50{,}000--100{,}000/year} loss avoidance.
+
+\textbf{Customer Risk Early Warning:} 22 critical-risk customers with \EUR1.14M total LTV. Early intervention could save \textbf{\EUR50{,}000--80{,}000/year}.
+
+\textbf{Quote Win Rate Optimization:} If strategic repricing improves win rate by 2\pp{}: $\sim$26 additional wins $\times$ \EUR7{,}121 avg deal = \textbf{\EUR185{,}000 additional revenue/year}.
+
+\subsection{Total Estimated Annual Impact (Phases 1--3)}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Impact Area} & \textbf{Conservative} & \textbf{Optimistic} \\
+\midrule
+Margin gap recovery           & \EUR30{,}000  & \EUR60{,}000 \\
+Negative margin product fixes & \EUR50{,}000  & \EUR100{,}000 \\
+Customer churn prevention     & \EUR50{,}000  & \EUR114{,}000 \\
+Win rate improvement          & \EUR100{,}000 & \EUR185{,}000 \\
+\midrule
+\textbf{Total Annual Impact}  & \textbf{\EUR230{,}000} & \textbf{\EUR459{,}000} \\
+\bottomrule
+\end{tabular}
+\caption{Estimated annual financial impact.}
+\end{table}
+
+\subsection{Time Savings}
+
+Before: Margin analysis done manually in Excel, quarterly, taking 2--3 days per analyst. After: Real-time dashboard refreshes---what took 3 days now takes 30 seconds. Estimated analyst time saved: \textbf{$\sim$40 hours/quarter = 160 hours/year}.
+
+% ======================================================================
+% SECTION 16
+% ======================================================================
+\section{Future Phases---What They Can Expect}
+
+\subsection{Phase 4: Pricing \& FX Analysis (Planned)}
+
+\begin{enumerate}
+  \item \textbf{Price Optimization Engine:} Analyzes the relationship between price level and win probability. Recommends optimal price points that maximize expected profit (margin $\times$ win probability). Uses the price sensitivity data we already have ($p = 0.006$).
+
+  \item \textbf{FX Impact Analysis:} Models how currency movements affect landed cost and margin. Provides hedging recommendations when FX exposure exceeds thresholds.
+
+  \item \textbf{Price Governance Framework:} Automated approval workflows: discounts $>$5\% require manager approval, $>$10\% require director. Tracks discount frequency by sales rep, customer, product.
+
+  \item \textbf{What-If Simulator:}
+  \begin{itemize}[nosep]
+    \item ``What happens to margin if material costs rise 10\%?''
+    \item ``What if we raise prices on BKAGG products by 5\%?''
+    \item ``How much volume can we afford to lose if we increase price by 3\%?''
+  \end{itemize}
+\end{enumerate}
+
+\subsection{Phase 5: Advanced ML Analytics (Planned)}
+
+\begin{enumerate}
+  \item \textbf{ML Churn Prediction:} Trained classifier (Random Forest or XGBoost) predicting 12-month churn probability. Features: order frequency, margin trend, volume trend, days since last order, quote win rate. Expected accuracy: 78--85\%.
+
+  \item \textbf{Customer Lifetime Value (CLV) Modeling:}
+  \[
+    \text{CLV} = \sum_{t=1}^{T} \text{predicted\_revenue}_t \times \text{predicted\_margin}_t \times \text{retention\_prob}^t
+  \]
+
+  \item \textbf{Demand Classification:} Segments each SKU into demand patterns: Steady, Seasonal, Lumpy, Intermittent, New. Uses coefficient of variation and order frequency analysis.
+
+  \item \textbf{Advanced Anomaly Detection:} ML-based outlier detection (Isolation Forest) on margin, revenue, and cost patterns. Automatic alerts when metrics deviate from expected patterns.
+\end{enumerate}
+
+\subsection{Phase 6+ (Potential Future)}
+
+\begin{itemize}[nosep]
+  \item \textbf{ERP Integration:} Direct connection to SAP/ERP for real-time data feeds
+  \item \textbf{Email/Alert System:} Automated notifications on risk score changes
+  \item \textbf{Sales Rep Dashboard:} Individual views per sales team member
+  \item \textbf{Supplier Cost Intelligence:} Track supplier price changes
+  \item \textbf{Competitive Intelligence Integration:} Feed competitor pricing into the optimizer
+\end{itemize}
+
+% ======================================================================
+% SECTION 17
+% ======================================================================
+\section{Future Phase Example Scenarios}
+
+\subsection{Scenario A: Phase 4---Price Optimization for Article 300143}
+
+\textbf{Current Situation (Phase 1--3):} Article 300143: BKAGG internal gear pump, 2025 margin 42.8\% declining, win rate for BKAGG $\sim$35\%, lost to price (PA+PR) $\sim$7.6\%.
+
+\textbf{What Phase 4 Would Do:} The Price Optimization Engine would build a win probability curve: $P(\text{win}) = f(\text{margin})$.
+
+\begin{lstlisting}
+Article 300143 -- Price Elasticity Model:
+  Current quoted margin: 48%
+  Current win rate: 31%
+
+  Optimal price point:
+    If we quote at 44% margin -> expected win rate rises to 38%
+    Expected profit change: (-4pp margin) x (+22% more wins) = NET POSITIVE
+
+  Recommendation: Reduce quoted margin to 44% for competitive deals
+  Expected annual impact: +7 additional wins x EUR 600/unit x 15 units avg
+                        = EUR 63,000 additional revenue
+                        = EUR 27,720 additional DB2
+\end{lstlisting}
+
+\textbf{What-If Simulator would show:}
+\begin{itemize}[nosep]
+  \item ``If material costs rise 5\%: margin drops to 39.8\%. Must raise price by 3\% to maintain 42.8\%.''
+  \item ``If we lose Customer 101690: revenue drops \EUR95K. Need 3 replacement customers.''
+\end{itemize}
+
+\subsection{Scenario B: Phase 5---ML Churn Prediction for Customer 101690}
+
+\textbf{Current Situation (Phase 1--3):} Customer 101690: \EUR1.54M total revenue (top customer), Enterprise segment, risk tier Medium (score 0.35), margin trend declining (57.5\% $\to$ 53.6\%), win rate 35.5\%.
+
+\begin{lstlisting}
+Customer 101690 -- Churn Risk Assessment:
+
+  Features extracted:
+  - Order frequency: 28/year avg -> dropped to 24 in 2024 -> back to 30 in 2025
+  - Days since last order: 14 days (active)
+  - Margin trend: -3.9pp over 4 years
+  - Win rate: 35.5% (below 37.6% average)
+  - Rejection pattern: 2 price-related losses in 2025
+  - Average deal size: Increasing (EUR 13.6K -> EUR 15.6K)
+
+  ML Prediction:
+  - 12-month churn probability: 18%
+  - Classification: WATCHLIST
+
+  CLV Estimate:
+  - Predicted annual revenue: EUR 450K -> 430K -> 410K
+  - Retention probability: 82% -> 78% -> 74%
+  - Total CLV: EUR 1,020,000
+
+  Recommended Action:
+  - Schedule quarterly business review
+  - Offer volume discount on top 3 products
+  - Investigate the 2 price losses
+\end{lstlisting}
+
+\subsection{Scenario C: Phase 5---Demand Classification for Production Planning}
+
+\textbf{Current:} Article 201885 orders come in bursts---62, 67, 20, 75 units across four years.
+
+\begin{lstlisting}
+Article 201885 -- Demand Pattern Classification:
+
+  Monthly order analysis (48 months):
+  - Months with orders: 32 out of 48 (67%)
+  - Coefficient of variation: 0.85 (high variability)
+  - Order size range: 1-15 units per order
+  - Seasonal pattern: Stronger in Q1 and Q3
+
+  Classification: LUMPY DEMAND
+
+  Production Planning Recommendation:
+  - Base plan: 6 units/month
+  - Flex capacity: +10 units with 4-week notice
+  - Annual forecast: 75-85 units (based on 2025 trajectory)
+\end{lstlisting}
+
+% ======================================================================
+% SECTION 18
+% ======================================================================
+\section{API Endpoint Reference}
+
+\subsection{Phase 1 Endpoints (19)}
+
+\begin{longtable}{l l p{6cm}}
+\toprule
+\textbf{Endpoint} & \textbf{Method} & \textbf{Purpose} \\
+\midrule
+\endfirsthead
+\code{/api/v1/stats}                    & GET & Invoice/quote/customer/product counts \\
+\code{/api/v1/margins/summary}          & GET & Overall revenue, DB2 margin, counts \\
+\code{/api/v1/margins/by-year}          & GET & Annual revenue + margin \\
+\code{/api/v1/margins/by-customer}      & GET & Top N customers by revenue \\
+\code{/api/v1/margins/by-product}       & GET & Top N products by revenue \\
+\code{/api/v1/margins/by-commodity-group} & GET & Revenue + margin per commodity group \\
+\code{/api/v1/margins/gap-analysis}     & GET & Quoted vs actual margin gap \\
+\code{/api/v1/margins/catalog-vs-quoted}& GET & Catalog vs quoted comparison \\
+\code{/api/v1/margins/trend}            & GET & Monthly/quarterly trends \\
+\code{/api/v1/quotes/summary}           & GET & Win/loss counts, rates \\
+\code{/api/v1/quotes/win-rate-by-year}  & GET & Annual win rates \\
+\code{/api/v1/quotes/win-rate-by-deal-size} & GET & Win rate by revenue band \\
+\code{/api/v1/quotes/win-rate-by-customer}  & GET & Win rate per customer \\
+\code{/api/v1/quotes/rejection-codes}   & GET & Loss reasons + revenue impact \\
+\code{/api/v1/quotes/price-sensitivity} & GET & T-test: pricing vs win probability \\
+\code{/api/v1/data-quality/summary}     & GET & Quality percentages \\
+\code{/api/v1/data-quality/issues}      & GET & Individual DQ records \\
+\code{/api/v1/dashboard}                & GET & Composite dashboard data \\
+\bottomrule
+\end{longtable}
+
+\subsection{Phase 2 Endpoints (9)}
+
+\begin{longtable}{l l p{5.5cm}}
+\toprule
+\textbf{Endpoint} & \textbf{Method} & \textbf{Purpose} \\
+\midrule
+\endfirsthead
+\code{/api/v1/forecasts/\{type\}/\{id\}}          & GET & Margin forecast for entity \\
+\code{/api/v1/forecasts/\{type\}/\{id\}/compare}   & GET & All models side-by-side \\
+\code{/api/v1/forecasts/accuracy}                   & GET & Backtest accuracy by model \\
+\code{/api/v1/risk/scores}                          & GET & Risk scores (filter by tier) \\
+\code{/api/v1/risk/scores/\{customer\_id\}}         & GET & Risk detail + components \\
+\code{/api/v1/costs/trends}                         & GET & Product cost trends by quarter \\
+\code{/api/v1/costs/risers}                         & GET & Top cost-rising products \\
+\code{/api/v1/benchmarks}                           & GET & All commodity benchmarks \\
+\code{/api/v1/benchmarks/\{commodity\_group\}}      & GET & Benchmark for specific group \\
+\code{/api/v1/simulations/\{type\}/\{id\}}         & GET & Monte Carlo results \\
+\bottomrule
+\end{longtable}
+
+% ======================================================================
+% SECTION 19
+% ======================================================================
+\section{Key Numbers to Remember for the Demo}
+
+\subsection{The Big Numbers}
+
+\begin{itemize}[nosep]
+  \item \textbf{\EUR24.6M} total revenue over 4 years
+  \item \textbf{5{,}565} invoices analyzed
+  \item \textbf{4{,}605} quotes analyzed
+  \item \textbf{967} unique customers
+  \item \textbf{1{,}223} unique products
+  \item \textbf{64.78\%} average DB2 margin
+  \item \textbf{37.6\%} overall win rate (improving: 36.5\% $\to$ 40.4\%)
+\end{itemize}
+
+\subsection{The Problem Numbers (What They Need to Fix)}
+
+\begin{itemize}[nosep]
+  \item \textbf{\EUR24.9M} in lost quotes (2025 alone)
+  \item \textbf{\EUR971K} lost to price competition (PA + PR codes)
+  \item \textbf{\EUR370K} lost because they didn't follow up (KD code!)
+  \item \textbf{47.6\%} of scored customers at High or Critical risk
+  \item \textbf{1.9\pp{}} consistent margin erosion from quote to invoice
+  \item \textbf{13} products with negative margins (losing money on every sale)
+  \item \textbf{BKAGG} ($-$9.6\% growth) and \textbf{SOPU} ($-$96.2\% growth) declining
+  \item \textbf{MBKUEHL} at only 9.8\% margin---nearly unprofitable
+\end{itemize}
+
+\subsection{The Opportunity Numbers (What They Can Gain)}
+
+\begin{itemize}[nosep]
+  \item \textbf{\EUR230K--459K} estimated annual impact from insights
+  \item \textbf{+2.4\pp{}} margin improvement potential from closing the quote--invoice gap
+  \item \textbf{26+ additional won deals} if pricing is optimized (2\pp{} win rate improvement)
+  \item \textbf{160 hours/year} analyst time saved
+  \item \textbf{BKAIZ} growing +70.9\%---invest here
+  \item \textbf{BKAES} is the reliable star---66.8\% margin, 68\% of revenue
+\end{itemize}
+
+\subsection{The Forecast Numbers}
+
+\begin{itemize}[nosep]
+  \item Overall 12-month forecast: \textbf{60.4\%} (stable, slight decline from 59.7\%)
+  \item Best performing group: \textbf{SOPUZK} at 80.4\% current
+  \item Best forecast trend: \textbf{BKAIZ} improving from 51.6\% to 56.4\%
+  \item Biggest concern: \textbf{SOPU} forecasted to go negative ($-$45.2\% at 12 months)
+  \item Monte Carlo: \textbf{25.6\% probability} overall margin drops below 50\%
+\end{itemize}
+
+\subsection{The Model Numbers}
+
+\begin{itemize}[nosep]
+  \item Best model: \textbf{Linear Trend}---MAE 0.024 (2.4\pp{} accuracy)
+  \item Risk model accuracy: \textbf{78\%} (churn prediction)
+  \item Monte Carlo: \textbf{10{,}000 simulations} per entity
+  \item Risk scoring: \textbf{5 components}, all weights add to 100\%
+\end{itemize}
+
+\vspace{1cm}
+\begin{center}
+\rule{0.5\textwidth}{0.4pt}
+\end{center}
+
+\vspace{0.5cm}
+\noindent\textit{This document covers all completed Phase 1--3 work, including every data source, transformation, formula, ML model, accuracy metric, JSON file, graph, and API endpoint. The two SKU examples (300143 declining vs.\ 201885 healthy) demonstrate real patterns from the actual data. Future phase scenarios show the tangible value the client can expect from continued investment.}
+
+\end{document}

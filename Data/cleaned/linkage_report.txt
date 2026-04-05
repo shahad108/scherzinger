@@ -1,0 +1,37 @@
+=== LINKAGE REPORT ===
+Won quotes total: 1675
+Won quotes total (all): 1684
+Won quotes with order_id: 1675
+Won quotes without order_id: 9
+Unique won order_ids: 1533
+Matched to invoices: 1378 (89.9%)
+Unmatched: 155
+  - S-prefix (service orders): 53
+  - Recent/pending: 102
+
+Links created: 1957
+
+Margin Gap Analysis (all links):
+  Mean gap: 0.0543 (5.4pp)
+  Median gap: 0.0190 (1.9pp)
+  Std dev: 0.1948
+
+Gap by Year:
+  2022: 0.0419 (4.2pp), n=415
+  2023: 0.0557 (5.6pp), n=538
+  2024: 0.0637 (6.4pp), n=511
+  2025: 0.0534 (5.3pp), n=485
+
+Gap Distribution:
+  Negative (actual > quoted): 510 (26.2%)
+  0-5pp: 820 (42.1%)
+  5-10pp: 190 (9.7%)
+  >10pp: 429 (22.0%)
+
+Days to Invoice:
+  Mean: 75 days
+  Median: 53 days
+  P25: 29 days
+  P75: 93 days
+  Min: 0 days
+  Max: 627 days
