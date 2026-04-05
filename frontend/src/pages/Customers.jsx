@@ -905,16 +905,6 @@ export default function Customers() {
           </div>
         </div>
 
-        {/* Scope disclaimer */}
-        <div className="px-5 py-4 rounded-xl border border-slate-200 bg-slate-50/50">
-          <p className="text-xs text-slate-500 leading-relaxed">
-            <span className="font-bold text-slate-700">Data scope:</span> This view currently covers <span className="font-semibold text-slate-700">71 key accounts</span> representing
-            ~60% of total revenue (€14.9M of €24.6M). The full customer base of 1,438 accounts across all segments
-            will be integrated in the next phase. Aggregate segment totals (Enterprise: 89 · Mid-Market: 234 · SME: 541 · Occasional: 574) reflect the complete ERP dataset
-            and will be fully reconciled once remaining detail records are loaded.
-          </p>
-        </div>
-
         <PhaseNotice type="mixed" />
       </div>
     </>
