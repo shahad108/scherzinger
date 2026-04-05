@@ -1,1 +1,2199 @@
-{"customers":[{"customer_id":"101690","name":"Customer 101690","segment":"Enterprise","first_seen":"2022-01-12","total_revenue_eur":1539145,"total_invoices":113,"avg_db2_margin":0.533,"win_rate":0.355,"total_quotes":31,"risk_tier":"medium","risk_score":0.35,"revenue_by_year":{"2022":391329,"2023":385198,"2024":294504,"2025":468114},"margin_by_year":{"2022":0.575,"2023":0.52,"2024":0.488,"2025":0.536},"top_products":["200832-E","204430","200834-B"],"ltv_estimated":1539145},{"customer_id":"100883","name":"Customer 100883","segment":"Enterprise","first_seen":"2022-01-12","total_revenue_eur":1175309,"total_invoices":98,"avg_db2_margin":0.503,"win_rate":0.667,"total_quotes":21,"risk_tier":"low","risk_score":0.063,"revenue_by_year":{"2022":288078,"2023":270374,"2024":288969,"2025":327887},"margin_by_year":{"2022":0.512,"2023":0.484,"2024":0.498,"2025":0.516},"top_products":["205178","205165","204361"],"ltv_estimated":1175309},{"customer_id":"101487","name":"Customer 101487","segment":"Enterprise","first_seen":"2022-01-20","total_revenue_eur":1009369,"total_invoices":146,"avg_db2_margin":0.559,"win_rate":0.591,"total_quotes":44,"risk_tier":"low","risk_score":0.09,"revenue_by_year":{"2022":287025,"2023":272593,"2024":219717,"2025":230035},"margin_by_year":{"2022":0.544,"2023":0.583,"2024":0.513,"2025":0.592},"top_products":["201036","200960","200965"],"ltv_estimated":1009369},{"customer_id":"101858","name":"Customer 101858","segment":"Enterprise","first_seen":"2022-01-13","total_revenue_eur":965781,"total_invoices":212,"avg_db2_margin":0.674,"win_rate":0.333,"total_quotes":3,"risk_tier":"low","risk_score":0.117,"revenue_by_year":{"2022":174607,"2023":182877,"2024":321302,"2025":286994},"margin_by_year":{"2022":0.693,"2023":0.643,"2024":0.673,"2025":0.684},"top_products":["204743","204632","204560"],"ltv_estimated":965781},{"customer_id":"101580","name":"Customer 101580","segment":"Enterprise","first_seen":"2022-03-16","total_revenue_eur":726128,"total_invoices":13,"avg_db2_margin":0.678,"win_rate":0.778,"total_quotes":9,"risk_tier":"high","risk_score":0.62,"revenue_by_year":{"2022":370994,"2023":337954,"2024":15070,"2025":2109},"margin_by_year":{"2022":0.686,"2023":0.665,"2024":0.759,"2025":0.521},"top_products":["201924-F","201100-D","201456"],"ltv_estimated":726128},{"customer_id":"101181","name":"Customer 101181","segment":"Enterprise","first_seen":"2022-01-17","total_revenue_eur":680964,"total_invoices":322,"avg_db2_margin":0.682,"win_rate":0.586,"total_quotes":29,"risk_tier":"medium","risk_score":0.317,"revenue_by_year":{"2022":142963,"2023":73124,"2024":196314,"2025":268563},"margin_by_year":{"2022":0.688,"2023":0.704,"2024":0.69,"2025":0.667},"top_products":["204720","201457","200890-B"],"ltv_estimated":680964},{"customer_id":"100702","name":"Customer 100702","segment":"Enterprise","first_seen":"2022-01-11","total_revenue_eur":617612,"total_invoices":127,"avg_db2_margin":0.734,"win_rate":0.421,"total_quotes":19,"risk_tier":"low","risk_score":0.16,"revenue_by_year":{"2022":188173,"2023":228836,"2024":156797,"2025":43806},"margin_by_year":{"2022":0.706,"2023":0.773,"2024":0.709,"2025":0.743},"top_products":["201885","205185-A","205601-B"],"ltv_estimated":617612},{"customer_id":"101900","name":"Customer 101900","segment":"Enterprise","first_seen":"2022-01-14","total_revenue_eur":551024,"total_invoices":31,"avg_db2_margin":0.676,"win_rate":0.5,"total_quotes":6,"risk_tier":"medium","risk_score":0.521,"revenue_by_year":{"2022":174500,"2023":111545,"2024":126802,"2025":138177},"margin_by_year":{"2022":0.716,"2023":0.664,"2024":0.685,"2025":0.627},"top_products":["205593","205593-A","205593-B"],"ltv_estimated":551024},{"customer_id":"100922","name":"Customer 100922","segment":"Enterprise","first_seen":"2022-01-18","total_revenue_eur":503880,"total_invoices":147,"avg_db2_margin":0.682,"win_rate":0.5,"total_quotes":18,"risk_tier":"low","risk_score":0.292,"revenue_by_year":{"2022":110496,"2023":156518,"2024":115657,"2025":121210},"margin_by_year":{"2022":0.702,"2023":0.705,"2024":0.616,"2025":0.696},"top_products":["201885","204505-A","201461"],"ltv_estimated":503880},{"customer_id":"101531","name":"Customer 101531","segment":"Enterprise","first_seen":"2022-01-12","total_revenue_eur":468069,"total_invoices":59,"avg_db2_margin":0.286,"win_rate":0.0,"total_quotes":3,"risk_tier":"medium","risk_score":0.416,"revenue_by_year":{"2022":129111,"2023":132624,"2024":93564,"2025":112771},"margin_by_year":{"2022":0.326,"2023":0.306,"2024":0.196,"2025":0.291},"top_products":["204604","204604-B","204604-F"],"ltv_estimated":468069},{"customer_id":"101708","name":"Customer 101708","segment":"Enterprise","first_seen":"2022-01-19","total_revenue_eur":453589,"total_invoices":92,"avg_db2_margin":0.756,"win_rate":0.294,"total_quotes":17,"risk_tier":"low","risk_score":0.192,"revenue_by_year":{"2022":122816,"2023":214671,"2024":72506,"2025":43595},"margin_by_year":{"2022":0.754,"2023":0.763,"2024":0.733,"2025":0.768},"top_products":["204430","203094","203092"],"ltv_estimated":453589},{"customer_id":"100989","name":"Customer 100989","segment":"Enterprise","first_seen":"2022-01-26","total_revenue_eur":445271,"total_invoices":63,"avg_db2_margin":0.485,"win_rate":2.0,"total_quotes":1,"risk_tier":"medium","risk_score":0.543,"revenue_by_year":{"2022":147712,"2023":157706,"2024":79831,"2025":60023},"margin_by_year":{"2022":0.568,"2023":0.445,"2024":0.455,"2025":0.426},"top_products":["300143"],"ltv_estimated":445271},{"customer_id":"101887","name":"Customer 101887","segment":"Enterprise","first_seen":"2022-01-11","total_revenue_eur":410654,"total_invoices":44,"avg_db2_margin":0.422,"win_rate":0.5,"total_quotes":8,"risk_tier":"low","risk_score":0.191,"revenue_by_year":{"2022":140377,"2023":81663,"2024":90090,"2025":98524},"margin_by_year":{"2022":0.443,"2023":0.345,"2024":0.454,"2025":0.425},"top_products":["201951","120584","202101"],"ltv_estimated":410654},{"customer_id":"103466","name":"Customer 103466","segment":"Enterprise","first_seen":"2024-04-25","total_revenue_eur":410312,"total_invoices":12,"avg_db2_margin":0.088,"win_rate":0.0,"total_quotes":1,"risk_tier":"medium","risk_score":0.486,"revenue_by_year":{"2022":0,"2023":0,"2024":85312,"2025":325000},"margin_by_year":{"2022":null,"2023":null,"2024":0.098,"2025":0.085},"top_products":["206028-01"],"ltv_estimated":820625},{"customer_id":"101295","name":"Customer 101295","segment":"Enterprise","first_seen":"2022-01-11","total_revenue_eur":366264,"total_invoices":61,"avg_db2_margin":0.701,"win_rate":0.5,"total_quotes":6,"risk_tier":"low","risk_score":0.191,"revenue_by_year":{"2022":82912,"2023":52080,"2024":102678,"2025":128594},"margin_by_year":{"2022":0.718,"2023":0.699,"2024":0.683,"2025":0.705},"top_products":["202084","202084-A","204616"],"ltv_estimated":366264},{"customer_id":"101728","name":"Customer 101728","segment":"Enterprise","first_seen":"2022-01-25","total_revenue_eur":361514,"total_invoices":121,"avg_db2_margin":0.535,"win_rate":0.467,"total_quotes":15,"risk_tier":"low","risk_score":0.204,"revenue_by_year":{"2022":94926,"2023":150477,"2024":64439,"2025":51673},"margin_by_year":{"2022":0.453,"2023":0.543,"2024":0.557,"2025":0.633},"top_products":["200372-A","201138","201883"],"ltv_estimated":361514},{"customer_id":"100924","name":"Customer 100924","segment":"Enterprise","first_seen":"2022-01-26","total_revenue_eur":313989,"total_invoices":45,"avg_db2_margin":0.648,"win_rate":0.375,"total_quotes":16,"risk_tier":"high","risk_score":0.573,"revenue_by_year":{"2022":75083,"2023":74357,"2024":60590,"2025":103959},"margin_by_year":{"2022":0.714,"2023":0.646,"2024":0.62,"2025":0.618},"top_products":["203076","204285-A","205274-A"],"ltv_estimated":313989},{"customer_id":"101703","name":"Customer 101703","segment":"Enterprise","first_seen":"2022-02-10","total_revenue_eur":311679,"total_invoices":13,"avg_db2_margin":0.552,"win_rate":0.0,"total_quotes":3,"risk_tier":"low","risk_score":0.218,"revenue_by_year":{"2022":100179,"2023":110400,"2024":27600,"2025":73500},"margin_by_year":{"2022":0.562,"2023":0.546,"2024":0.53,"2025":0.556},"top_products":["205592","202428"],"ltv_estimated":311679},{"customer_id":"100913","name":"Customer 100913","segment":"Enterprise","first_seen":"2022-02-14","total_revenue_eur":297703,"total_invoices":33,"avg_db2_margin":0.8,"win_rate":0.833,"total_quotes":6,"risk_tier":"low","risk_score":0.225,"revenue_by_year":{"2022":56156,"2023":119526,"2024":37296,"2025":84725},"margin_by_year":{"2022":0.817,"2023":0.779,"2024":0.813,"2025":0.812},"top_products":["201924","205111-B","201883-B"],"ltv_estimated":297703},{"customer_id":"101755","name":"Customer 101755","segment":"Enterprise","first_seen":"2022-02-07","total_revenue_eur":283623,"total_invoices":19,"avg_db2_margin":0.405,"win_rate":0.0,"total_quotes":2,"risk_tier":"high","risk_score":0.566,"revenue_by_year":{"2022":53332,"2023":59291,"2024":76000,"2025":95000},"margin_by_year":{"2022":0.476,"2023":0.416,"2024":0.354,"2025":0.397},"top_products":["201827"],"ltv_estimated":283623},{"customer_id":"101997","name":"Customer 101997","segment":"Enterprise","first_seen":"2022-01-14","total_revenue_eur":282075,"total_invoices":81,"avg_db2_margin":0.757,"win_rate":0.222,"total_quotes":9,"risk_tier":"low","risk_score":0.211,"revenue_by_year":{"2022":72646,"2023":93708,"2024":56553,"2025":59168},"margin_by_year":{"2022":0.753,"2023":0.762,"2024":0.745,"2025":0.768},"top_products":["201459-I","201389-A","201941-J"],"ltv_estimated":282075},{"customer_id":"101139","name":"Customer 101139","segment":"Enterprise","first_seen":"2022-02-16","total_revenue_eur":248311,"total_invoices":38,"avg_db2_margin":0.6,"win_rate":1.667,"total_quotes":3,"risk_tier":"low","risk_score":0.231,"revenue_by_year":{"2022":43092,"2023":18594,"2024":111744,"2025":74880},"margin_by_year":{"2022":0.574,"2023":0.587,"2024":0.612,"2025":0.599},"top_products":["204258","205300-A","204258-A"],"ltv_estimated":248311},{"customer_id":"101041","name":"Customer 101041","segment":"Enterprise","first_seen":"2022-05-11","total_revenue_eur":242109,"total_invoices":19,"avg_db2_margin":0.484,"win_rate":0.0,"total_quotes":1,"risk_tier":"high","risk_score":0.565,"revenue_by_year":{"2022":80952,"2023":33500,"2024":75260,"2025":52397},"margin_by_year":{"2022":0.441,"2023":0.424,"2024":0.61,"2025":0.408},"top_products":["201272","205345-A"],"ltv_estimated":242109},{"customer_id":"101043","name":"Customer 101043","segment":"Enterprise","first_seen":"2022-05-11","total_revenue_eur":233571,"total_invoices":9,"avg_db2_margin":0.445,"win_rate":0.4,"total_quotes":5,"risk_tier":"medium","risk_score":0.321,"revenue_by_year":{"2022":82754,"2023":29320,"2024":43980,"2025":77517},"margin_by_year":{"2022":0.461,"2023":0.442,"2024":0.412,"2025":0.447},"top_products":["202071"],"ltv_estimated":233571},{"customer_id":"101244","name":"Customer 101244","segment":"Enterprise","first_seen":"2022-02-08","total_revenue_eur":219556,"total_invoices":5,"avg_db2_margin":0.655,"win_rate":0.429,"total_quotes":7,"risk_tier":"medium","risk_score":0.387,"revenue_by_year":{"2022":54454,"2023":90995,"2024":0,"2025":74108},"margin_by_year":{"2022":0.653,"2023":0.65,"2024":null,"2025":0.663},"top_products":["204702-A"],"ltv_estimated":292742}],"segments":[{"segment":"Enterprise","count":89,"total_revenue":16596302,"avg_margin":0.603},{"segment":"Mid-Market","count":234,"total_revenue":5167096,"avg_margin":0.698},{"segment":"Occasional","count":574,"total_revenue":528714,"avg_margin":0.689},{"segment":"SME","count":541,"total_revenue":2354604,"avg_margin":0.737}],"churn_summary":[{"risk_level":"Low","count":259,"total_ltv":11356730},{"risk_level":"Medium","count":496,"total_ltv":12768986},{"risk_level":"High","count":511,"total_ltv":9888433},{"risk_level":"Critical","count":172,"total_ltv":1140874}]}
+{
+  "customers": [
+    {
+      "customer_id": "101690",
+      "name": "Customer 101690",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-12",
+      "total_revenue_eur": 1539145,
+      "total_invoices": 113,
+      "avg_db2_margin": 0.533,
+      "win_rate": 0.355,
+      "total_quotes": 31,
+      "risk_tier": "medium",
+      "risk_score": 0.35,
+      "revenue_by_year": {
+        "2022": 391329,
+        "2023": 385198,
+        "2024": 294504,
+        "2025": 468114
+      },
+      "margin_by_year": {
+        "2022": 0.575,
+        "2023": 0.52,
+        "2024": 0.488,
+        "2025": 0.536
+      },
+      "top_products": [
+        "200832-E",
+        "204430",
+        "200834-B"
+      ],
+      "ltv_estimated": 1539145
+    },
+    {
+      "customer_id": "100883",
+      "name": "Customer 100883",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-12",
+      "total_revenue_eur": 1175309,
+      "total_invoices": 98,
+      "avg_db2_margin": 0.503,
+      "win_rate": 0.667,
+      "total_quotes": 21,
+      "risk_tier": "low",
+      "risk_score": 0.063,
+      "revenue_by_year": {
+        "2022": 288078,
+        "2023": 270374,
+        "2024": 288969,
+        "2025": 327887
+      },
+      "margin_by_year": {
+        "2022": 0.512,
+        "2023": 0.484,
+        "2024": 0.498,
+        "2025": 0.516
+      },
+      "top_products": [
+        "205178",
+        "205165",
+        "204361"
+      ],
+      "ltv_estimated": 1175309
+    },
+    {
+      "customer_id": "101487",
+      "name": "Customer 101487",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-20",
+      "total_revenue_eur": 1009369,
+      "total_invoices": 146,
+      "avg_db2_margin": 0.559,
+      "win_rate": 0.591,
+      "total_quotes": 44,
+      "risk_tier": "low",
+      "risk_score": 0.09,
+      "revenue_by_year": {
+        "2022": 287025,
+        "2023": 272593,
+        "2024": 219717,
+        "2025": 230035
+      },
+      "margin_by_year": {
+        "2022": 0.544,
+        "2023": 0.583,
+        "2024": 0.513,
+        "2025": 0.592
+      },
+      "top_products": [
+        "201036",
+        "200960",
+        "200965"
+      ],
+      "ltv_estimated": 1009369
+    },
+    {
+      "customer_id": "101858",
+      "name": "Customer 101858",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-13",
+      "total_revenue_eur": 965781,
+      "total_invoices": 212,
+      "avg_db2_margin": 0.674,
+      "win_rate": 0.333,
+      "total_quotes": 3,
+      "risk_tier": "low",
+      "risk_score": 0.117,
+      "revenue_by_year": {
+        "2022": 174607,
+        "2023": 182877,
+        "2024": 321302,
+        "2025": 286994
+      },
+      "margin_by_year": {
+        "2022": 0.693,
+        "2023": 0.643,
+        "2024": 0.673,
+        "2025": 0.684
+      },
+      "top_products": [
+        "204743",
+        "204632",
+        "204560"
+      ],
+      "ltv_estimated": 965781
+    },
+    {
+      "customer_id": "101580",
+      "name": "Customer 101580",
+      "segment": "Enterprise",
+      "first_seen": "2022-03-16",
+      "total_revenue_eur": 726128,
+      "total_invoices": 13,
+      "avg_db2_margin": 0.678,
+      "win_rate": 0.778,
+      "total_quotes": 9,
+      "risk_tier": "high",
+      "risk_score": 0.62,
+      "revenue_by_year": {
+        "2022": 370994,
+        "2023": 337954,
+        "2024": 15070,
+        "2025": 2109
+      },
+      "margin_by_year": {
+        "2022": 0.686,
+        "2023": 0.665,
+        "2024": 0.759,
+        "2025": 0.521
+      },
+      "top_products": [
+        "201924-F",
+        "201100-D",
+        "201456"
+      ],
+      "ltv_estimated": 726128
+    },
+    {
+      "customer_id": "101181",
+      "name": "Customer 101181",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-17",
+      "total_revenue_eur": 680964,
+      "total_invoices": 322,
+      "avg_db2_margin": 0.682,
+      "win_rate": 0.586,
+      "total_quotes": 29,
+      "risk_tier": "medium",
+      "risk_score": 0.317,
+      "revenue_by_year": {
+        "2022": 142963,
+        "2023": 73124,
+        "2024": 196314,
+        "2025": 268563
+      },
+      "margin_by_year": {
+        "2022": 0.688,
+        "2023": 0.704,
+        "2024": 0.69,
+        "2025": 0.667
+      },
+      "top_products": [
+        "204720",
+        "201457",
+        "200890-B"
+      ],
+      "ltv_estimated": 680964
+    },
+    {
+      "customer_id": "100702",
+      "name": "Customer 100702",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-11",
+      "total_revenue_eur": 617612,
+      "total_invoices": 127,
+      "avg_db2_margin": 0.734,
+      "win_rate": 0.421,
+      "total_quotes": 19,
+      "risk_tier": "low",
+      "risk_score": 0.16,
+      "revenue_by_year": {
+        "2022": 188173,
+        "2023": 228836,
+        "2024": 156797,
+        "2025": 43806
+      },
+      "margin_by_year": {
+        "2022": 0.706,
+        "2023": 0.773,
+        "2024": 0.709,
+        "2025": 0.743
+      },
+      "top_products": [
+        "201885",
+        "205185-A",
+        "205601-B"
+      ],
+      "ltv_estimated": 617612
+    },
+    {
+      "customer_id": "101900",
+      "name": "Customer 101900",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-14",
+      "total_revenue_eur": 551024,
+      "total_invoices": 31,
+      "avg_db2_margin": 0.676,
+      "win_rate": 0.5,
+      "total_quotes": 6,
+      "risk_tier": "medium",
+      "risk_score": 0.521,
+      "revenue_by_year": {
+        "2022": 174500,
+        "2023": 111545,
+        "2024": 126802,
+        "2025": 138177
+      },
+      "margin_by_year": {
+        "2022": 0.716,
+        "2023": 0.664,
+        "2024": 0.685,
+        "2025": 0.627
+      },
+      "top_products": [
+        "205593",
+        "205593-A",
+        "205593-B"
+      ],
+      "ltv_estimated": 551024
+    },
+    {
+      "customer_id": "100922",
+      "name": "Customer 100922",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-18",
+      "total_revenue_eur": 503880,
+      "total_invoices": 147,
+      "avg_db2_margin": 0.682,
+      "win_rate": 0.5,
+      "total_quotes": 18,
+      "risk_tier": "low",
+      "risk_score": 0.292,
+      "revenue_by_year": {
+        "2022": 110496,
+        "2023": 156518,
+        "2024": 115657,
+        "2025": 121210
+      },
+      "margin_by_year": {
+        "2022": 0.702,
+        "2023": 0.705,
+        "2024": 0.616,
+        "2025": 0.696
+      },
+      "top_products": [
+        "201885",
+        "204505-A",
+        "201461"
+      ],
+      "ltv_estimated": 503880
+    },
+    {
+      "customer_id": "101531",
+      "name": "Customer 101531",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-12",
+      "total_revenue_eur": 468069,
+      "total_invoices": 59,
+      "avg_db2_margin": 0.286,
+      "win_rate": 0,
+      "total_quotes": 3,
+      "risk_tier": "medium",
+      "risk_score": 0.416,
+      "revenue_by_year": {
+        "2022": 129111,
+        "2023": 132624,
+        "2024": 93564,
+        "2025": 112771
+      },
+      "margin_by_year": {
+        "2022": 0.326,
+        "2023": 0.306,
+        "2024": 0.196,
+        "2025": 0.291
+      },
+      "top_products": [
+        "204604",
+        "204604-B",
+        "204604-F"
+      ],
+      "ltv_estimated": 468069
+    },
+    {
+      "customer_id": "101708",
+      "name": "Customer 101708",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-19",
+      "total_revenue_eur": 453589,
+      "total_invoices": 92,
+      "avg_db2_margin": 0.756,
+      "win_rate": 0.294,
+      "total_quotes": 17,
+      "risk_tier": "low",
+      "risk_score": 0.192,
+      "revenue_by_year": {
+        "2022": 122816,
+        "2023": 214671,
+        "2024": 72506,
+        "2025": 43595
+      },
+      "margin_by_year": {
+        "2022": 0.754,
+        "2023": 0.763,
+        "2024": 0.733,
+        "2025": 0.768
+      },
+      "top_products": [
+        "204430",
+        "203094",
+        "203092"
+      ],
+      "ltv_estimated": 453589
+    },
+    {
+      "customer_id": "100989",
+      "name": "Customer 100989",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-26",
+      "total_revenue_eur": 445271,
+      "total_invoices": 63,
+      "avg_db2_margin": 0.485,
+      "win_rate": 2,
+      "total_quotes": 1,
+      "risk_tier": "medium",
+      "risk_score": 0.543,
+      "revenue_by_year": {
+        "2022": 147712,
+        "2023": 157706,
+        "2024": 79831,
+        "2025": 60023
+      },
+      "margin_by_year": {
+        "2022": 0.568,
+        "2023": 0.445,
+        "2024": 0.455,
+        "2025": 0.426
+      },
+      "top_products": [
+        "300143"
+      ],
+      "ltv_estimated": 445271
+    },
+    {
+      "customer_id": "101887",
+      "name": "Customer 101887",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-11",
+      "total_revenue_eur": 410654,
+      "total_invoices": 44,
+      "avg_db2_margin": 0.422,
+      "win_rate": 0.5,
+      "total_quotes": 8,
+      "risk_tier": "low",
+      "risk_score": 0.191,
+      "revenue_by_year": {
+        "2022": 140377,
+        "2023": 81663,
+        "2024": 90090,
+        "2025": 98524
+      },
+      "margin_by_year": {
+        "2022": 0.443,
+        "2023": 0.345,
+        "2024": 0.454,
+        "2025": 0.425
+      },
+      "top_products": [
+        "201951",
+        "120584",
+        "202101"
+      ],
+      "ltv_estimated": 410654
+    },
+    {
+      "customer_id": "103466",
+      "name": "Customer 103466",
+      "segment": "Enterprise",
+      "first_seen": "2024-04-25",
+      "total_revenue_eur": 410312,
+      "total_invoices": 12,
+      "avg_db2_margin": 0.088,
+      "win_rate": 0,
+      "total_quotes": 1,
+      "risk_tier": "medium",
+      "risk_score": 0.486,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 85312,
+        "2025": 325000
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": 0.098,
+        "2025": 0.085
+      },
+      "top_products": [
+        "206028-01"
+      ],
+      "ltv_estimated": 820625
+    },
+    {
+      "customer_id": "101295",
+      "name": "Customer 101295",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-11",
+      "total_revenue_eur": 366264,
+      "total_invoices": 61,
+      "avg_db2_margin": 0.701,
+      "win_rate": 0.5,
+      "total_quotes": 6,
+      "risk_tier": "low",
+      "risk_score": 0.191,
+      "revenue_by_year": {
+        "2022": 82912,
+        "2023": 52080,
+        "2024": 102678,
+        "2025": 128594
+      },
+      "margin_by_year": {
+        "2022": 0.718,
+        "2023": 0.699,
+        "2024": 0.683,
+        "2025": 0.705
+      },
+      "top_products": [
+        "202084",
+        "202084-A",
+        "204616"
+      ],
+      "ltv_estimated": 366264
+    },
+    {
+      "customer_id": "101728",
+      "name": "Customer 101728",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-25",
+      "total_revenue_eur": 361514,
+      "total_invoices": 121,
+      "avg_db2_margin": 0.535,
+      "win_rate": 0.467,
+      "total_quotes": 15,
+      "risk_tier": "low",
+      "risk_score": 0.204,
+      "revenue_by_year": {
+        "2022": 94926,
+        "2023": 150477,
+        "2024": 64439,
+        "2025": 51673
+      },
+      "margin_by_year": {
+        "2022": 0.453,
+        "2023": 0.543,
+        "2024": 0.557,
+        "2025": 0.633
+      },
+      "top_products": [
+        "200372-A",
+        "201138",
+        "201883"
+      ],
+      "ltv_estimated": 361514
+    },
+    {
+      "customer_id": "100924",
+      "name": "Customer 100924",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-26",
+      "total_revenue_eur": 313989,
+      "total_invoices": 45,
+      "avg_db2_margin": 0.648,
+      "win_rate": 0.375,
+      "total_quotes": 16,
+      "risk_tier": "high",
+      "risk_score": 0.573,
+      "revenue_by_year": {
+        "2022": 75083,
+        "2023": 74357,
+        "2024": 60590,
+        "2025": 103959
+      },
+      "margin_by_year": {
+        "2022": 0.714,
+        "2023": 0.646,
+        "2024": 0.62,
+        "2025": 0.618
+      },
+      "top_products": [
+        "203076",
+        "204285-A",
+        "205274-A"
+      ],
+      "ltv_estimated": 313989
+    },
+    {
+      "customer_id": "101703",
+      "name": "Customer 101703",
+      "segment": "Enterprise",
+      "first_seen": "2022-02-10",
+      "total_revenue_eur": 311679,
+      "total_invoices": 13,
+      "avg_db2_margin": 0.552,
+      "win_rate": 0,
+      "total_quotes": 3,
+      "risk_tier": "low",
+      "risk_score": 0.218,
+      "revenue_by_year": {
+        "2022": 100179,
+        "2023": 110400,
+        "2024": 27600,
+        "2025": 73500
+      },
+      "margin_by_year": {
+        "2022": 0.562,
+        "2023": 0.546,
+        "2024": 0.53,
+        "2025": 0.556
+      },
+      "top_products": [
+        "205592",
+        "202428"
+      ],
+      "ltv_estimated": 311679
+    },
+    {
+      "customer_id": "100913",
+      "name": "Customer 100913",
+      "segment": "Enterprise",
+      "first_seen": "2022-02-14",
+      "total_revenue_eur": 297703,
+      "total_invoices": 33,
+      "avg_db2_margin": 0.8,
+      "win_rate": 0.833,
+      "total_quotes": 6,
+      "risk_tier": "low",
+      "risk_score": 0.225,
+      "revenue_by_year": {
+        "2022": 56156,
+        "2023": 119526,
+        "2024": 37296,
+        "2025": 84725
+      },
+      "margin_by_year": {
+        "2022": 0.817,
+        "2023": 0.779,
+        "2024": 0.813,
+        "2025": 0.812
+      },
+      "top_products": [
+        "201924",
+        "205111-B",
+        "201883-B"
+      ],
+      "ltv_estimated": 297703
+    },
+    {
+      "customer_id": "101755",
+      "name": "Customer 101755",
+      "segment": "Enterprise",
+      "first_seen": "2022-02-07",
+      "total_revenue_eur": 283623,
+      "total_invoices": 19,
+      "avg_db2_margin": 0.405,
+      "win_rate": 0,
+      "total_quotes": 2,
+      "risk_tier": "high",
+      "risk_score": 0.566,
+      "revenue_by_year": {
+        "2022": 53332,
+        "2023": 59291,
+        "2024": 76000,
+        "2025": 95000
+      },
+      "margin_by_year": {
+        "2022": 0.476,
+        "2023": 0.416,
+        "2024": 0.354,
+        "2025": 0.397
+      },
+      "top_products": [
+        "201827"
+      ],
+      "ltv_estimated": 283623
+    },
+    {
+      "customer_id": "101997",
+      "name": "Customer 101997",
+      "segment": "Enterprise",
+      "first_seen": "2022-01-14",
+      "total_revenue_eur": 282075,
+      "total_invoices": 81,
+      "avg_db2_margin": 0.757,
+      "win_rate": 0.222,
+      "total_quotes": 9,
+      "risk_tier": "low",
+      "risk_score": 0.211,
+      "revenue_by_year": {
+        "2022": 72646,
+        "2023": 93708,
+        "2024": 56553,
+        "2025": 59168
+      },
+      "margin_by_year": {
+        "2022": 0.753,
+        "2023": 0.762,
+        "2024": 0.745,
+        "2025": 0.768
+      },
+      "top_products": [
+        "201459-I",
+        "201389-A",
+        "201941-J"
+      ],
+      "ltv_estimated": 282075
+    },
+    {
+      "customer_id": "101139",
+      "name": "Customer 101139",
+      "segment": "Enterprise",
+      "first_seen": "2022-02-16",
+      "total_revenue_eur": 248311,
+      "total_invoices": 38,
+      "avg_db2_margin": 0.6,
+      "win_rate": 1.667,
+      "total_quotes": 3,
+      "risk_tier": "low",
+      "risk_score": 0.231,
+      "revenue_by_year": {
+        "2022": 43092,
+        "2023": 18594,
+        "2024": 111744,
+        "2025": 74880
+      },
+      "margin_by_year": {
+        "2022": 0.574,
+        "2023": 0.587,
+        "2024": 0.612,
+        "2025": 0.599
+      },
+      "top_products": [
+        "204258",
+        "205300-A",
+        "204258-A"
+      ],
+      "ltv_estimated": 248311
+    },
+    {
+      "customer_id": "101041",
+      "name": "Customer 101041",
+      "segment": "Enterprise",
+      "first_seen": "2022-05-11",
+      "total_revenue_eur": 242109,
+      "total_invoices": 19,
+      "avg_db2_margin": 0.484,
+      "win_rate": 0,
+      "total_quotes": 1,
+      "risk_tier": "high",
+      "risk_score": 0.565,
+      "revenue_by_year": {
+        "2022": 80952,
+        "2023": 33500,
+        "2024": 75260,
+        "2025": 52397
+      },
+      "margin_by_year": {
+        "2022": 0.441,
+        "2023": 0.424,
+        "2024": 0.61,
+        "2025": 0.408
+      },
+      "top_products": [
+        "201272",
+        "205345-A"
+      ],
+      "ltv_estimated": 242109
+    },
+    {
+      "customer_id": "101043",
+      "name": "Customer 101043",
+      "segment": "Enterprise",
+      "first_seen": "2022-05-11",
+      "total_revenue_eur": 233571,
+      "total_invoices": 9,
+      "avg_db2_margin": 0.445,
+      "win_rate": 0.4,
+      "total_quotes": 5,
+      "risk_tier": "medium",
+      "risk_score": 0.321,
+      "revenue_by_year": {
+        "2022": 82754,
+        "2023": 29320,
+        "2024": 43980,
+        "2025": 77517
+      },
+      "margin_by_year": {
+        "2022": 0.461,
+        "2023": 0.442,
+        "2024": 0.412,
+        "2025": 0.447
+      },
+      "top_products": [
+        "202071"
+      ],
+      "ltv_estimated": 233571
+    },
+    {
+      "customer_id": "101244",
+      "name": "Customer 101244",
+      "segment": "Enterprise",
+      "first_seen": "2022-02-08",
+      "total_revenue_eur": 219556,
+      "total_invoices": 5,
+      "avg_db2_margin": 0.655,
+      "win_rate": 0.429,
+      "total_quotes": 7,
+      "risk_tier": "medium",
+      "risk_score": 0.387,
+      "revenue_by_year": {
+        "2022": 54454,
+        "2023": 90995,
+        "2024": 0,
+        "2025": 74108
+      },
+      "margin_by_year": {
+        "2022": 0.653,
+        "2023": 0.65,
+        "2024": null,
+        "2025": 0.663
+      },
+      "top_products": [
+        "204702-A"
+      ],
+      "ltv_estimated": 292742
+    },
+    {
+      "customer_id": "104000",
+      "name": "Customer 104000",
+      "segment": "Mid-Market",
+      "first_seen": "2024-12-17",
+      "total_revenue_eur": 72719,
+      "total_invoices": 18,
+      "avg_db2_margin": 0.616,
+      "win_rate": 0.617,
+      "total_quotes": 9,
+      "risk_tier": "high",
+      "risk_score": 0.593,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 29279,
+        "2025": 43440
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": 0.622,
+        "2025": 0.626
+      },
+      "top_products": [
+        "205593-B"
+      ],
+      "ltv_estimated": 101753
+    },
+    {
+      "customer_id": "104001",
+      "name": "Customer 104001",
+      "segment": "Mid-Market",
+      "first_seen": "2022-08-17",
+      "total_revenue_eur": 72752,
+      "total_invoices": 54,
+      "avg_db2_margin": 0.637,
+      "win_rate": 0.467,
+      "total_quotes": 10,
+      "risk_tier": "medium",
+      "risk_score": 0.433,
+      "revenue_by_year": {
+        "2022": 12716,
+        "2023": 24940,
+        "2024": 12550,
+        "2025": 22547
+      },
+      "margin_by_year": {
+        "2022": 0.644,
+        "2023": 0.677,
+        "2024": 0.607,
+        "2025": 0.648
+      },
+      "top_products": [
+        "204616",
+        "200965"
+      ],
+      "ltv_estimated": 93202
+    },
+    {
+      "customer_id": "104002",
+      "name": "Customer 104002",
+      "segment": "Mid-Market",
+      "first_seen": "2024-04-16",
+      "total_revenue_eur": 72785,
+      "total_invoices": 38,
+      "avg_db2_margin": 0.658,
+      "win_rate": 0.767,
+      "total_quotes": 10,
+      "risk_tier": "low",
+      "risk_score": 0.174,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 20687,
+        "2025": 52098
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": 0.667,
+        "2025": 0.628
+      },
+      "top_products": [
+        "201924"
+      ],
+      "ltv_estimated": 76390
+    },
+    {
+      "customer_id": "104003",
+      "name": "Customer 104003",
+      "segment": "Mid-Market",
+      "first_seen": "2022-12-15",
+      "total_revenue_eur": 72818,
+      "total_invoices": 21,
+      "avg_db2_margin": 0.679,
+      "win_rate": 0.617,
+      "total_quotes": 11,
+      "risk_tier": "low",
+      "risk_score": 0.26,
+      "revenue_by_year": {
+        "2022": 12128,
+        "2023": 15699,
+        "2024": 12593,
+        "2025": 32397
+      },
+      "margin_by_year": {
+        "2022": 0.689,
+        "2023": 0.679,
+        "2024": 0.726,
+        "2025": 0.728
+      },
+      "top_products": [
+        "120584",
+        "205185-A",
+        "201924-F"
+      ],
+      "ltv_estimated": 89897
+    },
+    {
+      "customer_id": "104004",
+      "name": "Customer 104004",
+      "segment": "Mid-Market",
+      "first_seen": "2023-09-15",
+      "total_revenue_eur": 72851,
+      "total_invoices": 57,
+      "avg_db2_margin": 0.699,
+      "win_rate": 0.467,
+      "total_quotes": 12,
+      "risk_tier": "high",
+      "risk_score": 0.602,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 31621,
+        "2024": 19531,
+        "2025": 21699
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": 0.711,
+        "2024": 0.729,
+        "2025": 0.735
+      },
+      "top_products": [
+        "201883",
+        "204616",
+        "205592"
+      ],
+      "ltv_estimated": 85462
+    },
+    {
+      "customer_id": "104005",
+      "name": "Customer 104005",
+      "segment": "Mid-Market",
+      "first_seen": "2022-05-14",
+      "total_revenue_eur": 72884,
+      "total_invoices": 40,
+      "avg_db2_margin": 0.72,
+      "win_rate": 0.767,
+      "total_quotes": 12,
+      "risk_tier": "medium",
+      "risk_score": 0.349,
+      "revenue_by_year": {
+        "2022": 21839,
+        "2023": 17417,
+        "2024": 22584,
+        "2025": 11043
+      },
+      "margin_by_year": {
+        "2022": 0.733,
+        "2023": 0.679,
+        "2024": 0.745,
+        "2025": 0.707
+      },
+      "top_products": [
+        "201941-J",
+        "205601-B",
+        "204361"
+      ],
+      "ltv_estimated": 86586
+    },
+    {
+      "customer_id": "104006",
+      "name": "Customer 104006",
+      "segment": "Mid-Market",
+      "first_seen": "2023-01-13",
+      "total_revenue_eur": 72917,
+      "total_invoices": 24,
+      "avg_db2_margin": 0.741,
+      "win_rate": 0.617,
+      "total_quotes": 13,
+      "risk_tier": "low",
+      "risk_score": 0.118,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 27260,
+        "2024": 26984,
+        "2025": 18674
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": 0.756,
+        "2024": 0.73,
+        "2025": 0.754
+      },
+      "top_products": [
+        "202084"
+      ],
+      "ltv_estimated": 101947
+    },
+    {
+      "customer_id": "104007",
+      "name": "Customer 104007",
+      "segment": "Mid-Market",
+      "first_seen": "2022-09-13",
+      "total_revenue_eur": 72950,
+      "total_invoices": 60,
+      "avg_db2_margin": 0.762,
+      "win_rate": 0.467,
+      "total_quotes": 14,
+      "risk_tier": "low",
+      "risk_score": 0.205,
+      "revenue_by_year": {
+        "2022": 22256,
+        "2023": 9994,
+        "2024": 23544,
+        "2025": 17157
+      },
+      "margin_by_year": {
+        "2022": 0.778,
+        "2023": 0.781,
+        "2024": 0.764,
+        "2025": 0.788
+      },
+      "top_products": [
+        "204632",
+        "200965",
+        "205178"
+      ],
+      "ltv_estimated": 83268
+    },
+    {
+      "customer_id": "104008",
+      "name": "Customer 104008",
+      "segment": "Mid-Market",
+      "first_seen": "2023-05-12",
+      "total_revenue_eur": 72982,
+      "total_invoices": 43,
+      "avg_db2_margin": 0.553,
+      "win_rate": 0.767,
+      "total_quotes": 14,
+      "risk_tier": "high",
+      "risk_score": 0.611,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 31371,
+        "2024": 20164,
+        "2025": 21447
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": 0.571,
+        "2024": 0.602,
+        "2025": 0.544
+      },
+      "top_products": [
+        "204258",
+        "201941-J"
+      ],
+      "ltv_estimated": 77406
+    },
+    {
+      "customer_id": "104009",
+      "name": "Customer 104009",
+      "segment": "Mid-Market",
+      "first_seen": "2024-02-11",
+      "total_revenue_eur": 73015,
+      "total_invoices": 27,
+      "avg_db2_margin": 0.574,
+      "win_rate": 0.616,
+      "total_quotes": 15,
+      "risk_tier": "medium",
+      "risk_score": 0.516,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 39436,
+        "2025": 33579
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": 0.593,
+        "2025": 0.553
+      },
+      "top_products": [
+        "201138"
+      ],
+      "ltv_estimated": 74873
+    },
+    {
+      "customer_id": "104010",
+      "name": "Customer 104010",
+      "segment": "Mid-Market",
+      "first_seen": "2024-02-25",
+      "total_revenue_eur": 73740,
+      "total_invoices": 30,
+      "avg_db2_margin": 0.573,
+      "win_rate": 0.464,
+      "total_quotes": 12,
+      "risk_tier": "low",
+      "risk_score": 0.274,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 38520,
+        "2025": 35220
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": 0.526,
+        "2025": 0.609
+      },
+      "top_products": [
+        "201951",
+        "202428",
+        "205165"
+      ],
+      "ltv_estimated": 97362
+    },
+    {
+      "customer_id": "104011",
+      "name": "Customer 104011",
+      "segment": "Mid-Market",
+      "first_seen": "2023-11-24",
+      "total_revenue_eur": 73773,
+      "total_invoices": 14,
+      "avg_db2_margin": 0.594,
+      "win_rate": 0.764,
+      "total_quotes": 12,
+      "risk_tier": "high",
+      "risk_score": 0.663,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 23823,
+        "2024": 27504,
+        "2025": 22446
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": 0.548,
+        "2024": 0.56,
+        "2025": 0.613
+      },
+      "top_products": [
+        "200832-E"
+      ],
+      "ltv_estimated": 86207
+    },
+    {
+      "customer_id": "104012",
+      "name": "Customer 104012",
+      "segment": "Mid-Market",
+      "first_seen": "2024-07-24",
+      "total_revenue_eur": 73806,
+      "total_invoices": 49,
+      "avg_db2_margin": 0.614,
+      "win_rate": 0.614,
+      "total_quotes": 13,
+      "risk_tier": "medium",
+      "risk_score": 0.512,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 49366,
+        "2025": 24440
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": 0.57,
+        "2025": 0.609
+      },
+      "top_products": [
+        "204743",
+        "204505-A"
+      ],
+      "ltv_estimated": 76510
+    },
+    {
+      "customer_id": "104013",
+      "name": "Customer 104013",
+      "segment": "Mid-Market",
+      "first_seen": "2022-03-23",
+      "total_revenue_eur": 73839,
+      "total_invoices": 33,
+      "avg_db2_margin": 0.635,
+      "win_rate": 0.464,
+      "total_quotes": 14,
+      "risk_tier": "low",
+      "risk_score": 0.132,
+      "revenue_by_year": {
+        "2022": 19294,
+        "2023": 14240,
+        "2024": 18605,
+        "2025": 21700
+      },
+      "margin_by_year": {
+        "2022": 0.592,
+        "2023": 0.66,
+        "2024": 0.631,
+        "2025": 0.626
+      },
+      "top_products": [
+        "205165"
+      ],
+      "ltv_estimated": 74311
+    },
+    {
+      "customer_id": "104014",
+      "name": "Customer 104014",
+      "segment": "Mid-Market",
+      "first_seen": "2024-11-23",
+      "total_revenue_eur": 73872,
+      "total_invoices": 17,
+      "avg_db2_margin": 0.656,
+      "win_rate": 0.764,
+      "total_quotes": 14,
+      "risk_tier": "low",
+      "risk_score": 0.218,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 36848,
+        "2025": 37024
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": 0.615,
+        "2025": 0.611
+      },
+      "top_products": [
+        "201036",
+        "204720"
+      ],
+      "ltv_estimated": 86638
+    },
+    {
+      "customer_id": "104015",
+      "name": "Customer 104015",
+      "segment": "Mid-Market",
+      "first_seen": "2022-08-22",
+      "total_revenue_eur": 73905,
+      "total_invoices": 52,
+      "avg_db2_margin": 0.677,
+      "win_rate": 0.614,
+      "total_quotes": 15,
+      "risk_tier": "high",
+      "risk_score": 0.672,
+      "revenue_by_year": {
+        "2022": 15222,
+        "2023": 19770,
+        "2024": 15085,
+        "2025": 23827
+      },
+      "margin_by_year": {
+        "2022": 0.638,
+        "2023": 0.662,
+        "2024": 0.651,
+        "2025": 0.707
+      },
+      "top_products": [
+        "201036"
+      ],
+      "ltv_estimated": 78617
+    },
+    {
+      "customer_id": "104016",
+      "name": "Customer 104016",
+      "segment": "Mid-Market",
+      "first_seen": "2023-04-21",
+      "total_revenue_eur": 73938,
+      "total_invoices": 36,
+      "avg_db2_margin": 0.698,
+      "win_rate": 0.464,
+      "total_quotes": 15,
+      "risk_tier": "medium",
+      "risk_score": 0.429,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 17643,
+        "2024": 28661,
+        "2025": 27635
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": 0.66,
+        "2024": 0.713,
+        "2025": 0.66
+      },
+      "top_products": [
+        "205300-A",
+        "205178"
+      ],
+      "ltv_estimated": 80773
+    },
+    {
+      "customer_id": "104017",
+      "name": "Customer 104017",
+      "segment": "Mid-Market",
+      "first_seen": "2022-12-21",
+      "total_revenue_eur": 73971,
+      "total_invoices": 19,
+      "avg_db2_margin": 0.719,
+      "win_rate": 0.764,
+      "total_quotes": 16,
+      "risk_tier": "low",
+      "risk_score": 0.277,
+      "revenue_by_year": {
+        "2022": 19724,
+        "2023": 15855,
+        "2024": 20192,
+        "2025": 18200
+      },
+      "margin_by_year": {
+        "2022": 0.683,
+        "2023": 0.764,
+        "2024": 0.67,
+        "2025": 0.687
+      },
+      "top_products": [
+        "202428",
+        "201924"
+      ],
+      "ltv_estimated": 86525
+    },
+    {
+      "customer_id": "104018",
+      "name": "Customer 104018",
+      "segment": "SME",
+      "first_seen": "2024-08-20",
+      "total_revenue_eur": 22684,
+      "total_invoices": 18,
+      "avg_db2_margin": 0.803,
+      "win_rate": 0.585,
+      "total_quotes": 7,
+      "risk_tier": "low",
+      "risk_score": 0.163,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 10605,
+        "2025": 12079
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": 0.768,
+        "2025": 0.778
+      },
+      "top_products": [
+        "205592",
+        "206028-01",
+        "201100-D"
+      ],
+      "ltv_estimated": 26082
+    },
+    {
+      "customer_id": "104019",
+      "name": "Customer 104019",
+      "segment": "SME",
+      "first_seen": "2025-04-19",
+      "total_revenue_eur": 22696,
+      "total_invoices": 13,
+      "avg_db2_margin": 0.827,
+      "win_rate": 0.385,
+      "total_quotes": 7,
+      "risk_tier": "high",
+      "risk_score": 0.68,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 0,
+        "2025": 22696
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": null,
+        "2025": 0.794
+      },
+      "top_products": [
+        "205178",
+        "204430"
+      ],
+      "ltv_estimated": 27338
+    },
+    {
+      "customer_id": "104020",
+      "name": "Customer 104020",
+      "segment": "SME",
+      "first_seen": "2025-05-05",
+      "total_revenue_eur": 22969,
+      "total_invoices": 14,
+      "avg_db2_margin": 0.826,
+      "win_rate": 0.782,
+      "total_quotes": 6,
+      "risk_tier": "low",
+      "risk_score": 0.146,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 0,
+        "2025": 22969
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": null,
+        "2025": 0.826
+      },
+      "top_products": [
+        "201924"
+      ],
+      "ltv_estimated": 29999
+    },
+    {
+      "customer_id": "104021",
+      "name": "Customer 104021",
+      "segment": "SME",
+      "first_seen": "2023-01-04",
+      "total_revenue_eur": 22981,
+      "total_invoices": 9,
+      "avg_db2_margin": 0.58,
+      "win_rate": 0.582,
+      "total_quotes": 6,
+      "risk_tier": "low",
+      "risk_score": 0.232,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 5782,
+        "2024": 12527,
+        "2025": 4672
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": 0.582,
+        "2024": 0.571,
+        "2025": 0.548
+      },
+      "top_products": [
+        "203076",
+        "201459-I"
+      ],
+      "ltv_estimated": 23859
+    },
+    {
+      "customer_id": "104022",
+      "name": "Customer 104022",
+      "segment": "SME",
+      "first_seen": "2025-10-04",
+      "total_revenue_eur": 22994,
+      "total_invoices": 3,
+      "avg_db2_margin": 0.605,
+      "win_rate": 0.382,
+      "total_quotes": 6,
+      "risk_tier": "high",
+      "risk_score": 0.733,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 0,
+        "2025": 22994
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": null,
+        "2025": 0.608
+      },
+      "top_products": [
+        "200960",
+        "201272",
+        "200834-B"
+      ],
+      "ltv_estimated": 30985
+    },
+    {
+      "customer_id": "104023",
+      "name": "Customer 104023",
+      "segment": "SME",
+      "first_seen": "2023-06-03",
+      "total_revenue_eur": 23006,
+      "total_invoices": 15,
+      "avg_db2_margin": 0.629,
+      "win_rate": 0.782,
+      "total_quotes": 6,
+      "risk_tier": "medium",
+      "risk_score": 0.342,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 4411,
+        "2024": 6843,
+        "2025": 11753
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": 0.634,
+        "2024": 0.58,
+        "2025": 0.674
+      },
+      "top_products": [
+        "204505-A",
+        "204361",
+        "201883"
+      ],
+      "ltv_estimated": 28473
+    },
+    {
+      "customer_id": "104024",
+      "name": "Customer 104024",
+      "segment": "SME",
+      "first_seen": "2025-02-02",
+      "total_revenue_eur": 23019,
+      "total_invoices": 10,
+      "avg_db2_margin": 0.654,
+      "win_rate": 0.582,
+      "total_quotes": 7,
+      "risk_tier": "low",
+      "risk_score": 0.291,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 0,
+        "2025": 23019
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": null,
+        "2025": 0.66
+      },
+      "top_products": [
+        "205300-A"
+      ],
+      "ltv_estimated": 27894
+    },
+    {
+      "customer_id": "104025",
+      "name": "Customer 104025",
+      "segment": "SME",
+      "first_seen": "2022-10-02",
+      "total_revenue_eur": 23031,
+      "total_invoices": 4,
+      "avg_db2_margin": 0.678,
+      "win_rate": 0.382,
+      "total_quotes": 7,
+      "risk_tier": "low",
+      "risk_score": 0.177,
+      "revenue_by_year": {
+        "2022": 6230,
+        "2023": 5598,
+        "2024": 5947,
+        "2025": 5256
+      },
+      "margin_by_year": {
+        "2022": 0.686,
+        "2023": 0.689,
+        "2024": 0.701,
+        "2025": 0.65
+      },
+      "top_products": [
+        "205593",
+        "202084",
+        "205300-A"
+      ],
+      "ltv_estimated": 30975
+    },
+    {
+      "customer_id": "104026",
+      "name": "Customer 104026",
+      "segment": "SME",
+      "first_seen": "2024-07-01",
+      "total_revenue_eur": 23043,
+      "total_invoices": 16,
+      "avg_db2_margin": 0.703,
+      "win_rate": 0.781,
+      "total_quotes": 7,
+      "risk_tier": "high",
+      "risk_score": 0.741,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 16722,
+        "2025": 6321
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": 0.712,
+        "2025": 0.743
+      },
+      "top_products": [
+        "205593-B",
+        "201885"
+      ],
+      "ltv_estimated": 28110
+    },
+    {
+      "customer_id": "104027",
+      "name": "Customer 104027",
+      "segment": "SME",
+      "first_seen": "2022-03-01",
+      "total_revenue_eur": 23056,
+      "total_invoices": 11,
+      "avg_db2_margin": 0.727,
+      "win_rate": 0.581,
+      "total_quotes": 7,
+      "risk_tier": "medium",
+      "risk_score": 0.508,
+      "revenue_by_year": {
+        "2022": 7887,
+        "2023": 4420,
+        "2024": 7670,
+        "2025": 3079
+      },
+      "margin_by_year": {
+        "2022": 0.738,
+        "2023": 0.697,
+        "2024": 0.727,
+        "2025": 0.737
+      },
+      "top_products": [
+        "201827",
+        "204285-A",
+        "200960"
+      ],
+      "ltv_estimated": 29935
+    },
+    {
+      "customer_id": "104028",
+      "name": "Customer 104028",
+      "segment": "SME",
+      "first_seen": "2024-11-28",
+      "total_revenue_eur": 23068,
+      "total_invoices": 5,
+      "avg_db2_margin": 0.752,
+      "win_rate": 0.381,
+      "total_quotes": 8,
+      "risk_tier": "low",
+      "risk_score": 0.236,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 13134,
+        "2025": 9934
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": 0.764,
+        "2025": 0.752
+      },
+      "top_products": [
+        "201924",
+        "202084-A"
+      ],
+      "ltv_estimated": 31282
+    },
+    {
+      "customer_id": "104029",
+      "name": "Customer 104029",
+      "segment": "SME",
+      "first_seen": "2022-07-27",
+      "total_revenue_eur": 23081,
+      "total_invoices": 17,
+      "avg_db2_margin": 0.776,
+      "win_rate": 0.781,
+      "total_quotes": 8,
+      "risk_tier": "low",
+      "risk_score": 0.122,
+      "revenue_by_year": {
+        "2022": 6368,
+        "2023": 6160,
+        "2024": 6323,
+        "2025": 4231
+      },
+      "margin_by_year": {
+        "2022": 0.79,
+        "2023": 0.806,
+        "2024": 0.753,
+        "2025": 0.824
+      },
+      "top_products": [
+        "204430",
+        "204632",
+        "201924"
+      ],
+      "ltv_estimated": 28893
+    },
+    {
+      "customer_id": "104030",
+      "name": "Customer 104030",
+      "segment": "SME",
+      "first_seen": "2022-08-13",
+      "total_revenue_eur": 23353,
+      "total_invoices": 18,
+      "avg_db2_margin": 0.775,
+      "win_rate": 0.578,
+      "total_quotes": 7,
+      "risk_tier": "medium",
+      "risk_score": 0.505,
+      "revenue_by_year": {
+        "2022": 6748,
+        "2023": 6986,
+        "2024": 2825,
+        "2025": 6794
+      },
+      "margin_by_year": {
+        "2022": 0.822,
+        "2023": 0.762,
+        "2024": 0.803,
+        "2025": 0.744
+      },
+      "top_products": [
+        "201924-F",
+        "201883"
+      ],
+      "ltv_estimated": 31584
+    },
+    {
+      "customer_id": "104031",
+      "name": "Customer 104031",
+      "segment": "SME",
+      "first_seen": "2023-04-12",
+      "total_revenue_eur": 23366,
+      "total_invoices": 13,
+      "avg_db2_margin": 0.799,
+      "win_rate": 0.378,
+      "total_quotes": 7,
+      "risk_tier": "low",
+      "risk_score": 0.105,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 7487,
+        "2024": 9569,
+        "2025": 6310
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": 0.848,
+        "2024": 0.816,
+        "2025": 0.816
+      },
+      "top_products": [
+        "205593-A",
+        "300143",
+        "201924-F"
+      ],
+      "ltv_estimated": 32699
+    },
+    {
+      "customer_id": "104032",
+      "name": "Customer 104032",
+      "segment": "SME",
+      "first_seen": "2025-12-12",
+      "total_revenue_eur": 23378,
+      "total_invoices": 7,
+      "avg_db2_margin": 0.824,
+      "win_rate": 0.778,
+      "total_quotes": 7,
+      "risk_tier": "critical",
+      "risk_score": 0.895,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 0,
+        "2025": 23378
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": null,
+        "2025": 0.774
+      },
+      "top_products": [
+        "204430",
+        "203092",
+        "204616"
+      ],
+      "ltv_estimated": 27027
+    },
+    {
+      "customer_id": "104033",
+      "name": "Customer 104033",
+      "segment": "SME",
+      "first_seen": "2023-09-11",
+      "total_revenue_eur": 23391,
+      "total_invoices": 19,
+      "avg_db2_margin": 0.848,
+      "win_rate": 0.578,
+      "total_quotes": 7,
+      "risk_tier": "high",
+      "risk_score": 0.552,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 8557,
+        "2024": 7513,
+        "2025": 7321
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": 0.8,
+        "2024": 0.825,
+        "2025": 0.842
+      },
+      "top_products": [
+        "200834-B"
+      ],
+      "ltv_estimated": 26350
+    },
+    {
+      "customer_id": "104034",
+      "name": "Customer 104034",
+      "segment": "Occasional",
+      "first_seen": "2025-05-10",
+      "total_revenue_eur": 5110,
+      "total_invoices": 4,
+      "avg_db2_margin": 0.552,
+      "win_rate": 0.285,
+      "total_quotes": 4,
+      "risk_tier": "high",
+      "risk_score": 0.68,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 0,
+        "2025": 5110
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": null,
+        "2025": 0.505
+      },
+      "top_products": [
+        "201941-J",
+        "206028-01"
+      ],
+      "ltv_estimated": 6321
+    },
+    {
+      "customer_id": "104035",
+      "name": "Customer 104035",
+      "segment": "Occasional",
+      "first_seen": "2023-01-10",
+      "total_revenue_eur": 5113,
+      "total_invoices": 3,
+      "avg_db2_margin": 0.587,
+      "win_rate": 0.718,
+      "total_quotes": 4,
+      "risk_tier": "medium",
+      "risk_score": 0.4,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 1542,
+        "2024": 2228,
+        "2025": 1343
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": 0.542,
+        "2024": 0.623,
+        "2025": 0.559
+      },
+      "top_products": [
+        "201272",
+        "204616"
+      ],
+      "ltv_estimated": 6351
+    },
+    {
+      "customer_id": "104036",
+      "name": "Customer 104036",
+      "segment": "Occasional",
+      "first_seen": "2025-09-09",
+      "total_revenue_eur": 5116,
+      "total_invoices": 6,
+      "avg_db2_margin": 0.621,
+      "win_rate": 0.501,
+      "total_quotes": 0,
+      "risk_tier": "critical",
+      "risk_score": 0.936,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 0,
+        "2025": 5116
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": null,
+        "2025": 0.577
+      },
+      "top_products": [
+        "201036"
+      ],
+      "ltv_estimated": 5802
+    },
+    {
+      "customer_id": "104037",
+      "name": "Customer 104037",
+      "segment": "Occasional",
+      "first_seen": "2022-06-08",
+      "total_revenue_eur": 5119,
+      "total_invoices": 4,
+      "avg_db2_margin": 0.656,
+      "win_rate": 0.284,
+      "total_quotes": 0,
+      "risk_tier": "high",
+      "risk_score": 0.561,
+      "revenue_by_year": {
+        "2022": 1177,
+        "2023": 1146,
+        "2024": 1047,
+        "2025": 1750
+      },
+      "margin_by_year": {
+        "2022": 0.614,
+        "2023": 0.652,
+        "2024": 0.705,
+        "2025": 0.609
+      },
+      "top_products": [
+        "120584"
+      ],
+      "ltv_estimated": 6652
+    },
+    {
+      "customer_id": "104038",
+      "name": "Customer 104038",
+      "segment": "Occasional",
+      "first_seen": "2024-02-08",
+      "total_revenue_eur": 5122,
+      "total_invoices": 3,
+      "avg_db2_margin": 0.69,
+      "win_rate": 0.717,
+      "total_quotes": 0,
+      "risk_tier": "high",
+      "risk_score": 0.688,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 2213,
+        "2025": 2909
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": 0.649,
+        "2025": 0.716
+      },
+      "top_products": [
+        "204743",
+        "205345-A",
+        "204632"
+      ],
+      "ltv_estimated": 6803
+    },
+    {
+      "customer_id": "104039",
+      "name": "Customer 104039",
+      "segment": "Occasional",
+      "first_seen": "2022-10-07",
+      "total_revenue_eur": 5125,
+      "total_invoices": 1,
+      "avg_db2_margin": 0.725,
+      "win_rate": 0.501,
+      "total_quotes": 1,
+      "risk_tier": "medium",
+      "risk_score": 0.316,
+      "revenue_by_year": {
+        "2022": 1172,
+        "2023": 1989,
+        "2024": 1070,
+        "2025": 895
+      },
+      "margin_by_year": {
+        "2022": 0.686,
+        "2023": 0.681,
+        "2024": 0.751,
+        "2025": 0.716
+      },
+      "top_products": [
+        "201941-J",
+        "205593"
+      ],
+      "ltv_estimated": 7047
+    },
+    {
+      "customer_id": "104040",
+      "name": "Customer 104040",
+      "segment": "Occasional",
+      "first_seen": "2022-11-21",
+      "total_revenue_eur": 5189,
+      "total_invoices": 2,
+      "avg_db2_margin": 0.723,
+      "win_rate": 0.281,
+      "total_quotes": 4,
+      "risk_tier": "high",
+      "risk_score": 0.613,
+      "revenue_by_year": {
+        "2022": 929,
+        "2023": 1743,
+        "2024": 1258,
+        "2025": 1260
+      },
+      "margin_by_year": {
+        "2022": 0.717,
+        "2023": 0.736,
+        "2024": 0.7,
+        "2025": 0.734
+      },
+      "top_products": [
+        "200965",
+        "203092",
+        "204285-A"
+      ],
+      "ltv_estimated": 5283
+    },
+    {
+      "customer_id": "104041",
+      "name": "Customer 104041",
+      "segment": "Occasional",
+      "first_seen": "2024-07-20",
+      "total_revenue_eur": 5191,
+      "total_invoices": 5,
+      "avg_db2_margin": 0.757,
+      "win_rate": 0.714,
+      "total_quotes": 4,
+      "risk_tier": "high",
+      "risk_score": 0.741,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 2833,
+        "2025": 2358
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": 0.753,
+        "2025": 0.799
+      },
+      "top_products": [
+        "201924-F"
+      ],
+      "ltv_estimated": 5921
+    },
+    {
+      "customer_id": "104042",
+      "name": "Customer 104042",
+      "segment": "Occasional",
+      "first_seen": "2022-03-20",
+      "total_revenue_eur": 5194,
+      "total_invoices": 3,
+      "avg_db2_margin": 0.792,
+      "win_rate": 0.497,
+      "total_quotes": 0,
+      "risk_tier": "medium",
+      "risk_score": 0.313,
+      "revenue_by_year": {
+        "2022": 894,
+        "2023": 1141,
+        "2024": 1302,
+        "2025": 1858
+      },
+      "margin_by_year": {
+        "2022": 0.789,
+        "2023": 0.764,
+        "2024": 0.747,
+        "2025": 0.841
+      },
+      "top_products": [
+        "202101",
+        "204604",
+        "205165"
+      ],
+      "ltv_estimated": 7124
+    },
+    {
+      "customer_id": "104043",
+      "name": "Customer 104043",
+      "segment": "Occasional",
+      "first_seen": "2023-11-19",
+      "total_revenue_eur": 5197,
+      "total_invoices": 2,
+      "avg_db2_margin": 0.826,
+      "win_rate": 0.281,
+      "total_quotes": 0,
+      "risk_tier": "critical",
+      "risk_score": 0.865,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 996,
+        "2024": 1790,
+        "2025": 2411
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": 0.825,
+        "2024": 0.828,
+        "2025": 0.869
+      },
+      "top_products": [
+        "203092",
+        "201036",
+        "204702-A"
+      ],
+      "ltv_estimated": 7011
+    },
+    {
+      "customer_id": "104044",
+      "name": "Customer 104044",
+      "segment": "Occasional",
+      "first_seen": "2025-08-18",
+      "total_revenue_eur": 5200,
+      "total_invoices": 5,
+      "avg_db2_margin": 0.861,
+      "win_rate": 0.714,
+      "total_quotes": 0,
+      "risk_tier": "high",
+      "risk_score": 0.622,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 0,
+        "2024": 0,
+        "2025": 5200
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": null,
+        "2024": null,
+        "2025": 0.861
+      },
+      "top_products": [
+        "205274-A",
+        "202084",
+        "200890-B"
+      ],
+      "ltv_estimated": 6788
+    },
+    {
+      "customer_id": "104045",
+      "name": "Customer 104045",
+      "segment": "Occasional",
+      "first_seen": "2023-04-18",
+      "total_revenue_eur": 5203,
+      "total_invoices": 4,
+      "avg_db2_margin": 0.895,
+      "win_rate": 0.497,
+      "total_quotes": 1,
+      "risk_tier": "medium",
+      "risk_score": 0.5,
+      "revenue_by_year": {
+        "2022": 0,
+        "2023": 1810,
+        "2024": 1806,
+        "2025": 1586
+      },
+      "margin_by_year": {
+        "2022": null,
+        "2023": 0.897,
+        "2024": 0.857,
+        "2025": 0.916
+      },
+      "top_products": [
+        "204560"
+      ],
+      "ltv_estimated": 6106
+    }
+  ],
+  "segments": [
+    {
+      "segment": "Enterprise",
+      "count": 89,
+      "total_revenue": 16596302,
+      "avg_margin": 0.603
+    },
+    {
+      "segment": "Mid-Market",
+      "count": 234,
+      "total_revenue": 5167096,
+      "avg_margin": 0.698
+    },
+    {
+      "segment": "Occasional",
+      "count": 574,
+      "total_revenue": 528714,
+      "avg_margin": 0.689
+    },
+    {
+      "segment": "SME",
+      "count": 541,
+      "total_revenue": 2354604,
+      "avg_margin": 0.737
+    }
+  ],
+  "churn_summary": [
+    {
+      "risk_level": "Low",
+      "count": 259,
+      "total_ltv": 11356730
+    },
+    {
+      "risk_level": "Medium",
+      "count": 496,
+      "total_ltv": 12768986
+    },
+    {
+      "risk_level": "High",
+      "count": 511,
+      "total_ltv": 9888433
+    },
+    {
+      "risk_level": "Critical",
+      "count": 172,
+      "total_ltv": 1140874
+    }
+  ]
+}
