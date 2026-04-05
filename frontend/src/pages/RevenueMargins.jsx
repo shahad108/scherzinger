@@ -141,13 +141,15 @@ export default function RevenueMargins() {
     const db2DeltaPp = priorDb2 != null ? (avgDb2 - priorDb2) * 100 : null;
     const db1DeltaPp = priorDb1 != null ? (avgDb1 - priorDb1) * 100 : null;
 
-    // Margin Gap — avg of quarterly gaps for selected year
+    // Margin Gap — avg of quarterly gaps for selected commodity + year
+    const commodityQuarters = quarterlyGap[selectedCommodity] || quarterlyGap.All;
+    const priorCommodityQuarters = quarterlyGap[selectedCommodity] || quarterlyGap.All;
     const yearQuarters = selectedYear === 'All'
-      ? quarterlyGap
-      : quarterlyGap.filter((q) => q.year === selectedYear);
+      ? commodityQuarters
+      : commodityQuarters.filter((q) => q.year === selectedYear);
     const priorQuarters = selectedYear === 'All'
       ? []
-      : quarterlyGap.filter((q) => q.year === selectedYear - 1);
+      : priorCommodityQuarters.filter((q) => q.year === selectedYear - 1);
     const avgGap = yearQuarters.length
       ? yearQuarters.reduce((s, q) => s + q.gap_pp, 0) / yearQuarters.length
       : 0;
@@ -162,7 +164,7 @@ export default function RevenueMargins() {
       avgGap, gapDeltaPp,
       fixedSpreadPp: (avgDb1 - avgDb2) * 100,
     };
-  }, [selectedYear]);
+  }, [selectedYear, selectedCommodity]);
 
   // Monthly chart data
   const monthlyFiltered = useMemo(() => {
@@ -177,13 +179,15 @@ export default function RevenueMargins() {
     }));
   }, [selectedYear]);
 
-  // Row 2 hero chart: quarterly quoted vs actual, with range for shaded band
-  const quarterlyChartData = useMemo(() =>
-    quarterlyGap.map((q) => ({
+  // Row 2 hero chart: quarterly quoted vs actual for selected commodity, filtered by year
+  const quarterlyChartData = useMemo(() => {
+    const src = quarterlyGap[selectedCommodity] || quarterlyGap.All;
+    const filtered = selectedYear === 'All' ? src : src.filter((q) => q.year === selectedYear);
+    return filtered.map((q) => ({
       ...q,
       range: [q.actual, q.quoted],
-    })),
-    []);
+    }));
+  }, [selectedCommodity, selectedYear]);
 
   // Row 3R: commodity margin data, filtered and sorted by revenue desc
   const commodityChartData = useMemo(() => {
@@ -205,10 +209,27 @@ export default function RevenueMargins() {
     })),
     [commodityChartData]);
 
-  // Row 5: customer table data (all-time, no year filter per data design)
-  const customerTableData = useMemo(() =>
-    [...customerGaps].sort((a, b) => b.impact_eur - a.impact_eur),
-    []);
+  // Row 5: customer table data — filter by commodity, pick yearly or all_time metrics
+  const customerTableData = useMemo(() => {
+    const filtered = selectedCommodity === 'All'
+      ? customerGaps
+      : customerGaps.filter((c) => c.primary_commodity === selectedCommodity);
+    const rows = filtered.map((c) => {
+      const metrics = selectedYear === 'All' ? c.all_time : (c.yearly?.[selectedYear] || c.all_time);
+      return {
+        customer_id: c.customer_id,
+        name: c.name,
+        primary_commodity: c.primary_commodity,
+        revenue_eur: metrics.revenue_eur,
+        actual_margin: metrics.actual_margin,
+        quoted_margin: metrics.quoted_margin,
+        gap_pp: metrics.gap_pp,
+        impact_eur: metrics.impact_eur,
+        trend: metrics.trend,
+      };
+    });
+    return rows.sort((a, b) => b.impact_eur - a.impact_eur).slice(0, 15);
+  }, [selectedCommodity, selectedYear]);
 
   const customerColumns = [
     {
@@ -217,6 +238,12 @@ export default function RevenueMargins() {
         <span className="font-mono font-medium text-[#0393da]">{v}</span>
       ),
     },
+    ...(selectedCommodity === 'All' ? [{
+      key: 'primary_commodity', label: 'Commodity',
+      render: (v) => (
+        <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded bg-slate-100 text-slate-600">{v}</span>
+      ),
+    }] : []),
     {
       key: 'revenue_eur', label: 'Revenue', align: 'right',
       render: (v) => <span className="font-semibold">{formatEUR(v)}</span>,
@@ -376,8 +403,8 @@ export default function RevenueMargins() {
 
         {/* Row 2 — Hero Chart: Quoted vs Actual Margin Trend */}
         <ChartCard
-          title="Quoted vs Actual Margin — Quarterly Trend"
-          subtitle="Shaded band = leakage between won quotes and actual invoiced margin"
+          title={`Quoted vs Actual Margin — Quarterly Trend${selectedCommodity !== 'All' ? ` · ${selectedCommodity}` : ''}`}
+          subtitle={`${selectedYear === 'All' ? 'FY2022–2025' : `FY ${selectedYear}`} · shaded band = leakage between won quotes and actual invoiced margin`}
           tooltip={TOOLTIPS.quoted_vs_actual_trend}
           formulaId="db2_margin"
           confidence="derived"
@@ -418,15 +445,19 @@ export default function RevenueMargins() {
                   tickFormatter={(v) => `${(v * 100).toFixed(0)}%`}
                   tick={{ fontSize: 10, fill: '#94a3b8' }}
                   width={50}
-                  domain={[0.55, 0.80]}
+                  domain={['auto', 'auto']}
                   axisLine={false}
                   tickLine={false}
                 />
                 <Tooltip content={<HeroTooltip />} />
-                {/* Year dividers */}
-                <ReferenceLine x="2023-Q1" stroke="#e2e8f0" strokeDasharray="4 4" />
-                <ReferenceLine x="2024-Q1" stroke="#e2e8f0" strokeDasharray="4 4" />
-                <ReferenceLine x="2025-Q1" stroke="#e2e8f0" strokeDasharray="4 4" />
+                {/* Year dividers — only when showing multiple years */}
+                {selectedYear === 'All' && (
+                  <>
+                    <ReferenceLine x="2023-Q1" stroke="#e2e8f0" strokeDasharray="4 4" />
+                    <ReferenceLine x="2024-Q1" stroke="#e2e8f0" strokeDasharray="4 4" />
+                    <ReferenceLine x="2025-Q1" stroke="#e2e8f0" strokeDasharray="4 4" />
+                  </>
+                )}
                 {/* Shaded gap band */}
                 <Area
                   type="monotone"
@@ -532,7 +563,7 @@ export default function RevenueMargins() {
                 <BarChart
                   data={commodityChartData}
                   layout="vertical"
-                  margin={{ top: 8, right: 80, left: 8, bottom: 8 }}
+                  margin={{ top: 24, right: 80, left: 8, bottom: 8 }}
                   onClick={(s) => handleChartContainerClick('Margin by Commodity', selectItem, commodityChartData, s)}
                 >
                   <CartesianGrid stroke="#f0f0f0" horizontal={false} />
@@ -566,7 +597,7 @@ export default function RevenueMargins() {
                       );
                     }}
                   />
-                  <ReferenceLine x={0.60} stroke="#94a3b8" strokeDasharray="4 4" label={{ value: 'Target 60%', position: 'top', fill: '#94a3b8', fontSize: 9 }} />
+                  <ReferenceLine x={0.60} stroke="#94a3b8" strokeDasharray="4 4" label={{ value: 'Target 60%', position: 'top', fill: '#64748b', fontSize: 10, fontWeight: 600, offset: 8 }} />
                   <Bar dataKey="db2_margin" radius={[0, 6, 6, 0]} animationDuration={800}
                        label={{
                          position: 'right',
@@ -680,7 +711,7 @@ export default function RevenueMargins() {
 
         {/* Row 5 — Customer Margin Gap Table */}
         <DataTable
-          title="Top Customers by Margin Gap Impact"
+          title={`Top Customers by Margin Gap Impact${selectedCommodity !== 'All' ? ` · ${selectedCommodity}` : ''}${selectedYear !== 'All' ? ` · FY ${selectedYear}` : ''}`}
           columns={customerColumns}
           data={customerTableData}
           rowKey="customer_id"
@@ -725,7 +756,7 @@ export default function RevenueMargins() {
         >
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={marginBins} onClick={(s) => handleChartContainerClick('Margin Distribution', selectItem, marginBins, s)}>
+              <BarChart data={marginBins} margin={{ top: 24, right: 16, left: 0, bottom: 0 }} onClick={(s) => handleChartContainerClick('Margin Distribution', selectItem, marginBins, s)}>
                 <CartesianGrid stroke="#f0f0f0" strokeDasharray="none" />
                 <XAxis dataKey="range" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
                 <YAxis

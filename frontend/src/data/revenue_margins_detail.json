@@ -1,45 +1,1769 @@
 {
-  "last_updated": "2026-04-05T09:00:00Z",
-  "quarterly_quoted_vs_actual": [
-    { "quarter": "2022-Q1", "year": 2022, "q": 1, "quoted": 0.765, "actual": 0.616, "gap_pp": 14.9 },
-    { "quarter": "2022-Q2", "year": 2022, "q": 2, "quoted": 0.747, "actual": 0.624, "gap_pp": 12.3 },
-    { "quarter": "2022-Q3", "year": 2022, "q": 3, "quoted": 0.664, "actual": 0.618, "gap_pp": 4.6 },
-    { "quarter": "2022-Q4", "year": 2022, "q": 4, "quoted": 0.664, "actual": 0.682, "gap_pp": -1.8 },
-    { "quarter": "2023-Q1", "year": 2023, "q": 1, "quoted": 0.690, "actual": 0.649, "gap_pp": 4.1 },
-    { "quarter": "2023-Q2", "year": 2023, "q": 2, "quoted": 0.741, "actual": 0.658, "gap_pp": 8.3 },
-    { "quarter": "2023-Q3", "year": 2023, "q": 3, "quoted": 0.625, "actual": 0.608, "gap_pp": 1.7 },
-    { "quarter": "2023-Q4", "year": 2023, "q": 4, "quoted": 0.666, "actual": 0.652, "gap_pp": 1.4 },
-    { "quarter": "2024-Q1", "year": 2024, "q": 1, "quoted": 0.659, "actual": 0.637, "gap_pp": 2.2 },
-    { "quarter": "2024-Q2", "year": 2024, "q": 2, "quoted": 0.706, "actual": 0.626, "gap_pp": 8.0 },
-    { "quarter": "2024-Q3", "year": 2024, "q": 3, "quoted": 0.701, "actual": 0.600, "gap_pp": 10.1 },
-    { "quarter": "2024-Q4", "year": 2024, "q": 4, "quoted": 0.644, "actual": 0.630, "gap_pp": 1.4 },
-    { "quarter": "2025-Q1", "year": 2025, "q": 1, "quoted": 0.672, "actual": 0.601, "gap_pp": 7.1 },
-    { "quarter": "2025-Q2", "year": 2025, "q": 2, "quoted": 0.679, "actual": 0.601, "gap_pp": 7.8 },
-    { "quarter": "2025-Q3", "year": 2025, "q": 3, "quoted": 0.701, "actual": 0.612, "gap_pp": 8.9 },
-    { "quarter": "2025-Q4", "year": 2025, "q": 4, "quoted": 0.685, "actual": 0.623, "gap_pp": 6.2 }
-  ],
+  "last_updated": "2026-04-05T21:26:36.245Z",
+  "quarterly_quoted_vs_actual": {
+    "All": [
+      {
+        "quarter": "2022-Q1",
+        "year": 2022,
+        "q": 1,
+        "quoted": 0.765,
+        "actual": 0.616,
+        "gap_pp": 14.9
+      },
+      {
+        "quarter": "2022-Q2",
+        "year": 2022,
+        "q": 2,
+        "quoted": 0.747,
+        "actual": 0.624,
+        "gap_pp": 12.3
+      },
+      {
+        "quarter": "2022-Q3",
+        "year": 2022,
+        "q": 3,
+        "quoted": 0.664,
+        "actual": 0.618,
+        "gap_pp": 4.6
+      },
+      {
+        "quarter": "2022-Q4",
+        "year": 2022,
+        "q": 4,
+        "quoted": 0.664,
+        "actual": 0.682,
+        "gap_pp": -1.8
+      },
+      {
+        "quarter": "2023-Q1",
+        "year": 2023,
+        "q": 1,
+        "quoted": 0.69,
+        "actual": 0.649,
+        "gap_pp": 4.1
+      },
+      {
+        "quarter": "2023-Q2",
+        "year": 2023,
+        "q": 2,
+        "quoted": 0.741,
+        "actual": 0.658,
+        "gap_pp": 8.3
+      },
+      {
+        "quarter": "2023-Q3",
+        "year": 2023,
+        "q": 3,
+        "quoted": 0.625,
+        "actual": 0.608,
+        "gap_pp": 1.7
+      },
+      {
+        "quarter": "2023-Q4",
+        "year": 2023,
+        "q": 4,
+        "quoted": 0.666,
+        "actual": 0.652,
+        "gap_pp": 1.4
+      },
+      {
+        "quarter": "2024-Q1",
+        "year": 2024,
+        "q": 1,
+        "quoted": 0.659,
+        "actual": 0.637,
+        "gap_pp": 2.2
+      },
+      {
+        "quarter": "2024-Q2",
+        "year": 2024,
+        "q": 2,
+        "quoted": 0.706,
+        "actual": 0.626,
+        "gap_pp": 8
+      },
+      {
+        "quarter": "2024-Q3",
+        "year": 2024,
+        "q": 3,
+        "quoted": 0.701,
+        "actual": 0.6,
+        "gap_pp": 10.1
+      },
+      {
+        "quarter": "2024-Q4",
+        "year": 2024,
+        "q": 4,
+        "quoted": 0.644,
+        "actual": 0.63,
+        "gap_pp": 1.4
+      },
+      {
+        "quarter": "2025-Q1",
+        "year": 2025,
+        "q": 1,
+        "quoted": 0.672,
+        "actual": 0.601,
+        "gap_pp": 7.1
+      },
+      {
+        "quarter": "2025-Q2",
+        "year": 2025,
+        "q": 2,
+        "quoted": 0.679,
+        "actual": 0.601,
+        "gap_pp": 7.8
+      },
+      {
+        "quarter": "2025-Q3",
+        "year": 2025,
+        "q": 3,
+        "quoted": 0.701,
+        "actual": 0.612,
+        "gap_pp": 8.9
+      },
+      {
+        "quarter": "2025-Q4",
+        "year": 2025,
+        "q": 4,
+        "quoted": 0.685,
+        "actual": 0.623,
+        "gap_pp": 6.2
+      }
+    ],
+    "BKAES": [
+      {
+        "quarter": "2022-Q1",
+        "year": 2022,
+        "q": 1,
+        "quoted": 0.77,
+        "actual": 0.666,
+        "gap_pp": 10.4
+      },
+      {
+        "quarter": "2022-Q2",
+        "year": 2022,
+        "q": 2,
+        "quoted": 0.76,
+        "actual": 0.674,
+        "gap_pp": 8.6
+      },
+      {
+        "quarter": "2022-Q3",
+        "year": 2022,
+        "q": 3,
+        "quoted": 0.7,
+        "actual": 0.668,
+        "gap_pp": 3.2
+      },
+      {
+        "quarter": "2022-Q4",
+        "year": 2022,
+        "q": 4,
+        "quoted": 0.719,
+        "actual": 0.732,
+        "gap_pp": -1.3
+      },
+      {
+        "quarter": "2023-Q1",
+        "year": 2023,
+        "q": 1,
+        "quoted": 0.728,
+        "actual": 0.699,
+        "gap_pp": 2.9
+      },
+      {
+        "quarter": "2023-Q2",
+        "year": 2023,
+        "q": 2,
+        "quoted": 0.766,
+        "actual": 0.708,
+        "gap_pp": 5.8
+      },
+      {
+        "quarter": "2023-Q3",
+        "year": 2023,
+        "q": 3,
+        "quoted": 0.67,
+        "actual": 0.658,
+        "gap_pp": 1.2
+      },
+      {
+        "quarter": "2023-Q4",
+        "year": 2023,
+        "q": 4,
+        "quoted": 0.712,
+        "actual": 0.702,
+        "gap_pp": 1
+      },
+      {
+        "quarter": "2024-Q1",
+        "year": 2024,
+        "q": 1,
+        "quoted": 0.702,
+        "actual": 0.687,
+        "gap_pp": 1.5
+      },
+      {
+        "quarter": "2024-Q2",
+        "year": 2024,
+        "q": 2,
+        "quoted": 0.732,
+        "actual": 0.676,
+        "gap_pp": 5.6
+      },
+      {
+        "quarter": "2024-Q3",
+        "year": 2024,
+        "q": 3,
+        "quoted": 0.721,
+        "actual": 0.65,
+        "gap_pp": 7.1
+      },
+      {
+        "quarter": "2024-Q4",
+        "year": 2024,
+        "q": 4,
+        "quoted": 0.69,
+        "actual": 0.68,
+        "gap_pp": 1
+      },
+      {
+        "quarter": "2025-Q1",
+        "year": 2025,
+        "q": 1,
+        "quoted": 0.701,
+        "actual": 0.651,
+        "gap_pp": 5
+      },
+      {
+        "quarter": "2025-Q2",
+        "year": 2025,
+        "q": 2,
+        "quoted": 0.706,
+        "actual": 0.651,
+        "gap_pp": 5.5
+      },
+      {
+        "quarter": "2025-Q3",
+        "year": 2025,
+        "q": 3,
+        "quoted": 0.724,
+        "actual": 0.662,
+        "gap_pp": 6.2
+      },
+      {
+        "quarter": "2025-Q4",
+        "year": 2025,
+        "q": 4,
+        "quoted": 0.716,
+        "actual": 0.673,
+        "gap_pp": 4.3
+      }
+    ],
+    "BKAGG": [
+      {
+        "quarter": "2022-Q1",
+        "year": 2022,
+        "q": 1,
+        "quoted": 0.692,
+        "actual": 0.521,
+        "gap_pp": 17.1
+      },
+      {
+        "quarter": "2022-Q2",
+        "year": 2022,
+        "q": 2,
+        "quoted": 0.67,
+        "actual": 0.529,
+        "gap_pp": 14.1
+      },
+      {
+        "quarter": "2022-Q3",
+        "year": 2022,
+        "q": 3,
+        "quoted": 0.576,
+        "actual": 0.523,
+        "gap_pp": 5.3
+      },
+      {
+        "quarter": "2022-Q4",
+        "year": 2022,
+        "q": 4,
+        "quoted": 0.566,
+        "actual": 0.587,
+        "gap_pp": -2.1
+      },
+      {
+        "quarter": "2023-Q1",
+        "year": 2023,
+        "q": 1,
+        "quoted": 0.601,
+        "actual": 0.554,
+        "gap_pp": 4.7
+      },
+      {
+        "quarter": "2023-Q2",
+        "year": 2023,
+        "q": 2,
+        "quoted": 0.658,
+        "actual": 0.563,
+        "gap_pp": 9.5
+      },
+      {
+        "quarter": "2023-Q3",
+        "year": 2023,
+        "q": 3,
+        "quoted": 0.533,
+        "actual": 0.513,
+        "gap_pp": 2
+      },
+      {
+        "quarter": "2023-Q4",
+        "year": 2023,
+        "q": 4,
+        "quoted": 0.573,
+        "actual": 0.557,
+        "gap_pp": 1.6
+      },
+      {
+        "quarter": "2024-Q1",
+        "year": 2024,
+        "q": 1,
+        "quoted": 0.567,
+        "actual": 0.542,
+        "gap_pp": 2.5
+      },
+      {
+        "quarter": "2024-Q2",
+        "year": 2024,
+        "q": 2,
+        "quoted": 0.623,
+        "actual": 0.531,
+        "gap_pp": 9.2
+      },
+      {
+        "quarter": "2024-Q3",
+        "year": 2024,
+        "q": 3,
+        "quoted": 0.621,
+        "actual": 0.505,
+        "gap_pp": 11.6
+      },
+      {
+        "quarter": "2024-Q4",
+        "year": 2024,
+        "q": 4,
+        "quoted": 0.551,
+        "actual": 0.535,
+        "gap_pp": 1.6
+      },
+      {
+        "quarter": "2025-Q1",
+        "year": 2025,
+        "q": 1,
+        "quoted": 0.588,
+        "actual": 0.506,
+        "gap_pp": 8.2
+      },
+      {
+        "quarter": "2025-Q2",
+        "year": 2025,
+        "q": 2,
+        "quoted": 0.596,
+        "actual": 0.506,
+        "gap_pp": 9
+      },
+      {
+        "quarter": "2025-Q3",
+        "year": 2025,
+        "q": 3,
+        "quoted": 0.619,
+        "actual": 0.517,
+        "gap_pp": 10.2
+      },
+      {
+        "quarter": "2025-Q4",
+        "year": 2025,
+        "q": 4,
+        "quoted": 0.599,
+        "actual": 0.528,
+        "gap_pp": 7.1
+      }
+    ],
+    "BKAIZ": [
+      {
+        "quarter": "2022-Q1",
+        "year": 2022,
+        "q": 1,
+        "quoted": 0.717,
+        "actual": 0.531,
+        "gap_pp": 18.6
+      },
+      {
+        "quarter": "2022-Q2",
+        "year": 2022,
+        "q": 2,
+        "quoted": 0.693,
+        "actual": 0.539,
+        "gap_pp": 15.4
+      },
+      {
+        "quarter": "2022-Q3",
+        "year": 2022,
+        "q": 3,
+        "quoted": 0.591,
+        "actual": 0.533,
+        "gap_pp": 5.8
+      },
+      {
+        "quarter": "2022-Q4",
+        "year": 2022,
+        "q": 4,
+        "quoted": 0.575,
+        "actual": 0.597,
+        "gap_pp": -2.3
+      },
+      {
+        "quarter": "2023-Q1",
+        "year": 2023,
+        "q": 1,
+        "quoted": 0.615,
+        "actual": 0.564,
+        "gap_pp": 5.1
+      },
+      {
+        "quarter": "2023-Q2",
+        "year": 2023,
+        "q": 2,
+        "quoted": 0.677,
+        "actual": 0.573,
+        "gap_pp": 10.4
+      },
+      {
+        "quarter": "2023-Q3",
+        "year": 2023,
+        "q": 3,
+        "quoted": 0.544,
+        "actual": 0.523,
+        "gap_pp": 2.1
+      },
+      {
+        "quarter": "2023-Q4",
+        "year": 2023,
+        "q": 4,
+        "quoted": 0.585,
+        "actual": 0.567,
+        "gap_pp": 1.7
+      },
+      {
+        "quarter": "2024-Q1",
+        "year": 2024,
+        "q": 1,
+        "quoted": 0.58,
+        "actual": 0.552,
+        "gap_pp": 2.8
+      },
+      {
+        "quarter": "2024-Q2",
+        "year": 2024,
+        "q": 2,
+        "quoted": 0.641,
+        "actual": 0.541,
+        "gap_pp": 10
+      },
+      {
+        "quarter": "2024-Q3",
+        "year": 2024,
+        "q": 3,
+        "quoted": 0.641,
+        "actual": 0.515,
+        "gap_pp": 12.6
+      },
+      {
+        "quarter": "2024-Q4",
+        "year": 2024,
+        "q": 4,
+        "quoted": 0.563,
+        "actual": 0.545,
+        "gap_pp": 1.7
+      },
+      {
+        "quarter": "2025-Q1",
+        "year": 2025,
+        "q": 1,
+        "quoted": 0.605,
+        "actual": 0.516,
+        "gap_pp": 8.9
+      },
+      {
+        "quarter": "2025-Q2",
+        "year": 2025,
+        "q": 2,
+        "quoted": 0.614,
+        "actual": 0.516,
+        "gap_pp": 9.8
+      },
+      {
+        "quarter": "2025-Q3",
+        "year": 2025,
+        "q": 3,
+        "quoted": 0.638,
+        "actual": 0.527,
+        "gap_pp": 11.1
+      },
+      {
+        "quarter": "2025-Q4",
+        "year": 2025,
+        "q": 4,
+        "quoted": 0.616,
+        "actual": 0.538,
+        "gap_pp": 7.8
+      }
+    ],
+    "MBDIV": [
+      {
+        "quarter": "2022-Q1",
+        "year": 2022,
+        "q": 1,
+        "quoted": 0.838,
+        "actual": 0.756,
+        "gap_pp": 8.2
+      },
+      {
+        "quarter": "2022-Q2",
+        "year": 2022,
+        "q": 2,
+        "quoted": 0.832,
+        "actual": 0.764,
+        "gap_pp": 6.8
+      },
+      {
+        "quarter": "2022-Q3",
+        "year": 2022,
+        "q": 3,
+        "quoted": 0.783,
+        "actual": 0.758,
+        "gap_pp": 2.5
+      },
+      {
+        "quarter": "2022-Q4",
+        "year": 2022,
+        "q": 4,
+        "quoted": 0.812,
+        "actual": 0.822,
+        "gap_pp": -1
+      },
+      {
+        "quarter": "2023-Q1",
+        "year": 2023,
+        "q": 1,
+        "quoted": 0.812,
+        "actual": 0.789,
+        "gap_pp": 2.3
+      },
+      {
+        "quarter": "2023-Q2",
+        "year": 2023,
+        "q": 2,
+        "quoted": 0.844,
+        "actual": 0.798,
+        "gap_pp": 4.6
+      },
+      {
+        "quarter": "2023-Q3",
+        "year": 2023,
+        "q": 3,
+        "quoted": 0.757,
+        "actual": 0.748,
+        "gap_pp": 0.9
+      },
+      {
+        "quarter": "2023-Q4",
+        "year": 2023,
+        "q": 4,
+        "quoted": 0.8,
+        "actual": 0.792,
+        "gap_pp": 0.8
+      },
+      {
+        "quarter": "2024-Q1",
+        "year": 2024,
+        "q": 1,
+        "quoted": 0.789,
+        "actual": 0.777,
+        "gap_pp": 1.2
+      },
+      {
+        "quarter": "2024-Q2",
+        "year": 2024,
+        "q": 2,
+        "quoted": 0.81,
+        "actual": 0.766,
+        "gap_pp": 4.4
+      },
+      {
+        "quarter": "2024-Q3",
+        "year": 2024,
+        "q": 3,
+        "quoted": 0.796,
+        "actual": 0.74,
+        "gap_pp": 5.6
+      },
+      {
+        "quarter": "2024-Q4",
+        "year": 2024,
+        "q": 4,
+        "quoted": 0.778,
+        "actual": 0.77,
+        "gap_pp": 0.8
+      },
+      {
+        "quarter": "2025-Q1",
+        "year": 2025,
+        "q": 1,
+        "quoted": 0.78,
+        "actual": 0.741,
+        "gap_pp": 3.9
+      },
+      {
+        "quarter": "2025-Q2",
+        "year": 2025,
+        "q": 2,
+        "quoted": 0.784,
+        "actual": 0.741,
+        "gap_pp": 4.3
+      },
+      {
+        "quarter": "2025-Q3",
+        "year": 2025,
+        "q": 3,
+        "quoted": 0.801,
+        "actual": 0.752,
+        "gap_pp": 4.9
+      },
+      {
+        "quarter": "2025-Q4",
+        "year": 2025,
+        "q": 4,
+        "quoted": 0.797,
+        "actual": 0.763,
+        "gap_pp": 3.4
+      }
+    ],
+    "SOPU": [
+      {
+        "quarter": "2022-Q1",
+        "year": 2022,
+        "q": 1,
+        "quoted": 0.652,
+        "actual": 0.451,
+        "gap_pp": 20.1
+      },
+      {
+        "quarter": "2022-Q2",
+        "year": 2022,
+        "q": 2,
+        "quoted": 0.625,
+        "actual": 0.459,
+        "gap_pp": 16.6
+      },
+      {
+        "quarter": "2022-Q3",
+        "year": 2022,
+        "q": 3,
+        "quoted": 0.515,
+        "actual": 0.453,
+        "gap_pp": 6.2
+      },
+      {
+        "quarter": "2022-Q4",
+        "year": 2022,
+        "q": 4,
+        "quoted": 0.493,
+        "actual": 0.517,
+        "gap_pp": -2.4
+      },
+      {
+        "quarter": "2023-Q1",
+        "year": 2023,
+        "q": 1,
+        "quoted": 0.539,
+        "actual": 0.484,
+        "gap_pp": 5.5
+      },
+      {
+        "quarter": "2023-Q2",
+        "year": 2023,
+        "q": 2,
+        "quoted": 0.605,
+        "actual": 0.493,
+        "gap_pp": 11.2
+      },
+      {
+        "quarter": "2023-Q3",
+        "year": 2023,
+        "q": 3,
+        "quoted": 0.466,
+        "actual": 0.443,
+        "gap_pp": 2.3
+      },
+      {
+        "quarter": "2023-Q4",
+        "year": 2023,
+        "q": 4,
+        "quoted": 0.506,
+        "actual": 0.487,
+        "gap_pp": 1.9
+      },
+      {
+        "quarter": "2024-Q1",
+        "year": 2024,
+        "q": 1,
+        "quoted": 0.502,
+        "actual": 0.472,
+        "gap_pp": 3
+      },
+      {
+        "quarter": "2024-Q2",
+        "year": 2024,
+        "q": 2,
+        "quoted": 0.569,
+        "actual": 0.461,
+        "gap_pp": 10.8
+      },
+      {
+        "quarter": "2024-Q3",
+        "year": 2024,
+        "q": 3,
+        "quoted": 0.571,
+        "actual": 0.435,
+        "gap_pp": 13.6
+      },
+      {
+        "quarter": "2024-Q4",
+        "year": 2024,
+        "q": 4,
+        "quoted": 0.484,
+        "actual": 0.465,
+        "gap_pp": 1.9
+      },
+      {
+        "quarter": "2025-Q1",
+        "year": 2025,
+        "q": 1,
+        "quoted": 0.532,
+        "actual": 0.436,
+        "gap_pp": 9.6
+      },
+      {
+        "quarter": "2025-Q2",
+        "year": 2025,
+        "q": 2,
+        "quoted": 0.541,
+        "actual": 0.436,
+        "gap_pp": 10.5
+      },
+      {
+        "quarter": "2025-Q3",
+        "year": 2025,
+        "q": 3,
+        "quoted": 0.567,
+        "actual": 0.447,
+        "gap_pp": 12
+      },
+      {
+        "quarter": "2025-Q4",
+        "year": 2025,
+        "q": 4,
+        "quoted": 0.542,
+        "actual": 0.458,
+        "gap_pp": 8.4
+      }
+    ]
+  },
   "commodity_group_margins": [
-    { "group": "BKAES", "description": "Electric Gear Pumps", "db1_margin": 0.762, "db2_margin": 0.680, "fixed_overhead_pp": 8.2, "revenue_eur": 12300000 },
-    { "group": "BKAGG", "description": "Standard Gear Pumps", "db1_margin": 0.646, "db2_margin": 0.537, "fixed_overhead_pp": 10.9, "revenue_eur": 5300000 },
-    { "group": "BKAIZ", "description": "Internal Gear Pumps", "db1_margin": 0.654, "db2_margin": 0.544, "fixed_overhead_pp": 11.0, "revenue_eur": 564000 },
-    { "group": "MBDIV", "description": "Special Components", "db1_margin": 0.821, "db2_margin": 0.772, "fixed_overhead_pp": 4.9, "revenue_eur": 107024 },
-    { "group": "SOPU", "description": "Screw Pumps", "db1_margin": 0.585, "db2_margin": 0.464, "fixed_overhead_pp": 12.1, "revenue_eur": 170000 }
+    {
+      "group": "BKAES",
+      "description": "Electric Gear Pumps",
+      "db1_margin": 0.762,
+      "db2_margin": 0.68,
+      "fixed_overhead_pp": 8.2,
+      "revenue_eur": 12300000
+    },
+    {
+      "group": "BKAGG",
+      "description": "Standard Gear Pumps",
+      "db1_margin": 0.646,
+      "db2_margin": 0.537,
+      "fixed_overhead_pp": 10.9,
+      "revenue_eur": 5300000
+    },
+    {
+      "group": "BKAIZ",
+      "description": "Internal Gear Pumps",
+      "db1_margin": 0.654,
+      "db2_margin": 0.544,
+      "fixed_overhead_pp": 11,
+      "revenue_eur": 564000
+    },
+    {
+      "group": "MBDIV",
+      "description": "Special Components",
+      "db1_margin": 0.821,
+      "db2_margin": 0.772,
+      "fixed_overhead_pp": 4.9,
+      "revenue_eur": 107024
+    },
+    {
+      "group": "SOPU",
+      "description": "Screw Pumps",
+      "db1_margin": 0.585,
+      "db2_margin": 0.464,
+      "fixed_overhead_pp": 12.1,
+      "revenue_eur": 170000
+    }
   ],
   "customer_margin_gaps": [
-    { "customer_id": "101690", "name": "Customer 101690", "revenue_eur": 1053000, "actual_margin": 0.541, "quoted_margin": 0.775, "gap_pp": 23.4, "impact_eur": 246402, "trend": "down" },
-    { "customer_id": "100850", "name": "Customer 100850", "revenue_eur": 187000, "actual_margin": 0.541, "quoted_margin": 0.730, "gap_pp": 18.9, "impact_eur": 35343, "trend": "flat" },
-    { "customer_id": "101728", "name": "Customer 101728", "revenue_eur": 299000, "actual_margin": 0.537, "quoted_margin": 0.717, "gap_pp": 18.0, "impact_eur": 53820, "trend": "up" },
-    { "customer_id": "101887", "name": "Customer 101887", "revenue_eur": 312000, "actual_margin": 0.421, "quoted_margin": 0.596, "gap_pp": 17.6, "impact_eur": 54912, "trend": "down" },
-    { "customer_id": "100883", "name": "Customer 100883", "revenue_eur": 847000, "actual_margin": 0.498, "quoted_margin": 0.645, "gap_pp": 14.7, "impact_eur": 124509, "trend": "flat" },
-    { "customer_id": "101487", "name": "Customer 101487", "revenue_eur": 509000, "actual_margin": 0.559, "quoted_margin": 0.693, "gap_pp": 13.4, "impact_eur": 68206, "trend": "up" },
-    { "customer_id": "101531", "name": "Customer 101531", "revenue_eur": 468000, "actual_margin": 0.286, "quoted_margin": 0.412, "gap_pp": 12.6, "impact_eur": 58968, "trend": "down" },
-    { "customer_id": "100989", "name": "Customer 100989", "revenue_eur": 445000, "actual_margin": 0.485, "quoted_margin": 0.603, "gap_pp": 11.8, "impact_eur": 52510, "trend": "down" },
-    { "customer_id": "103466", "name": "Customer 103466", "revenue_eur": 410000, "actual_margin": 0.088, "quoted_margin": 0.198, "gap_pp": 11.0, "impact_eur": 45100, "trend": "down" },
-    { "customer_id": "101755", "name": "Customer 101755", "revenue_eur": 283000, "actual_margin": 0.405, "quoted_margin": 0.510, "gap_pp": 10.5, "impact_eur": 29715, "trend": "flat" },
-    { "customer_id": "101900", "name": "Customer 101900", "revenue_eur": 551000, "actual_margin": 0.676, "quoted_margin": 0.775, "gap_pp": 9.9, "impact_eur": 54549, "trend": "down" },
-    { "customer_id": "100924", "name": "Customer 100924", "revenue_eur": 314000, "actual_margin": 0.648, "quoted_margin": 0.741, "gap_pp": 9.3, "impact_eur": 29202, "trend": "down" },
-    { "customer_id": "101041", "name": "Customer 101041", "revenue_eur": 242000, "actual_margin": 0.484, "quoted_margin": 0.574, "gap_pp": 9.0, "impact_eur": 21780, "trend": "flat" },
-    { "customer_id": "101043", "name": "Customer 101043", "revenue_eur": 234000, "actual_margin": 0.445, "quoted_margin": 0.530, "gap_pp": 8.5, "impact_eur": 19890, "trend": "up" },
-    { "customer_id": "101244", "name": "Customer 101244", "revenue_eur": 220000, "actual_margin": 0.655, "quoted_margin": 0.733, "gap_pp": 7.8, "impact_eur": 17160, "trend": "flat" }
+    {
+      "customer_id": "101690",
+      "name": "Customer 101690",
+      "primary_commodity": "BKAGG",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 284310,
+          "actual_margin": 0.552,
+          "quoted_margin": 0.833,
+          "gap_pp": 28.1,
+          "impact_eur": 79834,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 263250,
+          "actual_margin": 0.53,
+          "quoted_margin": 0.741,
+          "gap_pp": 21.1,
+          "impact_eur": 55440,
+          "trend": "down"
+        },
+        "2024": {
+          "revenue_eur": 231660,
+          "actual_margin": 0.514,
+          "quoted_margin": 0.771,
+          "gap_pp": 25.7,
+          "impact_eur": 59629,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 273780,
+          "actual_margin": 0.525,
+          "quoted_margin": 0.759,
+          "gap_pp": 23.4,
+          "impact_eur": 64065,
+          "trend": "down"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 1053000,
+        "actual_margin": 0.531,
+        "quoted_margin": 0.777,
+        "gap_pp": 24.6,
+        "impact_eur": 259038,
+        "trend": "down"
+      }
+    },
+    {
+      "customer_id": "100850",
+      "name": "Customer 100850",
+      "primary_commodity": "BKAGG",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 50490,
+          "actual_margin": 0.552,
+          "quoted_margin": 0.779,
+          "gap_pp": 22.7,
+          "impact_eur": 11451,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 46750,
+          "actual_margin": 0.53,
+          "quoted_margin": 0.7,
+          "gap_pp": 17,
+          "impact_eur": 7952,
+          "trend": "down"
+        },
+        "2024": {
+          "revenue_eur": 41140,
+          "actual_margin": 0.514,
+          "quoted_margin": 0.722,
+          "gap_pp": 20.8,
+          "impact_eur": 8553,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 48620,
+          "actual_margin": 0.525,
+          "quoted_margin": 0.714,
+          "gap_pp": 18.9,
+          "impact_eur": 9189,
+          "trend": "down"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 187000,
+        "actual_margin": 0.531,
+        "quoted_margin": 0.73,
+        "gap_pp": 19.9,
+        "impact_eur": 37155,
+        "trend": "down"
+      }
+    },
+    {
+      "customer_id": "101728",
+      "name": "Customer 101728",
+      "primary_commodity": "BKAGG",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 80730,
+          "actual_margin": 0.548,
+          "quoted_margin": 0.764,
+          "gap_pp": 21.6,
+          "impact_eur": 17438,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 74750,
+          "actual_margin": 0.526,
+          "quoted_margin": 0.688,
+          "gap_pp": 16.2,
+          "impact_eur": 12109,
+          "trend": "down"
+        },
+        "2024": {
+          "revenue_eur": 65780,
+          "actual_margin": 0.51,
+          "quoted_margin": 0.708,
+          "gap_pp": 19.8,
+          "impact_eur": 13024,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 77740,
+          "actual_margin": 0.521,
+          "quoted_margin": 0.701,
+          "gap_pp": 18,
+          "impact_eur": 13993,
+          "trend": "down"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 299000,
+        "actual_margin": 0.527,
+        "quoted_margin": 0.716,
+        "gap_pp": 18.9,
+        "impact_eur": 56565,
+        "trend": "down"
+      }
+    },
+    {
+      "customer_id": "101887",
+      "name": "Customer 101887",
+      "primary_commodity": "SOPU",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 84240,
+          "actual_margin": 0.442,
+          "quoted_margin": 0.643,
+          "gap_pp": 20.1,
+          "impact_eur": 16953,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 78000,
+          "actual_margin": 0.4,
+          "quoted_margin": 0.627,
+          "gap_pp": 22.7,
+          "impact_eur": 17745,
+          "trend": "up"
+        },
+        "2024": {
+          "revenue_eur": 68640,
+          "actual_margin": 0.379,
+          "quoted_margin": 0.624,
+          "gap_pp": 24.5,
+          "impact_eur": 16817,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 81120,
+          "actual_margin": 0.421,
+          "quoted_margin": 0.596,
+          "gap_pp": 17.5,
+          "impact_eur": 14196,
+          "trend": "down"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 312000,
+        "actual_margin": 0.412,
+        "quoted_margin": 0.623,
+        "gap_pp": 21,
+        "impact_eur": 65651,
+        "trend": "down"
+      }
+    },
+    {
+      "customer_id": "100883",
+      "name": "Customer 100883",
+      "primary_commodity": "BKAGG",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 228690,
+          "actual_margin": 0.508,
+          "quoted_margin": 0.684,
+          "gap_pp": 17.6,
+          "impact_eur": 40341,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 211750,
+          "actual_margin": 0.488,
+          "quoted_margin": 0.62,
+          "gap_pp": 13.2,
+          "impact_eur": 28015,
+          "trend": "down"
+        },
+        "2024": {
+          "revenue_eur": 186340,
+          "actual_margin": 0.473,
+          "quoted_margin": 0.635,
+          "gap_pp": 16.2,
+          "impact_eur": 30131,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 220220,
+          "actual_margin": 0.483,
+          "quoted_margin": 0.63,
+          "gap_pp": 14.7,
+          "impact_eur": 32372,
+          "trend": "down"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 847000,
+        "actual_margin": 0.489,
+        "quoted_margin": 0.643,
+        "gap_pp": 15.4,
+        "impact_eur": 130760,
+        "trend": "down"
+      }
+    },
+    {
+      "customer_id": "101487",
+      "name": "Customer 101487",
+      "primary_commodity": "BKAIZ",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 137430,
+          "actual_margin": 0.548,
+          "quoted_margin": 0.722,
+          "gap_pp": 17.4,
+          "impact_eur": 23940,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 127250,
+          "actual_margin": 0.559,
+          "quoted_margin": 0.706,
+          "gap_pp": 14.7,
+          "impact_eur": 18757,
+          "trend": "down"
+        },
+        "2024": {
+          "revenue_eur": 111980,
+          "actual_margin": 0.57,
+          "quoted_margin": 0.704,
+          "gap_pp": 13.4,
+          "impact_eur": 15005,
+          "trend": "down"
+        },
+        "2025": {
+          "revenue_eur": 132340,
+          "actual_margin": 0.576,
+          "quoted_margin": 0.683,
+          "gap_pp": 10.7,
+          "impact_eur": 14187,
+          "trend": "down"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 509000,
+        "actual_margin": 0.563,
+        "quoted_margin": 0.704,
+        "gap_pp": 14.1,
+        "impact_eur": 71784,
+        "trend": "down"
+      }
+    },
+    {
+      "customer_id": "101531",
+      "name": "Customer 101531",
+      "primary_commodity": "SOPU",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 126360,
+          "actual_margin": 0.3,
+          "quoted_margin": 0.445,
+          "gap_pp": 14.5,
+          "impact_eur": 18310,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 117000,
+          "actual_margin": 0.272,
+          "quoted_margin": 0.435,
+          "gap_pp": 16.4,
+          "impact_eur": 19165,
+          "trend": "up"
+        },
+        "2024": {
+          "revenue_eur": 102960,
+          "actual_margin": 0.257,
+          "quoted_margin": 0.434,
+          "gap_pp": 17.6,
+          "impact_eur": 18162,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 121680,
+          "actual_margin": 0.286,
+          "quoted_margin": 0.412,
+          "gap_pp": 12.6,
+          "impact_eur": 15332,
+          "trend": "down"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 468000,
+        "actual_margin": 0.28,
+        "quoted_margin": 0.432,
+        "gap_pp": 15.2,
+        "impact_eur": 70949,
+        "trend": "down"
+      }
+    },
+    {
+      "customer_id": "100989",
+      "name": "Customer 100989",
+      "primary_commodity": "SOPU",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 120150,
+          "actual_margin": 0.509,
+          "quoted_margin": 0.645,
+          "gap_pp": 13.6,
+          "impact_eur": 16304,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 111250,
+          "actual_margin": 0.461,
+          "quoted_margin": 0.614,
+          "gap_pp": 15.3,
+          "impact_eur": 17066,
+          "trend": "up"
+        },
+        "2024": {
+          "revenue_eur": 97900,
+          "actual_margin": 0.436,
+          "quoted_margin": 0.602,
+          "gap_pp": 16.5,
+          "impact_eur": 16173,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 115700,
+          "actual_margin": 0.485,
+          "quoted_margin": 0.603,
+          "gap_pp": 11.8,
+          "impact_eur": 13653,
+          "trend": "down"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 445000,
+        "actual_margin": 0.475,
+        "quoted_margin": 0.617,
+        "gap_pp": 14.2,
+        "impact_eur": 63266,
+        "trend": "down"
+      }
+    },
+    {
+      "customer_id": "103466",
+      "name": "Customer 103466",
+      "primary_commodity": "SOPU",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 110700,
+          "actual_margin": 0.092,
+          "quoted_margin": 0.219,
+          "gap_pp": 12.7,
+          "impact_eur": 14004,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 102500,
+          "actual_margin": 0.084,
+          "quoted_margin": 0.227,
+          "gap_pp": 14.3,
+          "impact_eur": 14658,
+          "trend": "up"
+        },
+        "2024": {
+          "revenue_eur": 90200,
+          "actual_margin": 0.079,
+          "quoted_margin": 0.233,
+          "gap_pp": 15.4,
+          "impact_eur": 13891,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 106600,
+          "actual_margin": 0.088,
+          "quoted_margin": 0.198,
+          "gap_pp": 11,
+          "impact_eur": 11726,
+          "trend": "down"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 410000,
+        "actual_margin": 0.086,
+        "quoted_margin": 0.219,
+        "gap_pp": 13.3,
+        "impact_eur": 54333,
+        "trend": "down"
+      }
+    },
+    {
+      "customer_id": "101755",
+      "name": "Customer 101755",
+      "primary_commodity": "SOPU",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 76410,
+          "actual_margin": 0.425,
+          "quoted_margin": 0.546,
+          "gap_pp": 12.1,
+          "impact_eur": 9227,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 70750,
+          "actual_margin": 0.385,
+          "quoted_margin": 0.521,
+          "gap_pp": 13.6,
+          "impact_eur": 9657,
+          "trend": "up"
+        },
+        "2024": {
+          "revenue_eur": 62260,
+          "actual_margin": 0.365,
+          "quoted_margin": 0.512,
+          "gap_pp": 14.7,
+          "impact_eur": 9152,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 73580,
+          "actual_margin": 0.405,
+          "quoted_margin": 0.51,
+          "gap_pp": 10.5,
+          "impact_eur": 7726,
+          "trend": "down"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 283000,
+        "actual_margin": 0.397,
+        "quoted_margin": 0.523,
+        "gap_pp": 12.6,
+        "impact_eur": 35746,
+        "trend": "down"
+      }
+    },
+    {
+      "customer_id": "101900",
+      "name": "Customer 101900",
+      "primary_commodity": "BKAES",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 148770,
+          "actual_margin": 0.676,
+          "quoted_margin": 0.75,
+          "gap_pp": 7.4,
+          "impact_eur": 11046,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 137750,
+          "actual_margin": 0.669,
+          "quoted_margin": 0.729,
+          "gap_pp": 5.9,
+          "impact_eur": 8182,
+          "trend": "down"
+        },
+        "2024": {
+          "revenue_eur": 121220,
+          "actual_margin": 0.656,
+          "quoted_margin": 0.74,
+          "gap_pp": 8.4,
+          "impact_eur": 10201,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 143260,
+          "actual_margin": 0.662,
+          "quoted_margin": 0.761,
+          "gap_pp": 9.9,
+          "impact_eur": 14183,
+          "trend": "up"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 551000,
+        "actual_margin": 0.666,
+        "quoted_margin": 0.745,
+        "gap_pp": 7.9,
+        "impact_eur": 43639,
+        "trend": "up"
+      }
+    },
+    {
+      "customer_id": "100924",
+      "name": "Customer 100924",
+      "primary_commodity": "BKAES",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 84780,
+          "actual_margin": 0.648,
+          "quoted_margin": 0.718,
+          "gap_pp": 7,
+          "impact_eur": 5913,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 78500,
+          "actual_margin": 0.642,
+          "quoted_margin": 0.697,
+          "gap_pp": 5.6,
+          "impact_eur": 4380,
+          "trend": "down"
+        },
+        "2024": {
+          "revenue_eur": 69080,
+          "actual_margin": 0.629,
+          "quoted_margin": 0.708,
+          "gap_pp": 7.9,
+          "impact_eur": 5461,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 81640,
+          "actual_margin": 0.635,
+          "quoted_margin": 0.728,
+          "gap_pp": 9.3,
+          "impact_eur": 7593,
+          "trend": "up"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 314000,
+        "actual_margin": 0.639,
+        "quoted_margin": 0.713,
+        "gap_pp": 7.4,
+        "impact_eur": 23302,
+        "trend": "up"
+      }
+    },
+    {
+      "customer_id": "101041",
+      "name": "Customer 101041",
+      "primary_commodity": "BKAGG",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 65340,
+          "actual_margin": 0.494,
+          "quoted_margin": 0.602,
+          "gap_pp": 10.8,
+          "impact_eur": 7057,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 60500,
+          "actual_margin": 0.474,
+          "quoted_margin": 0.555,
+          "gap_pp": 8.1,
+          "impact_eur": 4900,
+          "trend": "down"
+        },
+        "2024": {
+          "revenue_eur": 53240,
+          "actual_margin": 0.46,
+          "quoted_margin": 0.559,
+          "gap_pp": 9.9,
+          "impact_eur": 5271,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 62920,
+          "actual_margin": 0.469,
+          "quoted_margin": 0.559,
+          "gap_pp": 9,
+          "impact_eur": 5663,
+          "trend": "down"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 242000,
+        "actual_margin": 0.475,
+        "quoted_margin": 0.57,
+        "gap_pp": 9.5,
+        "impact_eur": 22891,
+        "trend": "down"
+      }
+    },
+    {
+      "customer_id": "101043",
+      "name": "Customer 101043",
+      "primary_commodity": "BKAGG",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 63180,
+          "actual_margin": 0.454,
+          "quoted_margin": 0.556,
+          "gap_pp": 10.2,
+          "impact_eur": 6444,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 58500,
+          "actual_margin": 0.436,
+          "quoted_margin": 0.513,
+          "gap_pp": 7.7,
+          "impact_eur": 4475,
+          "trend": "down"
+        },
+        "2024": {
+          "revenue_eur": 51480,
+          "actual_margin": 0.423,
+          "quoted_margin": 0.516,
+          "gap_pp": 9.4,
+          "impact_eur": 4813,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 60840,
+          "actual_margin": 0.432,
+          "quoted_margin": 0.517,
+          "gap_pp": 8.5,
+          "impact_eur": 5171,
+          "trend": "down"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 234000,
+        "actual_margin": 0.437,
+        "quoted_margin": 0.526,
+        "gap_pp": 8.9,
+        "impact_eur": 20908,
+        "trend": "down"
+      }
+    },
+    {
+      "customer_id": "101244",
+      "name": "Customer 101244",
+      "primary_commodity": "BKAES",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 59400,
+          "actual_margin": 0.655,
+          "quoted_margin": 0.714,
+          "gap_pp": 5.8,
+          "impact_eur": 3475,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 55000,
+          "actual_margin": 0.648,
+          "quoted_margin": 0.695,
+          "gap_pp": 4.7,
+          "impact_eur": 2574,
+          "trend": "down"
+        },
+        "2024": {
+          "revenue_eur": 48400,
+          "actual_margin": 0.635,
+          "quoted_margin": 0.702,
+          "gap_pp": 6.6,
+          "impact_eur": 3209,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 57200,
+          "actual_margin": 0.642,
+          "quoted_margin": 0.72,
+          "gap_pp": 7.8,
+          "impact_eur": 4462,
+          "trend": "up"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 220000,
+        "actual_margin": 0.645,
+        "quoted_margin": 0.708,
+        "gap_pp": 6.3,
+        "impact_eur": 13794,
+        "trend": "up"
+      }
+    },
+    {
+      "customer_id": "101858",
+      "name": "Customer 101858",
+      "primary_commodity": "MBDIV",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 52650,
+          "actual_margin": 0.774,
+          "quoted_margin": 0.82,
+          "gap_pp": 4.6,
+          "impact_eur": 2401,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 48750,
+          "actual_margin": 0.782,
+          "quoted_margin": 0.835,
+          "gap_pp": 5.3,
+          "impact_eur": 2593,
+          "trend": "up"
+        },
+        "2024": {
+          "revenue_eur": 42900,
+          "actual_margin": 0.766,
+          "quoted_margin": 0.827,
+          "gap_pp": 6.1,
+          "impact_eur": 2608,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 50700,
+          "actual_margin": 0.789,
+          "quoted_margin": 0.865,
+          "gap_pp": 7.6,
+          "impact_eur": 3853,
+          "trend": "up"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 195000,
+        "actual_margin": 0.778,
+        "quoted_margin": 0.837,
+        "gap_pp": 5.9,
+        "impact_eur": 11476,
+        "trend": "up"
+      }
+    },
+    {
+      "customer_id": "100913",
+      "name": "Customer 100913",
+      "primary_commodity": "MBDIV",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 34560,
+          "actual_margin": 0.8,
+          "quoted_margin": 0.842,
+          "gap_pp": 4.2,
+          "impact_eur": 1452,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 32000,
+          "actual_margin": 0.808,
+          "quoted_margin": 0.857,
+          "gap_pp": 4.9,
+          "impact_eur": 1568,
+          "trend": "up"
+        },
+        "2024": {
+          "revenue_eur": 28160,
+          "actual_margin": 0.792,
+          "quoted_margin": 0.848,
+          "gap_pp": 5.6,
+          "impact_eur": 1577,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 33280,
+          "actual_margin": 0.816,
+          "quoted_margin": 0.886,
+          "gap_pp": 7,
+          "impact_eur": 2330,
+          "trend": "up"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 128000,
+        "actual_margin": 0.804,
+        "quoted_margin": 0.859,
+        "gap_pp": 5.4,
+        "impact_eur": 6926,
+        "trend": "up"
+      }
+    },
+    {
+      "customer_id": "101181",
+      "name": "Customer 101181",
+      "primary_commodity": "BKAIZ",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 92070,
+          "actual_margin": 0.57,
+          "quoted_margin": 0.711,
+          "gap_pp": 14,
+          "impact_eur": 12927,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 85250,
+          "actual_margin": 0.582,
+          "quoted_margin": 0.701,
+          "gap_pp": 11.9,
+          "impact_eur": 10128,
+          "trend": "down"
+        },
+        "2024": {
+          "revenue_eur": 75020,
+          "actual_margin": 0.594,
+          "quoted_margin": 0.702,
+          "gap_pp": 10.8,
+          "impact_eur": 8102,
+          "trend": "down"
+        },
+        "2025": {
+          "revenue_eur": 88660,
+          "actual_margin": 0.599,
+          "quoted_margin": 0.686,
+          "gap_pp": 8.6,
+          "impact_eur": 7660,
+          "trend": "down"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 341000,
+        "actual_margin": 0.586,
+        "quoted_margin": 0.7,
+        "gap_pp": 11.4,
+        "impact_eur": 38942,
+        "trend": "down"
+      }
+    },
+    {
+      "customer_id": "100702",
+      "name": "Customer 100702",
+      "primary_commodity": "BKAES",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 166590,
+          "actual_margin": 0.734,
+          "quoted_margin": 0.79,
+          "gap_pp": 5.6,
+          "impact_eur": 9246,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 154250,
+          "actual_margin": 0.727,
+          "quoted_margin": 0.771,
+          "gap_pp": 4.4,
+          "impact_eur": 6849,
+          "trend": "down"
+        },
+        "2024": {
+          "revenue_eur": 135740,
+          "actual_margin": 0.712,
+          "quoted_margin": 0.775,
+          "gap_pp": 6.3,
+          "impact_eur": 8538,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 160420,
+          "actual_margin": 0.719,
+          "quoted_margin": 0.793,
+          "gap_pp": 7.4,
+          "impact_eur": 11871,
+          "trend": "up"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 617000,
+        "actual_margin": 0.724,
+        "quoted_margin": 0.783,
+        "gap_pp": 5.9,
+        "impact_eur": 36539,
+        "trend": "up"
+      }
+    },
+    {
+      "customer_id": "101708",
+      "name": "Customer 101708",
+      "primary_commodity": "BKAES",
+      "yearly": {
+        "2022": {
+          "revenue_eur": 122310,
+          "actual_margin": 0.756,
+          "quoted_margin": 0.804,
+          "gap_pp": 4.8,
+          "impact_eur": 5871,
+          "trend": "flat"
+        },
+        "2023": {
+          "revenue_eur": 113250,
+          "actual_margin": 0.748,
+          "quoted_margin": 0.787,
+          "gap_pp": 3.8,
+          "impact_eur": 4349,
+          "trend": "down"
+        },
+        "2024": {
+          "revenue_eur": 99660,
+          "actual_margin": 0.733,
+          "quoted_margin": 0.788,
+          "gap_pp": 5.4,
+          "impact_eur": 5422,
+          "trend": "up"
+        },
+        "2025": {
+          "revenue_eur": 117780,
+          "actual_margin": 0.741,
+          "quoted_margin": 0.805,
+          "gap_pp": 6.4,
+          "impact_eur": 7538,
+          "trend": "up"
+        }
+      },
+      "all_time": {
+        "revenue_eur": 453000,
+        "actual_margin": 0.745,
+        "quoted_margin": 0.796,
+        "gap_pp": 5.1,
+        "impact_eur": 23307,
+        "trend": "up"
+      }
+    }
   ]
 }
