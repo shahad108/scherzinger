@@ -1,0 +1,502 @@
+{
+  "last_updated": "2026-04-05T22:03:37.420Z",
+  "kpis": {
+    "total_active_skus": 1015,
+    "skus_by_commodity": {
+      "BKAES": 627,
+      "BKAGG": 370,
+      "BKAIZ": 13,
+      "MBKUEHL": 1,
+      "SOPU": 4
+    },
+    "avg_db2_margin": 0.634,
+    "avg_db2_by_commodity": {
+      "BKAES": 0.68,
+      "BKAGG": 0.537,
+      "BKAIZ": 0.544,
+      "MBKUEHL": 0.085,
+      "SOPU": 0.464
+    },
+    "skus_below_target": {
+      "warning": 145,
+      "critical": 62,
+      "target_pct": 0.5,
+      "critical_pct": 0.25
+    },
+    "skus_below_target_by_commodity": {
+      "BKAES": {
+        "warning": 52,
+        "critical": 18
+      },
+      "BKAGG": {
+        "warning": 79,
+        "critical": 31
+      },
+      "BKAIZ": {
+        "warning": 4,
+        "critical": 2
+      },
+      "MBKUEHL": {
+        "warning": 1,
+        "critical": 1
+      },
+      "SOPU": {
+        "warning": 9,
+        "critical": 10
+      }
+    },
+    "new_product": {
+      "revenue_eur": 1500000,
+      "sku_count": 203,
+      "pct_of_total_revenue": 0.083,
+      "monthly_trend": [
+        42000,
+        68000,
+        85000,
+        94000,
+        112000,
+        128000,
+        145000,
+        161000,
+        172000,
+        183000,
+        196000,
+        204000
+      ]
+    },
+    "top10_concentration_pct": 0.38
+  },
+  "product_type_performance": [
+    {
+      "type": "Zahnradpumpe",
+      "type_en": "Gear Pump",
+      "revenue_eur": 8817000,
+      "db2_margin": 0.625,
+      "articles": 447,
+      "orders": 1916
+    },
+    {
+      "type": "Elektro-Zahnradpumpe",
+      "type_en": "Electric Gear Pump",
+      "revenue_eur": 6149000,
+      "db2_margin": 0.644,
+      "articles": 355,
+      "orders": 1095
+    },
+    {
+      "type": "Zahnrad-Flanschpumpe",
+      "type_en": "Gear Flange Pump",
+      "revenue_eur": 1327000,
+      "db2_margin": 0.639,
+      "articles": 112,
+      "orders": 535
+    },
+    {
+      "type": "Innenzahnringpumpe",
+      "type_en": "Internal Gear Pump",
+      "revenue_eur": 1057000,
+      "db2_margin": 0.549,
+      "articles": 19,
+      "orders": 214
+    },
+    {
+      "type": "Pumpenkopf",
+      "type_en": "Pump Head",
+      "revenue_eur": 847000,
+      "db2_margin": 0.743,
+      "articles": 66,
+      "orders": 334
+    }
+  ],
+  "commodity_scorecard": [
+    {
+      "group": "BKAES",
+      "revenue_eur": 12300000,
+      "db2_margin": 0.68,
+      "win_rate": 0.527,
+      "skus": 627,
+      "orders": 2066
+    },
+    {
+      "group": "BKAGG",
+      "revenue_eur": 5300000,
+      "db2_margin": 0.537,
+      "win_rate": 0.47,
+      "skus": 370,
+      "orders": 1939
+    },
+    {
+      "group": "BKAIZ",
+      "revenue_eur": 564000,
+      "db2_margin": 0.544,
+      "win_rate": 0.612,
+      "skus": 13,
+      "orders": 103
+    },
+    {
+      "group": "SOPU",
+      "revenue_eur": 170000,
+      "db2_margin": 0.464,
+      "win_rate": null,
+      "skus": 6,
+      "orders": 12
+    },
+    {
+      "group": "MBKUEHL",
+      "revenue_eur": 410000,
+      "db2_margin": 0.085,
+      "win_rate": 0.333,
+      "skus": 1,
+      "orders": 12
+    }
+  ],
+  "declining_fast": [
+    {
+      "article": "201773",
+      "description": "Zahnradpumpe",
+      "commodity_group": "BKAGG",
+      "revenue_eur": 50000,
+      "margin_2022": 0.625,
+      "margin_2024": 0.231,
+      "drop_pp": -39.4
+    },
+    {
+      "article": "205169",
+      "description": "Zahnradpumpe",
+      "commodity_group": "BKAGG",
+      "revenue_eur": 63000,
+      "margin_2022": 0.701,
+      "margin_2024": 0.442,
+      "drop_pp": -25.9
+    },
+    {
+      "article": "200832-E",
+      "description": "Elektro-Zahnradpumpe",
+      "commodity_group": "BKAES",
+      "revenue_eur": 162000,
+      "margin_2022": 0.306,
+      "margin_2024": 0.064,
+      "drop_pp": -24.2
+    },
+    {
+      "article": "204604",
+      "description": "Zahnradpumpe",
+      "commodity_group": "BKAGG",
+      "revenue_eur": 240000,
+      "margin_2022": 0.327,
+      "margin_2024": 0.118,
+      "drop_pp": -20.8
+    },
+    {
+      "article": "200834-B",
+      "description": "Elektro-Zahnradpumpe",
+      "commodity_group": "BKAES",
+      "revenue_eur": 124000,
+      "margin_2022": 0.558,
+      "margin_2024": 0.368,
+      "drop_pp": -19
+    }
+  ],
+  "article_enrichment": {
+    "120584": {
+      "product_type": "Zahnradflanschpumpe",
+      "win_rate": 0.736,
+      "lost_revenue_eur": 45610,
+      "customer_count": 13
+    },
+    "200960": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.522,
+      "lost_revenue_eur": 164307,
+      "customer_count": 11
+    },
+    "200979": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.775,
+      "lost_revenue_eur": 58710,
+      "customer_count": 13
+    },
+    "201036": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.725,
+      "lost_revenue_eur": 79881,
+      "customer_count": 13
+    },
+    "201206": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.54,
+      "lost_revenue_eur": 135613,
+      "customer_count": 11
+    },
+    "201263": {
+      "product_type": "Elektro-Innenzahnringpumpe",
+      "win_rate": 0.532,
+      "lost_revenue_eur": 83555,
+      "customer_count": 1
+    },
+    "201272": {
+      "product_type": "Elektro-Innenzahnradpumpe",
+      "win_rate": 0.661,
+      "lost_revenue_eur": 73604,
+      "customer_count": 10
+    },
+    "201397": {
+      "product_type": "Zahnrad-Flanschpumpe",
+      "win_rate": 0.445,
+      "lost_revenue_eur": 236619,
+      "customer_count": 12
+    },
+    "201398": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.611,
+      "lost_revenue_eur": 259105,
+      "customer_count": 15
+    },
+    "201457": {
+      "product_type": "Zahnrad-Flanschpumpe",
+      "win_rate": 0.415,
+      "lost_revenue_eur": 195244,
+      "customer_count": 12
+    },
+    "201791": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.6,
+      "lost_revenue_eur": 80898,
+      "customer_count": 10
+    },
+    "201827": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.684,
+      "lost_revenue_eur": 150064,
+      "customer_count": 12
+    },
+    "201885": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.647,
+      "lost_revenue_eur": 288579,
+      "customer_count": 1
+    },
+    "201888": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.481,
+      "lost_revenue_eur": 174121,
+      "customer_count": 8
+    },
+    "201924": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.499,
+      "lost_revenue_eur": 232449,
+      "customer_count": 1
+    },
+    "201951": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.597,
+      "lost_revenue_eur": 163106,
+      "customer_count": 11
+    },
+    "202071": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.782,
+      "lost_revenue_eur": 80884,
+      "customer_count": 15
+    },
+    "202084": {
+      "product_type": "Innenzahnringpumpe",
+      "win_rate": 0.571,
+      "lost_revenue_eur": 249407,
+      "customer_count": 12
+    },
+    "203076": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.421,
+      "lost_revenue_eur": 224435,
+      "customer_count": 1
+    },
+    "203092": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.533,
+      "lost_revenue_eur": 175625,
+      "customer_count": 12
+    },
+    "203094": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.532,
+      "lost_revenue_eur": 111396,
+      "customer_count": 11
+    },
+    "204235": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.435,
+      "lost_revenue_eur": 287075,
+      "customer_count": 14
+    },
+    "204361": {
+      "product_type": "Zahnradpumpe MV0695",
+      "win_rate": 0.695,
+      "lost_revenue_eur": 101381,
+      "customer_count": 13
+    },
+    "204430": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.483,
+      "lost_revenue_eur": 371316,
+      "customer_count": 11
+    },
+    "204560": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.41,
+      "lost_revenue_eur": 250742,
+      "customer_count": 12
+    },
+    "204562": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.545,
+      "lost_revenue_eur": 113556,
+      "customer_count": 12
+    },
+    "204604": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.684,
+      "lost_revenue_eur": 116755,
+      "customer_count": 12
+    },
+    "204632": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.409,
+      "lost_revenue_eur": 244472,
+      "customer_count": 1
+    },
+    "204743": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.45,
+      "lost_revenue_eur": 262676,
+      "customer_count": 9
+    },
+    "205165": {
+      "product_type": "Zahnradpumpe MV0669",
+      "win_rate": 0.534,
+      "lost_revenue_eur": 169109,
+      "customer_count": 8
+    },
+    "205178": {
+      "product_type": "Zahnradpumpe MV0665",
+      "win_rate": 0.688,
+      "lost_revenue_eur": 150903,
+      "customer_count": 13
+    },
+    "205180": {
+      "product_type": "Zahnradpumpe MV0666",
+      "win_rate": 0.668,
+      "lost_revenue_eur": 66445,
+      "customer_count": 12
+    },
+    "205183": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.524,
+      "lost_revenue_eur": 125194,
+      "customer_count": 10
+    },
+    "205551": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.581,
+      "lost_revenue_eur": 82879,
+      "customer_count": 8
+    },
+    "205592": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.509,
+      "lost_revenue_eur": 207638,
+      "customer_count": 1
+    },
+    "205593": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.642,
+      "lost_revenue_eur": 130621,
+      "customer_count": 8
+    },
+    "300143": {
+      "product_type": "Innenzahnringpumpe",
+      "win_rate": 0.706,
+      "lost_revenue_eur": 195697,
+      "customer_count": 13
+    },
+    "201924-F": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.475,
+      "lost_revenue_eur": 547764,
+      "customer_count": 10
+    },
+    "206028-01": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.259,
+      "lost_revenue_eur": 856145,
+      "customer_count": 8
+    },
+    "205415-B": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.436,
+      "lost_revenue_eur": 333949,
+      "customer_count": 9
+    },
+    "200372-A": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.422,
+      "lost_revenue_eur": 262676,
+      "customer_count": 8
+    },
+    "204702-A": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.511,
+      "lost_revenue_eur": 199686,
+      "customer_count": 11
+    },
+    "201459-I": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.356,
+      "lost_revenue_eur": 322057,
+      "customer_count": 11
+    },
+    "200832-E": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.317,
+      "lost_revenue_eur": 325466,
+      "customer_count": 9
+    },
+    "200834-B": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.778,
+      "lost_revenue_eur": 66569,
+      "customer_count": 8
+    },
+    "204604-B": {
+      "product_type": "Elektro-Zahnradpumpe",
+      "win_rate": 0.8,
+      "lost_revenue_eur": 32648,
+      "customer_count": 7
+    },
+    "205593-A": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.436,
+      "lost_revenue_eur": 159870,
+      "customer_count": 7
+    },
+    "201100-D": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.696,
+      "lost_revenue_eur": 68871,
+      "customer_count": 12
+    },
+    "201438-B": {
+      "product_type": "Zahnrad-Flanschpumpe",
+      "win_rate": 0.681,
+      "lost_revenue_eur": 60864,
+      "customer_count": 11
+    },
+    "205345-A": {
+      "product_type": "Zahnradpumpe",
+      "win_rate": 0.666,
+      "lost_revenue_eur": 60753,
+      "customer_count": 12
+    }
+  }
+}
