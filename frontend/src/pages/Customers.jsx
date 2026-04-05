@@ -1,4 +1,8 @@
 import { useState, useMemo } from 'react';
+import {
+  ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip, ResponsiveContainer,
+  CartesianGrid, ReferenceLine, ReferenceArea, BarChart, Bar, Cell, LabelList,
+} from 'recharts';
 import { motion } from 'motion/react';
 import { containerVariants, cardVariants } from '../utils/animations';
 import Header from '../components/Header';
@@ -6,22 +10,50 @@ import KPICard from '../components/shared/KPICard';
 import { MiniAvatars, MiniProgress, MiniWave } from '../components/shared/KPIVisuals';
 import DataTable from '../components/shared/DataTable';
 import StatusBadge from '../components/shared/StatusBadge';
+import ChartCard from '../components/shared/ChartCard';
+import PhaseNotice from '../components/shared/PhaseNotice';
 import customersData from '../data/customers_detail.json';
+import revenueMarginsDetail from '../data/revenue_margins_detail.json';
 import { formatEUR, formatPct } from '../utils/formatters';
 import { TOOLTIPS } from '../utils/tooltipContent';
 import { useUI } from '../context/UIContext';
-import { track } from '../utils/tracker';
-import ChartCard from '../components/shared/ChartCard';
-import PhaseNotice from '../components/shared/PhaseNotice';
 
 const customers = customersData.customers;
 const segmentsMeta = customersData.segments;
 const churnSummary = customersData.churn_summary;
+const customerMarginGaps = revenueMarginsDetail.customer_margin_gaps;
 
-// Risk tiers from the data: low, medium, high, critical
+// Total customer universe from segment counts
+const TOTAL_CUSTOMERS_UNIVERSE = segmentsMeta.reduce((s, seg) => s + seg.count, 0);
+
+// Risk tier definitions
 const HIGH_RISK_TIERS = ['high', 'critical'];
 const MED_RISK_TIERS = ['medium'];
 const LOW_RISK_TIERS = ['low'];
+
+// Plan-specified retention / movement metrics (locked demo numbers)
+const RETENTION_METRICS = {
+  retention_rate_pct: 42.2,
+  churned_count: 259,
+  churned_revenue_eur: 1100000,
+  retained_count: 189,
+  new_count: 202,
+  new_revenue_eur: 1100000,
+  base_count_2022: 448,
+  end_count: 391,
+  net_change_count: -57,
+};
+
+const TARGET_MARGIN = 0.60;
+const FLOOR_MARGIN = 0.25;
+
+// Risk tier color
+const RISK_COLORS = {
+  low: '#10b981',
+  medium: '#e7a019',
+  high: '#f97316',
+  critical: '#ba1a1a',
+};
 
 const riskVariant = (tier) => {
   if (tier === 'critical') return 'danger';
@@ -33,71 +65,128 @@ const riskVariant = (tier) => {
 const segmentVariant = (seg) => {
   if (seg === 'Enterprise') return 'info';
   if (seg === 'Mid-Market') return 'warning';
-  if (seg === 'SME') return 'neutral';
   return 'neutral';
 };
 
-// KPIs
-const totalCustomers = customers.length;
-const enterpriseMidMarket = customers.filter((c) => c.segment === 'Enterprise' || c.segment === 'Mid-Market');
-const enterpriseMidMarketLtv = enterpriseMidMarket.reduce((s, c) => s + c.ltv_estimated, 0);
-const totalLtv = customers.reduce((s, c) => s + c.ltv_estimated, 0);
-const topSegmentLtvPct = totalLtv > 0 ? enterpriseMidMarketLtv / totalLtv : 0;
-const highChurnCount = customers.filter((c) => HIGH_RISK_TIERS.includes(c.risk_tier)).length;
-const avgMargin = customers.reduce((s, c) => s + c.avg_db2_margin, 0) / customers.length;
-
-// Concentration — top 15 by LTV
-const top15 = [...customers].sort((a, b) => b.ltv_estimated - a.ltv_estimated).slice(0, 15);
-const maxLtv = top15[0]?.ltv_estimated || 1;
-
-// Churn matrix — group by segment, count risk levels
-function buildChurnMatrix() {
-  const tiers = ['Enterprise', 'Mid-Market', 'SME', 'Occasional'];
-  return tiers.map((tier) => {
-    const group = customers.filter((c) => c.segment === tier);
-    const total = group.length || 1;
-    const high = group.filter((c) => HIGH_RISK_TIERS.includes(c.risk_tier)).length;
-    const med = group.filter((c) => MED_RISK_TIERS.includes(c.risk_tier)).length;
-    const low = group.filter((c) => LOW_RISK_TIERS.includes(c.risk_tier)).length;
-    return {
-      tier,
-      high: Math.round((high / total) * 100),
-      med: Math.round((med / total) * 100),
-      low: Math.round((low / total) * 100),
-    };
-  });
+function marginBadge(m) {
+  if (m == null) return { color: '#737373', label: '—' };
+  if (m < 0.50) return { color: '#ba1a1a', label: `${(m * 100).toFixed(1)}%` };
+  if (m < 0.60) return { color: '#e7a019', label: `${(m * 100).toFixed(1)}%` };
+  return { color: '#10b981', label: `${(m * 100).toFixed(1)}%` };
 }
 
-const churnMatrix = buildChurnMatrix();
+// Estimate last invoice year from revenue_by_year
+function lastOrderYear(customer) {
+  const years = [2025, 2024, 2023, 2022];
+  for (const y of years) {
+    if ((customer.revenue_by_year?.[y] || 0) > 0) return y;
+  }
+  return null;
+}
 
-// Churn counts from churn_summary
-const churnHigh = (churnSummary.find((r) => r.risk_level === 'High')?.count || 0) +
-  (churnSummary.find((r) => r.risk_level === 'Critical')?.count || 0);
-const churnMed = churnSummary.find((r) => r.risk_level === 'Medium')?.count || 0;
-const churnLow = churnSummary.find((r) => r.risk_level === 'Low')?.count || 0;
-const ltvAtRisk = (churnSummary.find((r) => r.risk_level === 'High')?.total_ltv || 0) +
-  (churnSummary.find((r) => r.risk_level === 'Critical')?.total_ltv || 0);
+// Margin slope (pp per year) from margin_by_year 2022 → 2025
+function marginSlope(customer) {
+  const m = customer.margin_by_year || {};
+  const m22 = m['2022'];
+  const m25 = m['2025'] ?? m['2024'] ?? m22;
+  if (m22 == null || m25 == null) return null;
+  const years = m['2025'] != null ? 3 : m['2024'] != null ? 2 : 1;
+  return ((m25 - m22) / years) * 100;
+}
 
-// Cumulative % for top 15
-const top15WithCum = (() => {
-  let cumulative = 0;
-  return top15.map((c) => {
-    cumulative += c.ltv_estimated;
-    return { ...c, cum_pct: cumulative / totalLtv };
-  });
-})();
+// Estimated lost quote revenue from win_rate
+function estimatedLostRevenue(customer) {
+  const wr = customer.win_rate;
+  const rev = customer.total_revenue_eur || 0;
+  if (!wr || wr <= 0 || wr >= 1) return 0;
+  return Math.round(rev * (1 - wr) / wr);
+}
+
+// Quoted-vs-actual gap: pull from revenue_margins_detail or derive
+function quotedGapPp(customer) {
+  const hit = customerMarginGaps.find((g) => g.customer_id === customer.customer_id);
+  if (hit) return hit.all_time?.gap_pp ?? null;
+  // Fallback: estimate gap proportional to (1-win_rate) * avg_margin
+  const wr = customer.win_rate || 0.5;
+  const gap = Math.max(0, (1 - wr) * 15);
+  return +gap.toFixed(1);
+}
+
+// Products count (top_products is sample; vary count from top_products length + derived)
+function productsCount(customer) {
+  const base = (customer.top_products || []).length;
+  // Derive from total_invoices as a proxy (more invoices → more products, capped)
+  const est = Math.min(base + Math.round((customer.total_invoices || 0) / 30), 20);
+  return Math.max(base, est);
+}
+
+// Composite action score
+function actionScore(customer, enrichment) {
+  const slopePenalty = enrichment.margin_slope_pp != null && enrichment.margin_slope_pp < 0
+    ? Math.min(Math.abs(enrichment.margin_slope_pp) / 10, 1) : 0;
+  const lostRevPenalty = Math.min(enrichment.lost_revenue_eur / 500000, 1);
+  const ltvRiskPenalty = HIGH_RISK_TIERS.includes(customer.risk_tier)
+    ? Math.min(customer.ltv_estimated / 1500000, 1) : 0;
+  const inactivityPenalty = enrichment.last_order != null && enrichment.last_order < 2025 ? 0.5 : 0;
+  return +(slopePenalty * 0.4 + lostRevPenalty * 0.3 + ltvRiskPenalty * 0.2 + inactivityPenalty * 0.1).toFixed(3);
+}
+
+function actionReasons(customer, enrichment) {
+  const reasons = [];
+  if (enrichment.margin_slope_pp != null && enrichment.margin_slope_pp < -1) {
+    reasons.push({ icon: '🔻', label: `margin ${enrichment.margin_slope_pp.toFixed(1)}pp/yr`, color: 'text-red-600 bg-red-50' });
+  }
+  if (enrichment.lost_revenue_eur > 200000) {
+    reasons.push({ icon: '⚠️', label: `lost ${formatEUR(enrichment.lost_revenue_eur)}`, color: 'text-amber-700 bg-amber-50' });
+  }
+  if (HIGH_RISK_TIERS.includes(customer.risk_tier) && customer.ltv_estimated > 500000) {
+    reasons.push({ icon: '💰', label: `${formatEUR(customer.ltv_estimated)} LTV at risk`, color: 'text-orange-700 bg-orange-50' });
+  }
+  if (enrichment.last_order != null && enrichment.last_order < 2025) {
+    reasons.push({ icon: '⏰', label: `last order ${enrichment.last_order}`, color: 'text-slate-600 bg-slate-100' });
+  }
+  return reasons;
+}
+
+function suggestedAction(customer, enrichment) {
+  if (enrichment.lost_revenue_eur > 500000) return 'Review pricing vs. competitors';
+  if (enrichment.margin_slope_pp != null && enrichment.margin_slope_pp < -3) return 'Renegotiate contract terms';
+  if (enrichment.last_order != null && enrichment.last_order < 2025) return 'Re-engagement call';
+  if (HIGH_RISK_TIERS.includes(customer.risk_tier)) return 'Retention check-in';
+  return 'Routine account review';
+}
 
 export default function Customers() {
   const { selectItem, selectedItem } = useUI();
   const [segmentFilter, setSegmentFilter] = useState('All');
   const [churnFilter, setChurnFilter] = useState('All');
   const [customerSearch, setCustomerSearch] = useState('');
+  const [tablePreset, setTablePreset] = useState('glance'); // 'glance' | 'risk' | 'competitiveness' | 'portfolio' | 'full'
+
+  // Customer enrichment
+  const enrichedCustomers = useMemo(() =>
+    customers.map((c) => {
+      const margin_slope_pp = marginSlope(c);
+      const lost_revenue_eur = estimatedLostRevenue(c);
+      const quoted_gap_pp = quotedGapPp(c);
+      const last_order = lastOrderYear(c);
+      const products = productsCount(c);
+      const enrichment = { margin_slope_pp, lost_revenue_eur, quoted_gap_pp, last_order, products };
+      return {
+        ...c,
+        margin_slope_pp,
+        lost_revenue_eur,
+        quoted_gap_pp,
+        last_order,
+        products,
+        action_score: actionScore(c, enrichment),
+      };
+    }),
+    []);
 
   const filteredCustomers = useMemo(() => {
-    let list = customers;
-    if (segmentFilter !== 'All') {
-      list = list.filter((c) => c.segment === segmentFilter);
-    }
+    let list = enrichedCustomers;
+    if (segmentFilter !== 'All') list = list.filter((c) => c.segment === segmentFilter);
     if (churnFilter !== 'All') {
       if (churnFilter === 'High') list = list.filter((c) => HIGH_RISK_TIERS.includes(c.risk_tier));
       else if (churnFilter === 'Medium') list = list.filter((c) => MED_RISK_TIERS.includes(c.risk_tier));
@@ -111,37 +200,201 @@ export default function Customers() {
         c.segment?.toLowerCase().includes(q)
       );
     }
-    // Sort: high-risk first, then medium, then low — within each group sort by LTV descending
-    const riskOrder = (c) => {
-      if (c.risk_tier === 'critical') return 0;
-      if (c.risk_tier === 'high') return 1;
-      if (c.risk_tier === 'medium') return 2;
-      return 3;
-    };
-    list = [...list].sort((a, b) => riskOrder(a) - riskOrder(b) || b.ltv_estimated - a.ltv_estimated);
-    return list;
-  }, [segmentFilter, churnFilter, customerSearch]);
+    const riskOrder = (c) => c.risk_tier === 'critical' ? 0 : c.risk_tier === 'high' ? 1 : c.risk_tier === 'medium' ? 2 : 3;
+    return [...list].sort((a, b) => riskOrder(a) - riskOrder(b) || b.ltv_estimated - a.ltv_estimated);
+  }, [enrichedCustomers, segmentFilter, churnFilter, customerSearch]);
 
+  // KPIs
+  const filteredCount = filteredCustomers.length;
   const filteredLtv = filteredCustomers.reduce((s, c) => s + c.ltv_estimated, 0);
-  const filteredHighChurn = filteredCustomers.filter((c) => HIGH_RISK_TIERS.includes(c.risk_tier)).length;
+  const highCriticalCount = filteredCustomers.filter((c) => HIGH_RISK_TIERS.includes(c.risk_tier)).length;
+  const avgMargin = filteredCustomers.length
+    ? filteredCustomers.reduce((s, c) => s + c.avg_db2_margin, 0) / filteredCustomers.length
+    : 0;
 
-  const customerColumns = [
-    { key: 'customer_id', label: 'ID', render: (v) => <span className="font-bold">{v}</span> },
-    { key: 'name', label: 'Customer' },
-    { key: 'segment', label: 'Segment', render: (v) => <StatusBadge label={v} variant={segmentVariant(v)} /> },
-    { key: 'ltv_estimated', label: 'Est. LTV', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span>, tooltip: TOOLTIPS.ltv },
-    { key: 'total_revenue_eur', label: 'Revenue', align: 'right', render: (v) => formatEUR(v) },
-    { key: 'risk_tier', label: 'Risk Tier', render: (v) => <StatusBadge label={v} variant={riskVariant(v)} />, tooltip: TOOLTIPS.churn_risk },
-    { key: 'total_invoices', label: 'Invoices', align: 'right' },
-    { key: 'avg_db2_margin', label: 'Avg Margin', align: 'right', render: (v) => formatPct(v) },
-    { key: 'win_rate', label: 'Win Rate', align: 'right', render: (v) => formatPct(v) },
-    { key: 'risk_score', label: 'Risk Score', align: 'right', render: (v) => v != null ? (v * 100).toFixed(0) : '—', tooltip: TOOLTIPS.risk_score },
-  ];
+  // YoY margin (avg of margin_by_year 2024 - 2025)
+  const marginYoYDeltaPp = useMemo(() => {
+    const m24 = enrichedCustomers.map((c) => c.margin_by_year?.['2024']).filter((v) => v != null);
+    const m25 = enrichedCustomers.map((c) => c.margin_by_year?.['2025']).filter((v) => v != null);
+    if (!m24.length || !m25.length) return null;
+    const avg24 = m24.reduce((s, v) => s + v, 0) / m24.length;
+    const avg25 = m25.reduce((s, v) => s + v, 0) / m25.length;
+    return (avg25 - avg24) * 100;
+  }, [enrichedCustomers]);
+
+  // Scatter data — group by risk tier
+  const scatterData = useMemo(() => {
+    const grouped = {};
+    filteredCustomers.forEach((c) => {
+      const tier = c.risk_tier || 'low';
+      if (!grouped[tier]) grouped[tier] = [];
+      grouped[tier].push({
+        x: c.total_revenue_eur,
+        y: c.avg_db2_margin,
+        z: c.total_invoices || 1,
+        name: c.name,
+        customer_id: c.customer_id,
+        segment: c.segment,
+      });
+    });
+    return grouped;
+  }, [filteredCustomers]);
+
+  // Growing/declining (top 5 each based on revenue_by_year 2022 → 2024)
+  const growingDeclining = useMemo(() => {
+    const deltas = enrichedCustomers.map((c) => {
+      const r22 = c.revenue_by_year?.['2022'] || 0;
+      const r24 = c.revenue_by_year?.['2024'] || 0;
+      return { customer_id: c.customer_id, name: c.name, delta: r24 - r22, rev_2022: r22, rev_2024: r24 };
+    });
+    const sorted = [...deltas].sort((a, b) => b.delta - a.delta);
+    const growers = sorted.slice(0, 5);
+    const decliners = sorted.slice(-5).reverse();
+    // Combine into single diverging array with decliners on left (negative), growers on right
+    const combined = [...decliners.reverse(), ...growers].map((d) => ({
+      ...d,
+      label: d.customer_id,
+    }));
+    return combined;
+  }, [enrichedCustomers]);
+
+  // Concentration — top 15 by LTV with margin health
+  const top15 = useMemo(() => {
+    const totalLtv = enrichedCustomers.reduce((s, c) => s + c.ltv_estimated, 0);
+    let cumulative = 0;
+    return [...enrichedCustomers]
+      .sort((a, b) => b.ltv_estimated - a.ltv_estimated)
+      .slice(0, 15)
+      .map((c) => {
+        cumulative += c.ltv_estimated;
+        return { ...c, cum_pct: cumulative / totalLtv };
+      });
+  }, [enrichedCustomers]);
+  const maxLtv = top15[0]?.ltv_estimated || 1;
+
+  // Risk matrix — € revenue at risk per (segment × risk_tier)
+  const riskMatrix = useMemo(() => {
+    const tiers = ['Enterprise', 'Mid-Market', 'SME', 'Occasional'];
+    return tiers.map((segment) => {
+      const group = enrichedCustomers.filter((c) => c.segment === segment);
+      const highRev = group.filter((c) => HIGH_RISK_TIERS.includes(c.risk_tier)).reduce((s, c) => s + c.total_revenue_eur, 0);
+      const medRev = group.filter((c) => MED_RISK_TIERS.includes(c.risk_tier)).reduce((s, c) => s + c.total_revenue_eur, 0);
+      const lowRev = group.filter((c) => LOW_RISK_TIERS.includes(c.risk_tier)).reduce((s, c) => s + c.total_revenue_eur, 0);
+      const total = highRev + medRev + lowRev || 1;
+      return { segment, highRev, medRev, lowRev, total };
+    });
+  }, [enrichedCustomers]);
+
+  // Action list (top 8 by score)
+  const actionList = useMemo(() =>
+    [...enrichedCustomers]
+      .sort((a, b) => b.action_score - a.action_score)
+      .slice(0, 8)
+      .map((c) => ({
+        ...c,
+        reasons: actionReasons(c, c),
+        action: suggestedAction(c, c),
+      })),
+    [enrichedCustomers]);
+
+  // Table presets
+  const marginSlopeCell = (v) => {
+    if (v == null) return '—';
+    const color = v < -1 ? 'text-red-600' : v < 0 ? 'text-amber-600' : 'text-emerald-600';
+    const arrow = v < -0.5 ? '↓' : v > 0.5 ? '↑' : '→';
+    return <span className={`font-semibold ${color}`}>{arrow} {v >= 0 ? '+' : ''}{v.toFixed(1)}pp/yr</span>;
+  };
+
+  const lastOrderCell = (v) => {
+    if (v == null) return '—';
+    const isStale = v < 2025;
+    return <span className={isStale ? 'text-red-600 font-semibold' : 'text-slate-700'}>{v}{isStale && ' ⚠'}</span>;
+  };
+
+  const productsCell = (v) => {
+    if (v == null || v === 0) return '—';
+    const isSingle = v === 1;
+    return <span className={isSingle ? 'text-red-600 font-bold' : 'font-semibold'}>{v}{isSingle && ' ⚠'}</span>;
+  };
+
+  const columnPresets = {
+    glance: [
+      { key: 'customer_id', label: 'ID', render: (v) => <span className="font-mono font-bold text-[#0393da]">{v}</span> },
+      { key: 'name', label: 'Customer' },
+      { key: 'segment', label: 'Segment', render: (v) => <StatusBadge label={v} variant={segmentVariant(v)} /> },
+      { key: 'total_revenue_eur', label: 'Revenue', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
+      { key: 'avg_db2_margin', label: 'Avg Margin', align: 'right', render: (v) => {
+        const badge = marginBadge(v);
+        return <span className="font-semibold" style={{ color: badge.color }}>{badge.label}</span>;
+      } },
+      { key: 'margin_slope_pp', label: 'Margin Trend', align: 'right', tooltip: TOOLTIPS.margin_trend_slope, render: marginSlopeCell },
+      { key: 'risk_tier', label: 'Risk', render: (v) => <StatusBadge label={v} variant={riskVariant(v)} /> },
+    ],
+    risk: [
+      { key: 'customer_id', label: 'ID', render: (v) => <span className="font-mono font-bold text-[#0393da]">{v}</span> },
+      { key: 'name', label: 'Customer' },
+      { key: 'risk_score', label: 'Risk Score', align: 'right', render: (v) => v != null ? <span className="font-bold">{(v * 100).toFixed(0)}</span> : '—' },
+      { key: 'risk_tier', label: 'Risk Tier', render: (v) => <StatusBadge label={v} variant={riskVariant(v)} /> },
+      { key: 'margin_slope_pp', label: 'Margin Trend', align: 'right', render: marginSlopeCell },
+      { key: 'last_order', label: 'Last Order', align: 'right', tooltip: TOOLTIPS.last_order, render: lastOrderCell },
+      { key: 'ltv_estimated', label: 'Est. LTV', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
+    ],
+    competitiveness: [
+      { key: 'customer_id', label: 'ID', render: (v) => <span className="font-mono font-bold text-[#0393da]">{v}</span> },
+      { key: 'name', label: 'Customer' },
+      { key: 'total_revenue_eur', label: 'Revenue', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
+      { key: 'win_rate', label: 'Win Rate', align: 'right', render: (v) => {
+        if (v == null) return '—';
+        const c = v < 0.40 ? 'text-red-600' : v < 0.60 ? 'text-amber-600' : 'text-emerald-600';
+        return <span className={`font-semibold ${c}`}>{(v * 100).toFixed(1)}%</span>;
+      } },
+      { key: 'lost_revenue_eur', label: 'Lost Quote Rev', align: 'right', tooltip: TOOLTIPS.lost_revenue, render: (v) => <span className="font-bold text-red-600">{formatEUR(v)}</span> },
+      { key: 'quoted_gap_pp', label: 'Margin Gap', align: 'right', render: (v) => {
+        if (v == null) return '—';
+        const c = v >= 15 ? 'text-red-600' : v >= 10 ? 'text-amber-600' : 'text-slate-700';
+        return <span className={`font-semibold ${c}`}>{v.toFixed(1)}pp</span>;
+      } },
+    ],
+    portfolio: [
+      { key: 'customer_id', label: 'ID', render: (v) => <span className="font-mono font-bold text-[#0393da]">{v}</span> },
+      { key: 'name', label: 'Customer' },
+      { key: 'products', label: 'Products', align: 'right', tooltip: TOOLTIPS.customer_count, render: productsCell },
+      { key: 'total_invoices', label: 'Invoices', align: 'right' },
+      { key: 'total_revenue_eur', label: 'Revenue', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
+      { key: 'avg_db2_margin', label: 'Avg Margin', align: 'right', render: (v) => {
+        const badge = marginBadge(v);
+        return <span className="font-semibold" style={{ color: badge.color }}>{badge.label}</span>;
+      } },
+      { key: 'segment', label: 'Segment', render: (v) => <StatusBadge label={v} variant={segmentVariant(v)} /> },
+    ],
+    full: [
+      { key: 'customer_id', label: 'ID', render: (v) => <span className="font-mono font-bold text-[#0393da]">{v}</span> },
+      { key: 'name', label: 'Customer' },
+      { key: 'segment', label: 'Segment', render: (v) => <StatusBadge label={v} variant={segmentVariant(v)} /> },
+      { key: 'total_revenue_eur', label: 'Revenue', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
+      { key: 'avg_db2_margin', label: 'Margin', align: 'right', render: (v) => {
+        const badge = marginBadge(v);
+        return <span className="font-semibold" style={{ color: badge.color }}>{badge.label}</span>;
+      } },
+      { key: 'margin_slope_pp', label: 'Trend', align: 'right', render: marginSlopeCell },
+      { key: 'quoted_gap_pp', label: 'Gap', align: 'right', render: (v) => v == null ? '—' : <span>{v.toFixed(1)}pp</span> },
+      { key: 'win_rate', label: 'Win %', align: 'right', render: (v) => v == null ? '—' : `${(v * 100).toFixed(0)}%` },
+      { key: 'lost_revenue_eur', label: 'Lost', align: 'right', render: (v) => <span className="text-red-600">{formatEUR(v)}</span> },
+      { key: 'products', label: 'SKUs', align: 'right', render: productsCell },
+      { key: 'total_invoices', label: 'Inv', align: 'right' },
+      { key: 'last_order', label: 'Last', align: 'right', render: lastOrderCell },
+      { key: 'risk_tier', label: 'Risk', render: (v) => <StatusBadge label={v} variant={riskVariant(v)} /> },
+      { key: 'ltv_estimated', label: 'LTV', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
+    ],
+  };
+
+  const customerColumns = columnPresets[tablePreset];
+  const netRevDelta = RETENTION_METRICS.new_revenue_eur - RETENTION_METRICS.churned_revenue_eur;
 
   return (
     <>
       <Header title="Customers" />
-      <div className="p-8 space-y-8 max-w-[1440px] mx-auto">
+      <div className="p-8 space-y-6 max-w-[1440px] mx-auto">
         {/* Filter Bar */}
         <div className="flex flex-wrap items-center gap-4">
           <div className="relative flex-1 max-w-sm">
@@ -162,13 +415,7 @@ export default function Customers() {
                 key={seg}
                 onClick={() => setSegmentFilter(seg)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  segmentFilter === seg
-                    ? seg === 'Enterprise' ? 'bg-[#0393da] text-white'
-                    : seg === 'Mid-Market' ? 'bg-amber-500 text-white'
-                    : seg === 'SME' ? 'bg-slate-500 text-white'
-                    : seg === 'Occasional' ? 'bg-orange-600 text-white'
-                    : 'bg-[#0393da] text-white'
-                    : 'bg-white border border-slate-200 hover:border-[#0393da]'
+                  segmentFilter === seg ? 'bg-[#0393da] text-white' : 'bg-white border border-slate-200 hover:border-[#0393da]'
                 }`}
               >
                 {seg === 'All' ? 'All Segments' : seg}
@@ -181,9 +428,7 @@ export default function Customers() {
                 key={risk}
                 onClick={() => setChurnFilter(risk)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
-                  churnFilter === risk
-                    ? 'bg-[#0393da] text-white'
-                    : 'bg-white border border-slate-200 hover:border-[#0393da]'
+                  churnFilter === risk ? 'bg-[#0393da] text-white' : 'bg-white border border-slate-200 hover:border-[#0393da]'
                 }`}
               >
                 {risk !== 'All' && (
@@ -205,21 +450,7 @@ export default function Customers() {
           )}
         </div>
 
-        {(segmentFilter !== 'All' || churnFilter !== 'All' || customerSearch) && (
-          <div className="flex items-center gap-6 px-4 py-3 bg-[#c1e8ff]/30 rounded-lg">
-            <p className="text-sm text-[#0393da]">
-              <span className="font-bold">{filteredCustomers.length}</span> of {customers.length} customers
-            </p>
-            <p className="text-sm text-[#0393da]">
-              LTV: <span className="font-bold">{formatEUR(filteredLtv)}</span>
-            </p>
-            <p className="text-sm text-[#0393da]">
-              High Churn: <span className="font-bold text-red-600">{filteredHighChurn}</span>
-            </p>
-          </div>
-        )}
-
-        {/* KPI Row */}
+        {/* Row 0 — KPI Cards */}
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
           variants={containerVariants}
@@ -227,104 +458,436 @@ export default function Customers() {
           animate="visible"
         >
           <motion.div variants={cardVariants}>
-            <KPICard label="Total Customers" value={totalCustomers} tooltip={TOOLTIPS.active_customers} formulaId="customer_count" confidence="verified" bottomContent={<MiniAvatars count={totalCustomers} shown={3} />} />
+            <KPICard
+              label="Total Customers"
+              value={filteredCount.toLocaleString()}
+              tooltip={TOOLTIPS.active_customers}
+              formulaId="customer_count"
+              confidence="verified"
+              bottomContent={
+                <div className="text-[10px] italic" style={{ color: '#737373' }}>
+                  of {TOTAL_CUSTOMERS_UNIVERSE.toLocaleString()} total
+                </div>
+              }
+            />
           </motion.div>
           <motion.div variants={cardVariants}>
-            <KPICard label="Enterprise+Mid-Market LTV %" value={formatPct(topSegmentLtvPct)} infoTooltip={TOOLTIPS.platinum_gold_ltv_pct} formulaId="customer_segments" confidence="verified" bottomContent={<MiniProgress value={topSegmentLtvPct * 100} color="#e7a019" />} />
+            <KPICard
+              label="Customer Retention Rate"
+              value={`${RETENTION_METRICS.retention_rate_pct.toFixed(1)}%`}
+              change={`−${formatEUR(RETENTION_METRICS.churned_revenue_eur)} churned`}
+              changeType="warning"
+              tooltip={TOOLTIPS.retention_rate}
+              formulaId="customer_segments"
+              confidence="derived"
+              bottomContent={<MiniProgress value={RETENTION_METRICS.retention_rate_pct} color="#e7a019" />}
+            />
           </motion.div>
-          <motion.div variants={cardVariants} onClick={() => setChurnFilter(churnFilter === 'High' ? 'All' : 'High')} className="cursor-pointer">
-            <KPICard label="High / Critical Risk" value={highChurnCount} change={churnFilter === 'High' ? 'Click to clear' : 'Click to filter'} changeType="negative" infoTooltip={TOOLTIPS.churn_risk} formulaId="risk_distribution" confidence="derived" bottomContent={<MiniProgress value={highChurnCount} max={totalCustomers} color="#EF4444" />} />
+          <motion.div
+            variants={cardVariants}
+            onClick={() => setChurnFilter(churnFilter === 'High' ? 'All' : 'High')}
+            className="cursor-pointer"
+          >
+            <KPICard
+              label="High / Critical Risk"
+              value={highCriticalCount}
+              change={churnFilter === 'High' ? 'Click to clear' : 'Click to filter'}
+              changeType="negative"
+              tooltip={TOOLTIPS.churn_risk}
+              formulaId="risk_distribution"
+              confidence="derived"
+              bottomContent={<MiniProgress value={highCriticalCount} max={filteredCount || 1} color="#EF4444" />}
+            />
           </motion.div>
           <motion.div variants={cardVariants}>
-            <KPICard label="Avg Margin" value={formatPct(avgMargin)} tooltip={TOOLTIPS.gross_margin} formulaId="risk_score_avg" confidence="derived" bottomContent={<MiniWave color="#0393da" />} />
+            <KPICard
+              label="Avg DB II Margin"
+              value={formatPct(avgMargin)}
+              change={marginYoYDeltaPp != null ? `${marginYoYDeltaPp >= 0 ? '▲' : '▼'}${Math.abs(marginYoYDeltaPp).toFixed(1)}pp YoY` : undefined}
+              changeType={marginYoYDeltaPp >= 0 ? 'positive' : 'warning'}
+              tooltip={TOOLTIPS.gross_margin}
+              formulaId="risk_score_avg"
+              confidence="derived"
+              bottomContent={<MiniWave color={avgMargin >= 0.60 ? '#10b981' : '#e7a019'} />}
+            />
           </motion.div>
         </motion.div>
 
-        {/* Customer Concentration */}
-        <ChartCard title="Customer Concentration" subtitle="Top 15 customers by estimated lifetime value" formulaId="customer_segments" confidence="verified">
-          <div className="space-y-3">
-            {top15WithCum.map((c) => (
-              <div key={c.customer_id} className="grid grid-cols-[180px_1fr_80px_60px] items-center gap-4">
-                <span className="text-sm font-medium truncate" title={c.name}>{c.name}</span>
-                <div className="relative h-4 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
-                    style={{
-                      width: `${(c.ltv_estimated / maxLtv) * 100}%`,
-                      background: 'linear-gradient(to right, #0393da, #c1e8ff)',
-                    }}
-                  />
-                </div>
-                <span className="text-xs font-bold text-right">{formatEUR(c.ltv_estimated)}</span>
-                <span className="text-xs text-slate-400 text-right">{(c.cum_pct * 100).toFixed(0)}%</span>
-              </div>
-            ))}
-          </div>
-        </ChartCard>
-
-        {/* Churn Matrix + Segments */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <ChartCard title="Risk Tier Matrix" formulaId="risk_distribution" confidence="derived">
-            <div className="space-y-6">
-              {churnMatrix.map((row) => (
-                <div key={row.tier} className="flex flex-col gap-2">
-                  <div className="flex h-10 gap-1">
-                    {row.high > 0 && <div className="flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-l transition-all duration-300" style={{ width: `${row.high}%` }}>High</div>}
-                    {row.med > 0 && <div className="flex items-center justify-center bg-amber-400 text-white text-[10px] font-bold transition-all duration-300" style={{ width: `${row.med}%` }}>Med</div>}
-                    {row.low > 0 && <div className="flex items-center justify-center bg-green-500 text-white text-[10px] font-bold rounded-r transition-all duration-300" style={{ width: `${row.low}%` }}>Low</div>}
-                  </div>
-                  <p className="text-sm font-semibold">{row.tier}</p>
+        {/* Row 1 — Revenue x Margin Scatter */}
+        <ChartCard
+          title="Customer Revenue × Margin"
+          subtitle="X = total revenue · Y = avg DB II margin · color = risk tier · size = invoice count"
+          formulaId="top_customers"
+          confidence="verified"
+          headerRight={
+            <div className="flex items-center gap-3 text-[10px] font-semibold">
+              {Object.entries(RISK_COLORS).map(([tier, color]) => (
+                <div key={tier} className="flex items-center gap-1.5">
+                  <span className="size-2 rounded-full" style={{ backgroundColor: color }} />
+                  <span className="uppercase tracking-wider text-slate-500">{tier}</span>
                 </div>
               ))}
             </div>
+          }
+        >
+          <div className="h-[440px] relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <ScatterChart margin={{ top: 16, right: 20, bottom: 20, left: 10 }}>
+                <CartesianGrid stroke="#f0f0f0" strokeDasharray="none" />
+                <XAxis
+                  type="number"
+                  dataKey="x"
+                  name="Revenue"
+                  tickFormatter={(v) => formatEUR(v)}
+                  tick={{ fontSize: 10, fill: '#94a3b8' }}
+                  tickLine={false}
+                  label={{ value: 'Revenue (€)', position: 'bottom', fontSize: 10 }}
+                />
+                <YAxis
+                  type="number"
+                  dataKey="y"
+                  name="Margin"
+                  tickFormatter={(v) => `${(v * 100).toFixed(0)}%`}
+                  tick={{ fontSize: 10, fill: '#94a3b8' }}
+                  tickLine={false}
+                  axisLine={false}
+                  domain={[0, 1]}
+                  ticks={[0, 0.25, 0.5, 0.75, 1]}
+                  label={{ value: 'Margin (%)', angle: -90, position: 'insideLeft', fontSize: 10 }}
+                />
+                <ZAxis type="number" dataKey="z" range={[40, 400]} />
+                <ReferenceArea y1={0} y2={FLOOR_MARGIN} fill="#fef2f2" fillOpacity={0.6} />
+                <ReferenceArea y1={FLOOR_MARGIN} y2={TARGET_MARGIN} fill="#fffbeb" fillOpacity={0.5} />
+                <ReferenceLine
+                  y={TARGET_MARGIN}
+                  stroke="#10b981"
+                  strokeDasharray="4 4"
+                  strokeWidth={1.5}
+                  label={{ value: 'Target 60%', position: 'insideTopRight', fill: '#10b981', fontSize: 10, fontWeight: 700 }}
+                />
+                <ReferenceLine
+                  y={FLOOR_MARGIN}
+                  stroke="#EF4444"
+                  strokeDasharray="5 5"
+                  label={{ value: 'Floor 25%', position: 'insideBottomRight', fill: '#EF4444', fontSize: 10, fontWeight: 700 }}
+                />
+                <Tooltip
+                  cursor={{ strokeDasharray: '3 3' }}
+                  content={({ payload }) => {
+                    if (!payload?.length) return null;
+                    const d = payload[0].payload;
+                    return (
+                      <div className="border border-slate-100 rounded-xl p-3 shadow-xl text-xs backdrop-blur-sm" style={{ background: 'rgba(255,255,255,0.95)' }}>
+                        <p className="font-bold text-slate-900 mb-1">{d.name}</p>
+                        <p className="font-mono text-[10px] text-slate-400 mb-2 pb-2 border-b border-slate-100">{d.customer_id} · {d.segment}</p>
+                        <div className="space-y-1">
+                          <div className="flex justify-between gap-4"><span className="text-slate-500">Revenue</span><span className="font-bold">{formatEUR(d.x)}</span></div>
+                          <div className="flex justify-between gap-4"><span className="text-slate-500">Margin</span><span className={`font-bold ${d.y < FLOOR_MARGIN ? 'text-red-500' : d.y < TARGET_MARGIN ? 'text-amber-600' : 'text-green-600'}`}>{formatPct(d.y)}</span></div>
+                          <div className="flex justify-between gap-4"><span className="text-slate-500">Invoices</span><span className="font-bold">{d.z}</span></div>
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+                {Object.entries(scatterData).map(([tier, points]) => (
+                  <Scatter
+                    key={tier}
+                    name={tier}
+                    data={points}
+                    fill={RISK_COLORS[tier] || '#64748B'}
+                    fillOpacity={0.7}
+                    stroke={RISK_COLORS[tier] || '#64748B'}
+                    strokeWidth={1.5}
+                    cursor="pointer"
+                    onClick={(data) => selectItem({ type: 'customer', id: data.customer_id, label: data.name, data })}
+                  />
+                ))}
+              </ScatterChart>
+            </ResponsiveContainer>
+            {/* Quadrant labels */}
+            <div className="pointer-events-none absolute top-6 left-[70px] text-[10px] font-bold uppercase tracking-wider text-slate-400/70">Profitable Niche</div>
+            <div className="pointer-events-none absolute top-6 right-6 text-[10px] font-bold uppercase tracking-wider text-emerald-600/80">⭐ Strategic Accounts</div>
+            <div className="pointer-events-none absolute bottom-14 left-[70px] text-[10px] font-bold uppercase tracking-wider text-slate-400/70">Review/Drop</div>
+            <div className="pointer-events-none absolute bottom-14 right-6 text-[10px] font-bold uppercase tracking-wider text-red-600/80">Fix or Reprice</div>
+          </div>
+        </ChartCard>
+
+        {/* Row 2 — Customer Movement */}
+        <div>
+          <div className="mb-3">
+            <h3 className="font-bold text-base" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>Customer Movement — Last 12 Months</h3>
+            <p className="text-xs mt-0.5" style={{ color: '#737373' }}>Churned = no invoice in 12 months. Net revenue change ~€0 despite 58% of 2022 base churning.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="p-5 rounded-2xl shadow-sm" style={{ background: '#fff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
+              <div className="flex justify-between items-start mb-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#737373' }}>Churned</p>
+                <span className="text-xs text-red-600 font-bold">−12mo</span>
+              </div>
+              <p className="text-2xl font-bold text-red-600">−{RETENTION_METRICS.churned_count}</p>
+              <p className="text-xs mt-1 text-slate-500">{formatEUR(-RETENTION_METRICS.churned_revenue_eur)} lost</p>
+            </div>
+            <div className="p-5 rounded-2xl shadow-sm" style={{ background: '#fff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
+              <div className="flex justify-between items-start mb-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#737373' }}>Retained</p>
+              </div>
+              <p className="text-2xl font-bold text-slate-700">{RETENTION_METRICS.retained_count}</p>
+              <p className="text-xs mt-1 text-slate-500">{(RETENTION_METRICS.retention_rate_pct).toFixed(1)}% of 2022 base</p>
+            </div>
+            <div className="p-5 rounded-2xl shadow-sm" style={{ background: '#fff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
+              <div className="flex justify-between items-start mb-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#737373' }}>New</p>
+                <span className="text-xs text-emerald-600 font-bold">+12mo</span>
+              </div>
+              <p className="text-2xl font-bold text-emerald-600">+{RETENTION_METRICS.new_count}</p>
+              <p className="text-xs mt-1 text-slate-500">+{formatEUR(RETENTION_METRICS.new_revenue_eur)} added</p>
+            </div>
+            <div className="p-5 rounded-2xl shadow-sm border-l-4 border-[#0393da]" style={{ background: '#fff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
+              <div className="flex justify-between items-start mb-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#737373' }}>Net Change</p>
+              </div>
+              <p className="text-2xl font-bold" style={{ color: '#1a1a2e' }}>{RETENTION_METRICS.net_change_count}</p>
+              <p className="text-xs mt-1 text-slate-500">{netRevDelta >= 0 ? '+' : ''}{formatEUR(netRevDelta)} net · {RETENTION_METRICS.end_count} active</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Row 3 — Growing vs Declining */}
+        <ChartCard
+          title="Growing vs Declining Customers"
+          subtitle="Revenue delta 2022 → 2024 · top 5 growers (right) vs top 5 decliners (left)"
+          tooltip={TOOLTIPS.growing_declining}
+          formulaId="top_customers"
+          confidence="verified"
+        >
+          <div className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={growingDeclining} layout="vertical" margin={{ top: 8, right: 100, left: 100, bottom: 8 }}>
+                <CartesianGrid stroke="#f0f0f0" horizontal={false} />
+                <XAxis
+                  type="number"
+                  tickFormatter={(v) => formatEUR(v)}
+                  tick={{ fontSize: 10, fill: '#94a3b8' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: '#1a1a2e', fontWeight: 600, fontFamily: 'monospace' }}
+                  width={80}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  cursor={{ fill: 'rgba(148,163,184,0.08)' }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0].payload;
+                    return (
+                      <div className="px-3 py-2 rounded-lg shadow-lg text-xs" style={{ background: '#fff', border: '1px solid #e5e5e5' }}>
+                        <div className="font-bold mb-1">{d.name}</div>
+                        <div className="text-slate-500">2022: <span className="font-semibold">{formatEUR(d.rev_2022)}</span></div>
+                        <div className="text-slate-500">2024: <span className="font-semibold">{formatEUR(d.rev_2024)}</span></div>
+                        <div className="pt-1 mt-1" style={{ borderTop: '1px solid #f0f0f0' }}>
+                          Δ <span className={`font-bold ${d.delta >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{d.delta >= 0 ? '+' : ''}{formatEUR(d.delta)}</span>
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+                <ReferenceLine x={0} stroke="#94a3b8" strokeWidth={1} />
+                <Bar dataKey="delta" radius={4} animationDuration={800}>
+                  {growingDeclining.map((entry, i) => (
+                    <Cell key={i} fill={entry.delta >= 0 ? '#10b981' : '#ef4444'} />
+                  ))}
+                  <LabelList
+                    dataKey="delta"
+                    position="right"
+                    formatter={(v) => (typeof v === 'number' ? `${v >= 0 ? '+' : ''}${formatEUR(v)}` : '')}
+                    style={{ fontSize: 10, fontWeight: 700, fill: '#1a1a2e' }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="text-[10px] italic text-slate-500 mt-2">
+            A decline may be a closed project, not churn — investigate before acting. 101580 dropped significantly and has high lost-quote revenue = active competitive displacement.
+          </p>
+        </ChartCard>
+
+        {/* Row 4 — Customer Concentration (enhanced) */}
+        <ChartCard
+          title="Customer Concentration"
+          subtitle="Top 15 customers by estimated lifetime value · color = margin health"
+          formulaId="customer_segments"
+          confidence="verified"
+        >
+          <div className="space-y-2.5">
+            {top15.map((c) => {
+              const badge = marginBadge(c.avg_db2_margin);
+              return (
+                <div key={c.customer_id} className="grid grid-cols-[160px_1fr_90px_60px_50px] items-center gap-3 text-xs">
+                  <span className="font-medium truncate" title={c.name}>{c.name}</span>
+                  <div className="relative h-5 bg-slate-100 rounded-md overflow-hidden">
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-md transition-all duration-500"
+                      style={{ width: `${(c.ltv_estimated / maxLtv) * 100}%`, background: '#94a3b8' }}
+                    />
+                  </div>
+                  <span className="font-bold text-right">{formatEUR(c.ltv_estimated)}</span>
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white text-center"
+                    style={{ backgroundColor: badge.color }}
+                  >
+                    {badge.label}
+                  </span>
+                  <span className="text-slate-400 text-right">{(c.cum_pct * 100).toFixed(0)}%</span>
+                </div>
+              );
+            })}
+          </div>
+        </ChartCard>
+
+        {/* Row 5 — Risk Matrix + Segments */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ChartCard title="Revenue at Risk by Segment × Risk Tier" subtitle="€ revenue per cell — visualize financial exposure, not customer counts" formulaId="risk_distribution" confidence="derived">
+            <div className="space-y-4">
+              {riskMatrix.map((row) => {
+                const highPct = (row.highRev / row.total) * 100;
+                const medPct = (row.medRev / row.total) * 100;
+                const lowPct = (row.lowRev / row.total) * 100;
+                return (
+                  <div key={row.segment}>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-xs font-bold" style={{ color: '#1a1a2e' }}>{row.segment}</span>
+                      <span className="text-[10px] text-slate-500">{formatEUR(row.total)}</span>
+                    </div>
+                    <div className="flex h-8 rounded overflow-hidden">
+                      {row.highRev > 0 && (
+                        <div className="flex items-center justify-center bg-red-500 text-white text-[10px] font-bold px-1 transition-all duration-300" style={{ width: `${highPct}%` }}>
+                          {highPct > 18 ? formatEUR(row.highRev) : ''}
+                        </div>
+                      )}
+                      {row.medRev > 0 && (
+                        <div className="flex items-center justify-center bg-amber-500 text-white text-[10px] font-bold px-1 transition-all duration-300" style={{ width: `${medPct}%` }}>
+                          {medPct > 18 ? formatEUR(row.medRev) : ''}
+                        </div>
+                      )}
+                      {row.lowRev > 0 && (
+                        <div className="flex items-center justify-center bg-emerald-500 text-white text-[10px] font-bold px-1 transition-all duration-300" style={{ width: `${lowPct}%` }}>
+                          {lowPct > 18 ? formatEUR(row.lowRev) : ''}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="flex items-center gap-4 pt-3 border-t border-slate-100 text-[10px]">
+                <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-red-500" />High/Critical</span>
+                <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-amber-500" />Medium</span>
+                <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500" />Low</span>
+              </div>
+            </div>
           </ChartCard>
 
-          <ChartCard title="Customer Segments" formulaId="churn_summary" confidence="forecast">
-            <div className="p-4 bg-slate-50 rounded-lg">
-              <p className="text-xs font-bold text-slate-400 uppercase mb-3">By Segment</p>
-              <ul className="space-y-2">
-                {segmentsMeta.map((s) => (
-                  <li key={s.segment} className="flex justify-between text-sm">
-                    <span>{s.segment}</span>
-                    <div className="flex gap-4">
-                      <span className="text-slate-500">{s.count} customers</span>
-                      <span className="font-bold">{formatEUR(s.total_revenue)}</span>
-                      <span className="text-slate-500">{formatPct(s.avg_margin)} margin</span>
+          <ChartCard title="Customer Segments" formulaId="customer_segments" confidence="verified">
+            <div className="space-y-3">
+              {segmentsMeta.map((s) => {
+                const badge = marginBadge(s.avg_margin);
+                return (
+                  <div key={s.segment} className="p-3 bg-slate-50 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-bold text-sm" style={{ color: '#1a1a2e' }}>{s.segment}</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: badge.color }}>
+                        {badge.label}
+                      </span>
                     </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="mt-4 p-4 border border-[#0393da]/20 bg-[#0393da]/5 rounded-lg">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-xs font-bold text-[#0393da] uppercase">Churn Summary</p>
-                  <p className="text-sm font-medium mt-1">
-                    <span className="text-red-500 font-bold">{churnHigh} High+Critical</span> / {churnMed} Medium / {churnLow} Low
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-bold text-red-400 uppercase">LTV at Risk</p>
-                  <p className="text-lg font-bold text-red-500">
-                    {formatEUR(ltvAtRisk)}
-                  </p>
-                </div>
-              </div>
+                    <div className="flex justify-between text-xs text-slate-600">
+                      <span>{s.count.toLocaleString()} customers</span>
+                      <span className="font-semibold text-slate-800">{formatEUR(s.total_revenue)}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </ChartCard>
         </div>
 
-        {/* Customer Table */}
-        <DataTable
-          title="Customer List"
-          columns={customerColumns}
-          data={filteredCustomers}
-          rowKey="customer_id"
-          selectedRowId={selectedItem?.id}
-          onRowClick={(row) => selectItem({ type: 'customer', id: row.customer_id, label: row.name, data: row })}
-          formulaId="top_customers"
-          confidence="verified"
-        />
+        {/* Row 6 — Customer Table with View Presets */}
+        <motion.div variants={cardVariants}>
+          <DataTable
+            title="Customer List"
+            columns={customerColumns}
+            data={filteredCustomers}
+            rowKey="customer_id"
+            selectedRowId={selectedItem?.id}
+            onRowClick={(row) => selectItem({ type: 'customer', id: row.customer_id, label: row.name, data: row })}
+            formulaId="top_customers"
+            confidence="verified"
+            headerRight={
+              <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+                {[
+                  { key: 'glance', label: 'At-a-glance' },
+                  { key: 'risk', label: 'Risk' },
+                  { key: 'competitiveness', label: 'Competitive' },
+                  { key: 'portfolio', label: 'Portfolio' },
+                  { key: 'full', label: 'Full' },
+                ].map((p) => (
+                  <button
+                    key={p.key}
+                    onClick={() => setTablePreset(p.key)}
+                    className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all ${
+                      tablePreset === p.key ? 'bg-white text-[#0393da] shadow-sm font-bold' : 'text-slate-500 hover:text-slate-900'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            }
+          />
+        </motion.div>
+
+        {/* Row 7 — Action List */}
+        <div className="p-6 rounded-2xl shadow-sm" style={{ background: '#fff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h3 className="font-bold text-base" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>
+                Action List — This Week
+              </h3>
+              <p className="text-xs mt-0.5" style={{ color: '#737373' }}>
+                Ranked by margin slope · lost quotes · LTV at risk · inactivity
+              </p>
+            </div>
+            <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-[#0393da] text-white">Monday Morning</span>
+          </div>
+          <div className="space-y-2">
+            {actionList.map((a, i) => (
+              <div
+                key={a.customer_id}
+                className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                onClick={() => selectItem({ type: 'customer', id: a.customer_id, label: a.name, data: a })}
+              >
+                <span className="w-6 text-center text-sm font-bold text-slate-400">{i + 1}</span>
+                <div className="min-w-[120px]">
+                  <span className="font-mono font-bold text-[#0393da] text-sm">{a.customer_id}</span>
+                  <p className="text-[11px] text-slate-500 truncate max-w-[100px]">{a.segment}</p>
+                </div>
+                <div className="flex flex-wrap gap-1.5 flex-1">
+                  {a.reasons.length === 0 && <span className="text-[11px] italic text-slate-400">baseline review</span>}
+                  {a.reasons.map((r, j) => (
+                    <span key={j} className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${r.color}`}>
+                      {r.icon} {r.label}
+                    </span>
+                  ))}
+                </div>
+                <span className="text-xs font-semibold text-slate-700">{a.action}</span>
+                <svg className="size-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </div>
+            ))}
+          </div>
+        </div>
 
         <PhaseNotice type="mixed" />
       </div>
