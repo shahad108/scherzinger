@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip, ResponsiveContainer,
@@ -53,7 +53,7 @@ function productTypeColor(m) {
 }
 
 export default function ProductsSKUs() {
-  const { selectItem, selectedItem } = useUI();
+  const { selectItem, selectedItem, openSKUDetail } = useUI();
   const [selectedCommodity, setSelectedCommodity] = useState('All');
   const [selectedYear, setSelectedYear] = useState(2025);
   const [articleSearch, setArticleSearch] = useState('');
@@ -191,6 +191,14 @@ export default function ProductsSKUs() {
   const singleCustomerCount = useMemo(() =>
     filteredProducts.filter((p) => p.customer_count === 1).length,
     [filteredProducts]);
+
+  // Auto-open slide-over when search narrows to a single match
+  useEffect(() => {
+    if (articleSearch && filteredProducts.length === 1) {
+      const match = filteredProducts[0];
+      openSKUDetail(match.ArticleID);
+    }
+  }, [articleSearch, filteredProducts, openSKUDetail]);
 
   // Table columns per preset
   const marginCol = (v) => {
@@ -778,7 +786,10 @@ export default function ProductsSKUs() {
             formulaId="top_products_revenue"
             confidence="verified"
             selectedRowId={selectedItem?.id}
-            onRowClick={(row) => selectItem({ type: 'article', id: row.ArticleID, label: row.description, data: row })}
+            onRowClick={(row) => {
+              selectItem({ type: 'article', id: row.ArticleID, label: row.description, data: row });
+              openSKUDetail(row.ArticleID);
+            }}
             headerRight={
               <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
                 {[

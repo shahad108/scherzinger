@@ -9,7 +9,6 @@ import ProductsSKUs from './pages/ProductsSKUs';
 import Customers from './pages/Customers';
 import Forecasting from './pages/Forecasting';
 import PricingFX from './pages/PricingFX';
-import CostIntelligence from './pages/CostIntelligence';
 import MLAnalytics from './pages/MLAnalytics';
 import AIInsights from './pages/AIInsights';
 import Login from './pages/Login';
@@ -47,8 +46,6 @@ export default function App() {
                 <Route path="/forecasting" element={<Forecasting />} />
                 <Route path="/pricing" element={<PricingFX />} />
                 <Route path="/pricing-fx" element={<Navigate to="/pricing" replace />} />
-                <Route path="/cost-intelligence" element={<CostIntelligence />} />
-                <Route path="/inventory" element={<Navigate to="/cost-intelligence" replace />} />
                 <Route path="/ml-analytics" element={<MLAnalytics />} />
                 <Route path="/ai-insights" element={<AIInsights />} />
               </Route>

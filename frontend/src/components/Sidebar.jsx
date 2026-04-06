@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LayoutDashboard, TrendingUp, Package, Users, LineChart,
-  DollarSign, Warehouse, Brain, Sparkles, ChevronsLeft, ChevronsRight, LogOut,
+  DollarSign, Brain, Sparkles, ChevronsLeft, ChevronsRight, LogOut,
 } from 'lucide-react';
 import { useUI } from '../context/UIContext';
 import { useUser } from '../context/UserContext';
@@ -14,7 +14,6 @@ const navItems = [
   { to: '/products', label: 'Products & SKUs', icon: Package },
   { to: '/customers', label: 'Customers', icon: Users },
   { to: '/forecasting', label: 'Forecasting', icon: LineChart },
-  { to: '/cost-intelligence', label: 'Cost Intelligence', icon: Warehouse },
   { to: '/pricing', label: 'Pricing & Quotes', icon: DollarSign },
   { to: '/ml-analytics', label: 'ML Analytics', icon: Brain },
   { to: '/ai-insights', label: 'AI Insights', icon: Sparkles },

@@ -13,6 +13,7 @@ import { slideOverVariants, backdropVariants, slideOverSectionVariants, slideOve
 import KPICard from './shared/KPICard';
 import { gradients, colors } from '../utils/designTokensV2';
 import { track } from '../utils/tracker';
+import inventoryStock from '../data/inventory_stock.json';
 
 const MARGIN_FLOOR = 0.50;
 const MARGIN_TARGET = 0.55;
@@ -97,6 +98,18 @@ function PricingActionBadge({ action }) {
   return <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 ring-1 ring-green-200">OK</span>;
 }
 
+/* ── Inventory Status Helper ── */
+function getInventoryStatus(stock) {
+  if (!stock) return { label: 'No Data', color: 'bg-slate-100 text-slate-500' };
+  if (stock.current_stock <= stock.safety_stock || stock.stockouts_12mo > 0) {
+    return { label: 'Critical', color: 'bg-red-100 text-red-700' };
+  }
+  if (stock.current_stock <= stock.reorder_point) {
+    return { label: 'Reorder Soon', color: 'bg-amber-100 text-amber-700' };
+  }
+  return { label: 'Adequate', color: 'bg-green-100 text-green-700' };
+}
+
 export default function SKUSlideOver() {
   const { slideOver, closeSlideOver, setSidebarCollapsed } = useUI();
 
@@ -149,6 +162,10 @@ export default function SKUSlideOver() {
       trajectory,
     };
   }, [isOpen, skuCode]);
+
+  const stockData = inventoryStock[skuCode] || null;
+  const stockStatus = getInventoryStatus(stockData);
+  const costTrend = costTrendsByArticle[skuCode];
 
   // Auto-collapse sidebar when slide-over opens + track drilldown
   useEffect(() => {
@@ -629,6 +646,121 @@ export default function SKUSlideOver() {
               </div>
             </motion.div>
           )}
+
+            {/* ── Inventory Status ── */}
+            <div className="mt-6 pt-5 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Inventory Status</h4>
+                <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold ${stockStatus.color}`}>
+                  {stockStatus.label}
+                </span>
+              </div>
+
+              {stockData ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-slate-50 rounded-lg px-3 py-2">
+                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Current Stock</p>
+                      <p className="text-sm font-bold text-slate-800">{stockData.current_stock} units</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg px-3 py-2">
+                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Reorder Point</p>
+                      <p className="text-sm font-bold text-slate-800">{stockData.reorder_point} units</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg px-3 py-2">
+                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Lead Time</p>
+                      <p className="text-sm font-bold text-slate-800">{stockData.lead_time_weeks} weeks</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-50 rounded-lg px-3 py-2">
+                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Monthly Demand</p>
+                      <p className="text-sm font-bold text-slate-800">{stockData.avg_monthly_demand} units</p>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg px-3 py-2">
+                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Months of Supply</p>
+                      <p className={`text-sm font-bold ${stockData.months_of_supply < 2 ? 'text-red-600' : stockData.months_of_supply < 4 ? 'text-amber-600' : 'text-green-600'}`}>
+                        {stockData.months_of_supply.toFixed(1)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 text-[11px]">
+                    <div><span className="text-slate-400">Safety Stock:</span> <span className="font-semibold text-slate-700">{stockData.safety_stock} units</span></div>
+                    <div><span className="text-slate-400">Last Order:</span> <span className="font-semibold text-slate-700">{stockData.last_order_date}</span></div>
+                    <div><span className="text-slate-400">Stockouts:</span> <span className={`font-semibold ${stockData.stockouts_12mo > 0 ? 'text-red-600' : 'text-green-600'}`}>{stockData.stockouts_12mo}</span></div>
+                  </div>
+
+                  <div className="text-[11px]">
+                    <span className="text-slate-400">Carrying Cost:</span>
+                    <span className="ml-1 font-semibold text-slate-700">{formatEUR(stockData.carrying_cost_annual)}/yr</span>
+                  </div>
+
+                  <div className="relative w-full h-6 bg-slate-100 rounded-full overflow-hidden">
+                    <div className={`absolute left-0 top-0 h-full rounded-full transition-all ${stockStatus.label === 'Critical' ? 'bg-red-400' : stockStatus.label === 'Reorder Soon' ? 'bg-amber-400' : 'bg-green-400'}`}
+                      style={{ width: `${Math.min((stockData.current_stock / stockData.max_capacity) * 100, 100)}%` }} />
+                    <div className="absolute top-0 h-full border-l-2 border-dashed border-amber-500" style={{ left: `${(stockData.reorder_point / stockData.max_capacity) * 100}%` }} />
+                    <div className="absolute top-0 h-full border-l-2 border-dashed border-red-500" style={{ left: `${(stockData.safety_stock / stockData.max_capacity) * 100}%` }} />
+                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-slate-700">{stockData.current_stock} / {stockData.max_capacity}</span>
+                  </div>
+                  <div className="flex gap-4 text-[10px] text-slate-400">
+                    <span className="flex items-center gap-1"><span className="w-3 h-0 border-t-2 border-dashed border-red-500 inline-block" /> Safety</span>
+                    <span className="flex items-center gap-1"><span className="w-3 h-0 border-t-2 border-dashed border-amber-500 inline-block" /> Reorder</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-400 italic">No inventory data available for this article.</p>
+              )}
+            </div>
+
+            {/* ── Cost Intelligence ── */}
+            {costTrend && (
+              <div className="mt-6 pt-5 border-t border-slate-100">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">Cost Intelligence</h4>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    {[
+                      { key: 'Material', pct: costTrend.material_share || 0, color: 'bg-amber-400' },
+                      { key: 'Labor', pct: costTrend.labor_share || 0, color: 'bg-blue-400' },
+                      { key: 'Outsourcing', pct: costTrend.outsourcing_share || 0, color: 'bg-purple-400' },
+                      { key: 'Overhead', pct: Math.max(0, 1 - (costTrend.material_share || 0) - (costTrend.labor_share || 0) - (costTrend.outsourcing_share || 0)), color: 'bg-slate-300' },
+                    ].map(item => (
+                      <div key={item.key} className="flex items-center gap-3">
+                        <span className="text-[11px] w-20 text-slate-600">{item.key}</span>
+                        <div className="flex-1 h-3.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${item.color}`} style={{ width: `${Math.min(item.pct * 100, 100)}%` }} />
+                        </div>
+                        <span className="text-[11px] font-bold text-slate-700 w-12 text-right">{(item.pct * 100).toFixed(1)}%</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-[11px]">
+                    <div>
+                      <span className="text-slate-400">Cost Change:</span>
+                      <span className={`ml-1 font-bold ${(costTrend.cost_change_pct || 0) > 0.1 ? 'text-red-600' : (costTrend.cost_change_pct || 0) < -0.05 ? 'text-green-600' : 'text-slate-700'}`}>
+                        {costTrend.cost_change_pct != null ? `${(costTrend.cost_change_pct * 100).toFixed(1)}%` : '--'}
+                        {(costTrend.cost_change_pct || 0) > 0 ? ' ▲' : (costTrend.cost_change_pct || 0) < 0 ? ' ▼' : ''}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Trend:</span>
+                      <span className={`ml-1 font-bold ${costTrend.cost_trend === 'rising' ? 'text-red-600' : costTrend.cost_trend === 'declining' ? 'text-green-600' : 'text-slate-700'}`}>
+                        {costTrend.cost_trend === 'rising' ? '↑ Rising' : costTrend.cost_trend === 'declining' ? '↓ Declining' : '→ Stable'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {(costTrend.material_share || 0) > 0.40 && (
+                    <div className="flex items-start gap-2 bg-amber-50 rounded-lg p-2.5 text-[11px] text-amber-800">
+                      <span className="font-bold">!</span>
+                      <span>Material costs are {((costTrend.material_share || 0) * 100).toFixed(0)}% of production cost. Consider supplier renegotiation or price adjustment.</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
         </motion.div>
       </motion.div>
