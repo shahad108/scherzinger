@@ -1,1 +1,185 @@
-{"gap_analysis":{"overall":{"mean_gap":0.019,"median_gap":0.011,"std_gap":0.061,"linked_records":1313},"by_year":[{"year":2022,"avg_quoted_margin":0.732,"avg_actual_margin":0.709,"gap":0.023,"count":264},{"year":2023,"avg_quoted_margin":0.723,"avg_actual_margin":0.703,"gap":0.019,"count":336},{"year":2024,"avg_quoted_margin":0.729,"avg_actual_margin":0.709,"gap":0.021,"count":375},{"year":2025,"avg_quoted_margin":0.719,"avg_actual_margin":0.705,"gap":0.014,"count":338}]},"catalog_vs_quoted":{"catalog_margin_avg":0.588,"quoted_margin_avg":0.665,"catalog_pct_revenue":0.492,"quoted_pct_revenue":0.508},"win_rate_by_margin_band":[{"band":"< 50%","win_rate":0.324,"count":145},{"band":"50-60%","win_rate":0.43,"count":305},{"band":"60-70%","win_rate":0.436,"count":739},{"band":"70-80%","win_rate":0.406,"count":1291},{"band":"> 80%","win_rate":0.348,"count":1142}],"rejection_codes":[{"code":"KA","description":"No information","count":775,"revenue_lost":4942412,"pct_of_lost":0.517},{"code":"KR","description":"No response","count":276,"revenue_lost":1318560,"pct_of_lost":0.184},{"code":"AN","description":"Inquiry only","count":138,"revenue_lost":1168322,"pct_of_lost":0.092},{"code":"PA","description":"Competitor cheaper","count":87,"revenue_lost":793893,"pct_of_lost":0.058},{"code":"KE","description":"End customer no reaction","count":75,"revenue_lost":274121,"pct_of_lost":0.05},{"code":"KD","description":"Customer not followed up","count":60,"revenue_lost":369629,"pct_of_lost":0.04},{"code":"KN","description":"Project cancelled","count":44,"revenue_lost":503198,"pct_of_lost":0.029},{"code":"PR","description":"Price too high","count":27,"revenue_lost":177374,"pct_of_lost":0.018},{"code":"TE","description":"Technical rejection","count":9,"revenue_lost":22195,"pct_of_lost":0.006},{"code":"LZ","description":"Delivery time too long","count":5,"revenue_lost":14627,"pct_of_lost":0.003},{"code":"RZ","description":"Reaction time too slow","count":2,"revenue_lost":8372,"pct_of_lost":0.001}],"price_sensitivity":{"won_avg_margin":0.706,"lost_avg_margin":0.724,"margin_diff":0.018,"p_value":0.006,"significant":true}}
+{"gap_analysis":{"overall":{"mean_gap":0.019,"median_gap":0.011,"std_gap":0.061,"linked_records":1313},"by_year":[{"year":2022,"avg_quoted_margin":0.732,"avg_actual_margin":0.709,"gap":0.023,"count":264},{"year":2023,"avg_quoted_margin":0.723,"avg_actual_margin":0.703,"gap":0.019,"count":336},{"year":2024,"avg_quoted_margin":0.729,"avg_actual_margin":0.709,"gap":0.021,"count":375},{"year":2025,"avg_quoted_margin":0.719,"avg_actual_margin":0.705,"gap":0.014,"count":338}]},"catalog_vs_quoted":{"catalog_margin_avg":0.588,"quoted_margin_avg":0.665,"catalog_pct_revenue":0.492,"quoted_pct_revenue":0.508},"win_rate_by_margin_band":[{"band":"< 50%","win_rate":0.324,"count":145},{"band":"50-60%","win_rate":0.43,"count":305},{"band":"60-70%","win_rate":0.436,"count":739},{"band":"70-80%","win_rate":0.406,"count":1291},{"band":"> 80%","win_rate":0.348,"count":1142}],"rejection_codes":[{"code":"KA","description":"No information","count":775,"revenue_lost":4942412,"pct_of_lost":0.517},{"code":"KR","description":"No response","count":276,"revenue_lost":1318560,"pct_of_lost":0.184},{"code":"AN","description":"Inquiry only","count":138,"revenue_lost":1168322,"pct_of_lost":0.092},{"code":"PA","description":"Competitor cheaper","count":87,"revenue_lost":793893,"pct_of_lost":0.058},{"code":"KE","description":"End customer no reaction","count":75,"revenue_lost":274121,"pct_of_lost":0.05},{"code":"KD","description":"Customer not followed up","count":60,"revenue_lost":369629,"pct_of_lost":0.04},{"code":"KN","description":"Project cancelled","count":44,"revenue_lost":503198,"pct_of_lost":0.029},{"code":"PR","description":"Price too high","count":27,"revenue_lost":177374,"pct_of_lost":0.018},{"code":"TE","description":"Technical rejection","count":9,"revenue_lost":22195,"pct_of_lost":0.006},{"code":"LZ","description":"Delivery time too long","count":5,"revenue_lost":14627,"pct_of_lost":0.003},{"code":"RZ","description":"Reaction time too slow","count":2,"revenue_lost":8372,"pct_of_lost":0.001}],"price_sensitivity":{"won_avg_margin":0.706,"lost_avg_margin":0.724,"margin_diff":0.018,"p_value":0.006,"significant":true},
+
+"overall_win_rate": {
+  "current": 0.371,
+  "prior_year": 0.347,
+  "yoy_change": 0.024
+},
+
+"pricing_related_loss": {
+  "total": 971267,
+  "pa_competitor_cheaper": { "count": 87, "revenue": 793893 },
+  "pr_price_too_high": { "count": 27, "revenue": 177374 }
+},
+
+"pipeline_summary": {
+  "stages": [
+    { "stage": "New", "count": 62, "value": 285000 },
+    { "stage": "Quoted", "count": 86, "value": 957800 },
+    { "stage": "Won", "count": 1684, "value": 7420000 }
+  ],
+  "open_value": 957800,
+  "win_rate": 0.371,
+  "expected_value": 355343,
+  "total_won_revenue": 7420000
+},
+
+"quarterly_win_rates": [
+  { "quarter": "2022-Q1", "overall": 0.624, "bkaes": 0.638, "bkagg": 0.592 },
+  { "quarter": "2022-Q2", "overall": 0.558, "bkaes": 0.572, "bkagg": 0.531 },
+  { "quarter": "2022-Q3", "overall": 0.485, "bkaes": 0.510, "bkagg": 0.448 },
+  { "quarter": "2022-Q4", "overall": 0.512, "bkaes": 0.535, "bkagg": 0.479 },
+  { "quarter": "2023-Q1", "overall": 0.443, "bkaes": 0.468, "bkagg": 0.405 },
+  { "quarter": "2023-Q2", "overall": 0.351, "bkaes": 0.382, "bkagg": 0.308 },
+  { "quarter": "2023-Q3", "overall": 0.114, "bkaes": 0.142, "bkagg": 0.111 },
+  { "quarter": "2023-Q4", "overall": 0.604, "bkaes": 0.621, "bkagg": 0.583 },
+  { "quarter": "2024-Q1", "overall": 0.425, "bkaes": 0.448, "bkagg": 0.392 },
+  { "quarter": "2024-Q2", "overall": 0.388, "bkaes": 0.415, "bkagg": 0.358 },
+  { "quarter": "2024-Q3", "overall": 0.412, "bkaes": 0.438, "bkagg": 0.381 },
+  { "quarter": "2024-Q4", "overall": 0.644, "bkaes": 0.662, "bkagg": 0.667 }
+],
+
+"win_rate_by_commodity": [
+  { "group": "BKAES", "win_rate": 0.527, "count": 1245 },
+  { "group": "BKAGG", "win_rate": 0.470, "count": 892 },
+  { "group": "BKAIZ", "win_rate": 0.612, "count": 534 },
+  { "group": "SOPU", "win_rate": 0.318, "count": 187 }
+],
+
+"win_rate_margin_band_emc": [
+  { "band": "<40%", "win_rate": 0.643, "avg_margin": 0.282, "emc": 0.181, "count": 89 },
+  { "band": "40-50%", "win_rate": 0.533, "avg_margin": 0.458, "emc": 0.244, "count": 145 },
+  { "band": "50-60%", "win_rate": 0.517, "avg_margin": 0.555, "emc": 0.287, "count": 305 },
+  { "band": "60-70%", "win_rate": 0.453, "avg_margin": 0.655, "emc": 0.297, "count": 739 },
+  { "band": "70-80%", "win_rate": 0.463, "avg_margin": 0.753, "emc": 0.348, "count": 1291 },
+  { "band": ">80%", "win_rate": 0.569, "avg_margin": 0.843, "emc": 0.479, "count": 1142 }
+],
+
+"monthly_win_rates": [
+  { "month": 1, "name": "Jan", "win_rate": 0.425 },
+  { "month": 2, "name": "Feb", "win_rate": 0.448 },
+  { "month": 3, "name": "Mar", "win_rate": 0.512 },
+  { "month": 4, "name": "Apr", "win_rate": 0.595 },
+  { "month": 5, "name": "May", "win_rate": 0.485 },
+  { "month": 6, "name": "Jun", "win_rate": 0.382 },
+  { "month": 7, "name": "Jul", "win_rate": 0.351 },
+  { "month": 8, "name": "Aug", "win_rate": 0.335 },
+  { "month": 9, "name": "Sep", "win_rate": 0.428 },
+  { "month": 10, "name": "Oct", "win_rate": 0.521 },
+  { "month": 11, "name": "Nov", "win_rate": 0.605 },
+  { "month": 12, "name": "Dec", "win_rate": 0.669 }
+],
+
+"commodity_margin_heatmap": {
+  "groups": ["BKAES", "BKAGG", "BKAIZ", "SOPU"],
+  "bands": ["<40%", "40-50%", "50-60%", "60-70%", "70-80%", ">80%"],
+  "data": [
+    { "group": "BKAES", "band": "<40%", "win_rate": 0.681 },
+    { "group": "BKAES", "band": "40-50%", "win_rate": 0.558 },
+    { "group": "BKAES", "band": "50-60%", "win_rate": 0.534 },
+    { "group": "BKAES", "band": "60-70%", "win_rate": 0.571 },
+    { "group": "BKAES", "band": "70-80%", "win_rate": 0.482 },
+    { "group": "BKAES", "band": ">80%", "win_rate": 0.541 },
+    { "group": "BKAGG", "band": "<40%", "win_rate": 0.612 },
+    { "group": "BKAGG", "band": "40-50%", "win_rate": 0.498 },
+    { "group": "BKAGG", "band": "50-60%", "win_rate": 0.478 },
+    { "group": "BKAGG", "band": "60-70%", "win_rate": 0.419 },
+    { "group": "BKAGG", "band": "70-80%", "win_rate": 0.445 },
+    { "group": "BKAGG", "band": ">80%", "win_rate": 0.696 },
+    { "group": "BKAIZ", "band": "<40%", "win_rate": 0.702 },
+    { "group": "BKAIZ", "band": "40-50%", "win_rate": 0.625 },
+    { "group": "BKAIZ", "band": "50-60%", "win_rate": 0.588 },
+    { "group": "BKAIZ", "band": "60-70%", "win_rate": 0.571 },
+    { "group": "BKAIZ", "band": "70-80%", "win_rate": 0.548 },
+    { "group": "BKAIZ", "band": ">80%", "win_rate": 0.612 },
+    { "group": "SOPU", "band": "<40%", "win_rate": 0.445 },
+    { "group": "SOPU", "band": "40-50%", "win_rate": 0.368 },
+    { "group": "SOPU", "band": "50-60%", "win_rate": 0.312 },
+    { "group": "SOPU", "band": "60-70%", "win_rate": 0.285 },
+    { "group": "SOPU", "band": "70-80%", "win_rate": 0.298 },
+    { "group": "SOPU", "band": ">80%", "win_rate": 0.342 }
+  ]
+},
+
+"response_time_buckets": [
+  { "bucket": "<7 days", "win_rate": 0.502, "count": 342 },
+  { "bucket": "7-14 days", "win_rate": 0.445, "count": 518 },
+  { "bucket": "14-30 days", "win_rate": 0.368, "count": 624 },
+  { "bucket": "30-60 days", "win_rate": 0.285, "count": 398 },
+  { "bucket": ">60 days", "win_rate": 0.198, "count": 215 }
+],
+
+"lost_by_deal_size": [
+  { "size": "<€1K", "lost_quotes": 319, "lost_revenue": 212000, "pct_of_total": 0.023 },
+  { "size": "€1-5K", "lost_quotes": 721, "lost_revenue": 1670000, "pct_of_total": 0.184 },
+  { "size": "€5-10K", "lost_quotes": 167, "lost_revenue": 1250000, "pct_of_total": 0.138 },
+  { "size": "€10-50K", "lost_quotes": 113, "lost_revenue": 2090000, "pct_of_total": 0.230 },
+  { "size": ">€50K", "lost_quotes": 37, "lost_revenue": 4370000, "pct_of_total": 0.482 }
+],
+
+"customer_win_rates": [
+  { "customer": "101580", "quotes": 51, "win_rate": 0.392, "lost_revenue": 2780000, "won_margin": 0.837, "lost_margin": 0.725, "gap": 0.112 },
+  { "customer": "101728", "quotes": 14, "win_rate": 0.214, "lost_revenue": 137000, "won_margin": 0.740, "lost_margin": 0.669, "gap": 0.071 },
+  { "customer": "101690", "quotes": 13, "win_rate": 0.462, "lost_revenue": 125000, "won_margin": 0.685, "lost_margin": 0.423, "gap": 0.262 },
+  { "customer": "101445", "quotes": 28, "win_rate": 0.357, "lost_revenue": 445000, "won_margin": 0.792, "lost_margin": 0.698, "gap": 0.094 },
+  { "customer": "101312", "quotes": 22, "win_rate": 0.318, "lost_revenue": 382000, "won_margin": 0.758, "lost_margin": 0.712, "gap": 0.046 },
+  { "customer": "101895", "quotes": 19, "win_rate": 0.263, "lost_revenue": 298000, "won_margin": 0.715, "lost_margin": 0.645, "gap": 0.070 },
+  { "customer": "101623", "quotes": 16, "win_rate": 0.438, "lost_revenue": 195000, "won_margin": 0.802, "lost_margin": 0.735, "gap": 0.067 },
+  { "customer": "101987", "quotes": 11, "win_rate": 0.182, "lost_revenue": 178000, "won_margin": 0.681, "lost_margin": 0.592, "gap": 0.089 },
+  { "customer": "101156", "quotes": 25, "win_rate": 0.400, "lost_revenue": 168000, "won_margin": 0.745, "lost_margin": 0.688, "gap": 0.057 },
+  { "customer": "101742", "quotes": 9, "win_rate": 0.222, "lost_revenue": 155000, "won_margin": 0.698, "lost_margin": 0.612, "gap": 0.086 },
+  { "customer": "101534", "quotes": 18, "win_rate": 0.333, "lost_revenue": 142000, "won_margin": 0.778, "lost_margin": 0.715, "gap": 0.063 },
+  { "customer": "101267", "quotes": 12, "win_rate": 0.250, "lost_revenue": 135000, "won_margin": 0.725, "lost_margin": 0.658, "gap": 0.067 },
+  { "customer": "101891", "quotes": 8, "win_rate": 0.375, "lost_revenue": 128000, "won_margin": 0.812, "lost_margin": 0.748, "gap": 0.064 },
+  { "customer": "101478", "quotes": 15, "win_rate": 0.467, "lost_revenue": 118000, "won_margin": 0.695, "lost_margin": 0.625, "gap": 0.070 },
+  { "customer": "101653", "quotes": 10, "win_rate": 0.300, "lost_revenue": 112000, "won_margin": 0.738, "lost_margin": 0.682, "gap": 0.056 }
+],
+
+"persistent_losses": {
+  "total_pairs": 131,
+  "top_10": [
+    { "customer": "101580", "article": "200145", "quotes": 5, "lost_revenue": 285000 },
+    { "customer": "101580", "article": "201827", "quotes": 4, "lost_revenue": 198000 },
+    { "customer": "101728", "article": "200832", "quotes": 3, "lost_revenue": 95000 },
+    { "customer": "101445", "article": "200612", "quotes": 4, "lost_revenue": 88000 },
+    { "customer": "101312", "article": "201445", "quotes": 3, "lost_revenue": 72000 },
+    { "customer": "101895", "article": "200298", "quotes": 3, "lost_revenue": 68000 },
+    { "customer": "101987", "article": "201123", "quotes": 2, "lost_revenue": 55000 },
+    { "customer": "101742", "article": "200567", "quotes": 2, "lost_revenue": 48000 },
+    { "customer": "101156", "article": "201890", "quotes": 3, "lost_revenue": 42000 },
+    { "customer": "101534", "article": "200723", "quotes": 2, "lost_revenue": 38000 }
+  ]
+},
+
+"discount_distribution": [
+  { "bucket": "0-5%", "count": 412, "pct": 0.195 },
+  { "bucket": "5-10%", "count": 378, "pct": 0.179 },
+  { "bucket": "10-15%", "count": 445, "pct": 0.211 },
+  { "bucket": "15-20%", "count": 352, "pct": 0.167 },
+  { "bucket": "20-30%", "count": 318, "pct": 0.151 },
+  { "bucket": ">30%", "count": 206, "pct": 0.097 }
+],
+
+"quarterly_margin_gap": [
+  { "quarter": "2022-Q1", "quoted": 0.765, "actual": 0.616, "gap": 0.149 },
+  { "quarter": "2022-Q2", "quoted": 0.742, "actual": 0.698, "gap": 0.044 },
+  { "quarter": "2022-Q3", "quoted": 0.718, "actual": 0.725, "gap": -0.007 },
+  { "quarter": "2022-Q4", "quoted": 0.664, "actual": 0.682, "gap": -0.018 },
+  { "quarter": "2023-Q1", "quoted": 0.735, "actual": 0.718, "gap": 0.017 },
+  { "quarter": "2023-Q2", "quoted": 0.728, "actual": 0.702, "gap": 0.026 },
+  { "quarter": "2023-Q3", "quoted": 0.715, "actual": 0.685, "gap": 0.030 },
+  { "quarter": "2023-Q4", "quoted": 0.708, "actual": 0.698, "gap": 0.010 },
+  { "quarter": "2024-Q1", "quoted": 0.745, "actual": 0.722, "gap": 0.023 },
+  { "quarter": "2024-Q2", "quoted": 0.732, "actual": 0.718, "gap": 0.014 },
+  { "quarter": "2024-Q3", "quoted": 0.701, "actual": 0.600, "gap": 0.101 },
+  { "quarter": "2024-Q4", "quoted": 0.644, "actual": 0.630, "gap": 0.014 }
+],
+
+"product_type_elasticity": [
+  { "product_type": "Pumpenkopf", "avg_margin": 0.743, "win_rate": 0.582, "pricing_power": "Strong" },
+  { "product_type": "Zahnradpumpe", "avg_margin": 0.625, "win_rate": 0.445, "pricing_power": "Moderate" },
+  { "product_type": "Innenzahnringpumpe", "avg_margin": 0.549, "win_rate": 0.352, "pricing_power": "Weak" },
+  { "product_type": "Flügelzellenpumpe", "avg_margin": 0.612, "win_rate": 0.415, "pricing_power": "Moderate" },
+  { "product_type": "Drehkolbenpumpe", "avg_margin": 0.688, "win_rate": 0.498, "pricing_power": "Strong" }
+]
+}

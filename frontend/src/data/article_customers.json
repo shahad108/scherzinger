@@ -1,0 +1,174 @@
+{
+  "300143": {
+    "customer_count": 3,
+    "concentration": "HIGH",
+    "top_customer_share": 0.58,
+    "customers": [
+      { "customer_id": "101580", "revenue": 259782, "share": 0.58, "order_count": 85, "first_order": "2022-01", "last_order": "2025-03" },
+      { "customer_id": "101445", "revenue": 134117, "share": 0.30, "order_count": 48, "first_order": "2022-03", "last_order": "2024-12" },
+      { "customer_id": "101312", "revenue": 54002, "share": 0.12, "order_count": 15, "first_order": "2023-06", "last_order": "2024-11" }
+    ],
+    "total_customer_spend": { "101580": 1850000, "101445": 920000, "101312": 445000 }
+  },
+  "201827": {
+    "customer_count": 2,
+    "concentration": "HIGH",
+    "top_customer_share": 0.73,
+    "customers": [
+      { "customer_id": "101580", "revenue": 150000, "share": 0.73, "order_count": 42, "first_order": "2022-03", "last_order": "2024-12" },
+      { "customer_id": "101728", "revenue": 56000, "share": 0.27, "order_count": 18, "first_order": "2022-06", "last_order": "2024-11" }
+    ],
+    "total_customer_spend": { "101580": 1850000, "101728": 620000 }
+  },
+  "200832-E": {
+    "customer_count": 1,
+    "concentration": "Single customer (critical)",
+    "top_customer_share": 1.0,
+    "customers": [
+      { "customer_id": "101690", "revenue": 42000, "share": 1.0, "order_count": 20, "first_order": "2022-05", "last_order": "2024-10" }
+    ],
+    "total_customer_spend": { "101690": 380000 }
+  },
+  "201924-F": {
+    "customer_count": 4,
+    "concentration": "Moderate",
+    "top_customer_share": 0.42,
+    "customers": [
+      { "customer_id": "101580", "revenue": 243762, "share": 0.42, "order_count": 52, "first_order": "2022-01", "last_order": "2024-12" },
+      { "customer_id": "101445", "revenue": 168312, "share": 0.29, "order_count": 35, "first_order": "2022-02", "last_order": "2024-11" },
+      { "customer_id": "101623", "revenue": 110225, "share": 0.19, "order_count": 22, "first_order": "2022-06", "last_order": "2024-09" },
+      { "customer_id": "101895", "revenue": 58088, "share": 0.10, "order_count": 12, "first_order": "2023-01", "last_order": "2024-08" }
+    ],
+    "total_customer_spend": { "101580": 1850000, "101445": 920000, "101623": 520000, "101895": 310000 }
+  },
+  "201885": {
+    "customer_count": 5,
+    "concentration": "Moderate",
+    "top_customer_share": 0.35
+  },
+  "206028-01": {
+    "customer_count": 2,
+    "concentration": "HIGH",
+    "top_customer_share": 0.68
+  },
+  "204430": {
+    "customer_count": 1,
+    "concentration": "Single customer (critical)",
+    "top_customer_share": 1.0
+  },
+  "201398": {
+    "customer_count": 3,
+    "concentration": "HIGH",
+    "top_customer_share": 0.52
+  },
+  "205593": {
+    "customer_count": 6,
+    "concentration": "Moderate",
+    "top_customer_share": 0.30
+  },
+  "202084": {
+    "customer_count": 4,
+    "concentration": "Moderate",
+    "top_customer_share": 0.38
+  },
+  "205415-B": {
+    "customer_count": 1,
+    "concentration": "Single customer (critical)",
+    "top_customer_share": 1.0
+  },
+  "205178": {
+    "customer_count": 3,
+    "concentration": "HIGH",
+    "top_customer_share": 0.55
+  },
+  "205592": {
+    "customer_count": 7,
+    "concentration": "Moderate",
+    "top_customer_share": 0.28
+  },
+  "205165": {
+    "customer_count": 2,
+    "concentration": "HIGH",
+    "top_customer_share": 0.71
+  },
+  "200372-A": {
+    "customer_count": 4,
+    "concentration": "Moderate",
+    "top_customer_share": 0.40
+  },
+  "201951": {
+    "customer_count": 1,
+    "concentration": "Single customer (critical)",
+    "top_customer_share": 1.0
+  },
+  "204743": {
+    "customer_count": 5,
+    "concentration": "Moderate",
+    "top_customer_share": 0.33
+  },
+  "204604": {
+    "customer_count": 2,
+    "concentration": "HIGH",
+    "top_customer_share": 0.65
+  },
+  "202071": {
+    "customer_count": 8,
+    "concentration": "Moderate",
+    "top_customer_share": 0.25
+  },
+  "201888": {
+    "customer_count": 3,
+    "concentration": "HIGH",
+    "top_customer_share": 0.49
+  },
+  "203076": {
+    "customer_count": 6,
+    "concentration": "Moderate",
+    "top_customer_share": 0.31
+  },
+  "204702-A": {
+    "customer_count": 1,
+    "concentration": "Single customer (critical)",
+    "top_customer_share": 1.0
+  },
+  "204632": {
+    "customer_count": 4,
+    "concentration": "Moderate",
+    "top_customer_share": 0.37
+  },
+  "204361": {
+    "customer_count": 2,
+    "concentration": "HIGH",
+    "top_customer_share": 0.74
+  },
+  "201459-I": {
+    "customer_count": 5,
+    "concentration": "Moderate",
+    "top_customer_share": 0.34
+  },
+  "203092": {
+    "customer_count": 3,
+    "concentration": "HIGH",
+    "top_customer_share": 0.51
+  },
+  "201924": {
+    "customer_count": 7,
+    "concentration": "Moderate",
+    "top_customer_share": 0.27
+  },
+  "201036": {
+    "customer_count": 1,
+    "concentration": "Single customer (critical)",
+    "top_customer_share": 1.0
+  },
+  "204235": {
+    "customer_count": 6,
+    "concentration": "Moderate",
+    "top_customer_share": 0.29
+  },
+  "200834-B": {
+    "customer_count": 2,
+    "concentration": "HIGH",
+    "top_customer_share": 0.62
+  }
+}

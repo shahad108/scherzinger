@@ -12,6 +12,9 @@ import inventoryData from '../data/inventory_detail.json';
 import mlData from '../data/ml_analytics.json';
 import governanceData from '../data/price_governance.json';
 import cogsData from '../data/cogs_detail.json';
+import articleQuotesData from '../data/article_quotes.json';
+import articleCustomersData from '../data/article_customers.json';
+import pricingAnalysis from '../data/pricing_analysis.json';
 
 /* ── Constants ── */
 const MARGIN_FLOOR = 0.50; // 50 % DB II floor
@@ -34,6 +37,18 @@ const bcgByCommodity = Object.fromEntries(
 );
 
 const priceRules = governanceData.price_rules || [];
+
+/* ── Article-level quote stats ── */
+export const articleQuotes = articleQuotesData || {};
+
+/* ── Article-level customer data ── */
+export const articleCustomers = articleCustomersData || {};
+
+/* ── Persistent losses set for action label logic ── */
+const persistentLossesSet = new Set(
+  ((pricingAnalysis.persistent_losses || {}).top_10 || [])
+    .map(p => `${p.customer}-${p.article}`)
+);
 
 /* ── Risk Score (0-100) ── */
 export function computeRiskScore(product, costTrend) {
@@ -61,17 +76,42 @@ export function computeRiskScore(product, costTrend) {
   return Math.min(Math.round(score), 100);
 }
 
-/* ── Pricing Action ── */
-function computeAction(product) {
+/* ── Pricing Action (5 nuanced labels) ── */
+function computeAction(product, costTrend) {
+  const articleId = product?.article_id;
   const latestMargin = product?.margin_2025 ?? product?.margin_2024 ?? null;
-  if (
-    product?.margin_trend === 'declining' ||
-    (latestMargin != null && latestMargin < MARGIN_FLOOR)
-  ) {
+  const materialPct = product?.material_pct || costTrend?.material_share || 0;
+  const unitsLatest = product?.units_2025 ?? product?.units_2024 ?? 0;
+  const quoteData = articleQuotes[articleId];
+
+  // 1. Persistent losses → Stop Quoting
+  if (articleId && persistentLossesSet.size > 0) {
+    const isInPersistentLosses = [...persistentLossesSet].some(key => key.endsWith(`-${articleId}`));
+    if (isInPersistentLosses) return 'Stop Quoting';
+  }
+
+  // 2. High material cost + low volume + declining → Strategic Review
+  if (materialPct > 0.40 && unitsLatest < 30 && product?.margin_trend === 'declining') {
+    return 'Strategic Review';
+  }
+
+  // 3. Low quote win rate + high margin → Volume Discount Restructure
+  if (quoteData && quoteData.total >= 3 && quoteData.win_rate < 0.30 && latestMargin != null && latestMargin > 0.60) {
+    return 'Volume Discount';
+  }
+
+  // 4. Above target + not declining → Hold
+  const targetMargin = computeTargetMargin(product);
+  if (latestMargin != null && latestMargin >= targetMargin && product?.margin_trend !== 'declining') {
+    return 'Hold';
+  }
+
+  // 5. Declining or below floor → Increase
+  if (product?.margin_trend === 'declining' || (latestMargin != null && latestMargin < MARGIN_FLOOR)) {
     return 'Increase';
   }
-  if (product?.margin_trend === 'stable') return 'Monitor';
-  return 'OK';
+
+  return 'Monitor';
 }
 
 /* ── Priority Tier ── */
@@ -99,6 +139,63 @@ export function getMarginTrajectory(product) {
   if (product.margin_2024 != null) points.push({ year: '2024', margin: product.margin_2024 });
   if (product.margin_2025 != null) points.push({ year: '2025', margin: product.margin_2025 });
   return points;
+}
+
+/* ── Per-year price vs cost breakdown ── */
+export function getCostDeepDive(product, costTrend, cogsInfo) {
+  if (!product) return null;
+  const years = [2022, 2023, 2024, 2025];
+  const trend = [];
+  let prevPrice = null;
+  let prevCost = null;
+
+  for (const y of years) {
+    const rev = product[`revenue_${y}`];
+    const units = product[`units_${y}`];
+    const cost = costTrend?.[`hkvoll_${y}`];
+    if (!units || units === 0 || !rev) continue;
+
+    const price = Math.round(rev / units);
+    const margin = product[`margin_${y}`];
+    const priceYoY = prevPrice ? ((price - prevPrice) / prevPrice) : null;
+    const costYoY = prevCost ? ((cost - prevCost) / prevCost) : null;
+
+    trend.push({ year: y, price, cost: cost || 0, margin, priceYoY, costYoY });
+    prevPrice = price;
+    prevCost = cost;
+  }
+
+  const first = trend[0];
+  const last = trend[trend.length - 1];
+  let passThrough = null;
+  let leakagePerUnit = null;
+  if (first && last && first.cost > 0 && last.cost > first.cost) {
+    const costChange = last.cost - first.cost;
+    const priceChange = last.price - first.price;
+    passThrough = priceChange / costChange;
+    leakagePerUnit = costChange - priceChange;
+  }
+
+  const materialShare = costTrend?.material_share ?? cogsInfo?.material_pct ?? 0;
+  const laborShare = costTrend?.labor_share ?? cogsInfo?.labor_pct ?? 0;
+  const outsourcingShare = costTrend?.outsourcing_share ?? cogsInfo?.outsourcing_pct ?? 0;
+  const overheadShare = Math.max(0, 1 - materialShare - laborShare - outsourcingShare);
+  const costPerUnit = last?.cost || product.hkvoll_per_unit || 0;
+
+  return {
+    trend,
+    passThrough,
+    leakagePerUnit,
+    totalLeakage: leakagePerUnit != null ? leakagePerUnit * (product[`units_${last?.year}`] || 0) : null,
+    breakdown: {
+      material: { pct: materialShare, eur: Math.round(costPerUnit * materialShare) },
+      labor: { pct: laborShare, eur: Math.round(costPerUnit * laborShare) },
+      outsourcing: { pct: outsourcingShare, eur: Math.round(costPerUnit * outsourcingShare) },
+      overhead: { pct: overheadShare, eur: Math.round(costPerUnit * overheadShare) },
+    },
+    isFromArticle: !!(costTrend?.material_share),
+    unitsLatest: product[`units_${last?.year}`] || 0,
+  };
 }
 
 /* ── Target margin: at least the floor, otherwise prior year ── */
@@ -140,7 +237,7 @@ export function buildEnrichedRecommendations() {
     const gapPct = Math.max(gap * 100, 0);
 
     const riskScore = computeRiskScore(product, costTrend);
-    const action = computeAction(product);
+    const action = computeAction(product, costTrend);
     const priority = computePriority(riskScore);
     const approval = getApprovalLevel(gapPct);
     const marginTrajectory = getMarginTrajectory(product);
@@ -194,6 +291,23 @@ export function buildEnrichedRecommendations() {
       margin_2023: product.margin_2023,
       margin_2024: product.margin_2024,
       margin_2025: product.margin_2025,
+
+      // New: deep-dive data
+      costDeepDive: getCostDeepDive(product, costTrend, cogsInfo),
+      quoteStats: articleQuotes[product.article_id] || null,
+      customerData: articleCustomers[product.article_id] || null,
+
+      // Product fields for detail panel
+      fek_pct: product.fek_pct || 0,
+      fv_pct: product.fv_pct || 0,
+      revenue_2022: product.revenue_2022,
+      revenue_2023: product.revenue_2023,
+      revenue_2024: product.revenue_2024,
+      revenue_2025: product.revenue_2025,
+      units_2022: product.units_2022,
+      units_2023: product.units_2023,
+      units_2024: product.units_2024,
+      units_2025: product.units_2025,
     };
   });
 }
@@ -206,7 +320,7 @@ export function buildEnrichedRecommendations() {
 export function getReactiveRecommendations(enriched) {
   if (!enriched || !Array.isArray(enriched) || enriched.length === 0) return [];
   return enriched
-    .filter((r) => r.action === 'Increase' || r.current_margin < MARGIN_FLOOR)
+    .filter((r) => r.action === 'Increase' || r.action === 'Stop Quoting' || r.action === 'Strategic Review' || r.action === 'Volume Discount' || r.current_margin < MARGIN_FLOOR)
     .sort(
       (a, b) =>
         (b.riskScore || 0) - (a.riskScore || 0) ||

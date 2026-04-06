@@ -242,7 +242,29 @@ export default function Forecasting() {
     }));
   }, []);
 
-  const fullCostData = useMemo(() => [...costChartData, ...costProjectionData], [costChartData, costProjectionData]);
+  const fullCostData = useMemo(() => {
+    const data = costChartData.map((d, i) => {
+      const isLast = i === costChartData.length - 1;
+      return {
+        ...d,
+        // Bridge: last historical point also gets projected keys so dashed lines connect
+        materialProj: isLast ? d.material : null,
+        directMfgProj: isLast ? d.directMfg : null,
+        fullMfgProj: isLast ? d.fullMfg : null,
+      };
+    });
+    const projected = costProjectionData.map(d => ({
+      label: d.label,
+      material: null,
+      directMfg: null,
+      fullMfg: null,
+      materialProj: d.material,
+      directMfgProj: d.directMfg,
+      fullMfgProj: d.fullMfg,
+      projected: true,
+    }));
+    return [...data, ...projected];
+  }, [costChartData, costProjectionData]);
 
   /* ── Row 7: Revenue Projection ── */
   const revenueChartData = useMemo(() => {
@@ -591,9 +613,14 @@ export default function Forecasting() {
                 <YAxis tickFormatter={v => `${v}%`} tick={{ fontSize: 10, fill: '#94a3b8' }} width={50} axisLine={false} tickLine={false} domain={[8, 40]} />
                 <Tooltip content={<CustomTooltip formatter={v => `${v}%`} />} />
                 <Legend wrapperStyle={{ fontSize: 10 }} />
-                <Line type="monotone" dataKey="material" name="Material %" stroke="#10B981" strokeWidth={2} dot={{ r: 3, fill: '#10B981' }} animationDuration={800} connectNulls />
-                <Line type="monotone" dataKey="directMfg" name="Direct Mfg %" stroke="#0393da" strokeWidth={2} dot={{ r: 3, fill: '#0393da' }} animationDuration={800} connectNulls />
-                <Line type="monotone" dataKey="fullMfg" name="Full Mfg Cost %" stroke="#EF4444" strokeWidth={2} dot={{ r: 3, fill: '#EF4444' }} animationDuration={800} connectNulls />
+                {/* Historical lines (solid) */}
+                <Line type="monotone" dataKey="material" name="Material %" stroke="#10B981" strokeWidth={2} dot={{ r: 3, fill: '#10B981' }} animationDuration={800} />
+                <Line type="monotone" dataKey="directMfg" name="Direct Mfg %" stroke="#0393da" strokeWidth={2} dot={{ r: 3, fill: '#0393da' }} animationDuration={800} />
+                <Line type="monotone" dataKey="fullMfg" name="Full Mfg Cost %" stroke="#EF4444" strokeWidth={2} dot={{ r: 3, fill: '#EF4444' }} animationDuration={800} />
+                {/* Projected lines (dotted) */}
+                <Line type="monotone" dataKey="materialProj" stroke="#10B981" strokeWidth={2} strokeDasharray="6 3" dot={{ r: 3, fill: '#10B981', strokeDasharray: '' }} animationDuration={800} connectNulls legendType="none" />
+                <Line type="monotone" dataKey="directMfgProj" stroke="#0393da" strokeWidth={2} strokeDasharray="6 3" dot={{ r: 3, fill: '#0393da', strokeDasharray: '' }} animationDuration={800} connectNulls legendType="none" />
+                <Line type="monotone" dataKey="fullMfgProj" stroke="#EF4444" strokeWidth={2} strokeDasharray="6 3" dot={{ r: 3, fill: '#EF4444', strokeDasharray: '' }} animationDuration={800} connectNulls legendType="none" />
               </LineChart>
             </ResponsiveContainer>
           </div>
