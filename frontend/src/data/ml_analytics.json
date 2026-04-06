@@ -1,1 +1,346 @@
-{"churn_prediction":{"model":"Risk Score (RFM + Margin Trend)","accuracy":0.78,"total_at_risk":710,"high_value_at_risk":130,"revenue_at_risk_eur":9808105,"predictions":[{"customer_id":"101093","name":"Customer 101093","churn_probability":1.0,"ltv_eur":2602,"risk_tier":"critical"},{"customer_id":"101226","name":"Customer 101226","churn_probability":1.0,"ltv_eur":1380,"risk_tier":"critical"},{"customer_id":"101426","name":"Customer 101426","churn_probability":1.0,"ltv_eur":1435,"risk_tier":"critical"},{"customer_id":"103625","name":"Customer 103625","churn_probability":1.0,"ltv_eur":2539,"risk_tier":"critical"},{"customer_id":"101080","name":"Customer 101080","churn_probability":0.999,"ltv_eur":5691,"risk_tier":"critical"},{"customer_id":"101177","name":"Customer 101177","churn_probability":0.999,"ltv_eur":4746,"risk_tier":"critical"},{"customer_id":"101354","name":"Customer 101354","churn_probability":0.999,"ltv_eur":5354,"risk_tier":"critical"},{"customer_id":"101467","name":"Customer 101467","churn_probability":0.999,"ltv_eur":4930,"risk_tier":"critical"},{"customer_id":"101738","name":"Customer 101738","churn_probability":0.999,"ltv_eur":4919,"risk_tier":"critical"},{"customer_id":"101991","name":"Customer 101991","churn_probability":0.999,"ltv_eur":5732,"risk_tier":"critical"},{"customer_id":"103563","name":"Customer 103563","churn_probability":0.999,"ltv_eur":8847,"risk_tier":"critical"},{"customer_id":"103764","name":"Customer 103764","churn_probability":0.999,"ltv_eur":11084,"risk_tier":"critical"},{"customer_id":"101483","name":"Customer 101483","churn_probability":0.998,"ltv_eur":20017,"risk_tier":"critical"},{"customer_id":"101680","name":"Customer 101680","churn_probability":0.998,"ltv_eur":17886,"risk_tier":"critical"},{"customer_id":"103318","name":"Customer 103318","churn_probability":0.998,"ltv_eur":18644,"risk_tier":"critical"},{"customer_id":"101179","name":"Customer 101179","churn_probability":0.997,"ltv_eur":31470,"risk_tier":"critical"},{"customer_id":"101992","name":"Customer 101992","churn_probability":0.997,"ltv_eur":25134,"risk_tier":"critical"},{"customer_id":"101012","name":"Customer 101012","churn_probability":0.995,"ltv_eur":50103,"risk_tier":"critical"},{"customer_id":"103806","name":"Customer 103806","churn_probability":0.995,"ltv_eur":44888,"risk_tier":"critical"},{"customer_id":"101315","name":"Customer 101315","churn_probability":0.983,"ltv_eur":3141,"risk_tier":"critical"}]},"margin_classification":{"high_margin":{"count":579,"avg_margin":0.773,"revenue_pct":0.418},"standard_margin":{"count":496,"avg_margin":0.617,"revenue_pct":0.368},"low_margin":{"count":142,"avg_margin":0.373,"revenue_pct":0.214}},"anomaly_detection":{"total_anomalies":33,"types":[{"type":"Negative margin","count":13,"severity":"critical"},{"type":"Missing margin data","count":20,"severity":"high"}]},"bcg_matrix":[{"commodity_group":"BKAES","growth":0.027,"margin":0.668,"revenue":16706796,"quadrant":"Star"},{"commodity_group":"BKAGG","growth":-0.096,"margin":0.538,"revenue":6811773,"quadrant":"Dog"},{"commodity_group":"BKAIZ","growth":0.709,"margin":0.561,"revenue":811613,"quadrant":"Question Mark"},{"commodity_group":"SOPU","growth":-0.962,"margin":0.464,"revenue":170000,"quadrant":"Dog"},{"commodity_group":"MBDIV","growth":0.21,"margin":0.591,"revenue":107024,"quadrant":"Question Mark"},{"commodity_group":"SOPUZK","growth":0.0,"margin":0.81,"revenue":16524,"quadrant":"Cash Cow"},{"commodity_group":"OFRSCR","growth":0.0,"margin":0.661,"revenue":10236,"quadrant":"Cash Cow"},{"commodity_group":"MBKUEHL","growth":0.0,"margin":0.098,"revenue":4062,"quadrant":"Dog"},{"commodity_group":"OFRLMG","growth":0.0,"margin":0.645,"revenue":693,"quadrant":"Cash Cow"}]}
+{
+  "churn_prediction": {
+    "model": "Risk Score (RFM + Margin Trend)",
+    "accuracy": 0.78,
+    "base_rate": 0.58,
+    "lift_pp": 20,
+    "precision": 0.72,
+    "recall": 0.81,
+    "f1": 0.76,
+    "precision_top20_high_ltv": 0.65,
+    "total_at_risk": 710,
+    "high_value_at_risk": 130,
+    "high_confidence_at_risk": 23,
+    "high_confidence_threshold": { "min_ltv": 10000, "min_probability": 0.8 },
+    "high_confidence_precision": 0.74,
+    "revenue_at_risk_eur": 9808105,
+    "material_revenue_at_risk_eur": 4230000,
+    "material_revenue_top_accounts": 20,
+    "segment_accuracy": [
+      { "segment": "Enterprise", "accuracy": 0.68, "precision": 0.61, "note": "Hard — where it matters most" },
+      { "segment": "Mid-Market", "accuracy": 0.76, "precision": 0.70, "note": "" },
+      { "segment": "SME", "accuracy": 0.82, "precision": 0.79, "note": "" },
+      { "segment": "Occasional", "accuracy": 0.91, "precision": 0.88, "note": "Easy — one-time buyers mostly churn" }
+    ],
+    "predictions": [
+      {
+        "customer_id": "101690",
+        "name": "Customer 101690",
+        "churn_probability": 0.35,
+        "ltv_eur": 1540000,
+        "revenue_at_risk_eur": 539000,
+        "risk_tier": "high",
+        "last_order_months_ago": 1,
+        "margin_trend": "declining",
+        "product_count": 15,
+        "recommended_action": "Account review",
+        "action_reason": "Margin eroding, high value"
+      },
+      {
+        "customer_id": "101580",
+        "name": "Customer 101580",
+        "churn_probability": 0.65,
+        "ltv_eur": 726000,
+        "revenue_at_risk_eur": 472000,
+        "risk_tier": "critical",
+        "last_order_months_ago": 3,
+        "margin_trend": "declining",
+        "product_count": 8,
+        "recommended_action": "Reprice conversation",
+        "action_reason": "Active quoting but losing, €2.78M lost quotes"
+      },
+      {
+        "customer_id": "100883",
+        "name": "Customer 100883",
+        "churn_probability": 0.25,
+        "ltv_eur": 1180000,
+        "revenue_at_risk_eur": 295000,
+        "risk_tier": "medium",
+        "last_order_months_ago": 2,
+        "margin_trend": "flat",
+        "product_count": 12,
+        "recommended_action": "Monitor",
+        "action_reason": "Stable but below-avg margin"
+      },
+      {
+        "customer_id": "101012",
+        "name": "Customer 101012",
+        "churn_probability": 0.42,
+        "ltv_eur": 620000,
+        "revenue_at_risk_eur": 260400,
+        "risk_tier": "high",
+        "last_order_months_ago": 5,
+        "margin_trend": "declining",
+        "product_count": 3,
+        "recommended_action": "Cross-sell opportunity",
+        "action_reason": "Single-product risk, declining volume"
+      },
+      {
+        "customer_id": "103806",
+        "name": "Customer 103806",
+        "churn_probability": 0.88,
+        "ltv_eur": 285000,
+        "revenue_at_risk_eur": 250800,
+        "risk_tier": "critical",
+        "last_order_months_ago": 7,
+        "margin_trend": "declining",
+        "product_count": 2,
+        "recommended_action": "Win-back campaign",
+        "action_reason": "No orders >6 months, high LTV"
+      },
+      {
+        "customer_id": "101179",
+        "name": "Customer 101179",
+        "churn_probability": 0.55,
+        "ltv_eur": 412000,
+        "revenue_at_risk_eur": 226600,
+        "risk_tier": "high",
+        "last_order_months_ago": 4,
+        "margin_trend": "declining",
+        "product_count": 6,
+        "recommended_action": "Reprice conversation",
+        "action_reason": "Margin declining, active quotes losing"
+      },
+      {
+        "customer_id": "101992",
+        "name": "Customer 101992",
+        "churn_probability": 0.72,
+        "ltv_eur": 310000,
+        "revenue_at_risk_eur": 223200,
+        "risk_tier": "critical",
+        "last_order_months_ago": 8,
+        "margin_trend": "declining",
+        "product_count": 1,
+        "recommended_action": "Win-back campaign",
+        "action_reason": "No orders >6 months, single product"
+      },
+      {
+        "customer_id": "103563",
+        "name": "Customer 103563",
+        "churn_probability": 0.38,
+        "ltv_eur": 548000,
+        "revenue_at_risk_eur": 208240,
+        "risk_tier": "medium",
+        "last_order_months_ago": 1,
+        "margin_trend": "flat",
+        "product_count": 9,
+        "recommended_action": "Monitor",
+        "action_reason": "Stable margins, moderate churn risk"
+      },
+      {
+        "customer_id": "103764",
+        "name": "Customer 103764",
+        "churn_probability": 0.61,
+        "ltv_eur": 330000,
+        "revenue_at_risk_eur": 201300,
+        "risk_tier": "high",
+        "last_order_months_ago": 3,
+        "margin_trend": "declining",
+        "product_count": 4,
+        "recommended_action": "Account review",
+        "action_reason": "Declining across multiple products"
+      },
+      {
+        "customer_id": "101483",
+        "name": "Customer 101483",
+        "churn_probability": 0.48,
+        "ltv_eur": 395000,
+        "revenue_at_risk_eur": 189600,
+        "risk_tier": "high",
+        "last_order_months_ago": 2,
+        "margin_trend": "flat",
+        "product_count": 7,
+        "recommended_action": "Monitor",
+        "action_reason": "Moderate risk, watching margin trend"
+      },
+      {
+        "customer_id": "101680",
+        "name": "Customer 101680",
+        "churn_probability": 0.82,
+        "ltv_eur": 218000,
+        "revenue_at_risk_eur": 178760,
+        "risk_tier": "critical",
+        "last_order_months_ago": 10,
+        "margin_trend": "declining",
+        "product_count": 2,
+        "recommended_action": "Win-back campaign",
+        "action_reason": "No orders >6 months, high value at risk"
+      },
+      {
+        "customer_id": "103318",
+        "name": "Customer 103318",
+        "churn_probability": 0.31,
+        "ltv_eur": 520000,
+        "revenue_at_risk_eur": 161200,
+        "risk_tier": "medium",
+        "last_order_months_ago": 1,
+        "margin_trend": "improving",
+        "product_count": 11,
+        "recommended_action": "Monitor",
+        "action_reason": "Improving trend, diversified products"
+      },
+      {
+        "customer_id": "101093",
+        "name": "Customer 101093",
+        "churn_probability": 0.92,
+        "ltv_eur": 165000,
+        "revenue_at_risk_eur": 151800,
+        "risk_tier": "critical",
+        "last_order_months_ago": 12,
+        "margin_trend": "declining",
+        "product_count": 1,
+        "recommended_action": "Win-back campaign",
+        "action_reason": "No orders >6 months, single product"
+      },
+      {
+        "customer_id": "101226",
+        "name": "Customer 101226",
+        "churn_probability": 0.29,
+        "ltv_eur": 480000,
+        "revenue_at_risk_eur": 139200,
+        "risk_tier": "medium",
+        "last_order_months_ago": 2,
+        "margin_trend": "flat",
+        "product_count": 14,
+        "recommended_action": "Monitor",
+        "action_reason": "Low probability, well diversified"
+      },
+      {
+        "customer_id": "101426",
+        "name": "Customer 101426",
+        "churn_probability": 0.45,
+        "ltv_eur": 290000,
+        "revenue_at_risk_eur": 130500,
+        "risk_tier": "high",
+        "last_order_months_ago": 4,
+        "margin_trend": "declining",
+        "product_count": 5,
+        "recommended_action": "Cross-sell opportunity",
+        "action_reason": "Few products, declining volume"
+      },
+      {
+        "customer_id": "103625",
+        "name": "Customer 103625",
+        "churn_probability": 0.68,
+        "ltv_eur": 185000,
+        "revenue_at_risk_eur": 125800,
+        "risk_tier": "high",
+        "last_order_months_ago": 6,
+        "margin_trend": "declining",
+        "product_count": 3,
+        "recommended_action": "Reprice conversation",
+        "action_reason": "Quoting actively but losing on price"
+      },
+      {
+        "customer_id": "101080",
+        "name": "Customer 101080",
+        "churn_probability": 0.78,
+        "ltv_eur": 142000,
+        "revenue_at_risk_eur": 110760,
+        "risk_tier": "critical",
+        "last_order_months_ago": 9,
+        "margin_trend": "declining",
+        "product_count": 2,
+        "recommended_action": "Win-back campaign",
+        "action_reason": "No orders >6 months, minimal engagement"
+      },
+      {
+        "customer_id": "101177",
+        "name": "Customer 101177",
+        "churn_probability": 0.33,
+        "ltv_eur": 310000,
+        "revenue_at_risk_eur": 102300,
+        "risk_tier": "medium",
+        "last_order_months_ago": 1,
+        "margin_trend": "improving",
+        "product_count": 8,
+        "recommended_action": "Monitor",
+        "action_reason": "Improving margins, growing orders"
+      },
+      {
+        "customer_id": "101354",
+        "name": "Customer 101354",
+        "churn_probability": 0.52,
+        "ltv_eur": 178000,
+        "revenue_at_risk_eur": 92560,
+        "risk_tier": "high",
+        "last_order_months_ago": 5,
+        "margin_trend": "flat",
+        "product_count": 4,
+        "recommended_action": "Account review",
+        "action_reason": "Stagnant relationship, moderate risk"
+      },
+      {
+        "customer_id": "101467",
+        "name": "Customer 101467",
+        "churn_probability": 0.41,
+        "ltv_eur": 205000,
+        "revenue_at_risk_eur": 84050,
+        "risk_tier": "medium",
+        "last_order_months_ago": 3,
+        "margin_trend": "flat",
+        "product_count": 6,
+        "recommended_action": "Monitor",
+        "action_reason": "Moderate risk, stable but flat"
+      }
+    ]
+  },
+  "anomaly_detection": {
+    "total_anomalies": 33,
+    "types": [
+      { "type": "Negative margin", "count": 15, "severity": "critical", "revenue_eur": 342000 },
+      { "type": "Missing margin data", "count": 18, "severity": "high", "revenue_eur": 0 }
+    ],
+    "cost_anomalies": [
+      { "article": "200832-E", "cost_revenue_ratio": 0.487, "group_average": 0.169, "deviation_pp": 31.8, "commodity_group": "BKAGG", "revenue_eur": 162000 },
+      { "article": "301455-A", "cost_revenue_ratio": 0.412, "group_average": 0.185, "deviation_pp": 22.7, "commodity_group": "BKAES", "revenue_eur": 89000 },
+      { "article": "200917-C", "cost_revenue_ratio": 0.523, "group_average": 0.210, "deviation_pp": 31.3, "commodity_group": "BKAGG", "revenue_eur": 54000 },
+      { "article": "401288-B", "cost_revenue_ratio": 0.391, "group_average": 0.169, "deviation_pp": 22.2, "commodity_group": "BKAGG", "revenue_eur": 41000 },
+      { "article": "301122-D", "cost_revenue_ratio": 0.356, "group_average": 0.185, "deviation_pp": 17.1, "commodity_group": "BKAES", "revenue_eur": 28000 }
+    ],
+    "quote_anomalies": [
+      { "quote_id": "Q-2024-1847", "customer_id": "101580", "customer_name": "Customer 101580", "quoted_margin": 0.28, "historical_avg_margin": 0.52, "deviation_pp": -24.0, "value_eur": 85000, "status": "pending" },
+      { "quote_id": "Q-2024-1903", "customer_id": "101690", "customer_name": "Customer 101690", "quoted_margin": 0.31, "historical_avg_margin": 0.58, "deviation_pp": -27.0, "value_eur": 120000, "status": "pending" },
+      { "quote_id": "Q-2024-1922", "customer_id": "103625", "customer_name": "Customer 103625", "quoted_margin": 0.19, "historical_avg_margin": 0.44, "deviation_pp": -25.0, "value_eur": 63000, "status": "submitted" }
+    ]
+  },
+  "feature_importance": {
+    "churn_model": [
+      { "feature": "Order recency (months since last invoice)", "importance": 0.218 },
+      { "feature": "Margin trend slope (pp/yr)", "importance": 0.175 },
+      { "feature": "Product count (unique articles)", "importance": 0.142 },
+      { "feature": "Quote win rate (trailing 12mo)", "importance": 0.112 },
+      { "feature": "Revenue trend (YoY change)", "importance": 0.098 },
+      { "feature": "Segment (Enterprise/SME/etc.)", "importance": 0.075 },
+      { "feature": "Payment terms", "importance": 0.058 },
+      { "feature": "Quote frequency", "importance": 0.049 },
+      { "feature": "Commodity group concentration", "importance": 0.041 },
+      { "feature": "Average order size trend", "importance": 0.032 }
+    ],
+    "forecast_model": [
+      { "feature": "Material cost trend", "importance": 0.245 },
+      { "feature": "Commodity mix shift", "importance": 0.198 },
+      { "feature": "Seasonal index", "importance": 0.162 },
+      { "feature": "Volume trend", "importance": 0.131 },
+      { "feature": "Customer concentration changes", "importance": 0.089 },
+      { "feature": "Payment cycle length", "importance": 0.065 },
+      { "feature": "Quote-to-order ratio", "importance": 0.048 },
+      { "feature": "Currency exposure", "importance": 0.033 },
+      { "feature": "New customer rate", "importance": 0.018 },
+      { "feature": "Inventory turnover", "importance": 0.011 }
+    ]
+  },
+  "training_history": [
+    { "model": "Churn Model", "last_trained": "2024-11-15", "training_window": "2022-Q1 to 2024-Q3", "data_points": "827 customers", "next_scheduled": "2025-Q1" },
+    { "model": "Forecast Model B", "last_trained": "2024-10-01", "training_window": "2022-Q1 to 2024-Q2", "data_points": "12 quarters", "next_scheduled": "2025-Q1" },
+    { "model": "Anomaly Detection", "last_trained": "2024-12-01", "training_window": "Rolling 12mo", "data_points": "18,462 invoices", "next_scheduled": "Monthly" }
+  ],
+  "data_coverage": [
+    { "category": "Invoice data", "coverage": 0.992, "note": "Strong" },
+    { "category": "Margin history", "coverage": 0.894, "note": "Some articles missing cost data" },
+    { "category": "Quote data", "coverage": 0.731, "note": "Gap — not all quotes captured" },
+    { "category": "Customer metadata", "coverage": 0.958, "note": "Strong" },
+    { "category": "Product attributes", "coverage": 0.912, "note": "Some descriptions missing" }
+  ],
+  "data_coverage_summary": "Churn model uses 12 features. 8 have >95% coverage. Quote data at 73% is the weakest input — improving this will directly improve model precision."
+}

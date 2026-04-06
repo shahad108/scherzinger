@@ -59,3 +59,34 @@ export async function streamChat(messages, { onChunk, onDone, onError, signal })
     }
   }
 }
+
+/**
+ * Non-streaming quick chat — for lightweight tasks like generating follow-up suggestions.
+ * Uses Haiku for speed and low cost.
+ */
+export async function quickChat(messages, { maxTokens = 300, signal } = {}) {
+  const res = await fetch(OPENROUTER_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+      'HTTP-Referer': window.location.origin,
+      'X-Title': 'Scherzinger Analytics Platform',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      messages,
+      stream: false,
+      max_tokens: maxTokens,
+      temperature: 0.5,
+    }),
+    signal,
+  });
+
+  if (!res.ok) {
+    throw new Error(`API error ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content ?? '';
+}

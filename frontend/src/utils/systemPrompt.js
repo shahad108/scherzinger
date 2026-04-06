@@ -145,17 +145,17 @@ const govTimingStr = `Conversion timing: mean ${priceGov.conversion_timing.mean_
 
 // ML Analytics
 const ml = mlAnalytics;
-const mlChurnStr = `Model: ${ml.churn_prediction.model}, Accuracy: ${(ml.churn_prediction.accuracy * 100).toFixed(0)}%, Total at risk: ${ml.churn_prediction.total_at_risk}, High-value at risk: ${ml.churn_prediction.high_value_at_risk}, Revenue at risk: €${fmt(ml.churn_prediction.revenue_at_risk_eur)}`;
-
-const mlMarginStr = Object.entries(ml.margin_classification).map(([k, v]) =>
-  `${k}: ${v.count} articles, avg margin ${(v.avg_margin * 100).toFixed(0)}%, ${(v.revenue_pct * 100).toFixed(0)}% of revenue`
-).join('\n');
+const mlChurnStr = `Model: ${ml.churn_prediction.model}, Accuracy: ${(ml.churn_prediction.accuracy * 100).toFixed(0)}% (base rate: ${(ml.churn_prediction.base_rate * 100).toFixed(0)}%, lift: +${ml.churn_prediction.lift_pp}pp), Precision: ${(ml.churn_prediction.precision * 100).toFixed(0)}%, Recall: ${(ml.churn_prediction.recall * 100).toFixed(0)}%, F1: ${(ml.churn_prediction.f1 * 100).toFixed(0)}%, High-confidence at risk: ${ml.churn_prediction.high_confidence_at_risk}, Material revenue at risk: €${fmt(ml.churn_prediction.material_revenue_at_risk_eur)} (top ${ml.churn_prediction.material_revenue_top_accounts} accounts)`;
 
 const mlAnomalyStr = `Total anomalies: ${ml.anomaly_detection.total_anomalies}\n` +
   ml.anomaly_detection.types.map(t => `${t.type}: ${t.count} (${t.severity})`).join('\n');
 
-const mlBcgStr = ml.bcg_matrix.map(b =>
-  `${b.commodity_group}: ${b.quadrant}, growth ${(b.growth * 100).toFixed(0)}%, margin ${(b.margin * 100).toFixed(0)}%, rev €${fmt(b.revenue)}`
+const mlFeatureStr = ml.feature_importance.churn_model.slice(0, 5).map((f, i) =>
+  `${i + 1}. ${f.feature}: ${(f.importance * 100).toFixed(1)}%`
+).join('\n');
+
+const mlCoverageStr = ml.data_coverage.map(d =>
+  `${d.category}: ${(d.coverage * 100).toFixed(1)}% — ${d.note}`
 ).join('\n');
 
 export const SYSTEM_PROMPT = `You are PRYZM AI, the analytics assistant for Scherzinger GmbH — German pump manufacturing company specializing in high-precision industrial pumps. You analyze sales, margin, cost, pipeline, pricing, and forecasting data.
@@ -298,14 +298,14 @@ ${govHistStr}
 === ML ANALYTICS — CHURN PREDICTION ===
 ${mlChurnStr}
 
-=== ML ANALYTICS — MARGIN CLASSIFICATION ===
-${mlMarginStr}
-
 === ML ANALYTICS — ANOMALY DETECTION ===
 ${mlAnomalyStr}
 
-=== ML ANALYTICS — BCG MATRIX ===
-${mlBcgStr}
+=== ML ANALYTICS — CHURN FEATURE IMPORTANCE (TOP 5) ===
+${mlFeatureStr}
+
+=== ML ANALYTICS — DATA COVERAGE ===
+${mlCoverageStr}
 
 ## Pricing Intelligence Instructions
 - When answering pricing questions, reference margin bands, win rates, gap analysis, and governance rules.
