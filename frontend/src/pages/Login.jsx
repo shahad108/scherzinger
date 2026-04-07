@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Eye, EyeOff, Lock, User, ShieldCheck } from 'lucide-react';
-import { identifyUser } from '../utils/posthog';
+import { authenticate, isAuthenticated } from '../utils/auth';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -9,7 +10,12 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated()) navigate('/', { replace: true });
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,23 +23,14 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (res.ok) {
-        identifyUser(username);
-        const user = username.toLowerCase().trim();
-        const target = user === 'admin' ? '/admin' : user === 'demo' ? '/demo' : '/';
-        window.location.href = target;
+      const session = await authenticate(username, password);
+      if (session) {
+        window.location.href = '/';
       } else {
-        const data = await res.json().catch(() => ({}));
-        setError(data.message || 'Invalid credentials');
+        setError('Invalid username or password');
       }
     } catch {
-      setError('Unable to connect. Please try again.');
+      setError('Authentication failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -88,13 +85,15 @@ export default function Login() {
                   <polyline points="22 8.5 12 15.5 2 8.5" />
                 </svg>
               </motion.div>
-              <h1 className="text-2xl font-bold tracking-tight"
+              <h1 className="text-xl font-bold tracking-tight leading-none"
                 style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}
               >
-                Scherzinger
+                PRYZM
               </h1>
-              <p className="text-sm mt-1.5" style={{ color: '#737373' }}>
-                Margin Intelligence Platform
+              <p className="text-[10px] uppercase tracking-widest font-semibold mt-1"
+                style={{ color: '#0393da' }}
+              >
+                Solutions GmbH
               </p>
             </div>
 

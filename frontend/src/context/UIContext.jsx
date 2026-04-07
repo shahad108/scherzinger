@@ -7,27 +7,57 @@ export function UIProvider({ children }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const toggleSidebar = useCallback(() => setSidebarCollapsed(prev => !prev), []);
 
-  // ── Slide-over panel ──
-  // type: 'sku' | 'category' | null
-  // id: SKU code or category name
+  // ── Slide-over panel with history stack for breadcrumb navigation ──
+  // type: 'sku' | 'category' | 'customer' | null
+  // id: SKU code, category name, or customer ID
   const [slideOver, setSlideOver] = useState({ type: null, id: null });
+  const [panelHistory, setPanelHistory] = useState([]);
 
   // ── Selected item (lightweight click awareness for AI chat) ──
-  // { type: 'sku'|'category'|'customer'|'model', id, label, data }
   const [selectedItem, setSelectedItem] = useState(null);
   const selectItem = useCallback((item) => setSelectedItem(item), []);
   const clearSelection = useCallback(() => setSelectedItem(null), []);
 
   const openSKUDetail = useCallback((skuCode) => {
-    setSlideOver({ type: 'sku', id: skuCode });
+    setSlideOver(prev => {
+      // Push current panel to history if there is one (max 2 levels)
+      if (prev.type && prev.id) {
+        setPanelHistory(h => [...h.slice(-1), { type: prev.type, id: prev.id }]);
+      }
+      return { type: 'sku', id: skuCode };
+    });
   }, []);
 
   const openCategoryDetail = useCallback((categoryName) => {
-    setSlideOver({ type: 'category', id: categoryName });
+    setSlideOver(prev => {
+      if (prev.type && prev.id) {
+        setPanelHistory(h => [...h.slice(-1), { type: prev.type, id: prev.id }]);
+      }
+      return { type: 'category', id: categoryName };
+    });
+  }, []);
+
+  const openCustomerDetail = useCallback((customerId) => {
+    setSlideOver(prev => {
+      if (prev.type && prev.id) {
+        setPanelHistory(h => [...h.slice(-1), { type: prev.type, id: prev.id }]);
+      }
+      return { type: 'customer', id: customerId };
+    });
+  }, []);
+
+  const goBackPanel = useCallback(() => {
+    setPanelHistory(h => {
+      if (h.length === 0) return h;
+      const prev = h[h.length - 1];
+      setSlideOver({ type: prev.type, id: prev.id });
+      return h.slice(0, -1);
+    });
   }, []);
 
   const closeSlideOver = useCallback(() => {
     setSlideOver({ type: null, id: null });
+    setPanelHistory([]);
   }, []);
 
   return (
@@ -36,8 +66,11 @@ export function UIProvider({ children }) {
       toggleSidebar,
       setSidebarCollapsed,
       slideOver,
+      panelHistory,
       openSKUDetail,
       openCategoryDetail,
+      openCustomerDetail,
+      goBackPanel,
       closeSlideOver,
       selectedItem,
       selectItem,

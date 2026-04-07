@@ -1,10 +1,15 @@
 import React, { useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  AreaChart, Area, BarChart, Bar, Cell,
+  AreaChart, Area, BarChart, Bar,
   ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine,
 } from 'recharts';
-import { X, TrendingUp, TrendingDown, Minus, Package, DollarSign, Users, AlertTriangle, ShieldCheck, BarChart2, Activity, Search, Cpu } from 'lucide-react';
+import {
+  X, TrendingUp, TrendingDown, Minus, Package, DollarSign, Users,
+  AlertTriangle, ShieldCheck, BarChart2, Activity, Target, Clock,
+  Link2, ArrowUpRight, ChevronRight, ChevronLeft,
+} from 'lucide-react';
 import { useUI } from '../context/UIContext';
 import { getSKUDetail } from '../utils/skuDetailEngine';
 import { computeRiskScore, computePriority, getApprovalLevel, getMarginTrajectory, productsByArticle, costTrendsByArticle } from '../utils/pricingEngine';
@@ -13,12 +18,11 @@ import { slideOverVariants, backdropVariants, slideOverSectionVariants, slideOve
 import KPICard from './shared/KPICard';
 import { gradients, colors } from '../utils/designTokensV2';
 import { track } from '../utils/tracker';
-import inventoryStock from '../data/inventory_stock.json';
 
 const MARGIN_FLOOR = 0.50;
 const MARGIN_TARGET = 0.55;
 
-/* ── Margin Bar (reused) ── */
+/* ── Margin Bar ── */
 function MarginBar({ current }) {
   const pct = Math.min(current / 1.0, 1) * 100;
   const floorPct = (MARGIN_FLOOR / 1.0) * 100;
@@ -30,32 +34,6 @@ function MarginBar({ current }) {
       <div className="absolute top-0 h-full border-l-2 border-dashed border-slate-400" style={{ left: `${floorPct}%` }} />
       <div className="absolute top-0 h-full border-l-2 border-dashed border-green-600" style={{ left: `${targetPct}%` }} />
       <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold">{(current * 100).toFixed(1)}%</span>
-    </div>
-  );
-}
-
-/* ── Price Comparison Infographic ── */
-function PriceComparisonBar({ current, recommended }) {
-  if (!current || !recommended) return null;
-  const max = Math.max(current, recommended) * 1.1;
-  const currentPct = (current / max) * 100;
-  const recPct = (recommended / max) * 100;
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-slate-400 w-20">Current</span>
-        <div className="flex-1 h-5 bg-slate-100 rounded-full overflow-hidden relative">
-          <div className="absolute left-0 top-0 h-full rounded-full bg-red-300" style={{ width: `${currentPct}%` }} />
-          <span className="absolute inset-0 flex items-center px-2 text-[9px] font-bold">{formatEUR(current)}</span>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-green-600 font-bold w-20">Target</span>
-        <div className="flex-1 h-5 bg-slate-100 rounded-full overflow-hidden relative">
-          <div className="absolute left-0 top-0 h-full rounded-full bg-green-300" style={{ width: `${recPct}%` }} />
-          <span className="absolute inset-0 flex items-center px-2 text-[9px] font-bold">{formatEUR(recommended)}</span>
-        </div>
-      </div>
     </div>
   );
 }
@@ -89,29 +67,26 @@ function PriorityBadge({ priority }) {
 
 /* ── Pricing Action Badge ── */
 function PricingActionBadge({ action }) {
-  if (action === 'Increase') {
-    return <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 ring-1 ring-red-200">Increase</span>;
-  }
-  if (action === 'Monitor') {
-    return <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 ring-1 ring-amber-200">Monitor</span>;
-  }
+  if (action === 'Increase') return <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 ring-1 ring-red-200">Increase</span>;
+  if (action === 'Monitor') return <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 ring-1 ring-amber-200">Monitor</span>;
   return <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 ring-1 ring-green-200">OK</span>;
 }
 
-/* ── Inventory Status Helper ── */
-function getInventoryStatus(stock) {
-  if (!stock) return { label: 'No Data', color: 'bg-slate-100 text-slate-500' };
-  if (stock.current_stock <= stock.safety_stock || stock.stockouts_12mo > 0) {
-    return { label: 'Critical', color: 'bg-red-100 text-red-700' };
-  }
-  if (stock.current_stock <= stock.reorder_point) {
-    return { label: 'Reorder Soon', color: 'bg-amber-100 text-amber-700' };
-  }
-  return { label: 'Adequate', color: 'bg-green-100 text-green-700' };
+/* ── Section wrapper ── */
+function Section({ icon: Icon, iconColor, title, children, className = '' }) {
+  return (
+    <motion.div variants={slideOverItemVariants} className={`rounded-xl p-4 ${className}`} style={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
+      <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+        <Icon size={14} className={iconColor} /> {title}
+      </h4>
+      {children}
+    </motion.div>
+  );
 }
 
 export default function SKUSlideOver() {
-  const { slideOver, closeSlideOver, setSidebarCollapsed } = useUI();
+  const navigate = useNavigate();
+  const { slideOver, closeSlideOver, setSidebarCollapsed, openCustomerDetail, openSKUDetail, panelHistory, goBackPanel } = useUI();
 
   const isOpen = slideOver.type === 'sku';
   const skuCode = slideOver.id;
@@ -121,7 +96,6 @@ export default function SKUSlideOver() {
     return getSKUDetail(skuCode);
   }, [isOpen, skuCode]);
 
-  // Compute enriched pricing recommendation for this article
   const enrichedRec = useMemo(() => {
     if (!isOpen || !skuCode) return null;
     const product = productsByArticle[skuCode];
@@ -135,13 +109,11 @@ export default function SKUSlideOver() {
     const priority = computePriority(riskScore);
     const trajectory = getMarginTrajectory(product);
 
-    // Determine pricing action
     let action = 'OK';
     if (latestMargin != null && latestMargin < MARGIN_FLOOR) action = 'Increase';
     else if (latestMargin != null && latestMargin < MARGIN_TARGET) action = 'Monitor';
     else if (product.margin_trend === 'declining' && riskScore >= 40) action = 'Monitor';
 
-    // Determine trajectory direction
     let trajectoryDirection = 'stable';
     if (trajectory.length >= 2) {
       const first = trajectory[0].margin;
@@ -150,24 +122,9 @@ export default function SKUSlideOver() {
       else if (last < first - 0.02) trajectoryDirection = 'declining';
     }
 
-    return {
-      riskScore,
-      priority,
-      action,
-      currentMargin: latestMargin,
-      marginGapPct,
-      approvalLevel: approval.level,
-      approvalColor: approval.color,
-      trajectoryDirection,
-      trajectory,
-    };
+    return { riskScore, priority, action, currentMargin: latestMargin, marginGapPct, approvalLevel: approval.level, approvalColor: approval.color, trajectoryDirection, trajectory };
   }, [isOpen, skuCode]);
 
-  const stockData = inventoryStock[skuCode] || null;
-  const stockStatus = getInventoryStatus(stockData);
-  const costTrend = costTrendsByArticle[skuCode];
-
-  // Auto-collapse sidebar when slide-over opens + track drilldown
   useEffect(() => {
     if (isOpen) {
       setSidebarCollapsed(true);
@@ -175,7 +132,6 @@ export default function SKUSlideOver() {
     }
   }, [isOpen, setSidebarCollapsed, skuCode]);
 
-  // Close on Escape
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e) => { if (e.key === 'Escape') closeSlideOver(); };
@@ -209,25 +165,35 @@ export default function SKUSlideOver() {
             className="fixed right-0 top-0 h-screen w-[680px] max-w-[90vw] shadow-2xl z-50 flex flex-col overflow-hidden"
             style={{ background: '#ffffff' }}
           >
+        {/* ── Breadcrumb ── */}
+        {panelHistory.length > 0 && (() => {
+          const prev = panelHistory[panelHistory.length - 1];
+          return (
+            <div className="flex-shrink-0 px-6 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-2 text-xs">
+              <button onClick={goBackPanel} className="flex items-center gap-1 text-[#0393da] hover:text-[#0270a8] font-medium transition-colors">
+                <ChevronLeft size={14} />
+                {prev.type === 'customer' ? `Customer ${prev.id}` : prev.type === 'category' ? prev.id : `SKU ${prev.id}`}
+              </button>
+              <ChevronRight size={12} className="text-slate-300" />
+              <span className="text-slate-500">SKU {detail.article_id}</span>
+            </div>
+          );
+        })()}
+
         {/* ── Header ── */}
-        <div className="flex-shrink-0 px-6 py-4" style={{ background: '#ffffff', borderBottom: '1px solid #f8fafc' }}>
+        <div className="flex-shrink-0 px-6 py-4" style={{ background: '#ffffff', borderBottom: '1px solid #f0f1f3' }}>
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-mono text-sm text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{detail.article_id}</span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#c1e8ff] text-[#004b72]">{detail.commodity_group}</span>
+                {/* Product type from description */}
+                <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-50 text-slate-600">{detail.description}</span>
                 {detail.isAtRisk && (
                   <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 flex items-center gap-1">
                     <AlertTriangle size={10} /> AT RISK
                   </span>
                 )}
-                {detail.isBelowFloor && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">BELOW FLOOR</span>
-                )}
-                {detail.bcgQuadrant && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-600">BCG: {detail.bcgQuadrant}</span>
-                )}
-                {/* Risk Assessment Badges */}
                 {enrichedRec && (
                   <>
                     <RiskScoreBadge score={enrichedRec.riskScore} />
@@ -247,11 +213,11 @@ export default function SKUSlideOver() {
         {/* ── Scrollable Content ── */}
         <motion.div variants={slideOverSectionVariants} initial="hidden" animate="visible" className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
-          {/* ── Section 1: KPI Cards ── */}
+          {/* ── Section 1: KPI Cards (4, fixed bugs) ── */}
           <motion.div variants={slideOverItemVariants} className="grid grid-cols-4 gap-3">
             <KPICard
               compact
-              label="Total Revenue"
+              label="Revenue"
               value={formatEUR(detail.totalRevenue)}
               change={detail.yoyGrowth != null ? `${detail.yoyGrowth >= 0 ? '+' : ''}${detail.yoyGrowth.toFixed(1)}% YoY` : undefined}
               changeType={detail.yoyGrowth >= 0 ? 'positive' : 'negative'}
@@ -259,9 +225,8 @@ export default function SKUSlideOver() {
             />
             <KPICard
               compact
-              label="Total Units"
+              label="Units"
               value={detail.totalUnits}
-              change={detail.monthlyVelocity != null ? `${detail.monthlyVelocity.toFixed(1)}/mo` : undefined}
               changeType="neutral"
               accentGradient={gradients.navy}
             />
@@ -277,18 +242,15 @@ export default function SKUSlideOver() {
               compact
               label="Customers"
               value={detail.uniqueCustomers}
-              change={`ABC: ${detail.abcClass || '—'}`}
-              changeType="neutral"
+              change={detail.articleConcentration ? `${detail.articleConcentration}` : undefined}
+              changeType={detail.articleConcentration === 'HIGH' || detail.articleConcentration?.includes('critical') ? 'warning' : 'neutral'}
               accentGradient={gradients.navy}
             />
           </motion.div>
 
-          {/* ── Section 2: Revenue & Margin by Year (bar + line combo) ── */}
+          {/* ── Section 2: Revenue & Margin by Year ── */}
           {detail.revenueByYear.length > 0 && (
-            <motion.div variants={slideOverItemVariants} className="rounded-xl p-4" style={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
-              <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                <BarChart2 size={14} className="text-[#0393da]" /> Revenue & Margin by Year
-              </h4>
+            <Section icon={BarChart2} iconColor="text-[#0393da]" title="Revenue & Margin by Year">
               <div className="h-44">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={detail.revenueByYear}>
@@ -296,13 +258,7 @@ export default function SKUSlideOver() {
                     <XAxis dataKey="year" tick={{ fontSize: 11 }} tickLine={false} />
                     <YAxis yAxisId="rev" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}K`} />
                     <YAxis yAxisId="margin" orientation="right" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v * 100).toFixed(0)}%`} domain={[0, 0.5]} />
-                    <Tooltip
-                      formatter={(value, name) =>
-                        name === 'revenue' ? formatEUR(value) :
-                        name === 'margin' ? `${(value * 100).toFixed(1)}%` :
-                        value
-                      }
-                    />
+                    <Tooltip formatter={(value, name) => name === 'revenue' ? formatEUR(value) : name === 'margin' ? `${(value * 100).toFixed(1)}%` : value} />
                     <defs>
                       <linearGradient id="skuBarGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#0393da" />
@@ -310,20 +266,17 @@ export default function SKUSlideOver() {
                       </linearGradient>
                     </defs>
                     <Bar yAxisId="rev" dataKey="revenue" fill="url(#skuBarGrad)" radius={[6, 6, 0, 0]} name="Revenue" />
-                    <ReferenceLine yAxisId="margin" y={MARGIN_FLOOR} stroke="#EF4444" strokeDasharray="4 4" label={{ value: '25% Floor', position: 'right', fill: '#EF4444', fontSize: 9 }} />
-                    <ReferenceLine yAxisId="margin" y={MARGIN_TARGET} stroke="#22C55E" strokeDasharray="4 4" label={{ value: '30% Target', position: 'right', fill: '#22C55E', fontSize: 9 }} />
+                    <ReferenceLine yAxisId="margin" y={MARGIN_FLOOR} stroke="#EF4444" strokeDasharray="4 4" label={{ value: 'Floor', position: 'right', fill: '#EF4444', fontSize: 9 }} />
+                    <ReferenceLine yAxisId="margin" y={MARGIN_TARGET} stroke="#22C55E" strokeDasharray="4 4" label={{ value: 'Target', position: 'right', fill: '#22C55E', fontSize: 9 }} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </motion.div>
+            </Section>
           )}
 
-          {/* ── Section 3: Monthly Margin Trajectory (if data exists) ── */}
+          {/* ── Section 3: Monthly Margin Trajectory ── */}
           {detail.monthlyMargins.length > 4 && (
-            <motion.div variants={slideOverItemVariants} className="rounded-xl p-4" style={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
-              <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                <TrendingDown size={14} className="text-red-500" /> Monthly Margin Trajectory
-              </h4>
+            <Section icon={TrendingDown} iconColor="text-red-500" title="Monthly Margin Trajectory">
               <div className="h-40">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={detail.monthlyMargins}>
@@ -337,14 +290,159 @@ export default function SKUSlideOver() {
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
-            </motion.div>
+            </Section>
           )}
 
-          {/* ── Section 4: Cost Structure ── */}
-          <motion.div variants={slideOverItemVariants} className="rounded-xl p-4" style={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
-            <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-              <Package size={14} className="text-amber-500" /> Cost Structure
-            </h4>
+          {/* ── Section 4: Quote Performance (NEW) ── */}
+          <Section icon={Target} iconColor="text-indigo-500" title="Quote Performance">
+            {detail.quotePerformance ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div>
+                    <p className="text-[10px] text-slate-400">Win Rate</p>
+                    <p className={`text-sm font-bold ${detail.quotePerformance.winRate < 0.4 ? 'text-red-600' : detail.quotePerformance.winRate < 0.6 ? 'text-amber-600' : 'text-green-600'}`}>
+                      {detail.quotePerformance.win}/{detail.quotePerformance.total} ({(detail.quotePerformance.winRate * 100).toFixed(0)}%)
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-slate-400">Lost Revenue</p>
+                    <p className="text-sm font-bold text-red-600">{formatEUR(detail.quotePerformance.lostRevenue)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-slate-400">Won Avg Margin</p>
+                    <p className="text-sm font-bold text-slate-700">
+                      {detail.quotePerformance.wonAvgMargin != null ? `${(detail.quotePerformance.wonAvgMargin * 100).toFixed(1)}%` : '—'}
+                    </p>
+                  </div>
+                </div>
+                {detail.quotePerformance.wonAvgMargin != null && detail.quotePerformance.lostAvgMargin != null && (
+                  <div className="flex items-center gap-2 text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                    <span>Won margin: <span className="font-bold text-green-600">{(detail.quotePerformance.wonAvgMargin * 100).toFixed(1)}%</span></span>
+                    <span>vs Lost: <span className="font-bold text-red-600">{(detail.quotePerformance.lostAvgMargin * 100).toFixed(1)}%</span></span>
+                    <span className="ml-auto font-bold text-slate-700">
+                      Gap: {((detail.quotePerformance.wonAvgMargin - detail.quotePerformance.lostAvgMargin) * 100).toFixed(1)}pp
+                    </span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 italic">No recent quotes — repeat order pattern.</p>
+            )}
+          </Section>
+
+          {/* ── Section 5: Customer List (NEW — clickable, concentration flag) ── */}
+          {detail.uniqueCustomers > 0 && (
+            <Section icon={Users} iconColor="text-[#0393da]" title={`Customers (${detail.uniqueCustomers})`}>
+              {/* Concentration warning */}
+              {detail.articleTopCustomerShare != null && detail.articleTopCustomerShare > 0.6 && (
+                <div className="flex items-start gap-2 bg-amber-50 rounded-lg p-2.5 text-[11px] text-amber-800 mb-3">
+                  <AlertTriangle size={12} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                  <span>Single-customer concentration: top customer = {(detail.articleTopCustomerShare * 100).toFixed(0)}% of revenue.</span>
+                </div>
+              )}
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="text-slate-400 uppercase text-[9px] font-bold border-b border-slate-100">
+                      <th className="py-2 pr-3">Customer</th>
+                      <th className="py-2 pr-3">Segment</th>
+                      <th className="py-2 pr-3 text-right">Revenue</th>
+                      <th className="py-2 pr-3 text-right">Share</th>
+                      <th className="py-2 text-right">Margin</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {(detail.articleCustomerList.length > 0 ? detail.articleCustomerList : detail.customerPurchases).slice(0, 5).map((cp) => (
+                      <tr
+                        key={cp.customer_id}
+                        className="hover:bg-[#f0f7ff] cursor-pointer transition-colors"
+                        onClick={() => openCustomerDetail?.(cp.customer_id)}
+                      >
+                        <td className="py-2 pr-3 font-mono text-[#0393da] font-medium flex items-center gap-1">
+                          {cp.customer_name || cp.customer_id}
+                          <ChevronRight size={10} className="text-slate-300" />
+                        </td>
+                        <td className="py-2 pr-3">{cp.segment}</td>
+                        <td className="py-2 pr-3 text-right font-semibold">{formatEUR(cp.revenue ?? cp.totalValue)}</td>
+                        <td className="py-2 pr-3 text-right">{cp.share != null ? `${(cp.share * 100).toFixed(0)}%` : '—'}</td>
+                        <td className="py-2 text-right">
+                          {(cp.avgMargin != null) ? formatPct(cp.avgMargin) : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {detail.uniqueCustomers > 5 && (
+                  <p className="text-[10px] text-[#0393da] mt-2 cursor-pointer hover:underline">
+                    and {detail.uniqueCustomers - 5} more →
+                  </p>
+                )}
+              </div>
+            </Section>
+          )}
+
+          {/* ── Section 6: Price vs Cost Trend (NEW) ── */}
+          {detail.priceCostByYear.length >= 2 && detail.priceCostByYear.some(y => y.costPerUnit) && (
+            <Section icon={DollarSign} iconColor="text-emerald-500" title="Price vs Cost (per unit)">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-center">
+                  <thead>
+                    <tr className="text-slate-400 uppercase text-[9px] font-bold border-b border-slate-100">
+                      <th className="py-2">Year</th>
+                      <th className="py-2">Price</th>
+                      <th className="py-2">Cost</th>
+                      <th className="py-2">Margin</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {detail.priceCostByYear.map((y, i) => {
+                      const prev = i > 0 ? detail.priceCostByYear[i - 1] : null;
+                      const priceChange = prev?.pricePerUnit && y.pricePerUnit ? ((y.pricePerUnit - prev.pricePerUnit) / prev.pricePerUnit * 100) : null;
+                      const costChange = prev?.costPerUnit && y.costPerUnit ? ((y.costPerUnit - prev.costPerUnit) / prev.costPerUnit * 100) : null;
+                      return (
+                        <tr key={y.year}>
+                          <td className="py-2 font-bold text-slate-700">{y.year}</td>
+                          <td className="py-2">
+                            {y.pricePerUnit != null ? formatEUR(y.pricePerUnit) : '—'}
+                            {priceChange != null && (
+                              <span className={`block text-[9px] ${priceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                ({priceChange >= 0 ? '+' : ''}{priceChange.toFixed(1)}%)
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2">
+                            {y.costPerUnit != null ? formatEUR(y.costPerUnit) : '—'}
+                            {costChange != null && (
+                              <span className={`block text-[9px] ${costChange <= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                ({costChange >= 0 ? '+' : ''}{costChange.toFixed(1)}%)
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2 font-bold">
+                            {y.margin != null ? `${(y.margin * 100).toFixed(1)}%` : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {detail.costPassThrough != null && (
+                <div className="mt-3 pt-3 border-t border-slate-100 text-[11px] text-slate-600">
+                  <span className="font-bold">Cost Pass-Through Rate: {(detail.costPassThrough * 100).toFixed(0)}%</span>
+                  {detail.costPassThrough < 1 && (
+                    <span className="text-amber-700 ml-2">
+                      Absorbing {((1 - detail.costPassThrough) * 100).toFixed(0)}% of cost increases
+                    </span>
+                  )}
+                </div>
+              )}
+            </Section>
+          )}
+
+          {/* ── Section 7: Cost Structure ── */}
+          <Section icon={Package} iconColor="text-amber-500" title="Cost Structure">
             <div className="grid grid-cols-4 gap-3 mt-1 text-center">
               <div>
                 <p className="text-[10px] text-slate-400">HKVoll/Unit</p>
@@ -365,16 +463,128 @@ export default function SKUSlideOver() {
                 </p>
               </div>
             </div>
-          </motion.div>
+            {(detail.materialShare || 0) > 0.40 && (
+              <div className="flex items-start gap-2 bg-amber-50 rounded-lg p-2.5 text-[11px] text-amber-800 mt-3">
+                <span className="font-bold">!</span>
+                <span>Material costs are {((detail.materialShare || 0) * 100).toFixed(0)}% of production cost.</span>
+              </div>
+            )}
+          </Section>
 
-          {/* ── Section 4b: Enriched Pricing Recommendation Card ── */}
+          {/* ── Section 8: Order Frequency & Recency (NEW) ── */}
+          <Section icon={Clock} iconColor="text-blue-500" title="Order Activity">
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div>
+                <p className="text-[10px] text-slate-400">Last Order</p>
+                <p className="text-xs font-bold text-slate-700">{detail.orderActivity.lastOrderDate || '—'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-400">Avg Orders/Year</p>
+                <p className="text-xs font-bold text-slate-700">{detail.orderActivity.avgOrdersPerYear}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-400">Total Orders</p>
+                <p className="text-xs font-bold text-slate-700">{detail.orderActivity.totalOrders}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ring-1 ${
+                detail.orderActivity.status === 'Active' ? 'bg-green-50 text-green-700 ring-green-200' :
+                detail.orderActivity.status === 'Slowing' ? 'bg-amber-50 text-amber-700 ring-amber-200' :
+                detail.orderActivity.status === 'Inactive' ? 'bg-red-50 text-red-700 ring-red-200' :
+                'bg-slate-50 text-slate-500 ring-slate-200'
+              }`}>
+                {detail.orderActivity.status}
+              </span>
+              {detail.orderActivity.isInactive && (
+                <span className="text-[11px] text-red-600 font-medium">
+                  No orders in {detail.orderActivity.monthsSinceLastOrder} months — previously {detail.orderActivity.avgOrdersPerYear}/year
+                </span>
+              )}
+            </div>
+          </Section>
+
+          {/* ── Section 9: Margin Gap — THIS ARTICLE (FIXED — was showing portfolio data) ── */}
+          {detail.articleGap ? (
+            <Section icon={Target} iconColor="text-purple-500" title="Margin Gap (this article)">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-[10px] text-slate-400">Quoted</p>
+                  <p className="text-sm font-bold text-slate-700">{(detail.articleGap.quoted * 100).toFixed(1)}%</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400">Actual</p>
+                  <p className="text-sm font-bold text-slate-700">{(detail.articleGap.actual * 100).toFixed(1)}%</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400">Gap</p>
+                  <p className={`text-sm font-bold ${detail.articleGap.gap > 0.03 ? 'text-red-600' : detail.articleGap.gap > 0.01 ? 'text-amber-600' : 'text-green-600'}`}>
+                    {(detail.articleGap.gap * 100).toFixed(1)}pp
+                  </p>
+                </div>
+              </div>
+              {detail.portfolioGap && (
+                <div className="mt-2 pt-2 border-t border-slate-100 text-center text-[10px] text-slate-400">
+                  vs portfolio avg gap: <span className="font-bold text-slate-600">{(detail.portfolioGap.mean_gap * 100).toFixed(1)}pp</span>
+                  {detail.articleGap.gap > detail.portfolioGap.mean_gap * 2 && (
+                    <span className="text-red-500 font-bold ml-1">
+                      — {(detail.articleGap.gap / detail.portfolioGap.mean_gap).toFixed(1)}× above average
+                    </span>
+                  )}
+                </div>
+              )}
+            </Section>
+          ) : detail.portfolioGap ? (
+            <Section icon={Target} iconColor="text-purple-500" title="Margin Gap">
+              <p className="text-xs text-slate-400 italic">No article-specific gap data available. Portfolio avg gap: {(detail.portfolioGap.mean_gap * 100).toFixed(1)}pp</p>
+            </Section>
+          ) : null}
+
+          {/* ── Section 10: Margin Rank (NEW) ── */}
+          {detail.marginRank && (
+            <motion.div variants={slideOverItemVariants} className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: '#f8fafc' }}>
+              <BarChart2 size={14} className="text-indigo-500" />
+              <span className="text-xs text-slate-700">
+                <span className="font-bold">Rank: #{detail.marginRank.rank}</span> of {detail.marginRank.total} {detail.commodity_group} articles by margin
+                <span className="ml-1 font-bold text-[#0393da]">(top {100 - detail.marginRank.percentile}%)</span>
+              </span>
+            </motion.div>
+          )}
+
+          {/* ── Section 11: Related / Similar SKUs (NEW) ── */}
+          {detail.relatedSkus.length > 0 && (
+            <Section icon={Link2} iconColor="text-slate-500" title="Related Articles">
+              <div className="space-y-2">
+                {detail.relatedSkus.map(rs => (
+                  <div
+                    key={rs.article_id}
+                    className="flex items-center gap-3 text-xs py-1.5 px-2 rounded-lg hover:bg-[#f0f7ff] cursor-pointer transition-colors"
+                    onClick={() => openSKUDetail(rs.article_id)}
+                  >
+                    <span className="font-mono text-[#0393da] font-medium w-20">{rs.article_id}</span>
+                    <span className="text-slate-600 flex-1 truncate">{rs.description}</span>
+                    <span className="font-semibold">{formatEUR(rs.revenue)}</span>
+                    <span className={`font-bold ${rs.margin != null && rs.margin < MARGIN_FLOOR ? 'text-red-600' : 'text-slate-700'}`}>
+                      {rs.margin != null ? `${(rs.margin * 100).toFixed(1)}%` : '—'}
+                    </span>
+                    <span className={`text-[10px] ${rs.marginTrend === 'improving' ? 'text-green-500' : rs.marginTrend === 'declining' ? 'text-red-500' : 'text-slate-400'}`}>
+                      {rs.marginTrend === 'improving' ? '▲' : rs.marginTrend === 'declining' ? '▼' : '→'} {rs.marginTrend}
+                    </span>
+                    {rs.isVariant && <span className="text-[9px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded font-bold">variant</span>}
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {/* ── Section 12: Enriched Pricing Recommendation ── */}
           <motion.div variants={slideOverItemVariants} className={`rounded-xl border p-4 ${
             enrichedRec?.action === 'Increase' ? 'bg-red-50/60 border-red-200' :
             enrichedRec?.action === 'Monitor' ? 'bg-amber-50/60 border-amber-200' :
             'bg-green-50/60 border-green-200'
           }`} style={{ boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
             <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-              <DollarSign size={14} style={{ color: colors.primary }} /> Enriched Pricing Recommendation
+              <DollarSign size={14} style={{ color: colors.primary }} /> Pricing Recommendation
             </h4>
             {enrichedRec ? (
               <div className="space-y-3">
@@ -386,29 +596,24 @@ export default function SKUSlideOver() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400">Suggested Action</p>
-                    <p className="text-xs font-bold">
-                      <PricingActionBadge action={enrichedRec.action} />
-                    </p>
+                    <p className="text-[10px] text-slate-400">Action</p>
+                    <p className="text-xs font-bold"><PricingActionBadge action={enrichedRec.action} /></p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400">Approval Level</p>
+                    <p className="text-[10px] text-slate-400">Approval</p>
                     <p className={`text-xs font-bold ${
                       enrichedRec.approvalColor === 'green' ? 'text-green-700' :
                       enrichedRec.approvalColor === 'amber' ? 'text-amber-700' :
-                      enrichedRec.approvalColor === 'orange' ? 'text-orange-700' :
                       'text-red-700'
                     }`}>{enrichedRec.approvalLevel}</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-slate-400">Priority</p>
-                    <p className="text-xs font-bold">
-                      <PriorityBadge priority={enrichedRec.priority} />
-                    </p>
+                    <p className="text-xs font-bold"><PriorityBadge priority={enrichedRec.priority} /></p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 pt-2 border-t border-slate-200/50">
-                  <span className="text-[10px] text-slate-400">Margin Trajectory:</span>
+                  <span className="text-[10px] text-slate-400">Trajectory:</span>
                   <span className={`inline-flex items-center gap-1 text-xs font-bold ${
                     enrichedRec.trajectoryDirection === 'improving' ? 'text-green-600' :
                     enrichedRec.trajectoryDirection === 'declining' ? 'text-red-600' :
@@ -431,336 +636,15 @@ export default function SKUSlideOver() {
             )}
           </motion.div>
 
-          {/* ── Section 4c: Gap Analysis ── */}
-          {detail.gapAnalysis && (
-            <motion.div variants={slideOverItemVariants} className="rounded-xl p-4" style={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
-              <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                <Search size={14} style={{ color: colors.tertiary }} /> Gap Analysis
-              </h4>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-[10px] text-slate-400">Mean Gap</p>
-                  <p className={`text-sm font-bold ${
-                    (detail.gapAnalysis.mean_gap || 0) > 0.05 ? 'text-red-600' : 'text-slate-700'
-                  }`}>
-                    {detail.gapAnalysis.mean_gap != null ? `${(detail.gapAnalysis.mean_gap * 100).toFixed(1)}pp` : '—'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-slate-400">Median Gap</p>
-                  <p className={`text-sm font-bold ${
-                    (detail.gapAnalysis.median_gap || 0) > 0.03 ? 'text-amber-600' : 'text-slate-700'
-                  }`}>
-                    {detail.gapAnalysis.median_gap != null ? `${(detail.gapAnalysis.median_gap * 100).toFixed(1)}pp` : '—'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-slate-400">Linked Records</p>
-                  <p className="text-sm font-bold text-slate-700">
-                    {detail.gapAnalysis.linked_records != null ? detail.gapAnalysis.linked_records.toLocaleString() : '—'}
-                  </p>
-                </div>
-              </div>
-              {detail.gapAnalysis.std_gap != null && (
-                <div className="mt-2 pt-2 border-t border-slate-100 text-center">
-                  <span className="text-[10px] text-slate-400">Std. Dev: </span>
-                  <span className="text-[10px] font-bold text-slate-600">{(detail.gapAnalysis.std_gap * 100).toFixed(1)}pp</span>
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* ── Section 5: Pricing Recommendation (existing) ── */}
-          <motion.div variants={slideOverItemVariants} className={`rounded-lg border p-4 ${
-            detail.pricingAction === 'Increase' ? 'bg-red-50/50 border-red-200' :
-            detail.pricingAction === 'Monitor' ? 'bg-amber-50/50 border-amber-200' :
-            'bg-green-50/50 border-green-200'
-          }`}>
-            <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-              <DollarSign size={14} className="text-green-600" /> Pricing Recommendation
-            </h4>
-
-            <div className="flex items-center gap-3 mb-3">
-              <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold ${
-                detail.pricingAction === 'Increase' ? 'bg-red-100 text-red-700' :
-                detail.pricingAction === 'Monitor' ? 'bg-amber-100 text-amber-700' :
-                'bg-green-100 text-green-700'
-              }`}>
-                {detail.pricingAction === 'Increase' ? '↑ Price Increase Required' :
-                 detail.pricingAction === 'Monitor' ? '⊙ Monitor' : '✓ OK'}
-              </span>
-              {detail.marginGap > 0 && (
-                <span className="text-xs text-slate-500">
-                  Gap: <span className="font-bold text-red-600">{(detail.marginGap * 100).toFixed(1)}pp</span>
-                </span>
-              )}
-              {detail.recoveryPotential > 0 && (
-                <span className="text-xs text-slate-500">
-                  Recovery: <span className="font-bold text-green-600">{formatEUR(detail.recoveryPotential)}</span>
-                </span>
-              )}
-            </div>
-
-            {/* Current margin bar */}
-            <div className="mb-3">
-              <p className="text-[10px] text-slate-400 mb-1">Current Margin vs Target</p>
-              <MarginBar current={detail.currentMarginExact || detail.currentMargin} />
-            </div>
-
-            {/* Price comparison infographic */}
-            {detail.currentAvgPrice && detail.recommendedPrice && detail.pricingAction === 'Increase' && (
-              <div className="mt-3 pt-3 border-t border-slate-200/50">
-                <p className="text-[10px] uppercase font-bold text-slate-400 mb-2">Price Adjustment Required</p>
-                <PriceComparisonBar current={detail.currentAvgPrice} recommended={detail.recommendedPrice} />
-                <div className="flex items-center justify-between mt-2 text-xs">
-                  <span className="text-slate-500">
-                    Increase by <span className="font-bold text-red-600">{detail.priceIncreasePct?.toFixed(1)}%</span>
-                  </span>
-                  <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${
-                    detail.approvalColor === 'green' ? 'bg-green-100 text-green-700' :
-                    detail.approvalColor === 'blue' ? 'bg-[#c1e8ff] text-[#004b72]' :
-                    detail.approvalColor === 'amber' ? 'bg-amber-100 text-amber-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    Approval: {detail.approvalLevel}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* COGS breakdown if available */}
-            {detail.landedCost && (
-              <div className="mt-3 pt-3 border-t border-slate-200/50">
-                <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Cost Structure</p>
-                <div className="flex items-center gap-4 text-xs">
-                  <span className="text-slate-500">Landed Cost: <span className="font-bold">{formatEUR(detail.landedCost)}</span></span>
-                  {detail.fxRisk !== 'NONE' && (
-                    <span className={`font-bold ${detail.fxRisk === 'HIGH' ? 'text-red-600' : 'text-amber-600'}`}>
-                      FX Risk: {detail.fxRisk}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Price consistency if flagged */}
-            {detail.priceConsistency && (
-              <div className="mt-3 pt-3 border-t border-slate-200/50">
-                <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Price Variance Alert</p>
-                <div className="flex items-center gap-4 text-xs">
-                  <span className="text-slate-500">Min: <span className="font-bold">{formatEUR(detail.priceConsistency.minPrice)}</span></span>
-                  <span className="text-slate-500">Max: <span className="font-bold">{formatEUR(detail.priceConsistency.maxPrice)}</span></span>
-                  <span className="text-slate-500">CV: <span className="font-bold text-amber-600">{detail.priceConsistency.cv.toFixed(3)}</span></span>
-                </div>
-              </div>
-            )}
-
-            {/* Governance */}
-            <div className="mt-3 pt-3 border-t border-slate-200/50 flex items-center gap-4 text-xs">
-              <span className="flex items-center gap-1 text-slate-500"><ShieldCheck size={12} /> Governance</span>
-              <span>Target: <span className="font-bold">{(detail.targetMargin * 100).toFixed(0)}%</span></span>
-              {detail.maxDiscount && <span>Max Discount: <span className="font-bold">{(detail.maxDiscount * 100).toFixed(0)}%</span></span>}
-              {detail.reviewFrequency && <span>Review: <span className="font-bold">{detail.reviewFrequency}</span></span>}
-            </div>
+          {/* ── Footer ── */}
+          <motion.div variants={slideOverItemVariants} className="pt-3 border-t border-slate-100">
+            <button
+              onClick={() => { closeSlideOver(); navigate('/products'); }}
+              className="flex items-center gap-2 text-xs font-medium text-[#0393da] hover:text-[#0270a8] transition-colors"
+            >
+              Open in Products & SKUs <ArrowUpRight size={12} />
+            </button>
           </motion.div>
-
-          {/* ── Section 6: Customer Purchases ── */}
-          {detail.customerPurchases.length > 0 && (
-            <motion.div variants={slideOverItemVariants} className="rounded-xl p-4" style={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
-              <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                <Users size={14} className="text-[#0393da]" /> Customer Purchases ({detail.uniqueCustomers})
-              </h4>
-
-              {/* Churn Prediction Summary */}
-              {detail.churnPrediction && (
-                <div className="mb-3 p-2.5 rounded-lg bg-slate-50 border border-slate-100">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Cpu size={12} style={{ color: colors.secondary }} />
-                    <span className="text-[10px] font-bold text-slate-600 uppercase">Churn Prediction Model</span>
-                    <span className={`ml-auto inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold ring-1 ${
-                      detail.churnPrediction.accuracy >= 0.8 ? 'bg-green-50 text-green-700 ring-green-200' :
-                      detail.churnPrediction.accuracy >= 0.7 ? 'bg-amber-50 text-amber-700 ring-amber-200' :
-                      'bg-red-50 text-red-700 ring-red-200'
-                    }`}>
-                      {detail.churnPrediction.accuracy >= 0.8 ? 'High' :
-                       detail.churnPrediction.accuracy >= 0.7 ? 'Medium' : 'Low'} Confidence
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-3 text-center">
-                    <div>
-                      <p className="text-[10px] text-slate-400">Accuracy</p>
-                      <p className="text-xs font-bold text-slate-700">{(detail.churnPrediction.accuracy * 100).toFixed(0)}%</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400">Total At Risk</p>
-                      <p className="text-xs font-bold text-red-600">{detail.churnPrediction.total_at_risk}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400">High Value</p>
-                      <p className="text-xs font-bold text-amber-600">{detail.churnPrediction.high_value_at_risk}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-slate-400">Revenue at Risk</p>
-                      <p className="text-xs font-bold text-slate-700">{formatEUR(detail.churnPrediction.revenue_at_risk_eur)}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="text-slate-400 uppercase text-[9px] font-bold border-b border-slate-100">
-                      <th className="py-2 pr-3">Customer</th>
-                      <th className="py-2 pr-3">Segment</th>
-                      <th className="py-2 pr-3 text-right">Total Value</th>
-                      <th className="py-2 pr-3 text-right">Avg Margin</th>
-                      <th className="py-2 pr-3 text-right">Txns</th>
-                      <th className="py-2">Risk Tier</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {detail.customerPurchases.slice(0, 10).map((cp) => (
-                      <tr key={cp.customer_id} className="hover:bg-[#f8f9fa]">
-                        <td className="py-2 pr-3 font-mono text-slate-600" title={cp.customer_name}>{cp.customer_name || cp.customer_id}</td>
-                        <td className="py-2 pr-3">{cp.segment}</td>
-                        <td className="py-2 pr-3 text-right font-semibold">{formatEUR(cp.totalValue)}</td>
-                        <td className="py-2 pr-3 text-right">
-                          {cp.avgMargin != null ? formatPct(cp.avgMargin) : '—'}
-                        </td>
-                        <td className="py-2 pr-3 text-right">{cp.txnCount}</td>
-                        <td className="py-2">
-                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                            cp.riskTier === 'high' ? 'bg-red-100 text-red-700' :
-                            cp.riskTier === 'medium' ? 'bg-amber-100 text-amber-700' :
-                            'bg-green-100 text-green-700'
-                          }`}>{cp.riskTier}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {detail.customerPurchases.length > 10 && (
-                  <p className="text-[10px] text-slate-400 mt-2">Showing top 10 of {detail.customerPurchases.length} customers</p>
-                )}
-              </div>
-            </motion.div>
-          )}
-
-            {/* ── Inventory Status ── */}
-            <div className="mt-6 pt-5 border-t border-slate-100">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Inventory Status</h4>
-                <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold ${stockStatus.color}`}>
-                  {stockStatus.label}
-                </span>
-              </div>
-
-              {stockData ? (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-slate-50 rounded-lg px-3 py-2">
-                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Current Stock</p>
-                      <p className="text-sm font-bold text-slate-800">{stockData.current_stock} units</p>
-                    </div>
-                    <div className="bg-slate-50 rounded-lg px-3 py-2">
-                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Reorder Point</p>
-                      <p className="text-sm font-bold text-slate-800">{stockData.reorder_point} units</p>
-                    </div>
-                    <div className="bg-slate-50 rounded-lg px-3 py-2">
-                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Lead Time</p>
-                      <p className="text-sm font-bold text-slate-800">{stockData.lead_time_weeks} weeks</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-50 rounded-lg px-3 py-2">
-                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Monthly Demand</p>
-                      <p className="text-sm font-bold text-slate-800">{stockData.avg_monthly_demand} units</p>
-                    </div>
-                    <div className="bg-slate-50 rounded-lg px-3 py-2">
-                      <p className="text-[10px] text-slate-400 font-semibold uppercase">Months of Supply</p>
-                      <p className={`text-sm font-bold ${stockData.months_of_supply < 2 ? 'text-red-600' : stockData.months_of_supply < 4 ? 'text-amber-600' : 'text-green-600'}`}>
-                        {stockData.months_of_supply.toFixed(1)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3 text-[11px]">
-                    <div><span className="text-slate-400">Safety Stock:</span> <span className="font-semibold text-slate-700">{stockData.safety_stock} units</span></div>
-                    <div><span className="text-slate-400">Last Order:</span> <span className="font-semibold text-slate-700">{stockData.last_order_date}</span></div>
-                    <div><span className="text-slate-400">Stockouts:</span> <span className={`font-semibold ${stockData.stockouts_12mo > 0 ? 'text-red-600' : 'text-green-600'}`}>{stockData.stockouts_12mo}</span></div>
-                  </div>
-
-                  <div className="text-[11px]">
-                    <span className="text-slate-400">Carrying Cost:</span>
-                    <span className="ml-1 font-semibold text-slate-700">{formatEUR(stockData.carrying_cost_annual)}/yr</span>
-                  </div>
-
-                  <div className="relative w-full h-6 bg-slate-100 rounded-full overflow-hidden">
-                    <div className={`absolute left-0 top-0 h-full rounded-full transition-all ${stockStatus.label === 'Critical' ? 'bg-red-400' : stockStatus.label === 'Reorder Soon' ? 'bg-amber-400' : 'bg-green-400'}`}
-                      style={{ width: `${Math.min((stockData.current_stock / stockData.max_capacity) * 100, 100)}%` }} />
-                    <div className="absolute top-0 h-full border-l-2 border-dashed border-amber-500" style={{ left: `${(stockData.reorder_point / stockData.max_capacity) * 100}%` }} />
-                    <div className="absolute top-0 h-full border-l-2 border-dashed border-red-500" style={{ left: `${(stockData.safety_stock / stockData.max_capacity) * 100}%` }} />
-                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-slate-700">{stockData.current_stock} / {stockData.max_capacity}</span>
-                  </div>
-                  <div className="flex gap-4 text-[10px] text-slate-400">
-                    <span className="flex items-center gap-1"><span className="w-3 h-0 border-t-2 border-dashed border-red-500 inline-block" /> Safety</span>
-                    <span className="flex items-center gap-1"><span className="w-3 h-0 border-t-2 border-dashed border-amber-500 inline-block" /> Reorder</span>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-[11px] text-slate-400 italic">No inventory data available for this article.</p>
-              )}
-            </div>
-
-            {/* ── Cost Intelligence ── */}
-            {costTrend && (
-              <div className="mt-6 pt-5 border-t border-slate-100">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">Cost Intelligence</h4>
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    {[
-                      { key: 'Material', pct: costTrend.material_share || 0, color: 'bg-amber-400' },
-                      { key: 'Labor', pct: costTrend.labor_share || 0, color: 'bg-blue-400' },
-                      { key: 'Outsourcing', pct: costTrend.outsourcing_share || 0, color: 'bg-purple-400' },
-                      { key: 'Overhead', pct: Math.max(0, 1 - (costTrend.material_share || 0) - (costTrend.labor_share || 0) - (costTrend.outsourcing_share || 0)), color: 'bg-slate-300' },
-                    ].map(item => (
-                      <div key={item.key} className="flex items-center gap-3">
-                        <span className="text-[11px] w-20 text-slate-600">{item.key}</span>
-                        <div className="flex-1 h-3.5 bg-slate-100 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${item.color}`} style={{ width: `${Math.min(item.pct * 100, 100)}%` }} />
-                        </div>
-                        <span className="text-[11px] font-bold text-slate-700 w-12 text-right">{(item.pct * 100).toFixed(1)}%</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 text-[11px]">
-                    <div>
-                      <span className="text-slate-400">Cost Change:</span>
-                      <span className={`ml-1 font-bold ${(costTrend.cost_change_pct || 0) > 0.1 ? 'text-red-600' : (costTrend.cost_change_pct || 0) < -0.05 ? 'text-green-600' : 'text-slate-700'}`}>
-                        {costTrend.cost_change_pct != null ? `${(costTrend.cost_change_pct * 100).toFixed(1)}%` : '--'}
-                        {(costTrend.cost_change_pct || 0) > 0 ? ' ▲' : (costTrend.cost_change_pct || 0) < 0 ? ' ▼' : ''}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400">Trend:</span>
-                      <span className={`ml-1 font-bold ${costTrend.cost_trend === 'rising' ? 'text-red-600' : costTrend.cost_trend === 'declining' ? 'text-green-600' : 'text-slate-700'}`}>
-                        {costTrend.cost_trend === 'rising' ? '↑ Rising' : costTrend.cost_trend === 'declining' ? '↓ Declining' : '→ Stable'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {(costTrend.material_share || 0) > 0.40 && (
-                    <div className="flex items-start gap-2 bg-amber-50 rounded-lg p-2.5 text-[11px] text-amber-800">
-                      <span className="font-bold">!</span>
-                      <span>Material costs are {((costTrend.material_share || 0) * 100).toFixed(0)}% of production cost. Consider supplier renegotiation or price adjustment.</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
         </motion.div>
       </motion.div>

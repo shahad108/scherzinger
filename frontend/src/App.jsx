@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import { UIProvider } from './context/UIContext';
 import { ChatProvider } from './context/ChatContext';
+import { isAuthenticated } from './utils/auth';
 import Layout from './components/Layout';
 import DashboardOverviewV2 from './pages/DashboardOverviewV2';
 import RevenueMargins from './pages/RevenueMargins';
@@ -21,6 +22,13 @@ import AdminSessions from './pages/admin/AdminSessions';
 import AdminHeatmaps from './pages/admin/AdminHeatmaps';
 import AdminAIInsights from './pages/admin/AdminAIInsights';
 
+function ProtectedRoute({ children }) {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
+
 export default function App() {
   return (
     <UserProvider>
@@ -29,7 +37,7 @@ export default function App() {
           <BrowserRouter basename={import.meta.env.BASE_URL}>
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route path="/admin" element={<AdminLayout />}>
+              <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
                 <Route index element={<AdminCommandCenter />} />
                 <Route path="pages" element={<AdminPageAnalytics />} />
                 <Route path="interactions" element={<AdminInteractions />} />
@@ -38,7 +46,7 @@ export default function App() {
                 <Route path="heatmaps" element={<AdminHeatmaps />} />
                 <Route path="insights" element={<AdminAIInsights />} />
               </Route>
-              <Route element={<Layout />}>
+              <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                 <Route path="/" element={<DashboardOverviewV2 />} />
                 <Route path="/revenue" element={<RevenueMargins />} />
                 <Route path="/products" element={<ProductsSKUs />} />

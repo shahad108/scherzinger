@@ -1,15 +1,22 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { getSession } from '../utils/auth';
 
 const UserContext = createContext(null);
 
 export function UserProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const session = getSession();
+    return session ? { name: session.name, role: session.role, initials: session.initials } : null;
+  });
 
   useEffect(() => {
-    fetch('/api/me')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => setUser(data))
-      .catch(() => setUser(null));
+    // Re-check session validity on mount
+    const session = getSession();
+    if (session) {
+      setUser({ name: session.name, role: session.role, initials: session.initials });
+    } else {
+      setUser(null);
+    }
   }, []);
 
   return (

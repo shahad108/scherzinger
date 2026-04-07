@@ -58,7 +58,7 @@ const LTV_FILTERS = [
 ];
 
 export default function MLAnalytics() {
-  const { selectItem, selectedItem } = useUI();
+  const { selectItem, selectedItem, openCustomerDetail } = useUI();
   const [techDrawerOpen, setTechDrawerOpen] = useState(false);
   const [ltvFilter, setLtvFilter] = useState(1); // default to >€10K
   const [activeModel, setActiveModel] = useState('all'); // 'all', 'churn', 'forecast', 'anomaly'
@@ -391,7 +391,7 @@ export default function MLAnalytics() {
             data={churnPredictions}
             rowKey="customer_id"
             selectedRowId={selectedItem?.id}
-            onRowClick={(row) => selectItem({ type: 'customer', id: row.customer_id, label: `${row.name} (${row.customer_id})`, data: row })}
+            onRowClick={(row) => { selectItem({ type: 'customer', id: row.customer_id, label: `${row.name} (${row.customer_id})`, data: row }); openCustomerDetail(row.customer_id); }}
             confidence="forecast"
             headerRight={
               <div className="flex items-center gap-2">

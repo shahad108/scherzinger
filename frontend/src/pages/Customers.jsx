@@ -173,7 +173,7 @@ function suggestedAction(customer, enrichment) {
 }
 
 export default function Customers() {
-  const { selectItem, selectedItem } = useUI();
+  const { selectItem, selectedItem, openCustomerDetail } = useUI();
   const [segmentFilter, setSegmentFilter] = useState('All');
   const [churnFilter, setChurnFilter] = useState('All');
   const [customerSearch, setCustomerSearch] = useState('');
@@ -615,7 +615,7 @@ export default function Customers() {
                     stroke={RISK_COLORS[tier] || '#64748B'}
                     strokeWidth={1.5}
                     cursor="pointer"
-                    onClick={(data) => selectItem({ type: 'customer', id: data.customer_id, label: data.name, data })}
+                    onClick={(data) => { selectItem({ type: 'customer', id: data.customer_id, label: data.name, data }); openCustomerDetail(data.customer_id); }}
                   />
                 ))}
               </ScatterChart>
@@ -838,7 +838,7 @@ export default function Customers() {
             data={filteredCustomers}
             rowKey="customer_id"
             selectedRowId={selectedItem?.id}
-            onRowClick={(row) => selectItem({ type: 'customer', id: row.customer_id, label: row.name, data: row })}
+            onRowClick={(row) => { selectItem({ type: 'customer', id: row.customer_id, label: row.name, data: row }); openCustomerDetail(row.customer_id); }}
             formulaId="top_customers"
             confidence="verified"
             headerRight={
@@ -883,7 +883,7 @@ export default function Customers() {
               <div
                 key={a.customer_id}
                 className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-                onClick={() => selectItem({ type: 'customer', id: a.customer_id, label: a.name, data: a })}
+                onClick={() => { selectItem({ type: 'customer', id: a.customer_id, label: a.name, data: a }); openCustomerDetail(a.customer_id); }}
               >
                 <span className="w-6 text-center text-sm font-bold text-slate-400">{i + 1}</span>
                 <div className="min-w-[120px]">

@@ -7,6 +7,7 @@ import {
 import { useUI } from '../context/UIContext';
 import { useUser } from '../context/UserContext';
 import { track } from '../utils/tracker';
+import { logout } from '../utils/auth';
 
 const navItems = [
   { to: '/', label: 'Dashboard Overview', icon: LayoutDashboard },
@@ -119,16 +120,13 @@ export default function Sidebar() {
           <AnimatePresence>
             {!sidebarCollapsed && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="flex-1 min-w-0">
-                <p className="text-xs font-bold truncate" style={{ color: '#1a1a2e' }}>Alex Meier</p>
-                <p className="text-[10px]" style={{ color: '#737373' }}>Head of Analytics</p>
+                <p className="text-xs font-bold truncate" style={{ color: '#1a1a2e' }}>Scherzinger</p>
+                <p className="text-[10px]" style={{ color: '#737373' }}>MD</p>
               </motion.div>
             )}
           </AnimatePresence>
           <button
-            onClick={async () => {
-              await fetch('/api/logout', { method: 'POST' });
-              window.location.href = '/login';
-            }}
+            onClick={logout}
             title="Log Out"
             className="flex-shrink-0 p-2 rounded-lg transition-colors hover:bg-white"
             style={{ color: '#a3a3a3' }}

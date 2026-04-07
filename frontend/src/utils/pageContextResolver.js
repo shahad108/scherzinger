@@ -7,9 +7,9 @@ const ROUTE_META = {
   '/products':    { name: 'Products & Articles', focus: 'article-level performance, margin by article' },
   '/customers':   { name: 'Customers', focus: 'segmentation, churn risk, purchase patterns' },
   '/forecasting': { name: 'Forecasting', focus: 'FY26 forecast, model predictions, confidence intervals' },
-  '/pricing':     { name: 'Pricing Command Center', focus: 'pricing recommendations, FX sensitivity' },
-  '/inventory':   { name: 'Inventory & Costs', focus: 'cost trends, material/labor breakdown, cost optimization' },
+  '/pricing':     { name: 'Pricing Command Center', focus: 'pricing recommendations, FX sensitivity, quote analysis' },
   '/ml-analytics':{ name: 'ML Analytics', focus: 'BCG matrix, demand forecasts, portfolio analysis' },
+  '/ai-insights': { name: 'AI Insights', focus: 'AI-powered analysis, detailed questions, data exploration' },
 };
 
 function buildSKUSummary(skuCode) {
@@ -65,6 +65,7 @@ export function buildContextLabel(pathname, slideOver, selectedItem) {
   const page = route?.name || pathname;
   if (slideOver?.type === 'sku' && slideOver.id) return `${page} · Article: ${slideOver.id}`;
   if (slideOver?.type === 'category' && slideOver.id) return `${page} · Commodity Group: ${slideOver.id}`;
+  if (slideOver?.type === 'customer' && slideOver.id) return `${page} · Customer: ${slideOver.id}`;
   if (selectedItem?.label || selectedItem?.id) return `${page} · ${selectedItem.label || selectedItem.id}`;
   return page;
 }
@@ -89,6 +90,8 @@ export function buildContextMessage(pathname, slideOver, selectedItem) {
       : `The user is currently viewing article detail panel for article ID "${slideOver.id}". Answer questions about THIS specific article.`);
   } else if (slideOver?.type === 'category' && slideOver.id) {
     parts.push(`The user is currently viewing commodity group detail panel for "${slideOver.id}". Answer questions about THIS commodity group.`);
+  } else if (slideOver?.type === 'customer' && slideOver.id) {
+    parts.push(`The user is currently viewing customer detail panel for customer ID "${slideOver.id}". Answer questions about THIS specific customer.`);
   }
 
   // Selected item context (only when no slide-over is open — slide-over takes precedence)

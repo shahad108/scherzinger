@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import Footer from './shared/Footer';
 import SKUSlideOver from './SKUSlideOver';
 import CategorySlideOver from './CategorySlideOver';
+import CustomerSlideOver from './CustomerSlideOver';
 import GlobalChatBar from './GlobalChatBar';
 import { AnimatedGridPattern } from './ui/AnimatedGridPattern';
 import { pageTransitionVariants } from '../utils/animations';
@@ -81,6 +82,7 @@ export default function Layout() {
       {/* Slide-over panels */}
       <SKUSlideOver />
       <CategorySlideOver />
+      <CustomerSlideOver />
     </div>
   );
 }

@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.102.1",
     "lucide-react": "^0.576.0",
     "motion": "^12.34.4",
     "posthog-js": "^1.363.1",

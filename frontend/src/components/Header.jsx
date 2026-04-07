@@ -5,38 +5,49 @@ import { Bell, Search, Package, TrendingDown, UserMinus, Clock, DollarSign, Chec
 import { dropdownVariants } from '../utils/animations';
 import { useUI } from '../context/UIContext';
 import { useUser } from '../context/UserContext';
+import { logout } from '../utils/auth';
 import forecastingData from '../data/forecasting.json';
 import productsData from '../data/products.json';
 import customersData from '../data/customers_detail.json';
 import inventoryData from '../data/inventory_detail.json';
 
+// Format helpers for search
+const fmtEUR = (v) => { if (v == null) return '—'; const a = Math.abs(v); return a >= 1e6 ? `€${(a/1e6).toFixed(1)}M` : a >= 1e3 ? `€${(a/1e3).toFixed(0)}K` : `€${Math.round(a)}`; };
+const fmtPct = (v) => v != null ? `${(v * 100).toFixed(1)}%` : '—';
+
+// Collect all commodity groups
+const ALL_COMMODITY_GROUPS = [...new Set(productsData.products.map(p => p.commodity_group).filter(Boolean))].sort();
+
 const SEARCH_INDEX = (() => {
   const items = [];
   productsData.products.forEach((p) => {
+    const margin = p.margin_2025 ?? p.margin_2024 ?? null;
+    const riskLabel = p.is_at_risk ? 'At Risk' : margin != null && margin < 0.50 ? 'Critical' : margin != null && margin < 0.55 ? 'Monitor' : 'OK';
     items.push({
       label: p.article_id,
       sublabel: p.description,
       category: 'SKU',
       path: '/products',
+      revenue: p.total_revenue,
+      margin,
+      riskLabel,
+      commodityGroup: p.commodity_group,
     });
   });
   customersData.customers.forEach((c) => {
+    const riskLabel = c.risk_tier === 'high' || c.risk_tier === 'critical' ? 'High' : c.risk_tier === 'medium' ? 'Medium' : 'Low';
     items.push({
       label: c.customer_id,
       sublabel: `${c.segment} · ${c.name}`,
       category: 'Customer',
       path: '/customers',
+      revenue: c.total_revenue_eur,
+      margin: c.avg_db2_margin,
+      riskLabel,
+      commodityGroup: null,
     });
   });
-  (inventoryData.cost_trends || []).forEach((i) => {
-    items.push({
-      label: i.article_id,
-      sublabel: `${i.description} (${i.commodity_group})`,
-      category: 'Cost',
-      path: '/cost-intelligence',
-    });
-  });
-  // Unique commodity groups from products
+  // Unique commodity groups
   const groupSet = new Set();
   productsData.products.forEach((p) => {
     if (p.commodity_group && !groupSet.has(p.commodity_group)) {
@@ -59,6 +70,9 @@ const SEARCH_INDEX = (() => {
   items.push({ label: 'AI Insights', sublabel: 'Chat with your data', category: 'Page', path: '/ai-insights' });
   return items;
 })();
+
+// Recent searches (session-only)
+let _recentSearches = [];
 
 const buildForecastNotifications = () => {
   const notes = [];
@@ -162,22 +176,45 @@ const INITIAL_NOTIFICATIONS = [
 
 export default function Header({ title }) {
   const navigate = useNavigate();
-  const { openSKUDetail, openCategoryDetail } = useUI();
+  const { openSKUDetail, openCategoryDetail, openCustomerDetail } = useUI();
   const user = useUser();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [searchTab, setSearchTab] = useState('All');
+  const [commodityFilter, setCommodityFilter] = useState(null);
+  const [recentSearches, setRecentSearches] = useState(_recentSearches);
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
 
-  const searchResults = useMemo(() => {
+  const allResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
     return SEARCH_INDEX.filter(
       (item) => item.label.toLowerCase().includes(q) || item.sublabel.toLowerCase().includes(q)
-    ).slice(0, 8);
+    );
   }, [searchQuery]);
+
+  const searchResults = useMemo(() => {
+    let filtered = allResults;
+    if (searchTab === 'SKUs') filtered = filtered.filter(i => i.category === 'SKU');
+    else if (searchTab === 'Customers') filtered = filtered.filter(i => i.category === 'Customer');
+    if (commodityFilter) filtered = filtered.filter(i => i.commodityGroup === commodityFilter || i.category === 'Customer' || i.category === 'Page' || i.category === 'Category');
+    return filtered.slice(0, 12);
+  }, [allResults, searchTab, commodityFilter]);
+
+  const tabCounts = useMemo(() => ({
+    All: allResults.length,
+    SKUs: allResults.filter(i => i.category === 'SKU').length,
+    Customers: allResults.filter(i => i.category === 'Customer').length,
+  }), [allResults]);
+
+  const addRecentSearch = (query) => {
+    if (!query.trim()) return;
+    _recentSearches = [query, ..._recentSearches.filter(s => s !== query)].slice(0, 5);
+    setRecentSearches(_recentSearches);
+  };
 
   useEffect(() => {
     function handleClickOutsideSearch(e) {
@@ -226,13 +263,16 @@ export default function Header({ title }) {
             type="text"
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setShowSearch(true); }}
-            onFocus={() => { if (searchQuery.trim()) setShowSearch(true); }}
+            onFocus={() => setShowSearch(true)}
             onKeyDown={(e) => {
-              if (e.key === 'Escape') { setShowSearch(false); setSearchQuery(''); }
+              if (e.key === 'Escape') { setShowSearch(false); setSearchQuery(''); setCommodityFilter(null); setSearchTab('All'); }
               if (e.key === 'Enter' && searchResults.length > 0) {
                 const item = searchResults[0];
+                addRecentSearch(searchQuery);
                 if (item.category === 'SKU') {
                   openSKUDetail(item.label);
+                } else if (item.category === 'Customer') {
+                  openCustomerDetail(item.label);
                 } else if (item.category === 'Category') {
                   openCategoryDetail(item.rawCategory);
                 } else {
@@ -240,6 +280,8 @@ export default function Header({ title }) {
                 }
                 setSearchQuery('');
                 setShowSearch(false);
+                setCommodityFilter(null);
+                setSearchTab('All');
               }
             }}
           />
@@ -252,48 +294,129 @@ export default function Header({ title }) {
             </button>
           )}
           <AnimatePresence>
-          {showSearch && searchQuery.trim() && (
+          {showSearch && (searchQuery.trim() || recentSearches.length > 0) && (
             <motion.div
               variants={dropdownVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="absolute top-full left-0 right-0 mt-1 border border-slate-200/80 rounded-2xl shadow-xl z-50 overflow-hidden max-h-96 overflow-y-auto"
-              style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)' }}
+              className="absolute top-full left-0 right-0 mt-1 border border-slate-200/80 rounded-2xl shadow-xl z-50 overflow-hidden"
+              style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)' }}
             >
-              {searchResults.length === 0 ? (
-                <div className="px-4 py-6 text-center text-sm text-slate-400">No results found</div>
-              ) : (
-                searchResults.map((item, i) => (
-                  <button
-                    key={`${item.category}-${item.label}-${i}`}
-                    onClick={() => {
-                      if (item.category === 'SKU') {
-                        openSKUDetail(item.label);
-                      } else if (item.category === 'Category') {
-                        openCategoryDetail(item.rawCategory);
-                      } else {
-                        navigate(item.path);
-                      }
-                      setSearchQuery('');
-                      setShowSearch(false);
-                    }}
-                    className="w-full text-left px-4 py-3 hover:bg-[#c1e8ff]/20 transition-colors flex items-center gap-3 border-b border-slate-50 last:border-0"
-                  >
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                      item.category === 'SKU' ? 'bg-[#c1e8ff] text-[#004b72]' :
-                      item.category === 'Customer' ? 'bg-green-50 text-green-600' :
-                      item.category === 'Inventory' ? 'bg-amber-50 text-amber-600' :
-                      item.category === 'Category' ? 'bg-purple-50 text-purple-600' :
-                      'bg-slate-100 text-slate-500'
-                    }`}>{item.category}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-800 truncate">{item.label}</p>
-                      <p className="text-xs text-slate-400 truncate">{item.sublabel}</p>
+              {/* Recent searches when no query */}
+              {!searchQuery.trim() && recentSearches.length > 0 && (
+                <div className="px-4 py-3">
+                  <p className="text-[10px] text-slate-400 uppercase font-bold mb-2">Recent Searches</p>
+                  {recentSearches.map((rs, i) => (
+                    <button key={i} onClick={() => { setSearchQuery(rs); setShowSearch(true); }} className="block w-full text-left text-sm text-slate-600 hover:text-[#0393da] py-1 transition-colors">
+                      {rs}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Search results */}
+              {searchQuery.trim() && (
+                <>
+                  {/* Tabs */}
+                  <div className="flex items-center gap-1 px-4 pt-3 pb-2 border-b border-slate-100">
+                    {['All', 'SKUs', 'Customers'].map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => setSearchTab(tab)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          searchTab === tab ? 'bg-[#0393da] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        }`}
+                      >
+                        {tab} ({tabCounts[tab]})
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Commodity filter pills */}
+                  {(searchTab === 'All' || searchTab === 'SKUs') && (
+                    <div className="flex items-center gap-1.5 px-4 py-2 border-b border-slate-50 overflow-x-auto">
+                      <button
+                        onClick={() => setCommodityFilter(null)}
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium transition-colors flex-shrink-0 ${
+                          !commodityFilter ? 'bg-[#004b72] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        }`}
+                      >
+                        All
+                      </button>
+                      {ALL_COMMODITY_GROUPS.map(grp => (
+                        <button
+                          key={grp}
+                          onClick={() => setCommodityFilter(commodityFilter === grp ? null : grp)}
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium transition-colors flex-shrink-0 ${
+                            commodityFilter === grp ? 'bg-[#004b72] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                          }`}
+                        >
+                          {grp}
+                        </button>
+                      ))}
                     </div>
-                    <svg className="size-4 text-slate-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                  </button>
-                ))
+                  )}
+
+                  {/* Results */}
+                  <div className="max-h-80 overflow-y-auto">
+                    {searchResults.length === 0 ? (
+                      <div className="px-4 py-6 text-center">
+                        <p className="text-sm text-slate-400">No matches for &quot;{searchQuery}&quot;</p>
+                        <p className="text-xs text-slate-300 mt-1">Try searching by article ID, customer name, or product type.</p>
+                      </div>
+                    ) : (
+                      searchResults.map((item, i) => (
+                        <button
+                          key={`${item.category}-${item.label}-${i}`}
+                          onClick={() => {
+                            addRecentSearch(searchQuery);
+                            if (item.category === 'SKU') {
+                              openSKUDetail(item.label);
+                            } else if (item.category === 'Customer') {
+                              openCustomerDetail(item.label);
+                            } else if (item.category === 'Category') {
+                              openCategoryDetail(item.rawCategory);
+                            } else {
+                              navigate(item.path);
+                            }
+                            setSearchQuery('');
+                            setShowSearch(false);
+                            setCommodityFilter(null);
+                            setSearchTab('All');
+                          }}
+                          className="w-full text-left px-4 py-2.5 hover:bg-[#c1e8ff]/20 transition-colors flex items-center gap-3 border-b border-slate-50 last:border-0"
+                        >
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase w-14 text-center flex-shrink-0 ${
+                            item.category === 'SKU' ? 'bg-[#c1e8ff] text-[#004b72]' :
+                            item.category === 'Customer' ? 'bg-green-50 text-green-600' :
+                            item.category === 'Category' ? 'bg-purple-50 text-purple-600' :
+                            'bg-slate-100 text-slate-500'
+                          }`}>{item.category === 'Customer' ? 'CUST' : item.category}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-800 truncate">{item.label}</p>
+                            <p className="text-xs text-slate-400 truncate">{item.sublabel}</p>
+                          </div>
+                          {item.revenue != null && (
+                            <span className="text-xs font-semibold text-slate-600 flex-shrink-0">{fmtEUR(item.revenue)}</span>
+                          )}
+                          {item.margin != null && (
+                            <span className={`text-xs font-bold flex-shrink-0 ${item.margin < 0.50 ? 'text-red-600' : item.margin < 0.55 ? 'text-amber-600' : 'text-slate-700'}`}>
+                              {fmtPct(item.margin)}
+                            </span>
+                          )}
+                          {item.riskLabel && (
+                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold flex-shrink-0 ${
+                              item.riskLabel === 'At Risk' || item.riskLabel === 'Critical' || item.riskLabel === 'High' ? 'bg-red-50 text-red-600' :
+                              item.riskLabel === 'Monitor' || item.riskLabel === 'Medium' ? 'bg-amber-50 text-amber-600' :
+                              'bg-green-50 text-green-600'
+                            }`}>{item.riskLabel}</span>
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </>
               )}
             </motion.div>
           )}
@@ -377,10 +500,7 @@ export default function Header({ title }) {
             {user?.initials || 'U'}
           </div>
           <button
-            onClick={async () => {
-              await fetch('/api/logout', { method: 'POST' });
-              window.location.href = '/login';
-            }}
+            onClick={logout}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
             title="Log Out"
           >
