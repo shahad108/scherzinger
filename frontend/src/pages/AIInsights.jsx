@@ -140,10 +140,10 @@ export default function AIInsights() {
   const langRef = useRef(lang);
   useEffect(() => { langRef.current = lang; }, [lang]);
 
-  // Intelligence feed
-  const feedReports = useMemo(() => generateIntelligenceFeed(), []);
-  const dynamicPrompts = useMemo(() => generateDynamicPrompts(feedReports), [feedReports]);
-  const quickPrompts = useMemo(() => generateQuickPrompts(feedReports), [feedReports]);
+  // Intelligence feed — re-generate when language changes so titles/summaries follow
+  const feedReports = useMemo(() => generateIntelligenceFeed(t), [t]);
+  const dynamicPrompts = useMemo(() => generateDynamicPrompts(feedReports, 8, t), [feedReports, t]);
+  const quickPrompts = useMemo(() => generateQuickPrompts(feedReports, t), [feedReports, t]);
   const [expandedReport, setExpandedReport] = useState(null);
   const [feedCollapsed, setFeedCollapsed] = useState(() => {
     try { return localStorage.getItem('insights-feed-collapsed') === 'true'; } catch { return false; }

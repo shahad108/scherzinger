@@ -48,7 +48,7 @@ export default function IntelligenceReportCard({
 
   const borderColor = BORDER_COLORS[report.borderColor] || BORDER_COLORS.blue;
   const badge = BADGE_STYLES[report.borderColor] || BADGE_STYLES.blue;
-  const severity = getSeverityCategory(report);
+  const severity = getSeverityCategory(report, t);
   const Icon = REPORT_ICONS[report.reportType] || AlertCircle;
 
   const handleAskAbout = (e) => {

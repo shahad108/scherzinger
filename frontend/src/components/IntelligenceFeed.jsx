@@ -41,7 +41,7 @@ export default function IntelligenceFeed({ reports, onAskAbout, onExpandReport, 
   const filteredReports = useMemo(() => {
     let filtered = reports;
     if (activeFilter !== 'all') {
-      filtered = reports.filter((r) => getSeverityCategory(r).level === activeFilter);
+      filtered = reports.filter((r) => getSeverityCategory(r, t).level === activeFilter);
     }
 
     // Pinned reports always appear first
@@ -56,11 +56,11 @@ export default function IntelligenceFeed({ reports, onAskAbout, onExpandReport, 
   const severityCounts = useMemo(() => {
     const counts = { critical: 0, action: 0, brief: 0, positive: 0 };
     for (const r of reports) {
-      const cat = getSeverityCategory(r);
+      const cat = getSeverityCategory(r, t);
       counts[cat.level] = (counts[cat.level] || 0) + 1;
     }
     return counts;
-  }, [reports]);
+  }, [reports, t]);
 
   return (
     <div className="flex flex-col h-full">
