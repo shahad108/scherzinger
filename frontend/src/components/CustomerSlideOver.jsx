@@ -9,6 +9,7 @@ import {
   Package, BarChart2, Shield, ArrowUpRight, ChevronLeft, ChevronRight, Clock, Copy,
 } from 'lucide-react';
 import { useUI } from '../context/UIContext';
+import { useT, useLanguage } from '../context/LanguageContext';
 import { getCustomerDetail } from '../utils/customerDetailEngine';
 import { formatEUR, formatPct } from '../utils/formatters';
 import { slideOverVariants, backdropVariants, slideOverSectionVariants, slideOverItemVariants } from '../utils/animations';
@@ -29,7 +30,9 @@ function Section({ icon: Icon, iconColor, title, children, className = '' }) {
 }
 
 /* ── Risk tier badge ── */
+const TIER_LABEL_KEY = { critical: 'sku.priority.critical', high: 'sku.priority.high', medium: 'sku.priority.medium', low: 'sku.priority.low' };
 function RiskTierBadge({ tier }) {
+  const t = useT();
   const styles = {
     critical: 'bg-red-100 text-red-700 ring-red-200',
     high: 'bg-red-100 text-red-700 ring-red-200',
@@ -37,8 +40,8 @@ function RiskTierBadge({ tier }) {
     low: 'bg-green-100 text-green-700 ring-green-200',
   };
   return (
-    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ring-1 capitalize ${styles[tier] || styles.low}`}>
-      {tier} Risk
+    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ring-1 ${styles[tier] || styles.low}`}>
+      {t('cso.tier.suffix', { tier: t(TIER_LABEL_KEY[tier] || 'sku.priority.low') })}
     </span>
   );
 }
@@ -52,6 +55,7 @@ function SeverityDot({ severity }) {
 export default function CustomerSlideOver() {
   const navigate = useNavigate();
   const { slideOver, closeSlideOver, setSidebarCollapsed, panelHistory, goBackPanel, openSKUDetail } = useUI();
+  const { t } = useLanguage();
 
   const isOpen = slideOver.type === 'customer';
   const customerId = slideOver.id;
@@ -106,10 +110,10 @@ export default function CustomerSlideOver() {
           <div className="flex-shrink-0 px-6 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-2 text-xs">
             <button onClick={goBackPanel} className="flex items-center gap-1 text-[#0393da] hover:text-[#0270a8] font-medium transition-colors">
               <ChevronLeft size={14} />
-              {prevPanel.type === 'sku' ? `SKU ${prevPanel.id}` : prevPanel.type === 'category' ? prevPanel.id : `Customer ${prevPanel.id}`}
+              {prevPanel.type === 'sku' ? t('cso.bc.sku', { id: prevPanel.id }) : prevPanel.type === 'category' ? prevPanel.id : t('cso.bc.customer', { id: prevPanel.id })}
             </button>
             <ChevronRight size={12} className="text-slate-300" />
-            <span className="text-slate-500">Customer {detail.customer_id}</span>
+            <span className="text-slate-500">{t('cso.bc.customer', { id: detail.customer_id })}</span>
           </div>
         )}
 
@@ -125,7 +129,7 @@ export default function CustomerSlideOver() {
               <h3 className="text-lg font-bold text-slate-800 mt-1 leading-tight">{detail.name}</h3>
               {detail.commodityMix.length > 0 && (
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Primary: {detail.commodityMix.map(c => c.group).join(' + ')} mix
+                  {t('cso.primary', { mix: detail.commodityMix.map(c => c.group).join(' + ') })}
                 </p>
               )}
             </div>
@@ -142,7 +146,7 @@ export default function CustomerSlideOver() {
           <motion.div variants={slideOverItemVariants} className="grid grid-cols-4 gap-3">
             <KPICard
               compact
-              label="Revenue"
+              label={t('cso.kpi.revenue')}
               value={formatEUR(detail.totalRevenue)}
               change={detail.yoyGrowth != null ? `${detail.yoyGrowth >= 0 ? '+' : ''}${detail.yoyGrowth.toFixed(1)}% YoY` : undefined}
               changeType={detail.yoyGrowth != null && detail.yoyGrowth < -20 ? 'negative' : detail.yoyGrowth >= 0 ? 'positive' : 'warning'}
@@ -150,15 +154,15 @@ export default function CustomerSlideOver() {
             />
             <KPICard
               compact
-              label="DB2 Margin"
+              label={t('cso.kpi.db2')}
               value={`${(detail.avgMargin * 100).toFixed(1)}%`}
-              change={detail.avgMargin < 0.55 ? 'Below avg' : undefined}
+              change={detail.avgMargin < 0.55 ? t('cso.kpi.belowAvg') : undefined}
               changeType={detail.avgMargin < 0.50 ? 'negative' : detail.avgMargin < 0.55 ? 'warning' : 'positive'}
               accentGradient={detail.avgMargin < 0.50 ? gradients.tertiary : gradients.emerald}
             />
             <KPICard
               compact
-              label="Win Rate"
+              label={t('cso.kpi.winRate')}
               value={detail.winRate != null ? `${(detail.winRate * 100).toFixed(1)}%` : '—'}
               change={detail.totalQuotes > 0 ? `${detail.quotePerformance.won}/${detail.totalQuotes}` : undefined}
               changeType={detail.winRate != null && detail.winRate < 0.3 ? 'negative' : detail.winRate < 0.5 ? 'warning' : 'positive'}
@@ -166,7 +170,7 @@ export default function CustomerSlideOver() {
             />
             <KPICard
               compact
-              label="Orders"
+              label={t('cso.kpi.orders')}
               value={detail.totalInvoices}
               changeType="neutral"
               accentGradient={gradients.navy}
@@ -175,7 +179,7 @@ export default function CustomerSlideOver() {
 
           {/* ── Section 2: Revenue & Margin by Year ── */}
           {detail.revenueByYear.length > 0 && (
-            <Section icon={BarChart2} iconColor="text-[#0393da]" title="Revenue & Margin by Year">
+            <Section icon={BarChart2} iconColor="text-[#0393da]" title={t('cso.section.revByYear')}>
               <div className="space-y-2">
                 {detail.revenueByYear.map((y, i) => {
                   const prev = i > 0 ? detail.revenueByYear[i - 1] : null;
@@ -203,7 +207,7 @@ export default function CustomerSlideOver() {
               {detail.yoyGrowth != null && detail.yoyGrowth < -30 && (
                 <div className="mt-3 p-2.5 bg-red-50 rounded-lg text-[11px] text-red-700 flex items-start gap-2">
                   <AlertTriangle size={12} className="mt-0.5 flex-shrink-0" />
-                  <span>Revenue collapsed {Math.abs(detail.yoyGrowth).toFixed(0)}% YoY. Flag for immediate review.</span>
+                  <span>{t('cso.text.collapsed', { pct: Math.abs(detail.yoyGrowth).toFixed(0) })}</span>
                 </div>
               )}
             </Section>
@@ -215,12 +219,12 @@ export default function CustomerSlideOver() {
               <div className="flex items-start gap-3">
                 <AlertTriangle size={18} className="text-red-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-bold text-red-800">Inactivity Alert</p>
+                  <p className="text-sm font-bold text-red-800">{t('cso.alert.inactivity')}</p>
                   <p className="text-xs text-red-700 mt-1">
-                    Last order: {detail.lastOrderDate || 'unknown'} — no orders in {detail.monthsSinceLastOrder} months
+                    {t('cso.alert.lastOrder', { date: detail.lastOrderDate || '—', n: detail.monthsSinceLastOrder })}
                   </p>
                   <p className="text-xs text-red-600 mt-0.5">
-                    Previously: {detail.totalInvoices} total invoices across {detail.revenueByYear.length} years
+                    {t('cso.alert.previously', { n: detail.totalInvoices, years: detail.revenueByYear.length })}
                   </p>
                 </div>
               </div>
@@ -229,27 +233,27 @@ export default function CustomerSlideOver() {
             <motion.div variants={slideOverItemVariants} className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: '#f8fafc' }}>
               <Clock size={14} className="text-green-500" />
               <span className="text-xs text-slate-700">
-                Last order: <span className="font-bold">{detail.lastOrderDate}</span>
-                {detail.avgOrdersPerMonth > 0 && <span className="ml-2">· {detail.avgOrdersPerMonth} orders/month</span>}
+                {t('cso.text.lastOrder')} <span className="font-bold">{detail.lastOrderDate}</span>
+                {detail.avgOrdersPerMonth > 0 && <span className="ml-2">· {t('cso.text.ordersPerMonth', { n: detail.avgOrdersPerMonth })}</span>}
               </span>
             </motion.div>
           ) : null}
 
           {/* ── Section 4: Quote Performance ── */}
-          <Section icon={Target} iconColor="text-indigo-500" title="Quote Performance">
+          <Section icon={Target} iconColor="text-indigo-500" title={t('cso.section.quotePerf')}>
             {detail.totalQuotes > 0 ? (
               <div className="space-y-3">
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div>
-                    <p className="text-[10px] text-slate-400">Won</p>
+                    <p className="text-[10px] text-slate-400">{t('cso.label.won')}</p>
                     <p className="text-sm font-bold text-green-600">{detail.quotePerformance.won}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400">Lost</p>
+                    <p className="text-[10px] text-slate-400">{t('cso.label.lost')}</p>
                     <p className="text-sm font-bold text-red-600">{detail.quotePerformance.lost}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400">Win Rate</p>
+                    <p className="text-[10px] text-slate-400">{t('cso.kpi.winRate')}</p>
                     <p className={`text-sm font-bold ${detail.winRate < 0.3 ? 'text-red-600' : detail.winRate < 0.5 ? 'text-amber-600' : 'text-green-600'}`}>
                       {(detail.winRate * 100).toFixed(1)}%
                     </p>
@@ -257,11 +261,11 @@ export default function CustomerSlideOver() {
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-center pt-2 border-t border-slate-100">
                   <div>
-                    <p className="text-[10px] text-slate-400">Lost Revenue</p>
+                    <p className="text-[10px] text-slate-400">{t('cso.label.lostRevenue')}</p>
                     <p className="text-xs font-bold text-red-600">{formatEUR(detail.quotePerformance.lostRevenue)}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400">Won vs Lost Margin</p>
+                    <p className="text-[10px] text-slate-400">{t('cso.label.wonVsLost')}</p>
                     <p className="text-xs text-slate-700">
                       <span className="font-bold text-green-600">{detail.quotePerformance.wonAvgMargin != null ? `${(detail.quotePerformance.wonAvgMargin * 100).toFixed(1)}%` : '—'}</span>
                       {' vs '}
@@ -272,32 +276,32 @@ export default function CustomerSlideOver() {
                 {detail.quotePerformance.wonAvgMargin != null && detail.quotePerformance.lostAvgMargin != null && (
                   <p className="text-[11px] text-slate-500 italic pt-2 border-t border-slate-100">
                     {detail.winRate < 0.3
-                      ? `Losing on competitive deals at ${(detail.quotePerformance.lostAvgMargin * 100).toFixed(1)}% margin — either competitor is undercutting or relationship needs attention.`
+                      ? t('cso.text.losing', { pct: (detail.quotePerformance.lostAvgMargin * 100).toFixed(1) })
                       : detail.quotePerformance.wonAvgMargin - detail.quotePerformance.lostAvgMargin > 0.05
-                      ? `Won quotes margin ${((detail.quotePerformance.wonAvgMargin - detail.quotePerformance.lostAvgMargin) * 100).toFixed(1)}pp above lost — pricing strategy is working for the right deals.`
-                      : 'Win/loss margin differential is tight — pricing likely not the main factor in lost deals.'
+                      ? t('cso.text.wonAbove', { pp: ((detail.quotePerformance.wonAvgMargin - detail.quotePerformance.lostAvgMargin) * 100).toFixed(1) })
+                      : t('cso.text.tight')
                     }
                   </p>
                 )}
               </div>
             ) : (
-              <p className="text-xs text-slate-400 italic">No quote data available for this customer.</p>
+              <p className="text-xs text-slate-400 italic">{t('cso.text.noQuotes')}</p>
             )}
           </Section>
 
           {/* ── Section 5: Product Mix ── */}
           {detail.uniqueArticles > 0 && (
-            <Section icon={Package} iconColor="text-amber-500" title={`Product Mix (${detail.uniqueArticles} unique articles)`}>
+            <Section icon={Package} iconColor="text-amber-500" title={t('cso.section.productMix', { n: detail.uniqueArticles })}>
               {detail.commodityMix.length > 0 && (
                 <div className="space-y-2 mb-3">
                   {detail.commodityMix.map(cm => (
                     <div key={cm.group} className="flex items-center gap-3 text-xs">
                       <span className="font-bold text-[#004b72] bg-[#c1e8ff] px-2 py-0.5 rounded text-[10px] w-14 text-center">{cm.group}</span>
-                      <span className="text-slate-600">{cm.articles} articles</span>
+                      <span className="text-slate-600">{t('cso.text.articles', { n: cm.articles })}</span>
                       <span className="font-semibold">{formatEUR(cm.revenue)}</span>
                       <span className="text-slate-400">({(cm.share * 100).toFixed(0)}%)</span>
                       <span className={`font-bold ${cm.avgMargin != null && cm.avgMargin < 0.50 ? 'text-red-600' : 'text-slate-700'}`}>
-                        Avg: {cm.avgMargin != null ? `${(cm.avgMargin * 100).toFixed(1)}%` : '—'}
+                        {t('cso.text.avg', { value: cm.avgMargin != null ? `${(cm.avgMargin * 100).toFixed(1)}%` : '—' })}
                       </span>
                     </div>
                   ))}
@@ -305,7 +309,7 @@ export default function CustomerSlideOver() {
               )}
               {/* Top articles */}
               <div className="pt-3 border-t border-slate-100">
-                <p className="text-[10px] text-slate-400 uppercase font-bold mb-2">Top Articles</p>
+                <p className="text-[10px] text-slate-400 uppercase font-bold mb-2">{t('cso.label.topArticles')}</p>
                 {detail.articles.slice(0, 3).map(a => (
                   <div
                     key={a.article_id}
@@ -329,7 +333,7 @@ export default function CustomerSlideOver() {
                 if (lowest.avgMargin != null && highest.avgMargin != null && highest.avgMargin - lowest.avgMargin > 0.1) {
                   return (
                     <p className="text-[11px] text-slate-500 italic mt-3 pt-3 border-t border-slate-100">
-                      {lowest.group} portion ({(lowest.share * 100).toFixed(0)}% of orders) drags average margin down — {lowest.group} avg {(lowest.avgMargin * 100).toFixed(1)}% vs {highest.group} {(highest.avgMargin * 100).toFixed(1)}%.
+                      {t('cso.text.lowestDrag', { lowest: lowest.group, share: (lowest.share * 100).toFixed(0), lowMargin: (lowest.avgMargin * 100).toFixed(1), highest: highest.group, highMargin: (highest.avgMargin * 100).toFixed(1) })}
                     </p>
                   );
                 }
@@ -340,18 +344,18 @@ export default function CustomerSlideOver() {
 
           {/* ── Section 6: Margin Gap — THIS CUSTOMER ── */}
           {detail.customerGap && (
-            <Section icon={Target} iconColor="text-purple-500" title="Margin Gap (this customer)">
+            <Section icon={Target} iconColor="text-purple-500" title={t('cso.section.gap')}>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p className="text-[10px] text-slate-400">Quoted</p>
+                  <p className="text-[10px] text-slate-400">{t('cso.label.quoted')}</p>
                   <p className="text-sm font-bold text-slate-700">{(detail.customerGap.quoted_margin * 100).toFixed(1)}%</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400">Actual</p>
+                  <p className="text-[10px] text-slate-400">{t('cso.label.actual')}</p>
                   <p className="text-sm font-bold text-slate-700">{(detail.customerGap.actual_margin * 100).toFixed(1)}%</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400">Gap</p>
+                  <p className="text-[10px] text-slate-400">{t('cso.label.gap')}</p>
                   <p className={`text-sm font-bold ${detail.customerGap.gap_pp > 10 ? 'text-red-600' : detail.customerGap.gap_pp > 5 ? 'text-amber-600' : 'text-green-600'}`}>
                     {detail.customerGap.gap_pp.toFixed(1)}pp
                   </p>
@@ -359,18 +363,18 @@ export default function CustomerSlideOver() {
               </div>
               {detail.portfolioGap && (
                 <div className="mt-2 pt-2 border-t border-slate-100 text-center text-[10px] text-slate-400">
-                  vs portfolio avg gap: <span className="font-bold text-slate-600">{(detail.portfolioGap.mean_gap * 100).toFixed(1)}pp</span>
+                  {t('cso.text.vsPortfolio')} <span className="font-bold text-slate-600">{(detail.portfolioGap.mean_gap * 100).toFixed(1)}pp</span>
                   {detail.customerGap.gap_pp > detail.portfolioGap.mean_gap * 100 * 3 && (
                     <span className="text-red-500 font-bold ml-1">
-                      — {(detail.customerGap.gap_pp / (detail.portfolioGap.mean_gap * 100)).toFixed(0)}× worse than average
+                      {t('cso.text.worse', { x: (detail.customerGap.gap_pp / (detail.portfolioGap.mean_gap * 100)).toFixed(0) })}
                     </span>
                   )}
                 </div>
               )}
               {detail.customerGap.impact_eur > 0 && (
                 <p className="text-[11px] text-slate-500 italic mt-2 pt-2 border-t border-slate-100">
-                  Impact: {formatEUR(detail.customerGap.impact_eur)} margin leakage.
-                  {detail.commodityMix.length >= 2 && ` Gap likely driven by ${detail.commodityMix[detail.commodityMix.length - 1].group} product mix.`}
+                  {t('cso.text.impact', { value: formatEUR(detail.customerGap.impact_eur) })}
+                  {detail.commodityMix.length >= 2 && t('cso.text.gapDriver', { group: detail.commodityMix[detail.commodityMix.length - 1].group })}
                 </p>
               )}
             </Section>
@@ -378,28 +382,28 @@ export default function CustomerSlideOver() {
 
           {/* ── Section 7: Comparable Customers ── */}
           {detail.comparables.length > 0 && (
-            <Section icon={Users} iconColor="text-slate-500" title={`Similar Customers (${detail.segment}, ${formatEUR(detail.totalRevenue * 0.5)}-${formatEUR(detail.totalRevenue * 1.5)})`}>
+            <Section icon={Users} iconColor="text-slate-500" title={t('cso.section.similar', { segment: detail.segment, low: formatEUR(detail.totalRevenue * 0.5), high: formatEUR(detail.totalRevenue * 1.5) })}>
               <div className="space-y-2">
                 {detail.comparables.map(c => (
                   <div key={c.customer_id} className="flex items-center gap-3 text-xs py-1.5 px-2 rounded-lg bg-slate-50">
                     <span className="font-mono text-slate-600 w-16">{c.customer_id}</span>
                     <span className="font-semibold">{formatEUR(c.revenue)}</span>
                     <span className="font-bold text-slate-700">{(c.margin * 100).toFixed(1)}%</span>
-                    <span className="text-slate-500">Win: {c.winRate != null ? `${(c.winRate * 100).toFixed(0)}%` : '—'}</span>
+                    <span className="text-slate-500">{t('cso.text.win', { value: c.winRate != null ? `${(c.winRate * 100).toFixed(0)}%` : '—' })}</span>
                   </div>
                 ))}
               </div>
               <div className="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-600">
-                <span className="font-bold">This customer:</span> {(detail.avgMargin * 100).toFixed(1)}% margin, {detail.winRate != null ? `${(detail.winRate * 100).toFixed(1)}%` : '—'} win rate
+                <span className="font-bold">{t('cso.text.thisCustomer')}</span> {t('cso.text.marginAndWin', { margin: `${(detail.avgMargin * 100).toFixed(1)}%`, win: detail.winRate != null ? `${(detail.winRate * 100).toFixed(1)}%` : '—' })}
                 {detail.peerAvgMargin != null && (
                   <div className="mt-1">
-                    <span className="font-bold">vs peer avg:</span>{' '}
+                    <span className="font-bold">{t('cso.text.vsPeerAvg')}</span>{' '}
                     <span className={detail.avgMargin < detail.peerAvgMargin ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
-                      {((detail.avgMargin - detail.peerAvgMargin) * 100).toFixed(1)}pp margin
+                      {t('cso.text.marginDelta', { value: ((detail.avgMargin - detail.peerAvgMargin) * 100).toFixed(1) })}
                     </span>
                     {detail.peerAvgWinRate != null && detail.winRate != null && (
                       <span className={`ml-2 ${detail.winRate < detail.peerAvgWinRate ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}`}>
-                        {((detail.winRate - detail.peerAvgWinRate) * 100).toFixed(1)}pp win rate
+                        {t('cso.text.winDelta', { value: ((detail.winRate - detail.peerAvgWinRate) * 100).toFixed(1) })}
                       </span>
                     )}
                   </div>
@@ -410,7 +414,7 @@ export default function CustomerSlideOver() {
 
           {/* ── Section 8: Risk Signals ── */}
           {detail.riskSignals.length > 0 && (
-            <Section icon={Shield} iconColor="text-red-500" title="Risk Assessment">
+            <Section icon={Shield} iconColor="text-red-500" title={t('cso.section.risk')}>
               <div className="space-y-2">
                 {detail.riskSignals.map((sig, i) => (
                   <div key={i} className="flex items-center gap-3 text-xs">
@@ -426,13 +430,13 @@ export default function CustomerSlideOver() {
                   detail.overallRisk === 'MEDIUM' ? 'bg-amber-100 text-amber-700' :
                   'bg-green-100 text-green-700'
                 }`}>
-                  Overall: {detail.overallRisk} RISK
+                  {t('cso.text.overallRisk', { tier: detail.overallRisk })}
                 </span>
                 <button
                   onClick={handleCopyBrief}
                   className="flex items-center gap-1 text-xs text-[#0393da] hover:text-[#0270a8] font-medium transition-colors ml-auto"
                 >
-                  <Copy size={12} /> Copy Brief
+                  <Copy size={12} /> {t('cso.button.copyBrief')}
                 </button>
               </div>
             </Section>
@@ -444,7 +448,7 @@ export default function CustomerSlideOver() {
               onClick={() => { closeSlideOver(); navigate('/customers'); }}
               className="flex items-center gap-2 text-xs font-medium text-[#0393da] hover:text-[#0270a8] transition-colors"
             >
-              Open in Customers <ArrowUpRight size={12} />
+              {t('cso.openInCustomers')} <ArrowUpRight size={12} />
             </button>
           </motion.div>
 

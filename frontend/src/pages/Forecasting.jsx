@@ -16,6 +16,7 @@ import pipelineData from '../data/pipeline.json';
 import { formatEUR } from '../utils/formatters';
 import { TOOLTIPS } from '../utils/tooltipContent';
 import { useUI } from '../context/UIContext';
+import { useLanguage } from '../context/LanguageContext';
 import { handleChartContainerClick } from '../utils/pageContextResolver';
 import { track } from '../utils/tracker';
 import { TrendingDown, TrendingUp, ChevronDown, ChevronUp, Bell, BarChart3, Users, FlaskConical } from 'lucide-react';
@@ -93,13 +94,14 @@ function projectWMA(wmaValues, quarters = 4) {
 
 /* ── Year range filter options ── */
 const YEAR_RANGES = [
-  { label: 'Last 2Y', startYear: 2023 },
-  { label: 'Last 3Y', startYear: 2022 },
-  { label: 'All', startYear: 0 },
+  { label: 'Last 2Y', tKey: 'forecast.range.2y', startYear: 2023 },
+  { label: 'Last 3Y', tKey: 'forecast.range.3y', startYear: 2022 },
+  { label: 'All', tKey: 'forecast.range.all', startYear: 0 },
 ];
 
 export default function Forecasting() {
   const { selectItem } = useUI();
+  const { t, lang } = useLanguage();
   const [yearRange, setYearRange] = useState('Last 3Y');
   const [methodologyOpen, setMethodologyOpen] = useState(false);
 
@@ -287,9 +289,10 @@ export default function Forecasting() {
   const marginDiff = +((trailing4Q - prior4Q) * 100).toFixed(1);
   const revYoY = (((annualizedRevenue - priorAnnualizedRevenue) / priorAnnualizedRevenue) * 100).toFixed(1);
 
+  const dateLocale = lang === 'de' ? 'de-DE' : 'en-GB';
   return (
     <>
-      <Header title="Forecasting" />
+      <Header title={t('forecast.title')} />
       <div className="p-8 space-y-6 max-w-[1440px] mx-auto">
 
         {/* ── Global Header: Year Range + Freshness ── */}
@@ -305,12 +308,12 @@ export default function Forecasting() {
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                {r.label}
+                {t(r.tKey)}
               </button>
             ))}
           </div>
           <p className="text-xs font-medium" style={{ color: '#737373' }}>
-            Data through: <span className="font-bold text-slate-700">{new Date(dataThrough).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+            {t('forecast.dataThrough')} <span className="font-bold text-slate-700">{new Date(dataThrough).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short', year: 'numeric' })}</span>
           </p>
         </div>
 
@@ -324,11 +327,11 @@ export default function Forecasting() {
           {/* KPI 1: Trailing 4Q DB2 Margin */}
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Trailing 4Q DB2 Margin"
+              label={t('forecast.kpi.trailing4Q')}
               value={`${(trailing4Q * 100).toFixed(1)}%`}
-              change={`vs 4Q prior: ${(prior4Q * 100).toFixed(1)}% ${marginDiff >= 0 ? '▲' : '▼'}${Math.abs(marginDiff)}pp`}
+              change={t('forecast.kpi.trailing4Q.change', { prior: (prior4Q * 100).toFixed(1), arrow: marginDiff >= 0 ? '▲' : '▼', diff: Math.abs(marginDiff) })}
               changeType={marginDiff >= 0 ? 'positive' : 'negative'}
-              infoTooltip="Weighted average of most recent 4 quarters of DB2 margin"
+              infoTooltip={t('forecast.kpi.trailing4Q.tip')}
               formulaId="forecast_margin"
               confidence="verified"
               bottomContent={<MiniProgress value={trailing4Q * 100} max={100} color={colors.primary} />}
@@ -338,24 +341,24 @@ export default function Forecasting() {
           {/* KPI 2: Revenue Run Rate */}
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Revenue Run Rate"
+              label={t('forecast.kpi.runRate')}
               value={formatEUR(annualizedRevenue)}
-              change={`vs prior year: ${revYoY >= 0 ? '+' : ''}${revYoY}%`}
+              change={t('forecast.kpi.runRate.change', { sign: revYoY >= 0 ? '+' : '', pct: revYoY })}
               changeType={Number(revYoY) >= 0 ? 'positive' : 'negative'}
-              infoTooltip="Trailing 4-quarter total revenue, annualized"
+              infoTooltip={t('forecast.kpi.runRate.tip')}
               confidence="verified"
-              bottomContent={<MiniRange text="Trailing 4Q annualized" />}
+              bottomContent={<MiniRange text={t('forecast.kpi.runRate.bottom')} />}
             />
           </motion.div>
 
           {/* KPI 3: Open Pipeline (Expected) */}
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Open Pipeline (Expected)"
-              value={`${formatEUR(pipelineSummary.open_value)} open`}
-              change={`Expected: ${formatEUR(pipelineSummary.expected_value)} (${(pipelineSummary.win_rate * 100).toFixed(1)}% win rate)`}
+              label={t('forecast.kpi.pipeline')}
+              value={t('forecast.kpi.pipeline.value', { value: formatEUR(pipelineSummary.open_value) })}
+              change={t('forecast.kpi.pipeline.change', { expected: formatEUR(pipelineSummary.expected_value), wr: (pipelineSummary.win_rate * 100).toFixed(1) })}
               changeType="neutral"
-              infoTooltip="Open pipeline value x trailing win rate = expected revenue"
+              infoTooltip={t('forecast.kpi.pipeline.tip')}
               formulaId="pipeline_stages"
               confidence="derived"
               bottomContent={
@@ -371,13 +374,13 @@ export default function Forecasting() {
           {/* KPI 4: Margin Trend */}
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Margin Trend"
+              label={t('forecast.kpi.marginTrend')}
               value={`${marginSlopePP >= 0 ? '▲' : '▼'}${Math.abs(marginSlopePP)}pp/yr`}
-              change={crossDate ? `At current trajectory, margin reaches 60% by ${crossDate}` : 'Margin stable above 60%'}
+              change={crossDate ? t('forecast.kpi.marginTrend.crosses', { when: crossDate }) : t('forecast.kpi.marginTrend.stable')}
               changeType={marginSlopePP >= 0 ? 'positive' : 'warning'}
-              infoTooltip="Simple slope computed from 12 quarters of DB2 margin data"
+              infoTooltip={t('forecast.kpi.marginTrend.tip')}
               confidence="derived"
-              bottomContent={<MiniRange text={`Slope over ${quarterlyMargins.length} quarters`} />}
+              bottomContent={<MiniRange text={t('forecast.kpi.marginTrend.slope', { n: quarterlyMargins.length })} />}
             />
           </motion.div>
         </motion.div>
@@ -396,31 +399,31 @@ export default function Forecasting() {
           }}
         >
           <h3 className="font-bold text-sm mb-3" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>
-            Quote-to-Revenue Bridge
+            {t('forecast.bridge.title')}
           </h3>
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-500">Open Quotes</span>
+              <span className="text-xs font-medium text-slate-500">{t('forecast.bridge.openQuotes')}</span>
               <span className="text-lg font-bold" style={{ color: colors.darkNavy }}>{formatEUR(pipelineSummary.open_value)}</span>
             </div>
             <span className="text-slate-300 text-lg font-light">&times;</span>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-500">Win Rate</span>
+              <span className="text-xs font-medium text-slate-500">{t('forecast.bridge.winRate')}</span>
               <span className="text-lg font-bold" style={{ color: colors.darkNavy }}>{(pipelineSummary.win_rate * 100).toFixed(1)}%</span>
             </div>
             <span className="text-slate-300 text-lg font-light">&times;</span>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-500">Avg Margin</span>
+              <span className="text-xs font-medium text-slate-500">{t('forecast.bridge.avgMargin')}</span>
               <span className="text-lg font-bold" style={{ color: colors.darkNavy }}>{(pipelineSummary.avg_margin * 100).toFixed(1)}%</span>
             </div>
             <span className="text-slate-300 text-lg font-light">=</span>
             <div className="flex items-center gap-2 px-4 py-2 rounded-xl" style={{ background: `${colors.primary}10` }}>
-              <span className="text-xs font-medium" style={{ color: colors.primary }}>Expected Gross Profit</span>
+              <span className="text-xs font-medium" style={{ color: colors.primary }}>{t('forecast.bridge.expected')}</span>
               <span className="text-xl font-bold" style={{ color: colors.primary }}>~{formatEUR(pipelineSummary.expected_gross_profit)}</span>
             </div>
           </div>
           <p className="text-[11px] mt-2" style={{ color: '#a3a3a3' }}>
-            What the current pipeline is worth in margin terms. Updates live as quotes move.
+            {t('forecast.bridge.note')}
           </p>
         </motion.div>
 
@@ -428,26 +431,25 @@ export default function Forecasting() {
         <div className="flex items-start gap-3 px-5 py-4 bg-[#c1e8ff]/20 rounded-2xl text-xs leading-relaxed">
           <div className="size-7 bg-[#0393da] text-white rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5">i</div>
           <p className="text-slate-600">
-            <span className="font-bold text-slate-800">DB2 margin has declined ~{Math.abs(marginSlopePP)}pp/year over 3 years.</span>{' '}
-            {crossDate && <>At this rate, margin reaches the 60% floor by {crossDate}. </>}
-            Primary driver: rising full manufacturing cost ({costTrajectory[0].full_mfg_pct}% &rarr; {costTrajectory[costTrajectory.length - 1].full_mfg_pct}% of revenue).
-            Material costs are stabilizing, but fixed overhead allocation is growing &mdash; investigate capacity utilization.
+            <span className="font-bold text-slate-800">{t('forecast.banner.declined', { pp: Math.abs(marginSlopePP) })}</span>{' '}
+            {crossDate && <>{t('forecast.banner.crosses', { when: crossDate })} </>}
+            {t('forecast.banner.driver', { from: costTrajectory[0].full_mfg_pct, to: costTrajectory[costTrajectory.length - 1].full_mfg_pct })}
           </p>
         </div>
 
         {/* ── Row 4: Margin Trajectory (full width) ── */}
         <ChartCard
-          title="Margin Trend Projection"
-          subtitle="Historical quarterly DB2 margin with weighted moving average projection"
+          title={t('forecast.trajectory.title')}
+          subtitle={t('forecast.trajectory.subtitle')}
           tooltip={TOOLTIPS.forecast_vs_actuals}
           formulaId="forecast_margin"
           confidence="derived"
           headerRight={
             <div className="flex items-center gap-4 text-xs font-medium">
-              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-400" /> Actual</div>
-              <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#0393da] block" /> WMA Trend</div>
-              <div className="flex items-center gap-1.5"><span className="w-4 h-3 bg-[#c1e8ff] block rounded" /> Projection Band</div>
-              <span className="text-[10px] italic text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">Based on 3-year quarterly data &middot; trend projection, not ML model</span>
+              <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-400" /> {t('forecast.legend.actual')}</div>
+              <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#0393da] block" /> {t('forecast.legend.wma')}</div>
+              <div className="flex items-center gap-1.5"><span className="w-4 h-3 bg-[#c1e8ff] block rounded" /> {t('forecast.legend.band')}</div>
+              <span className="text-[10px] italic text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">{t('forecast.legend.note')}</span>
             </div>
           }
         >
@@ -464,22 +466,22 @@ export default function Forecasting() {
                     if (!d) return null;
                     return (
                       <div className="border border-slate-100 rounded-xl p-3 shadow-xl text-xs min-w-[180px] backdrop-blur-sm" style={{ background: 'rgba(255,255,255,0.95)' }}>
-                        <p className="font-bold text-slate-800 mb-2">{label} {d.projected ? '(Projected)' : ''}</p>
+                        <p className="font-bold text-slate-800 mb-2">{label} {d.projected ? t('forecast.tip.projected') : ''}</p>
                         {d.margin != null && (
                           <div className="flex justify-between gap-6">
-                            <span className="text-slate-500">Actual Margin</span>
+                            <span className="text-slate-500">{t('forecast.tip.actualMargin')}</span>
                             <span className="font-bold">{d.margin}%</span>
                           </div>
                         )}
                         {d.wma != null && (
                           <div className="flex justify-between gap-6">
-                            <span className="text-[#0393da]">WMA Trend</span>
+                            <span className="text-[#0393da]">{t('forecast.legend.wma')}</span>
                             <span className="font-bold">{d.wma}%</span>
                           </div>
                         )}
                         {d.upper != null && d.lower != null && (
                           <div className="flex justify-between gap-6 mt-1 pt-1 border-t border-slate-100">
-                            <span className="text-slate-400">Range</span>
+                            <span className="text-slate-400">{t('forecast.tip.range')}</span>
                             <span className="font-semibold text-[#0393da]">{d.lower}% – {d.upper}%</span>
                           </div>
                         )}
@@ -494,9 +496,9 @@ export default function Forecasting() {
                   </linearGradient>
                 </defs>
                 <Area type="monotone" dataKey="band" stroke="none" fill="url(#projBandGrad)" fillOpacity={1} animationDuration={1000} />
-                <ReferenceLine y={60} stroke="#EF4444" strokeDasharray="6 3" strokeWidth={1} label={{ value: '60% floor', position: 'insideTopRight', fill: '#EF4444', fontSize: 9 }} />
+                <ReferenceLine y={60} stroke="#EF4444" strokeDasharray="6 3" strokeWidth={1} label={{ value: t('forecast.label.floor'), position: 'insideTopRight', fill: '#EF4444', fontSize: 9 }} />
                 {crossDate && (
-                  <ReferenceLine y={60} stroke="none" label={{ value: `Crosses 60% by ~${crossDate}`, position: 'insideBottomRight', fill: '#94a3b8', fontSize: 9 }} />
+                  <ReferenceLine y={60} stroke="none" label={{ value: t('forecast.label.crosses', { when: crossDate }), position: 'insideBottomRight', fill: '#94a3b8', fontSize: 9 }} />
                 )}
                 <Line type="monotone" dataKey="margin" stroke="#94a3b8" strokeWidth={0} dot={{ r: 4, stroke: '#94a3b8', strokeWidth: 2, fill: 'white' }} activeDot={{ r: 6, stroke: '#94a3b8', strokeWidth: 2, fill: 'white' }} animationDuration={800} connectNulls={false} />
                 <Line type="monotone" dataKey="wma" stroke="#0393da" strokeWidth={2.5} dot={false} activeDot={{ r: 5, stroke: '#0393da', strokeWidth: 2, fill: 'white' }} animationDuration={1000} connectNulls />
@@ -509,8 +511,8 @@ export default function Forecasting() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Commodity Group Margin Trajectories */}
           <ChartCard
-            title="Commodity Group Margin Trajectories"
-            subtitle="Quarterly margins by group with trend direction"
+            title={t('forecast.commodity.title')}
+            subtitle={t('forecast.commodity.subtitle')}
             tooltip={TOOLTIPS.category_forecasts}
             confidence="derived"
           >
@@ -529,23 +531,23 @@ export default function Forecasting() {
               </ResponsiveContainer>
             </div>
             <div className="flex gap-6 mt-2 text-[10px] font-medium px-2">
-              <span className="text-[#0393da]">BKAES: ~68% &rarr; ~66% <TrendingDown size={10} className="inline" /></span>
-              <span className="text-[#10B981]">BKAGG: ~53&ndash;55% volatile &harr;</span>
-              <span className="text-[#e7a019]">BKAIZ: improving <TrendingUp size={10} className="inline" /></span>
+              <span className="text-[#0393da]">{t('forecast.commodity.bkaes')} <TrendingDown size={10} className="inline" /></span>
+              <span className="text-[#10B981]">{t('forecast.commodity.bkagg')} &harr;</span>
+              <span className="text-[#e7a019]">{t('forecast.commodity.bkaiz')} <TrendingUp size={10} className="inline" /></span>
             </div>
           </ChartCard>
 
           {/* Seasonal Pattern (enhanced) */}
           <ChartCard
-            title="Seasonal Pattern"
-            subtitle="Monthly seasonal indices with actual recent performance overlay"
+            title={t('forecast.seasonal.title')}
+            subtitle={t('forecast.seasonal.subtitle')}
             tooltip={TOOLTIPS.seasonal_indices}
             formulaId="seasonal_pattern"
             confidence="derived"
             headerRight={
               <div className="flex items-center gap-3 text-xs font-medium">
-                <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-slate-300" /> Expected</div>
-                <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#0393da]" /> Actual</div>
+                <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-slate-300" /> {t('forecast.seasonal.expected')}</div>
+                <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#0393da]" /> {t('forecast.seasonal.actual')}</div>
               </div>
             }
           >
@@ -564,15 +566,15 @@ export default function Forecasting() {
                         <div className="border border-slate-100 rounded-xl p-3 shadow-xl text-xs min-w-[160px] backdrop-blur-sm" style={{ background: 'rgba(255,255,255,0.95)' }}>
                           <p className="font-bold text-slate-800 mb-2">{label}</p>
                           <div className="flex justify-between gap-4">
-                            <span className="text-slate-500">Expected</span>
+                            <span className="text-slate-500">{t('forecast.seasonal.expected')}</span>
                             <span className="font-bold">{d.expected.toFixed(3)}x</span>
                           </div>
                           <div className="flex justify-between gap-4">
-                            <span className="text-[#0393da]">Actual</span>
+                            <span className="text-[#0393da]">{t('forecast.seasonal.actual')}</span>
                             <span className="font-bold">{d.actual.toFixed(3)}x</span>
                           </div>
                           <div className="flex justify-between gap-4 mt-1 pt-1 border-t border-slate-100">
-                            <span className="text-slate-400">Deviation</span>
+                            <span className="text-slate-400">{t('forecast.seasonal.deviation')}</span>
                             <span className={`font-semibold ${d.deviation >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                               {d.deviation >= 0 ? '+' : ''}{d.deviation}pp
                             </span>
@@ -592,16 +594,16 @@ export default function Forecasting() {
 
         {/* ── Row 6: Cost Trajectory (full width) ── */}
         <ChartCard
-          title="Cost Trajectory"
-          subtitle="Cost layers as % of revenue — material, direct manufacturing, and full manufacturing cost"
+          title={t('forecast.cost.title')}
+          subtitle={t('forecast.cost.subtitle')}
           tooltip={TOOLTIPS.gross_margin}
           confidence="derived"
           headerRight={
             <div className="flex items-center gap-4 text-xs font-medium">
-              <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#10B981] block" /> Material</div>
-              <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#0393da] block" /> Direct Mfg</div>
-              <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#EF4444] block" /> Full Mfg Cost</div>
-              <span className="text-[10px] italic text-slate-400">Dotted = projected</span>
+              <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#10B981] block" /> {t('forecast.cost.material')}</div>
+              <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#0393da] block" /> {t('forecast.cost.direct')}</div>
+              <div className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-[#EF4444] block" /> {t('forecast.cost.full')}</div>
+              <span className="text-[10px] italic text-slate-400">{t('forecast.cost.dotted')}</span>
             </div>
           }
         >
@@ -625,20 +627,20 @@ export default function Forecasting() {
             </ResponsiveContainer>
           </div>
           <p className="text-[11px] italic mt-2 px-2" style={{ color: '#737373' }}>
-            Material costs declining, but full manufacturing cost trend rising &mdash; suggests fixed overhead growing. Investigate capacity utilization.
+            {t('forecast.cost.note')}
           </p>
         </ChartCard>
 
         {/* ── Row 7: Revenue Projection (full width) ── */}
         <ChartCard
-          title="Revenue Projection"
-          subtitle="Quarterly revenue with seasonal + growth-adjusted projection"
+          title={t('forecast.revenue.title')}
+          subtitle={t('forecast.revenue.subtitle')}
           confidence="derived"
           headerRight={
             <div className="flex items-center gap-4 text-xs font-medium">
-              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#0393da]" /> Historical</div>
-              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#0393da]/40" /> Projected</div>
-              <div className="flex items-center gap-1.5"><span className="w-4 h-3 bg-[#c1e8ff] block rounded" /> &plusmn;15% Band</div>
+              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#0393da]" /> {t('forecast.revenue.historical')}</div>
+              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#0393da]/40" /> {t('forecast.revenue.projected')}</div>
+              <div className="flex items-center gap-1.5"><span className="w-4 h-3 bg-[#c1e8ff] block rounded" /> {t('forecast.revenue.band')}</div>
             </div>
           }
         >
@@ -655,14 +657,14 @@ export default function Forecasting() {
                     if (!d) return null;
                     return (
                       <div className="border border-slate-100 rounded-xl p-3 shadow-xl text-xs min-w-[180px] backdrop-blur-sm" style={{ background: 'rgba(255,255,255,0.95)' }}>
-                        <p className="font-bold text-slate-800 mb-2">{label} {d.projected ? '(Projected)' : ''}</p>
+                        <p className="font-bold text-slate-800 mb-2">{label} {d.projected ? t('forecast.tip.projected') : ''}</p>
                         <div className="flex justify-between gap-6">
-                          <span className="text-slate-500">Revenue</span>
+                          <span className="text-slate-500">{t('forecast.revenue.tip.revenue')}</span>
                           <span className="font-bold">{formatEUR(d.revenue)}</span>
                         </div>
                         {d.lower && d.upper && (
                           <div className="flex justify-between gap-6 mt-1 pt-1 border-t border-slate-100">
-                            <span className="text-slate-400">Range</span>
+                            <span className="text-slate-400">{t('forecast.tip.range')}</span>
                             <span className="font-semibold text-[#0393da]">{formatEUR(d.lower)} – {formatEUR(d.upper)}</span>
                           </div>
                         )}
@@ -693,7 +695,7 @@ export default function Forecasting() {
               onClick={() => setMethodologyOpen(!methodologyOpen)}
               className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors"
             >
-              How is this calculated?
+              {t('forecast.method.toggle')}
               {methodologyOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
             {methodologyOpen && (
@@ -705,12 +707,12 @@ export default function Forecasting() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-100">
-                      <th className="text-left py-2 font-semibold text-slate-600">Quarter</th>
-                      <th className="text-right py-2 font-semibold text-slate-600">Base</th>
-                      <th className="text-right py-2 font-semibold text-slate-600">Seasonal</th>
-                      <th className="text-right py-2 font-semibold text-slate-600">Growth</th>
-                      <th className="text-right py-2 font-semibold text-slate-600">Projection</th>
-                      <th className="text-right py-2 font-semibold text-slate-600">Range</th>
+                      <th className="text-left py-2 font-semibold text-slate-600">{t('forecast.method.col.quarter')}</th>
+                      <th className="text-right py-2 font-semibold text-slate-600">{t('forecast.method.col.base')}</th>
+                      <th className="text-right py-2 font-semibold text-slate-600">{t('forecast.method.col.seasonal')}</th>
+                      <th className="text-right py-2 font-semibold text-slate-600">{t('forecast.method.col.growth')}</th>
+                      <th className="text-right py-2 font-semibold text-slate-600">{t('forecast.method.col.projection')}</th>
+                      <th className="text-right py-2 font-semibold text-slate-600">{t('forecast.method.col.range')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -734,7 +736,7 @@ export default function Forecasting() {
         {/* ── Row 8: Phase 4 — Advanced Analytics Placeholder ── */}
         <div>
           <h3 className="font-bold text-base mb-4" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>
-            Phase 4: Advanced Analytics
+            {t('forecast.advanced.title')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Scenario Simulator */}
@@ -755,15 +757,15 @@ export default function Forecasting() {
               <div className="size-10 rounded-xl flex items-center justify-center mb-4" style={{ background: `${colors.primary}10` }}>
                 <FlaskConical size={20} style={{ color: colors.primary }} />
               </div>
-              <h4 className="font-bold text-sm mb-2" style={{ color: colors.darkNavy }}>Scenario Simulator</h4>
+              <h4 className="font-bold text-sm mb-2" style={{ color: colors.darkNavy }}>{t('forecast.advanced.scenario.title')}</h4>
               <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                "What if material costs rise 10%?" "What if we reprice BKAGG by +5%?"
+                {t('forecast.advanced.scenario.desc')}
               </p>
               <div className="flex items-center gap-1.5 text-[10px] font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full w-fit">
-                <span>Available in future phases</span>
+                <span>{t('forecast.advanced.future')}</span>
               </div>
               <button className="mt-4 flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg transition-colors" style={{ color: colors.primary, background: `${colors.primary}08` }}>
-                <Bell size={12} /> Notify me
+                <Bell size={12} /> {t('forecast.advanced.notify')}
               </button>
             </motion.div>
 
@@ -785,15 +787,15 @@ export default function Forecasting() {
               <div className="size-10 rounded-xl flex items-center justify-center mb-4" style={{ background: `${colors.success}10` }}>
                 <BarChart3 size={20} style={{ color: colors.success }} />
               </div>
-              <h4 className="font-bold text-sm mb-2" style={{ color: colors.darkNavy }}>Monte Carlo Engine</h4>
+              <h4 className="font-bold text-sm mb-2" style={{ color: colors.darkNavy }}>{t('forecast.advanced.mc.title')}</h4>
               <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                P5/P25/P50/P75/P95 margin distribution from validated ML models.
+                {t('forecast.advanced.mc.desc')}
               </p>
               <div className="flex items-center gap-1.5 text-[10px] font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full w-fit">
-                <span>Available when model accuracy exceeds 70%</span>
+                <span>{t('forecast.advanced.mc.gate')}</span>
               </div>
               <a href="/ml-analytics" className="mt-4 flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg transition-colors" style={{ color: colors.success, background: `${colors.success}08` }}>
-                View current model performance &rarr;
+                {t('forecast.advanced.mc.link')}
               </a>
             </motion.div>
 
@@ -815,15 +817,15 @@ export default function Forecasting() {
               <div className="size-10 rounded-xl flex items-center justify-center mb-4" style={{ background: `${colors.tertiary}15` }}>
                 <Users size={20} style={{ color: colors.tertiary }} />
               </div>
-              <h4 className="font-bold text-sm mb-2" style={{ color: colors.darkNavy }}>Customer-Level Prediction</h4>
+              <h4 className="font-bold text-sm mb-2" style={{ color: colors.darkNavy }}>{t('forecast.advanced.cust.title')}</h4>
               <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                Per-customer margin forecast with churn probability scoring.
+                {t('forecast.advanced.cust.desc')}
               </p>
               <div className="flex items-center gap-1.5 text-[10px] font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full w-fit">
-                <span>Available in future phases</span>
+                <span>{t('forecast.advanced.future')}</span>
               </div>
               <button className="mt-4 flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg transition-colors" style={{ color: colors.tertiary, background: `${colors.tertiary}08` }}>
-                <Bell size={12} /> Notify me
+                <Bell size={12} /> {t('forecast.advanced.notify')}
               </button>
             </motion.div>
           </div>
@@ -832,11 +834,11 @@ export default function Forecasting() {
         {/* ── Footer: Assumptions ── */}
         <div className="border-t border-slate-100 pt-4 pb-2">
           <div className="flex flex-wrap gap-x-8 gap-y-1 text-[11px]" style={{ color: '#a3a3a3' }}>
-            <span>Growth rate: based on {assumptions.growth_rate_source} ({(assumptions.growth_rate * 100).toFixed(1)}%)</span>
-            <span>Seasonality: {assumptions.seasonality_source}</span>
-            <span>Cost trends: {assumptions.cost_trend_source}</span>
-            <span>Win rate: {assumptions.win_rate_source} ({(assumptions.win_rate * 100).toFixed(1)}%)</span>
-            <span>Data through: {new Date(dataThrough).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+            <span>{t('forecast.assumptions.growthRate', { source: assumptions.growth_rate_source, pct: (assumptions.growth_rate * 100).toFixed(1) })}</span>
+            <span>{t('forecast.assumptions.seasonality', { source: assumptions.seasonality_source })}</span>
+            <span>{t('forecast.assumptions.costTrends', { source: assumptions.cost_trend_source })}</span>
+            <span>{t('forecast.assumptions.winRate', { source: assumptions.win_rate_source, pct: (assumptions.win_rate * 100).toFixed(1) })}</span>
+            <span>{t('forecast.assumptions.dataThrough', { date: new Date(dataThrough).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short', year: 'numeric' }) })}</span>
           </div>
         </div>
       </div>

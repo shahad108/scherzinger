@@ -8,6 +8,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { colors } from '../utils/designTokensV2';
 import { getSeverityCategory } from '../utils/insightsFeedEngine';
+import { useLanguage } from '../context/LanguageContext';
 
 const BORDER_COLORS = {
   red: '#dc2626',
@@ -43,6 +44,7 @@ export default function IntelligenceReportCard({
 }) {
   const [feedback, setFeedback] = useState(null); // 'up' | 'down' | null
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const borderColor = BORDER_COLORS[report.borderColor] || BORDER_COLORS.blue;
   const badge = BADGE_STYLES[report.borderColor] || BADGE_STYLES.blue;
@@ -103,11 +105,11 @@ export default function IntelligenceReportCard({
                 </span>
                 {report.frequency === 'triggered' && (
                   <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-red-50 text-red-500">
-                    Alert
+                    {t('feed.alert')}
                   </span>
                 )}
                 {isPinned && (
-                  <span className="text-[9px] text-amber-500 font-bold">Pinned</span>
+                  <span className="text-[9px] text-amber-500 font-bold">{t('feed.pinned')}</span>
                 )}
               </div>
             </div>
@@ -137,7 +139,7 @@ export default function IntelligenceReportCard({
             onClick={() => onExpand?.(report)}
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 transition-colors"
           >
-            Expand <ChevronDown size={10} />
+            {t('feed.expand')} <ChevronDown size={10} />
           </button>
 
           {report.linkPage && (
@@ -146,7 +148,7 @@ export default function IntelligenceReportCard({
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-semibold hover:bg-blue-50 transition-colors"
               style={{ color: colors.primary }}
             >
-              View in {report.linkLabel} <ExternalLink size={10} />
+              {t('feed.viewIn', { label: report.linkLabel })} <ExternalLink size={10} />
             </button>
           )}
 
@@ -154,7 +156,7 @@ export default function IntelligenceReportCard({
             onClick={handleAskAbout}
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-semibold text-purple-600 hover:bg-purple-50 transition-colors"
           >
-            Ask about this <MessageSquare size={10} />
+            {t('feed.askAbout')} <MessageSquare size={10} />
           </button>
 
           <div className="ml-auto flex items-center gap-0.5">
@@ -163,7 +165,7 @@ export default function IntelligenceReportCard({
               className={`p-1 rounded transition-colors ${
                 feedback === 'up' ? 'text-green-600 bg-green-50' : 'text-slate-300 hover:text-slate-500'
               }`}
-              title="Useful"
+              title={t('feed.useful')}
             >
               <ThumbsUp size={12} />
             </button>
@@ -172,7 +174,7 @@ export default function IntelligenceReportCard({
               className={`p-1 rounded transition-colors ${
                 feedback === 'down' ? 'text-red-500 bg-red-50' : 'text-slate-300 hover:text-slate-500'
               }`}
-              title="Not relevant"
+              title={t('feed.notRelevant')}
             >
               <ThumbsDown size={12} />
             </button>

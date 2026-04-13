@@ -4,16 +4,18 @@ import { Filter, Pin, Clock, Zap, Bell, PanelLeftClose } from 'lucide-react';
 import IntelligenceReportCard from './IntelligenceReportCard';
 import { getSeverityCategory } from '../utils/insightsFeedEngine';
 import { containerVariants } from '../utils/animations';
+import { useLanguage } from '../context/LanguageContext';
 
 const FILTER_OPTIONS = [
-  { key: 'all', label: 'All Reports' },
-  { key: 'critical', label: 'Critical', color: '#dc2626' },
-  { key: 'action', label: 'Action Required', color: '#f97316' },
-  { key: 'brief', label: 'Weekly Briefs', color: '#eab308' },
-  { key: 'positive', label: 'Positive Signals', color: '#10b981' },
+  { key: 'all', tKey: 'feed.filter.all' },
+  { key: 'critical', tKey: 'feed.filter.critical', color: '#dc2626' },
+  { key: 'action', tKey: 'feed.filter.action', color: '#f97316' },
+  { key: 'brief', tKey: 'feed.filter.brief', color: '#eab308' },
+  { key: 'positive', tKey: 'feed.filter.positive', color: '#10b981' },
 ];
 
 export default function IntelligenceFeed({ reports, onAskAbout, onExpandReport, onCollapse }) {
+  const { t } = useLanguage();
   const [activeFilter, setActiveFilter] = useState('all');
   const [pinnedIds, setPinnedIds] = useState(() => {
     try {
@@ -67,22 +69,22 @@ export default function IntelligenceFeed({ reports, onAskAbout, onExpandReport, 
         <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="text-base font-bold text-slate-800" style={{ fontFamily: "'Manrope', sans-serif" }}>
-              Intelligence Feed
+              {t('feed.title')}
             </h2>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              {reports.length} reports — severity-ranked, pre-generated
+              {t('feed.subtitle', { n: reports.length })}
             </p>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="flex items-center gap-1 px-2 py-1 bg-slate-50 rounded-lg">
               <Zap size={10} className="text-red-500" />
-              <span className="text-[10px] font-bold text-slate-500">{severityCounts.critical} critical</span>
+              <span className="text-[10px] font-bold text-slate-500">{t('feed.critical', { n: severityCounts.critical })}</span>
             </div>
             {onCollapse && (
               <button
                 onClick={onCollapse}
                 className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-                title="Collapse feed"
+                title={t('feed.collapse')}
               >
                 <PanelLeftClose size={16} />
               </button>
@@ -111,7 +113,7 @@ export default function IntelligenceFeed({ reports, onAskAbout, onExpandReport, 
                     style={{ background: isActive ? '#fff' : opt.color }}
                   />
                 )}
-                {opt.label}
+                {t(opt.tKey)}
                 <span className={`text-[9px] ${isActive ? 'text-slate-300' : 'text-slate-400'}`}>
                   {count}
                 </span>
@@ -131,12 +133,12 @@ export default function IntelligenceFeed({ reports, onAskAbout, onExpandReport, 
         {filteredReports.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Filter size={24} className="text-slate-300 mb-2" />
-            <p className="text-sm font-medium text-slate-400">No reports match this filter</p>
+            <p className="text-sm font-medium text-slate-400">{t('feed.empty')}</p>
             <button
               onClick={() => setActiveFilter('all')}
               className="mt-2 text-xs text-blue-500 hover:underline"
             >
-              Show all reports
+              {t('feed.showAll')}
             </button>
           </div>
         ) : (
@@ -157,7 +159,7 @@ export default function IntelligenceFeed({ reports, onAskAbout, onExpandReport, 
       <div className="flex-shrink-0 px-5 py-3 border-t border-slate-100 bg-slate-50/50">
         <div className="flex items-center gap-2 text-[10px] text-slate-400">
           <Bell size={12} />
-          <span>Notification settings — coming soon</span>
+          <span>{t('feed.notificationsSoon')}</span>
         </div>
       </div>
     </div>

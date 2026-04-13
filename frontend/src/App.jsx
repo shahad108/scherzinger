@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import { UIProvider } from './context/UIContext';
 import { ChatProvider } from './context/ChatContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { isAuthenticated } from './utils/auth';
 import Layout from './components/Layout';
 import DashboardOverviewV2 from './pages/DashboardOverviewV2';
@@ -31,6 +32,7 @@ function ProtectedRoute({ children }) {
 
 export default function App() {
   return (
+    <LanguageProvider>
     <UserProvider>
       <UIProvider>
         <ChatProvider>
@@ -62,5 +64,6 @@ export default function App() {
         </ChatProvider>
       </UIProvider>
     </UserProvider>
+    </LanguageProvider>
   );
 }

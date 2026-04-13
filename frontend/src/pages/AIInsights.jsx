@@ -12,6 +12,8 @@ import ChatChart from '../components/ChatChart';
 import IntelligenceFeed from '../components/IntelligenceFeed';
 import InsightReportSlideOver from '../components/InsightReportSlideOver';
 import { useChat } from '../context/ChatContext';
+import { useLanguage } from '../context/LanguageContext';
+import { translations } from '../i18n/translations';
 import { streamChat } from '../utils/openrouter';
 import { SYSTEM_PROMPT } from '../utils/systemPrompt';
 import { generateIntelligenceFeed } from '../utils/insightsFeedEngine';
@@ -134,6 +136,9 @@ export default function AIInsights() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { detailedAnalysisHandoff, clearDetailedAnalysisHandoff, pageContext } = useChat();
+  const { t, lang } = useLanguage();
+  const langRef = useRef(lang);
+  useEffect(() => { langRef.current = lang; }, [lang]);
 
   // Intelligence feed
   const feedReports = useMemo(() => generateIntelligenceFeed(), []);
@@ -359,8 +364,10 @@ export default function AIInsights() {
     abortRef.current = controller;
 
     const effectiveContext = options.handoffPageContext || pageContext;
+    const langDirective = langRef.current === 'de' ? translations.de['ai.directive.de'] : null;
     const apiMessages = [
       { role: 'system', content: SYSTEM_PROMPT },
+      ...(langDirective ? [{ role: 'system', content: langDirective }] : []),
       ...historyMessages,
       ...(effectiveContext ? [{ role: 'system', content: effectiveContext }] : []),
       ...(options.additionalInstructions ? [{ role: 'system', content: options.additionalInstructions }] : []),
@@ -501,7 +508,7 @@ export default function AIInsights() {
 
   return (
     <>
-      <Header title="AI Insights" />
+      <Header title={t('ai.title')} />
 
       <div className="flex flex-1 min-h-0 overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
         {/* ═══ LEFT PANEL: Intelligence Feed (collapsible) ═══ */}
@@ -515,7 +522,7 @@ export default function AIInsights() {
               <button
                 onClick={toggleFeed}
                 className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors shadow-sm"
-                title="Show Intelligence Feed"
+                title={t('ai.feed.show')}
               >
                 <PanelLeftOpen size={16} />
               </button>
@@ -529,7 +536,7 @@ export default function AIInsights() {
               )}
               <div className="flex-1" />
               <span className="text-[8px] text-slate-300 font-semibold [writing-mode:vertical-lr] rotate-180 tracking-wider uppercase">
-                Feed
+                {t('ai.feed.label')}
               </span>
             </div>
           ) : (
@@ -557,7 +564,7 @@ export default function AIInsights() {
                   className="flex items-center gap-2 text-sm font-bold text-slate-700 hover:text-slate-900 transition-colors"
                 >
                   <Bot size={16} style={{ color: colors.primary }} />
-                  AI Assistant
+                  {t('ai.assistant')}
                   <ChevronDown
                     size={14}
                     className={`text-slate-400 transition-transform ${showRecentChats ? 'rotate-180' : ''}`}
@@ -567,7 +574,7 @@ export default function AIInsights() {
                 {turnCount > 0 && (
                   <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 text-[9px] font-semibold text-green-600">
                     <History size={9} />
-                    {turnCount} {turnCount === 1 ? 'turn' : 'turns'} in memory
+                    {turnCount} {turnCount === 1 ? t('ai.turns.singular') : t('ai.turns.plural')}
                   </span>
                 )}
               </div>
@@ -576,7 +583,7 @@ export default function AIInsights() {
                 className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors flex-shrink-0"
               >
                 <Plus size={12} />
-                New Chat
+                {t('ai.newChat')}
               </button>
             </div>
 
@@ -605,7 +612,7 @@ export default function AIInsights() {
                           <div className="flex-1 min-w-0">
                             <span className="font-medium text-slate-700 truncate block">{conv.title}</span>
                             <span className="text-[10px] text-slate-400">
-                              {msgCount > 0 ? `${msgCount} msgs` : 'Empty'}
+                              {msgCount > 0 ? t('ai.msgs', { n: msgCount }) : t('ai.empty')}
                               {conv.createdAt ? ` · ${formatTimeAgo(conv.createdAt)}` : ''}
                             </span>
                           </div>
@@ -614,7 +621,7 @@ export default function AIInsights() {
                             <button
                               onClick={(e) => handleDeleteConversation(conv.id, e)}
                               className="opacity-0 group-hover:opacity-100 p-1 rounded text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex-shrink-0"
-                              title="Delete conversation"
+                              title={t('ai.delete')}
                             >
                               <Trash2 size={12} />
                             </button>
@@ -635,10 +642,9 @@ export default function AIInsights() {
                 <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-3">
                   <Bot size={24} style={{ color: colors.primary }} />
                 </div>
-                <h3 className="text-sm font-bold text-slate-800 mb-1">PRYZM AI</h3>
+                <h3 className="text-sm font-bold text-slate-800 mb-1">{t('ai.empty.title')}</h3>
                 <p className="text-xs text-slate-400 max-w-xs mb-4">
-                  Ask follow-up questions about any report, or explore your data.
-                  Click "Ask about this" on any report card to start with context.
+                  {t('ai.empty.subtitle')}
                 </p>
 
                 {/* Dynamic Suggested Prompts */}
@@ -707,7 +713,7 @@ export default function AIInsights() {
                       isStreaming && i === activeConv.messages.length - 1 && (
                         <div className="flex items-center gap-2 text-slate-400 text-xs">
                           <Loader size={12} className="animate-spin" />
-                          Thinking...
+                          {t('ai.thinking')}
                         </div>
                       )
                     )}
@@ -720,8 +726,8 @@ export default function AIInsights() {
             {showTurnNudge && !isStreaming && (
               <div className="flex justify-center">
                 <div className="px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-full text-[10px] text-amber-700">
-                  This conversation is getting long.{' '}
-                  <button onClick={handleNewChat} className="font-bold underline">Start a fresh chat</button> for a new topic — this one is saved.
+                  {t('ai.turnNudge')}{' '}
+                  <button onClick={handleNewChat} className="font-bold underline">{t('ai.startFresh')}</button>{t('ai.startFreshSuffix')}
                 </div>
               </div>
             )}
@@ -732,16 +738,16 @@ export default function AIInsights() {
             <div className="mx-4 mb-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-start gap-2">
                 <div>
-                  <p className="text-xs font-bold text-red-700">AI Unavailable</p>
+                  <p className="text-xs font-bold text-red-700">{t('ai.unavailable')}</p>
                   <p className="text-[10px] text-red-600 mt-0.5">{error}</p>
                   <div className="flex gap-2 mt-1.5">
                     {lastUserMsg && (
                       <button onClick={handleRetry} className="text-[10px] font-medium text-red-600 hover:text-red-800 flex items-center gap-1">
-                        <RotateCcw size={10} /> Retry
+                        <RotateCcw size={10} /> {t('ai.retry')}
                       </button>
                     )}
                     <button onClick={() => setError(null)} className="text-[10px] text-red-500 hover:text-red-700 underline">
-                      Dismiss
+                      {t('ai.dismiss')}
                     </button>
                   </div>
                 </div>
@@ -754,12 +760,12 @@ export default function AIInsights() {
             <div className="flex-shrink-0 px-4 py-2 border-t border-slate-100 bg-slate-50/50">
               <div className="flex items-start gap-1.5">
                 <MessageSquare size={10} className="text-blue-400 flex-shrink-0 mt-1" />
-                <span className="text-[9px] text-slate-400 flex-shrink-0 mt-0.5">Follow up:</span>
+                <span className="text-[9px] text-slate-400 flex-shrink-0 mt-0.5">{t('ai.followUp')}</span>
                 <div className="flex-1 min-w-0 flex flex-wrap gap-1.5">
                   {followUpsLoading ? (
                     <span className="flex items-center gap-1 text-[10px] text-slate-400">
                       <Loader size={10} className="animate-spin" />
-                      Generating suggestions...
+                      {t('ai.generating')}
                     </span>
                   ) : (
                     followUpSuggestions.map((q, i) => (
@@ -797,7 +803,7 @@ export default function AIInsights() {
             <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1.5 shadow-sm">
               <input
                 className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-xs py-1.5 px-2.5 text-slate-800 min-w-0"
-                placeholder="Ask a follow-up question..."
+                placeholder={t('ai.placeholder')}
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -808,7 +814,7 @@ export default function AIInsights() {
                 <button
                   onClick={handleStop}
                   className="ml-1 w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm"
-                  title="Stop generating"
+                  title={t('ai.stop')}
                 >
                   <Square size={12} />
                 </button>
@@ -823,7 +829,7 @@ export default function AIInsights() {
                 </button>
               )}
             </div>
-            <p className="text-[9px] text-center text-slate-300 mt-2">PRYZM AI powered by Claude</p>
+            <p className="text-[9px] text-center text-slate-300 mt-2">{t('ai.poweredBy')}</p>
           </div>
         </div>
       </div>

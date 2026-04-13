@@ -21,6 +21,7 @@ import CustomTooltip from '../components/shared/CustomTooltip';
 import { formatEUR, formatPct } from '../utils/formatters';
 import { TOOLTIPS } from '../utils/tooltipContent';
 import { useUI } from '../context/UIContext';
+import { useLanguage } from '../context/LanguageContext';
 import { track } from '../utils/tracker';
 import { colors, shadows, radius } from '../utils/designTokensV2';
 
@@ -59,6 +60,7 @@ const LTV_FILTERS = [
 
 export default function MLAnalytics() {
   const { selectItem, selectedItem, openCustomerDetail } = useUI();
+  const { t } = useLanguage();
   const [techDrawerOpen, setTechDrawerOpen] = useState(false);
   const [ltvFilter, setLtvFilter] = useState(1); // default to >€10K
   const [activeModel, setActiveModel] = useState('all'); // 'all', 'churn', 'forecast', 'anomaly'
@@ -159,7 +161,7 @@ export default function MLAnalytics() {
 
   return (
     <>
-      <Header title="ML Analytics" />
+      <Header title={t('ml.title')} />
       <motion.div className="p-8 space-y-6 max-w-[1440px] mx-auto" variants={containerVariants} initial="hidden" animate="visible">
 
         {/* ── Global Header: Model Selector + Last Updated ── */}
@@ -175,12 +177,12 @@ export default function MLAnalytics() {
                   color: activeModel === key ? '#fff' : '#737373',
                 }}
               >
-                {key === 'all' ? 'All Models' : key === 'churn' ? 'Churn Model' : key === 'forecast' ? 'Forecast Model' : 'Anomaly Detection'}
+                {key === 'all' ? t('ml.tab.all') : key === 'churn' ? t('ml.tab.churn') : key === 'forecast' ? t('ml.tab.forecast') : t('ml.tab.anomaly')}
               </button>
             ))}
           </div>
           <span className="text-xs font-medium" style={{ color: '#737373' }}>
-            Models last updated: 2024-12-01
+            {t('ml.lastUpdated')}
           </span>
         </div>
 
@@ -190,7 +192,7 @@ export default function MLAnalytics() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Churn Model: 78%"
+              label={t('ml.kpi.churn')}
               value={formatPct(ml.churn_prediction.accuracy)}
               change={`Base rate: ${formatPct(ml.churn_prediction.base_rate)}. Lift: +${ml.churn_prediction.lift_pp}pp`}
               changeType="positive"
@@ -201,7 +203,7 @@ export default function MLAnalytics() {
           </motion.div>
           <motion.div variants={cardVariants}>
             <KPICard
-              label="High-Confidence At-Risk"
+              label={t('ml.kpi.highRisk')}
               value={ml.churn_prediction.high_confidence_at_risk}
               change={`>€${(ml.churn_prediction.high_confidence_threshold.min_ltv / 1000).toFixed(0)}K LTV AND >${formatPct(ml.churn_prediction.high_confidence_threshold.min_probability)} prob`}
               changeType="negative"
@@ -212,7 +214,7 @@ export default function MLAnalytics() {
           </motion.div>
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Material Revenue at Risk"
+              label={t('ml.kpi.materialRev')}
               value={formatEUR(ml.churn_prediction.material_revenue_at_risk_eur)}
               change={`From top ${ml.churn_prediction.material_revenue_top_accounts} at-risk accounts`}
               changeType="negative"
@@ -223,7 +225,7 @@ export default function MLAnalytics() {
           </motion.div>
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Anomalies Detected"
+              label={t('ml.kpi.anomalies')}
               value={ml.anomaly_detection.total_anomalies}
               change={`${negMarginCount} negative-margin · ${missingCount} missing-data`}
               changeType="neutral"
@@ -243,8 +245,8 @@ export default function MLAnalytics() {
             {(activeModel === 'all' || activeModel === 'churn') && (
               <SectionCard>
                 <div className="p-6">
-                  <h3 className="font-bold text-base mb-1" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>Churn Model Performance</h3>
-                  <p className="text-xs mb-4" style={{ color: '#737373' }}>Summary metrics and segment breakdown</p>
+                  <h3 className="font-bold text-base mb-1" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>{t('ml.section.churnPerf')}</h3>
+                  <p className="text-xs mb-4" style={{ color: '#737373' }}>{t('ml.section.churnPerf.subtitle')}</p>
 
                   {/* Summary metrics */}
                   <InlineTable
@@ -260,7 +262,7 @@ export default function MLAnalytics() {
                   />
 
                   {/* Segment accuracy */}
-                  <h4 className="text-xs font-bold uppercase tracking-wider mt-6 mb-3" style={{ color: '#737373' }}>Accuracy by Customer Segment</h4>
+                  <h4 className="text-xs font-bold uppercase tracking-wider mt-6 mb-3" style={{ color: '#737373' }}>{t('ml.section.segmentAcc')}</h4>
                   <InlineTable
                     headers={[{ label: 'Segment' }, { label: 'Accuracy', align: 'right' }, { label: 'Precision', align: 'right' }, { label: 'Note' }]}
                     rows={ml.churn_prediction.segment_accuracy.map(s => [
@@ -301,23 +303,23 @@ export default function MLAnalytics() {
                       >
                         <div className="pt-4 space-y-4">
                           {/* Confusion matrix */}
-                          <h4 className="text-xs font-bold uppercase tracking-wider" style={{ color: '#737373' }}>Confusion Matrix</h4>
+                          <h4 className="text-xs font-bold uppercase tracking-wider" style={{ color: '#737373' }}>{t('ml.section.confusionMatrix')}</h4>
                           <div className="grid grid-cols-2 gap-2 max-w-xs">
                             <div className="p-3 rounded-lg text-center" style={{ background: '#f0fdf4' }}>
                               <div className="text-lg font-bold text-emerald-700">524</div>
-                              <div className="text-[10px] text-emerald-600">True Positive</div>
+                              <div className="text-[10px] text-emerald-600">{t('ml.label.tp')}</div>
                             </div>
                             <div className="p-3 rounded-lg text-center" style={{ background: '#fef2f2' }}>
                               <div className="text-lg font-bold text-red-600">123</div>
-                              <div className="text-[10px] text-red-500">False Positive</div>
+                              <div className="text-[10px] text-red-500">{t('ml.label.fp')}</div>
                             </div>
                             <div className="p-3 rounded-lg text-center" style={{ background: '#fef2f2' }}>
                               <div className="text-lg font-bold text-red-600">59</div>
-                              <div className="text-[10px] text-red-500">False Negative</div>
+                              <div className="text-[10px] text-red-500">{t('ml.label.fn')}</div>
                             </div>
                             <div className="p-3 rounded-lg text-center" style={{ background: '#f0fdf4' }}>
                               <div className="text-lg font-bold text-emerald-700">121</div>
-                              <div className="text-[10px] text-emerald-600">True Negative</div>
+                              <div className="text-[10px] text-emerald-600">{t('ml.label.tn')}</div>
                             </div>
                           </div>
                           <p className="text-[10px]" style={{ color: '#94a3b8' }}>
@@ -335,8 +337,8 @@ export default function MLAnalytics() {
             {(activeModel === 'all' || activeModel === 'forecast') && (
               <SectionCard>
                 <div className="p-6">
-                  <h3 className="font-bold text-base mb-1" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>Forecast Model Performance</h3>
-                  <p className="text-xs mb-4" style={{ color: '#737373' }}>Honest status flags for each model</p>
+                  <h3 className="font-bold text-base mb-1" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>{t('ml.section.forecastPerf')}</h3>
+                  <p className="text-xs mb-4" style={{ color: '#737373' }}>{t('ml.section.forecastPerf.subtitle')}</p>
 
                   <InlineTable
                     headers={[
@@ -367,7 +369,7 @@ export default function MLAnalytics() {
                     <div className="flex items-start gap-2">
                       <AlertTriangle size={16} className="text-amber-500 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-xs font-bold text-amber-800">Deployment Threshold</p>
+                        <p className="text-xs font-bold text-amber-800">{t('ml.label.deployThreshold')}</p>
                         <p className="text-[11px] mt-1 text-amber-700 leading-relaxed">
                           Minimum for production use: <strong>60% directional accuracy</strong>. No model currently meets this bar.
                           Forecasting page uses trend projections, not ML, until models improve.
@@ -386,7 +388,7 @@ export default function MLAnalytics() {
         ═══════════════════════════════════════════════════════════ */}
         {(activeModel === 'all' || activeModel === 'churn') && (
           <DataTable
-            title="Churn Risk Predictions — Sorted by Revenue at Risk"
+            title={t('ml.section.churnPredictions')}
             columns={churnColumns}
             data={churnPredictions}
             rowKey="customer_id"
@@ -420,8 +422,8 @@ export default function MLAnalytics() {
         {(activeModel === 'all' || activeModel === 'anomaly') && (
           <SectionCard>
             <div className="p-6">
-              <h3 className="font-bold text-base mb-1" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>Anomaly Detection</h3>
-              <p className="text-xs mb-5" style={{ color: '#737373' }}>Negative margins, missing data, cost deviations, and quote outliers</p>
+              <h3 className="font-bold text-base mb-1" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>{t('ml.section.anomalyDetection')}</h3>
+              <p className="text-xs mb-5" style={{ color: '#737373' }}>{t('ml.section.anomalyDetection.subtitle')}</p>
 
               {/* Summary strip */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
@@ -440,7 +442,7 @@ export default function MLAnalytics() {
               </div>
 
               {/* Cost anomalies table */}
-              <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#737373' }}>Cost Anomalies — Articles with Deviant Cost/Revenue Ratios</h4>
+              <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#737373' }}>{t('ml.section.costAnomalies')}</h4>
               <InlineTable
                 headers={[
                   { label: 'Article' },
@@ -460,7 +462,7 @@ export default function MLAnalytics() {
               />
 
               {/* Quote anomalies table */}
-              <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#737373' }}>Quote Anomalies — Margin Outliers vs Historical Average</h4>
+              <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#737373' }}>{t('ml.section.quoteAnomalies')}</h4>
               <p className="text-[11px] mb-3" style={{ color: '#94a3b8' }}>
                 Quotes where margin is &gt;20pp from customer's historical average. Flags pricing errors before submission.
               </p>
@@ -496,8 +498,8 @@ export default function MLAnalytics() {
             {/* Churn Model Feature Importance */}
             {(activeModel === 'all' || activeModel === 'churn') && (
               <ChartCard
-                title="Churn Model — Feature Importance"
-                subtitle="Top 10 features by importance weight"
+                title={t('ml.section.churnFeatures')}
+                subtitle={t('ml.section.churnFeatures.subtitle')}
                 tooltip="Builds trust and gives actionable insight. Single-product customers churn 3x more — so cross-sell."
                 confidence="forecast"
               >
@@ -518,8 +520,8 @@ export default function MLAnalytics() {
             {/* Forecast Model Feature Importance */}
             {(activeModel === 'all' || activeModel === 'forecast') && (
               <ChartCard
-                title="Forecast Model — Feature Importance"
-                subtitle="What drives margin forecasts"
+                title={t('ml.section.forecastFeatures')}
+                subtitle={t('ml.section.forecastFeatures.subtitle')}
                 tooltip="Key drivers behind forecast model predictions"
                 confidence="forecast"
               >
@@ -546,8 +548,8 @@ export default function MLAnalytics() {
           {/* Training History */}
           <SectionCard>
             <div className="p-6">
-              <h3 className="font-bold text-base mb-1" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>Training History</h3>
-              <p className="text-xs mb-4" style={{ color: '#737373' }}>When models were last trained and on what data</p>
+              <h3 className="font-bold text-base mb-1" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>{t('ml.section.trainingHistory')}</h3>
+              <p className="text-xs mb-4" style={{ color: '#737373' }}>{t('ml.section.trainingHistory.subtitle')}</p>
 
               <InlineTable
                 headers={[
@@ -580,8 +582,8 @@ export default function MLAnalytics() {
           {/* Data Coverage */}
           <SectionCard>
             <div className="p-6">
-              <h3 className="font-bold text-base mb-1" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>Data Coverage</h3>
-              <p className="text-xs mb-4" style={{ color: '#737373' }}>Feature completeness across data sources</p>
+              <h3 className="font-bold text-base mb-1" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>{t('ml.section.dataCoverage')}</h3>
+              <p className="text-xs mb-4" style={{ color: '#737373' }}>{t('ml.section.dataCoverage.subtitle')}</p>
 
               <InlineTable
                 headers={[

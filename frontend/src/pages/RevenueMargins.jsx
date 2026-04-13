@@ -13,6 +13,7 @@ import DataTable from '../components/shared/DataTable';
 import CustomTooltip from '../components/shared/CustomTooltip';
 import PhaseNotice from '../components/shared/PhaseNotice';
 import { useUI } from '../context/UIContext';
+import { useLanguage } from '../context/LanguageContext';
 import { handleChartContainerClick } from '../utils/pageContextResolver';
 import monthlyData from '../data/monthly_detail.json';
 import productsData from '../data/products.json';
@@ -73,41 +74,45 @@ const TrendArrow = ({ trend }) => {
   return <span className="text-slate-400 font-bold">→</span>;
 };
 
-// Custom tooltip for hero chart with negative-gap note
-function HeroTooltip({ active, payload, label }) {
-  if (!active || !payload || !payload.length) return null;
-  const data = payload[0].payload;
-  const isNegative = data.gap_pp < 0;
-  return (
-    <div className="px-4 py-3 rounded-lg shadow-lg text-xs" style={{ background: '#fff', border: '1px solid #e5e5e5' }}>
-      <div className="font-bold text-[13px] mb-2" style={{ color: '#1a1a2e' }}>{label}</div>
-      <div className="flex items-center gap-2 mb-1">
-        <span className="w-2 h-2 rounded-sm bg-[#0393da]" />
-        <span className="text-slate-500">Quoted</span>
-        <span className="font-semibold ml-auto">{(data.quoted * 100).toFixed(1)}%</span>
-      </div>
-      <div className="flex items-center gap-2 mb-1">
-        <span className="w-2 h-2 rounded-sm bg-[#10b981]" />
-        <span className="text-slate-500">Actual</span>
-        <span className="font-semibold ml-auto">{(data.actual * 100).toFixed(1)}%</span>
-      </div>
-      <div className="flex items-center gap-2 mt-2 pt-2" style={{ borderTop: '1px solid #f0f0f0' }}>
-        <span className="text-slate-500">Gap</span>
-        <span className={`font-bold ml-auto ${isNegative ? 'text-green-700' : 'text-red-600'}`}>
-          {data.gap_pp > 0 ? '+' : ''}{data.gap_pp.toFixed(1)}pp
-        </span>
-      </div>
-      {isNegative && (
-        <div className="mt-2 pt-2 text-[10px] italic text-slate-500" style={{ borderTop: '1px solid #f0f0f0', maxWidth: '200px' }}>
-          Negative gap — underquoted deals that overperformed.
+// Custom tooltip for hero chart with negative-gap note (curried so we can inject t)
+function makeHeroTooltip(t) {
+  return function HeroTooltip({ active, payload, label }) {
+    if (!active || !payload || !payload.length) return null;
+    const data = payload[0].payload;
+    const isNegative = data.gap_pp < 0;
+    return (
+      <div className="px-4 py-3 rounded-lg shadow-lg text-xs" style={{ background: '#fff', border: '1px solid #e5e5e5' }}>
+        <div className="font-bold text-[13px] mb-2" style={{ color: '#1a1a2e' }}>{label}</div>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="w-2 h-2 rounded-sm bg-[#0393da]" />
+          <span className="text-slate-500">{t('revenue.tip.quoted')}</span>
+          <span className="font-semibold ml-auto">{(data.quoted * 100).toFixed(1)}%</span>
         </div>
-      )}
-    </div>
-  );
+        <div className="flex items-center gap-2 mb-1">
+          <span className="w-2 h-2 rounded-sm bg-[#10b981]" />
+          <span className="text-slate-500">{t('revenue.tip.actual')}</span>
+          <span className="font-semibold ml-auto">{(data.actual * 100).toFixed(1)}%</span>
+        </div>
+        <div className="flex items-center gap-2 mt-2 pt-2" style={{ borderTop: '1px solid #f0f0f0' }}>
+          <span className="text-slate-500">{t('revenue.tip.gap')}</span>
+          <span className={`font-bold ml-auto ${isNegative ? 'text-green-700' : 'text-red-600'}`}>
+            {data.gap_pp > 0 ? '+' : ''}{data.gap_pp.toFixed(1)}pp
+          </span>
+        </div>
+        {isNegative && (
+          <div className="mt-2 pt-2 text-[10px] italic text-slate-500" style={{ borderTop: '1px solid #f0f0f0', maxWidth: '200px' }}>
+            {t('revenue.tip.negative')}
+          </div>
+        )}
+      </div>
+    );
+  };
 }
 
 export default function RevenueMargins() {
   const { selectItem, selectedItem } = useUI();
+  const { t, lang } = useLanguage();
+  const HeroTooltip = useMemo(() => makeHeroTooltip(t), [t]);
   const [selectedYear, setSelectedYear] = useState(2025);
   const [selectedCommodity, setSelectedCommodity] = useState('All');
   const [histogramMode, setHistogramMode] = useState('count'); // 'count' | 'revenue'
@@ -233,45 +238,45 @@ export default function RevenueMargins() {
 
   const customerColumns = [
     {
-      key: 'customer_id', label: 'Customer',
+      key: 'customer_id', label: t('revenue.col.customer'),
       render: (v, row) => (
         <span className="font-mono font-medium text-[#0393da]">{v}</span>
       ),
     },
     ...(selectedCommodity === 'All' ? [{
-      key: 'primary_commodity', label: 'Commodity',
+      key: 'primary_commodity', label: t('revenue.col.commodity'),
       render: (v) => (
         <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded bg-slate-100 text-slate-600">{v}</span>
       ),
     }] : []),
     {
-      key: 'revenue_eur', label: 'Revenue', align: 'right',
+      key: 'revenue_eur', label: t('revenue.col.revenue'), align: 'right',
       render: (v) => <span className="font-semibold">{formatEUR(v)}</span>,
     },
     {
-      key: 'actual_margin', label: 'Actual', align: 'right',
+      key: 'actual_margin', label: t('revenue.col.actual'), align: 'right',
       render: (v) => <span>{(v * 100).toFixed(1)}%</span>,
     },
     {
-      key: 'quoted_margin', label: 'Quoted', align: 'right',
+      key: 'quoted_margin', label: t('revenue.col.quoted'), align: 'right',
       render: (v) => <span className="text-slate-500">{(v * 100).toFixed(1)}%</span>,
     },
     {
-      key: 'gap_pp', label: 'Gap (pp)', align: 'right',
+      key: 'gap_pp', label: t('revenue.col.gap'), align: 'right',
       render: (v) => {
         const color = v >= 15 ? 'text-red-600' : v >= 10 ? 'text-amber-600' : 'text-slate-700';
         return <span className={`font-bold ${color}`}>{v.toFixed(1)}pp</span>;
       },
     },
     {
-      key: 'impact_eur', label: 'Impact (€)', align: 'right',
+      key: 'impact_eur', label: t('revenue.col.impact'), align: 'right',
       render: (v) => <span className="font-bold text-red-600">{formatEUR(v)}</span>,
-      tooltip: 'Revenue × Gap — annualized € value of margin leakage from this customer.',
+      tooltip: t('revenue.col.impact.tip'),
     },
     {
-      key: 'trend', label: 'Trend', align: 'right',
+      key: 'trend', label: t('revenue.col.trend'), align: 'right',
       render: (v) => <TrendArrow trend={v} />,
-      tooltip: 'Direction of gap QoQ. ↑ widening · → flat · ↓ closing.',
+      tooltip: t('revenue.col.trend.tip'),
     },
   ];
 
@@ -285,12 +290,12 @@ export default function RevenueMargins() {
   // Format last updated
   const lastUpdatedStr = useMemo(() => {
     const d = new Date(LAST_UPDATED);
-    return d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' });
-  }, []);
+    return d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'short', day: 'numeric', year: 'numeric' });
+  }, [lang]);
 
   return (
     <>
-      <Header title="Revenue & Margins" />
+      <Header title={t('revenue.title')} />
       <div className="p-8 space-y-6 max-w-[1440px] mx-auto">
         {/* Global Filter Row */}
         <div className="flex flex-wrap items-center gap-4 justify-between">
@@ -307,13 +312,13 @@ export default function RevenueMargins() {
                       : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
-                  {y}
+                  {y === 'All' ? t('revenue.filter.year.all') : y}
                 </button>
               ))}
             </div>
             {/* Commodity Filter */}
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Commodity</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{t('revenue.filter.commodity')}</span>
               <div className="flex gap-1 p-1 bg-slate-100 rounded-lg w-fit">
                 {commodityGroups.map((g) => (
                   <button
@@ -325,14 +330,14 @@ export default function RevenueMargins() {
                         : 'text-slate-500 hover:text-slate-900'
                     }`}
                   >
-                    {g}
+                    {g === 'All' ? t('revenue.filter.year.all') : g}
                   </button>
                 ))}
               </div>
             </div>
           </div>
           <div className="text-[10px] text-slate-500">
-            Last updated: <span className="font-semibold text-slate-700">{lastUpdatedStr}</span>
+            {t('revenue.lastUpdated')} <span className="font-semibold text-slate-700">{lastUpdatedStr}</span>
           </div>
         </div>
 
@@ -345,7 +350,7 @@ export default function RevenueMargins() {
         >
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Total Revenue"
+              label={t('revenue.kpi.totalRevenue')}
               value={formatEUR(kpis.totalRev)}
               change={kpis.yoyGrowth != null ? `${kpis.yoyGrowth >= 0 ? '+' : ''}${(kpis.yoyGrowth * 100).toFixed(1)}% YoY` : undefined}
               changeType={kpis.yoyGrowth >= 0 ? 'positive' : 'negative'}
@@ -357,7 +362,7 @@ export default function RevenueMargins() {
           </motion.div>
           <motion.div variants={cardVariants}>
             <KPICard
-              label="DB II Margin"
+              label={t('revenue.kpi.db2')}
               value={formatPct(kpis.avgDb2)}
               change={kpis.db2DeltaPp != null ? `${kpis.db2DeltaPp >= 0 ? '▲' : '▼'}${Math.abs(kpis.db2DeltaPp).toFixed(1)}pp YoY` : undefined}
               changeType={kpis.db2DeltaPp >= 0 ? 'positive' : 'warning'}
@@ -369,7 +374,7 @@ export default function RevenueMargins() {
           </motion.div>
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Margin Gap"
+              label={t('revenue.kpi.gap')}
               value={`${kpis.avgGap.toFixed(1)}pp`}
               change={kpis.gapDeltaPp != null ? `${kpis.gapDeltaPp >= 0 ? '▲' : '▼'}${Math.abs(kpis.gapDeltaPp).toFixed(1)}pp YoY` : undefined}
               changeType={kpis.gapDeltaPp != null && kpis.gapDeltaPp < 0 ? 'positive' : 'warning'}
@@ -378,14 +383,14 @@ export default function RevenueMargins() {
               confidence="verified"
               bottomContent={
                 <div className="text-[10px] italic" style={{ color: '#737373' }}>
-                  Quoted vs Actual · quarterly avg
+                  {t('revenue.kpi.gapBottom')}
                 </div>
               }
             />
           </motion.div>
           <motion.div variants={cardVariants}>
             <KPICard
-              label="DB I Margin"
+              label={t('revenue.kpi.db1')}
               value={formatPct(kpis.avgDb1)}
               change={kpis.db1DeltaPp != null ? `${kpis.db1DeltaPp >= 0 ? '▲' : '▼'}${Math.abs(kpis.db1DeltaPp).toFixed(1)}pp YoY` : undefined}
               changeType={kpis.db1DeltaPp >= 0 ? 'positive' : 'warning'}
@@ -394,7 +399,7 @@ export default function RevenueMargins() {
               confidence="verified"
               bottomContent={
                 <div className="text-[10px] italic" style={{ color: '#737373' }}>
-                  Fixed-cost spread: {kpis.fixedSpreadPp.toFixed(1)}pp between DB1 &amp; DB2
+                  {t('revenue.kpi.spreadBottom', { pp: kpis.fixedSpreadPp.toFixed(1) })}
                 </div>
               }
             />
@@ -403,8 +408,8 @@ export default function RevenueMargins() {
 
         {/* Row 2 — Hero Chart: Quoted vs Actual Margin Trend */}
         <ChartCard
-          title={`Quoted vs Actual Margin — Quarterly Trend${selectedCommodity !== 'All' ? ` · ${selectedCommodity}` : ''}`}
-          subtitle={`${selectedYear === 'All' ? 'FY2022–2025' : `FY ${selectedYear}`} · shaded band = leakage between won quotes and actual invoiced margin`}
+          title={`${t('revenue.hero.title')}${selectedCommodity !== 'All' ? ` · ${selectedCommodity}` : ''}`}
+          subtitle={t('revenue.hero.subtitle', { period: selectedYear === 'All' ? t('revenue.hero.period.all') : t('revenue.hero.period.year', { year: selectedYear }) })}
           tooltip={TOOLTIPS.quoted_vs_actual_trend}
           formulaId="db2_margin"
           confidence="derived"
@@ -412,15 +417,15 @@ export default function RevenueMargins() {
             <div className="flex gap-4">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-0.5 bg-[#0393da] block" />
-                <span className="text-xs font-medium text-slate-500">Quoted</span>
+                <span className="text-xs font-medium text-slate-500">{t('revenue.tip.quoted')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-0.5 bg-[#10b981] block" />
-                <span className="text-xs font-medium text-slate-500">Actual</span>
+                <span className="text-xs font-medium text-slate-500">{t('revenue.tip.actual')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-sm" style={{ background: '#ef4444', opacity: 0.15 }} />
-                <span className="text-xs font-medium text-slate-500">Gap</span>
+                <span className="text-xs font-medium text-slate-500">{t('revenue.tip.gap')}</span>
               </div>
             </div>
           }
@@ -498,8 +503,8 @@ export default function RevenueMargins() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Row 3L — Monthly Revenue & Margin (kept) */}
           <ChartCard
-            title="Monthly Revenue & Margin — Cadence"
-            subtitle={selectedYear === 'All' ? 'Full history 2022–2025' : `FY ${selectedYear} · monthly bars + margin line`}
+            title={t('revenue.monthly.title')}
+            subtitle={selectedYear === 'All' ? t('revenue.monthly.subtitle.all') : t('revenue.monthly.subtitle.year', { year: selectedYear })}
             tooltip={TOOLTIPS.revenue_margin_performance}
             formulaId="monthly_revenue"
             confidence="verified"
@@ -507,11 +512,11 @@ export default function RevenueMargins() {
               <div className="flex gap-3">
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 bg-[#0393da] rounded-sm" />
-                  <span className="text-[10px] font-medium text-slate-500">Revenue</span>
+                  <span className="text-[10px] font-medium text-slate-500">{t('revenue.legend.revenue')}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-0.5 bg-green-500 block" />
-                  <span className="text-[10px] font-medium text-slate-500">Margin</span>
+                  <span className="text-[10px] font-medium text-slate-500">{t('revenue.legend.margin')}</span>
                 </div>
               </div>
             }
@@ -552,8 +557,8 @@ export default function RevenueMargins() {
 
           {/* Row 3R — Margin by Commodity Group (NEW) */}
           <ChartCard
-            title="Margin by Commodity Group"
-            subtitle="DB II margin · sorted by revenue · red <50% · amber 50–55% · green >60%"
+            title={t('revenue.byCommodity.title')}
+            subtitle={t('revenue.byCommodity.subtitle')}
             tooltip={TOOLTIPS.margin_by_commodity}
             formulaId="db2_margin"
             confidence="verified"
@@ -597,7 +602,7 @@ export default function RevenueMargins() {
                       );
                     }}
                   />
-                  <ReferenceLine x={0.60} stroke="#94a3b8" strokeDasharray="4 4" label={{ value: 'Target 60%', position: 'top', fill: '#64748b', fontSize: 10, fontWeight: 600, offset: 8 }} />
+                  <ReferenceLine x={0.60} stroke="#94a3b8" strokeDasharray="4 4" label={{ value: t('revenue.target60'), position: 'top', fill: '#64748b', fontSize: 10, fontWeight: 600, offset: 8 }} />
                   <Bar dataKey="db2_margin" radius={[0, 6, 6, 0]} animationDuration={800}
                        label={{
                          position: 'right',
@@ -623,7 +628,7 @@ export default function RevenueMargins() {
               {commodityChartData.map((c) => (
                 <div key={c.group} className="flex justify-between text-[10px]">
                   <span className="font-mono font-semibold text-slate-600">{c.group}</span>
-                  <span className="text-slate-500">Rev: <span className="font-semibold text-slate-700">{formatEUR(c.revenue_eur)}</span></span>
+                  <span className="text-slate-500">{t('revenue.rev')} <span className="font-semibold text-slate-700">{formatEUR(c.revenue_eur)}</span></span>
                 </div>
               ))}
             </div>
@@ -632,8 +637,8 @@ export default function RevenueMargins() {
 
         {/* Row 4 — DB1 vs DB2 Breakdown by Commodity Group */}
         <ChartCard
-          title="DB I vs DB II by Commodity Group — Fixed Overhead Burden"
-          subtitle="Gap between DB I and DB II = fixed overhead allocated per group"
+          title={t('revenue.db1Db2.title')}
+          subtitle={t('revenue.db1Db2.subtitle')}
           tooltip={TOOLTIPS.db1_db2_breakdown}
           formulaId="db2_margin"
           confidence="derived"
@@ -641,11 +646,11 @@ export default function RevenueMargins() {
             <div className="flex gap-4">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 bg-[#0393da] rounded-sm" />
-                <span className="text-xs font-medium text-slate-500">DB I</span>
+                <span className="text-xs font-medium text-slate-500">{t('revenue.db1Db2.legend.db1')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 bg-[#e7a019] rounded-sm" />
-                <span className="text-xs font-medium text-slate-500">DB II</span>
+                <span className="text-xs font-medium text-slate-500">{t('revenue.db1Db2.legend.db2')}</span>
               </div>
             </div>
           }
@@ -683,10 +688,10 @@ export default function RevenueMargins() {
                     return (
                       <div className="px-3 py-2 rounded-lg shadow-lg text-xs" style={{ background: '#fff', border: '1px solid #e5e5e5' }}>
                         <div className="font-bold mb-1">{d.group} — {d.description}</div>
-                        <div>DB I: <span className="font-semibold text-[#0393da]">{d.db1_pct.toFixed(1)}%</span></div>
-                        <div>DB II: <span className="font-semibold text-[#e7a019]">{d.db2_pct.toFixed(1)}%</span></div>
+                        <div>{t('revenue.db1Db2.legend.db1')}: <span className="font-semibold text-[#0393da]">{d.db1_pct.toFixed(1)}%</span></div>
+                        <div>{t('revenue.db1Db2.legend.db2')}: <span className="font-semibold text-[#e7a019]">{d.db2_pct.toFixed(1)}%</span></div>
                         <div className="mt-1 pt-1" style={{ borderTop: '1px solid #f0f0f0' }}>
-                          Fixed overhead: <span className="font-bold">{d.fixed_overhead_pp.toFixed(1)}pp</span>
+                          {t('revenue.db1Db2.fixed')} <span className="font-bold">{d.fixed_overhead_pp.toFixed(1)}pp</span>
                         </div>
                       </div>
                     );
@@ -703,7 +708,7 @@ export default function RevenueMargins() {
               <div key={d.group} className="text-center">
                 <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{d.group}</div>
                 <div className="text-sm font-bold text-slate-800 mt-1">{d.fixed_overhead_pp.toFixed(1)}pp</div>
-                <div className="text-[9px] text-slate-400">fixed O/H</div>
+                <div className="text-[9px] text-slate-400">{t('revenue.db1Db2.fixedOh')}</div>
               </div>
             ))}
           </div>
@@ -711,7 +716,7 @@ export default function RevenueMargins() {
 
         {/* Row 5 — Customer Margin Gap Table */}
         <DataTable
-          title={`Top Customers by Margin Gap Impact${selectedCommodity !== 'All' ? ` · ${selectedCommodity}` : ''}${selectedYear !== 'All' ? ` · FY ${selectedYear}` : ''}`}
+          title={`${t('revenue.customers.title')}${selectedCommodity !== 'All' ? ` · ${selectedCommodity}` : ''}${selectedYear !== 'All' ? ` · ${t('revenue.hero.period.year', { year: selectedYear })}` : ''}`}
           columns={customerColumns}
           data={customerTableData}
           rowKey="customer_id"
@@ -724,8 +729,12 @@ export default function RevenueMargins() {
 
         {/* Row 6 — Margin Distribution Histogram (enhanced) */}
         <ChartCard
-          title="Margin Distribution"
-          subtitle={`${selectedCommodity === 'All' ? (productsData.summary?.total_active_skus ?? filteredProducts.length).toLocaleString() : filteredProducts.length.toLocaleString()} SKUs${selectedCommodity !== 'All' ? ` in ${selectedCommodity}` : ''} · target ${(TARGET_MARGIN * 100).toFixed(0)}%`}
+          title={t('revenue.histogram.title')}
+          subtitle={t('revenue.histogram.subtitle', {
+            count: selectedCommodity === 'All' ? (productsData.summary?.total_active_skus ?? filteredProducts.length).toLocaleString() : filteredProducts.length.toLocaleString(),
+            commodity: selectedCommodity !== 'All' ? t('revenue.histogram.subtitle.in', { group: selectedCommodity }) : '',
+            pct: (TARGET_MARGIN * 100).toFixed(0),
+          })}
           tooltip={TOOLTIPS.margin_distribution}
           formulaId="db2_margin"
           confidence="verified"
@@ -739,7 +748,7 @@ export default function RevenueMargins() {
                     : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
-                Count
+                {t('revenue.histogram.count')}
               </button>
               <button
                 onClick={() => setHistogramMode('revenue')}
@@ -749,7 +758,7 @@ export default function RevenueMargins() {
                     : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
-                Revenue-weighted
+                {t('revenue.histogram.revenue')}
               </button>
             </div>
           }
@@ -772,9 +781,9 @@ export default function RevenueMargins() {
                     const d = payload[0].payload;
                     return (
                       <div className="px-3 py-2 rounded-lg shadow-lg text-xs" style={{ background: '#fff', border: '1px solid #e5e5e5' }}>
-                        <div className="font-bold mb-1">Margin {label}</div>
-                        <div>SKUs: <span className="font-semibold">{d.count.toLocaleString()}</span></div>
-                        <div>Revenue: <span className="font-semibold">{formatEUR(d.revenue)}</span></div>
+                        <div className="font-bold mb-1">{t('revenue.histogram.tip.title', { label })}</div>
+                        <div>{t('revenue.histogram.tip.skus')} <span className="font-semibold">{d.count.toLocaleString()}</span></div>
+                        <div>{t('revenue.histogram.tip.revenue')} <span className="font-semibold">{formatEUR(d.revenue)}</span></div>
                       </div>
                     );
                   }}
@@ -785,7 +794,7 @@ export default function RevenueMargins() {
                   stroke="#1a1a2e"
                   strokeDasharray="4 4"
                   strokeWidth={1.5}
-                  label={{ value: `Target ${(TARGET_MARGIN * 100).toFixed(0)}%`, position: 'top', fill: '#1a1a2e', fontSize: 10, fontWeight: 700 }}
+                  label={{ value: t('revenue.target', { pct: (TARGET_MARGIN * 100).toFixed(0) }), position: 'top', fill: '#1a1a2e', fontSize: 10, fontWeight: 700 }}
                 />
                 <Bar
                   dataKey={histogramMode === 'revenue' ? 'revenue' : 'count'}

@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Eye, EyeOff, Lock, User, ShieldCheck } from 'lucide-react';
 import { authenticate, isAuthenticated } from '../utils/auth';
+import { useLanguage } from '../context/LanguageContext';
+import LanguageToggle from '../components/LanguageToggle';
 
 export default function Login() {
+  const { t } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -27,10 +30,10 @@ export default function Login() {
       if (session) {
         window.location.href = '/';
       } else {
-        setError('Invalid username or password');
+        setError(t('login.error.invalid'));
       }
     } catch {
-      setError('Authentication failed. Please try again.');
+      setError(t('login.error.failed'));
     } finally {
       setLoading(false);
     }
@@ -40,6 +43,10 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden"
       style={{ background: 'linear-gradient(135deg, #f0f4f8 0%, #e8f0fe 50%, #f0f4f8 100%)' }}
     >
+      {/* Language toggle in top-right corner */}
+      <div className="absolute top-6 right-6 z-20">
+        <LanguageToggle />
+      </div>
       {/* Decorative background shapes */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-20"
@@ -104,7 +111,7 @@ export default function Login() {
                 <label htmlFor="username" className="block text-sm font-medium mb-1.5"
                   style={{ color: '#404040' }}
                 >
-                  Username
+                  {t('login.username')}
                 </label>
                 <div className="relative">
                   <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2"
@@ -130,7 +137,7 @@ export default function Login() {
                       e.target.style.boxShadow = 'none';
                       e.target.style.background = '#fafafa';
                     }}
-                    placeholder="Enter your username"
+                    placeholder={t('login.username.placeholder')}
                   />
                 </div>
               </div>
@@ -140,7 +147,7 @@ export default function Login() {
                 <label htmlFor="password" className="block text-sm font-medium mb-1.5"
                   style={{ color: '#404040' }}
                 >
-                  Password
+                  {t('login.password')}
                 </label>
                 <div className="relative">
                   <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2"
@@ -165,7 +172,7 @@ export default function Login() {
                       e.target.style.boxShadow = 'none';
                       e.target.style.background = '#fafafa';
                     }}
-                    placeholder="Enter your password"
+                    placeholder={t('login.password.placeholder')}
                   />
                   <button
                     type="button"
@@ -214,10 +221,10 @@ export default function Login() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Signing in...
+                    {t('login.signingIn')}
                   </span>
                 ) : (
-                  'Sign In'
+                  t('login.signIn')
                 )}
               </motion.button>
             </form>
@@ -228,7 +235,7 @@ export default function Login() {
         <div className="flex items-center justify-center gap-1.5 mt-6">
           <ShieldCheck size={12} style={{ color: '#a3a3a3' }} />
           <p className="text-xs" style={{ color: '#a3a3a3' }}>
-            Secured by PRYZM Solutions
+            {t('login.footer')}
           </p>
         </div>
       </motion.div>

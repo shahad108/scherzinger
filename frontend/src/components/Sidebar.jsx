@@ -6,24 +6,26 @@ import {
 } from 'lucide-react';
 import { useUI } from '../context/UIContext';
 import { useUser } from '../context/UserContext';
+import { useLanguage } from '../context/LanguageContext';
 import { track } from '../utils/tracker';
 import { logout } from '../utils/auth';
 
 const navItems = [
-  { to: '/', label: 'Dashboard Overview', icon: LayoutDashboard },
-  { to: '/revenue', label: 'Revenue & Margins', icon: TrendingUp },
-  { to: '/products', label: 'Products & SKUs', icon: Package },
-  { to: '/customers', label: 'Customers', icon: Users },
-  { to: '/forecasting', label: 'Forecasting', icon: LineChart },
-  { to: '/pricing', label: 'Pricing & Quotes', icon: DollarSign },
-  { to: '/ml-analytics', label: 'ML Analytics', icon: Brain },
-  { to: '/ai-insights', label: 'AI Insights', icon: Sparkles },
+  { to: '/', tKey: 'nav.dashboard', icon: LayoutDashboard },
+  { to: '/revenue', tKey: 'nav.revenue', icon: TrendingUp },
+  { to: '/products', tKey: 'nav.products', icon: Package },
+  { to: '/customers', tKey: 'nav.customers', icon: Users },
+  { to: '/forecasting', tKey: 'nav.forecasting', icon: LineChart },
+  { to: '/pricing', tKey: 'nav.pricing', icon: DollarSign },
+  { to: '/ml-analytics', tKey: 'nav.ml', icon: Brain },
+  { to: '/ai-insights', tKey: 'nav.aiInsights', icon: Sparkles },
 ];
 
 export default function Sidebar() {
   const location = useLocation();
   const { sidebarCollapsed, toggleSidebar } = useUI();
   const user = useUser();
+  const { t } = useLanguage();
 
   return (
     <motion.aside
@@ -50,7 +52,7 @@ export default function Sidebar() {
               transition={{ duration: 0.15 }}
             >
               <h1 className="text-xl font-bold tracking-tight leading-none" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>PRYZM</h1>
-              <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: '#0393da' }}>Solutions GmbH</p>
+              <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: '#0393da' }}>{t('brand.tagline')}</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -58,8 +60,9 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map(({ to, label, icon: Icon }) => {
+        {navItems.map(({ to, tKey, icon: Icon }) => {
           const isActive = to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
+          const label = t(tKey);
           return (
             <NavLink
               key={to}
@@ -100,12 +103,12 @@ export default function Sidebar() {
           onClick={() => { toggleSidebar(); sidebarCollapsed ? track.sidebarExpand() : track.sidebarCollapse(); }}
           className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors hover:bg-[#f8f9fa]"
           style={{ color: '#a3a3a3' }}
-          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={sidebarCollapsed ? t('sidebar.expand') : t('sidebar.collapseTitle')}
         >
           {sidebarCollapsed ? <ChevronsRight size={18} /> : <ChevronsLeft size={18} />}
           <AnimatePresence>
             {!sidebarCollapsed && (
-              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="text-xs font-medium">Collapse</motion.span>
+              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="text-xs font-medium">{t('sidebar.collapse')}</motion.span>
             )}
           </AnimatePresence>
         </button>
@@ -121,13 +124,13 @@ export default function Sidebar() {
             {!sidebarCollapsed && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="flex-1 min-w-0">
                 <p className="text-xs font-bold truncate" style={{ color: '#1a1a2e' }}>Scherzinger</p>
-                <p className="text-[10px]" style={{ color: '#737373' }}>MD</p>
+                <p className="text-[10px]" style={{ color: '#737373' }}>{t('sidebar.userRole')}</p>
               </motion.div>
             )}
           </AnimatePresence>
           <button
             onClick={logout}
-            title="Log Out"
+            title={t('sidebar.logout')}
             className="flex-shrink-0 p-2 rounded-lg transition-colors hover:bg-white"
             style={{ color: '#a3a3a3' }}
           >

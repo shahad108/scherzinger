@@ -5,7 +5,9 @@ import { Bell, Search, Package, TrendingDown, UserMinus, Clock, DollarSign, Chec
 import { dropdownVariants } from '../utils/animations';
 import { useUI } from '../context/UIContext';
 import { useUser } from '../context/UserContext';
+import { useLanguage } from '../context/LanguageContext';
 import { logout } from '../utils/auth';
+import LanguageToggle from './LanguageToggle';
 import forecastingData from '../data/forecasting.json';
 import productsData from '../data/products.json';
 import customersData from '../data/customers_detail.json';
@@ -18,11 +20,24 @@ const fmtPct = (v) => v != null ? `${(v * 100).toFixed(1)}%` : '—';
 // Collect all commodity groups
 const ALL_COMMODITY_GROUPS = [...new Set(productsData.products.map(p => p.commodity_group).filter(Boolean))].sort();
 
-const SEARCH_INDEX = (() => {
+// Risk tier keys (translated in component via t())
+const SKU_RISK_KEY = (p, margin) => {
+  if (p.is_at_risk) return 'risk.atRisk';
+  if (margin != null && margin < 0.50) return 'risk.critical';
+  if (margin != null && margin < 0.55) return 'risk.monitor';
+  return 'risk.ok';
+};
+const CUSTOMER_RISK_KEY = (tier) => {
+  if (tier === 'high' || tier === 'critical') return 'risk.high';
+  if (tier === 'medium') return 'risk.medium';
+  return 'risk.low';
+};
+
+// Static portion of search index (not language-dependent: SKU codes, customer IDs, etc.)
+const SEARCH_INDEX_BASE = (() => {
   const items = [];
   productsData.products.forEach((p) => {
     const margin = p.margin_2025 ?? p.margin_2024 ?? null;
-    const riskLabel = p.is_at_risk ? 'At Risk' : margin != null && margin < 0.50 ? 'Critical' : margin != null && margin < 0.55 ? 'Monitor' : 'OK';
     items.push({
       label: p.article_id,
       sublabel: p.description,
@@ -30,12 +45,11 @@ const SEARCH_INDEX = (() => {
       path: '/products',
       revenue: p.total_revenue,
       margin,
-      riskLabel,
+      riskKey: SKU_RISK_KEY(p, margin),
       commodityGroup: p.commodity_group,
     });
   });
   customersData.customers.forEach((c) => {
-    const riskLabel = c.risk_tier === 'high' || c.risk_tier === 'critical' ? 'High' : c.risk_tier === 'medium' ? 'Medium' : 'Low';
     items.push({
       label: c.customer_id,
       sublabel: `${c.segment} · ${c.name}`,
@@ -43,143 +57,160 @@ const SEARCH_INDEX = (() => {
       path: '/customers',
       revenue: c.total_revenue_eur,
       margin: c.avg_db2_margin,
-      riskLabel,
+      riskKey: CUSTOMER_RISK_KEY(c.risk_tier),
       commodityGroup: null,
     });
   });
-  // Unique commodity groups
   const groupSet = new Set();
   productsData.products.forEach((p) => {
     if (p.commodity_group && !groupSet.has(p.commodity_group)) {
       groupSet.add(p.commodity_group);
       items.push({
         label: p.commodity_group,
-        sublabel: `Commodity Group — ${productsData.products.filter(x => x.commodity_group === p.commodity_group).length} articles`,
+        sublabelTemplate: { count: productsData.products.filter(x => x.commodity_group === p.commodity_group).length },
         category: 'Category',
         rawCategory: p.commodity_group,
         path: '/products',
       });
     }
   });
-  // Static page shortcuts
-  items.push({ label: 'Revenue & Margins', sublabel: 'Revenue trends and margin analysis', category: 'Page', path: '/revenue' });
-  items.push({ label: 'Forecasting', sublabel: 'Margin forecast with Monte Carlo simulation', category: 'Page', path: '/forecasting' });
-  items.push({ label: 'Pricing & Quotes', sublabel: 'Pricing recommendations and quote management', category: 'Page', path: '/pricing' });
-  items.push({ label: 'Cost Intelligence', sublabel: 'Cost analysis and supply chain optimization', category: 'Page', path: '/cost-intelligence' });
-  items.push({ label: 'ML Analytics', sublabel: 'Model performance and validation', category: 'Page', path: '/ml-analytics' });
-  items.push({ label: 'AI Insights', sublabel: 'Chat with your data', category: 'Page', path: '/ai-insights' });
   return items;
 })();
+
+// Page shortcuts use translation keys, resolved in component
+const PAGE_SHORTCUTS = [
+  { labelKey: 'nav.revenue', sublabelKey: 'pageShortcut.revenue', category: 'Page', path: '/revenue' },
+  { labelKey: 'nav.forecasting', sublabelKey: 'pageShortcut.forecasting', category: 'Page', path: '/forecasting' },
+  { labelKey: 'nav.pricing', sublabelKey: 'pageShortcut.pricing', category: 'Page', path: '/pricing' },
+  { labelKey: 'nav.ml', sublabelKey: 'pageShortcut.ml', category: 'Page', path: '/ml-analytics' },
+  { labelKey: 'nav.aiInsights', sublabelKey: 'pageShortcut.ai', category: 'Page', path: '/ai-insights' },
+];
 
 // Recent searches (session-only)
 let _recentSearches = [];
 
-const buildForecastNotifications = () => {
-  const notes = [];
+// Static notification specs — the visible title/desc/time are looked up by
+// translation key in the component, so the language is reactive.
+const NOTIFICATION_SPECS = (() => {
   const fc = forecastingData.overall_forecast;
   const models = forecastingData.model_accuracy || [];
   const mc = forecastingData.monte_carlo?.overall;
 
-  notes.push({
+  const specs = [];
+  specs.push({
     id: 100,
     icon: BarChart2,
     iconBg: 'bg-purple-50',
     iconColor: 'text-purple-500',
-    title: 'Margin Forecast Updated',
-    desc: `${models.length} models tested. Current margin: ${(fc.current_margin * 100).toFixed(1)}%. 12m forecast: ${(fc.forecast_12m.predicted * 100).toFixed(1)}%.`,
-    time: 'Today',
-    read: false,
+    titleKey: 'notif.forecast.updated.title',
+    descKey: 'notif.forecast.updated.desc',
+    descVars: {
+      n: models.length,
+      curr: `${(fc.current_margin * 100).toFixed(1)}%`,
+      next: `${(fc.forecast_12m.predicted * 100).toFixed(1)}%`,
+    },
+    timeKey: 'time.today',
   });
 
   if (models[0]) {
-    notes.push({
+    specs.push({
       id: 101,
       icon: BarChart2,
       iconBg: 'bg-indigo-50',
       iconColor: 'text-indigo-500',
-      title: `Best Model: ${models[0].model.toUpperCase()}`,
-      desc: `MAE ${models[0].mae.toFixed(3)}, directional accuracy ${(models[0].directional_accuracy * 100).toFixed(0)}%.`,
-      time: 'Today',
-      read: false,
+      titleKey: 'notif.forecast.bestModel.title',
+      titleVars: { model: models[0].model.toUpperCase() },
+      descKey: 'notif.forecast.bestModel.desc',
+      descVars: {
+        mae: models[0].mae.toFixed(3),
+        acc: `${(models[0].directional_accuracy * 100).toFixed(0)}%`,
+      },
+      timeKey: 'time.today',
     });
   }
 
   if (mc) {
-    notes.push({
+    specs.push({
       id: 102,
       icon: BarChart2,
       iconBg: 'bg-blue-50',
       iconColor: 'text-[#0393da]',
-      title: 'Monte Carlo Simulation Ready',
-      desc: `Median margin: ${(mc.median * 100).toFixed(1)}% (P5: ${(mc.p5 * 100).toFixed(1)}%, P95: ${(mc.p95 * 100).toFixed(1)}%). ${(mc.prob_below_50pct * 100).toFixed(1)}% chance below 50%.`,
-      time: 'Today',
-      read: false,
+      titleKey: 'notif.forecast.monteCarlo.title',
+      descKey: 'notif.forecast.monteCarlo.desc',
+      descVars: {
+        median: `${(mc.median * 100).toFixed(1)}%`,
+        p5: `${(mc.p5 * 100).toFixed(1)}%`,
+        p95: `${(mc.p95 * 100).toFixed(1)}%`,
+        prob: `${(mc.prob_below_50pct * 100).toFixed(1)}%`,
+      },
+      timeKey: 'time.today',
     });
   }
 
-  return notes;
-};
+  specs.push(
+    {
+      id: 1,
+      icon: Package,
+      iconBg: 'bg-red-50',
+      iconColor: 'text-red-500',
+      titleKey: 'notif.cost.title',
+      descKey: 'notif.cost.desc',
+      timeKey: 'time.minutesAgo',
+      timeVars: { n: 30 },
+    },
+    {
+      id: 2,
+      icon: TrendingDown,
+      iconBg: 'bg-amber-50',
+      iconColor: 'text-amber-500',
+      titleKey: 'notif.margin.title',
+      descKey: 'notif.margin.desc',
+      timeKey: 'time.hoursAgo',
+      timeVars: { n: 2 },
+    },
+    {
+      id: 3,
+      icon: UserMinus,
+      iconBg: 'bg-rose-50',
+      iconColor: 'text-rose-500',
+      titleKey: 'notif.churn.title',
+      descKey: 'notif.churn.desc',
+      timeKey: 'time.hoursAgo',
+      timeVars: { n: 4 },
+    },
+    {
+      id: 4,
+      icon: Clock,
+      iconBg: 'bg-blue-50',
+      iconColor: 'text-[#0393da]',
+      titleKey: 'notif.seasonal.title',
+      descKey: 'notif.seasonal.desc',
+      timeKey: 'time.hoursAgo',
+      timeVars: { n: 6 },
+    },
+    {
+      id: 5,
+      icon: DollarSign,
+      iconBg: 'bg-emerald-50',
+      iconColor: 'text-emerald-500',
+      titleKey: 'notif.q1.title',
+      descKey: 'notif.q1.desc',
+      timeKey: 'time.daysAgo',
+      timeVars: { n: 1 },
+    },
+  );
 
-const INITIAL_NOTIFICATIONS = [
-  ...buildForecastNotifications(),
-  {
-    id: 1,
-    icon: Package,
-    iconBg: 'bg-red-50',
-    iconColor: 'text-red-500',
-    title: 'Cost Alert: 12 Products High Expense',
-    desc: '12 pump models showing material cost increases. Supply chain pressure detected. Action required.',
-    time: '30m ago',
-    read: false,
-  },
-  {
-    id: 2,
-    icon: TrendingDown,
-    iconBg: 'bg-amber-50',
-    iconColor: 'text-amber-500',
-    title: 'Margin Floor Breach — 7 Products',
-    desc: '7 products below 25% margin floor. Manufacturing cost pressure compounding in Q1.',
-    time: '2h ago',
-    read: false,
-  },
-  {
-    id: 3,
-    icon: UserMinus,
-    iconBg: 'bg-rose-50',
-    iconColor: 'text-rose-500',
-    title: '24 Customers High Churn Risk',
-    desc: 'ML model flagged 24 high-risk customers. Combined revenue at risk: €3.16M. Top 1% = 19.7% of revenue.',
-    time: '4h ago',
-    read: false,
-  },
-  {
-    id: 4,
-    icon: Clock,
-    iconBg: 'bg-blue-50',
-    iconColor: 'text-[#0393da]',
-    title: 'March Seasonal Peak Approaching',
-    desc: 'Seasonal index 1.64x — strongest month. Ensure manufacturing capacity and pipeline acceleration.',
-    time: '6h ago',
-    read: false,
-  },
-  {
-    id: 5,
-    icon: DollarSign,
-    iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-500',
-    title: 'Q1 2026 Revenue Forecast: €38.3M',
-    desc: 'Model prediction: €38.3M. Monitor actuals vs forecast through quarter end.',
-    time: '1d ago',
-    read: false,
-  },
-];
+  return specs;
+})();
 
 export default function Header({ title }) {
   const navigate = useNavigate();
   const { openSKUDetail, openCategoryDetail, openCustomerDetail } = useUI();
   const user = useUser();
+  const { t, lang } = useLanguage();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  // Track only the read-state; render uses translated NOTIFICATION_SPECS.
+  const [readIds, setReadIds] = useState(() => new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [searchTab, setSearchTab] = useState('All');
@@ -188,13 +219,36 @@ export default function Header({ title }) {
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
 
+  // Build a language-aware search index that includes page shortcuts and
+  // commodity-group sublabels.
+  const SEARCH_INDEX = useMemo(() => {
+    const base = SEARCH_INDEX_BASE.map(item => {
+      if (item.category === 'Category' && item.sublabelTemplate) {
+        return {
+          ...item,
+          sublabel: lang === 'de'
+            ? `Warengruppe — ${item.sublabelTemplate.count} Artikel`
+            : `Commodity Group — ${item.sublabelTemplate.count} articles`,
+        };
+      }
+      return item;
+    });
+    const shortcuts = PAGE_SHORTCUTS.map(s => ({
+      label: t(s.labelKey),
+      sublabel: t(s.sublabelKey),
+      category: 'Page',
+      path: s.path,
+    }));
+    return [...base, ...shortcuts];
+  }, [lang, t]);
+
   const allResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
     return SEARCH_INDEX.filter(
-      (item) => item.label.toLowerCase().includes(q) || item.sublabel.toLowerCase().includes(q)
+      (item) => item.label.toLowerCase().includes(q) || (item.sublabel || '').toLowerCase().includes(q)
     );
-  }, [searchQuery]);
+  }, [searchQuery, SEARCH_INDEX]);
 
   const searchResults = useMemo(() => {
     let filtered = allResults;
@@ -228,6 +282,16 @@ export default function Header({ title }) {
     }
   }, [showSearch]);
 
+  const notifications = useMemo(
+    () => NOTIFICATION_SPECS.map(spec => ({
+      ...spec,
+      title: t(spec.titleKey, spec.titleVars),
+      desc: t(spec.descKey, spec.descVars),
+      time: t(spec.timeKey, spec.timeVars),
+      read: readIds.has(spec.id),
+    })),
+    [t, readIds],
+  );
   const unreadCount = notifications.filter(n => !n.read).length;
 
   useEffect(() => {
@@ -243,11 +307,15 @@ export default function Header({ title }) {
   }, [showNotifications]);
 
   function markRead(id) {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    setReadIds(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
   }
 
   function markAllRead() {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setReadIds(new Set(NOTIFICATION_SPECS.map(s => s.id)));
   }
 
   return (
@@ -259,7 +327,7 @@ export default function Header({ title }) {
           <input
             className="w-full pl-10 pr-4 py-2 bg-white rounded-lg text-sm focus:ring-2 focus:ring-[#0393da]/20 focus:outline-none"
             style={{ border: '1px solid #edeeef' }}
-            placeholder="Search analytics, customers, or products..."
+            placeholder={t('header.search.placeholder')}
             type="text"
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setShowSearch(true); }}
@@ -306,7 +374,7 @@ export default function Header({ title }) {
               {/* Recent searches when no query */}
               {!searchQuery.trim() && recentSearches.length > 0 && (
                 <div className="px-4 py-3">
-                  <p className="text-[10px] text-slate-400 uppercase font-bold mb-2">Recent Searches</p>
+                  <p className="text-[10px] text-slate-400 uppercase font-bold mb-2">{t('header.search.recent')}</p>
                   {recentSearches.map((rs, i) => (
                     <button key={i} onClick={() => { setSearchQuery(rs); setShowSearch(true); }} className="block w-full text-left text-sm text-slate-600 hover:text-[#0393da] py-1 transition-colors">
                       {rs}
@@ -320,15 +388,19 @@ export default function Header({ title }) {
                 <>
                   {/* Tabs */}
                   <div className="flex items-center gap-1 px-4 pt-3 pb-2 border-b border-slate-100">
-                    {['All', 'SKUs', 'Customers'].map(tab => (
+                    {[
+                      { key: 'All', labelKey: 'header.search.tab.all' },
+                      { key: 'SKUs', labelKey: 'header.search.tab.skus' },
+                      { key: 'Customers', labelKey: 'header.search.tab.customers' },
+                    ].map(tab => (
                       <button
-                        key={tab}
-                        onClick={() => setSearchTab(tab)}
+                        key={tab.key}
+                        onClick={() => setSearchTab(tab.key)}
                         className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                          searchTab === tab ? 'bg-[#0393da] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                          searchTab === tab.key ? 'bg-[#0393da] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                         }`}
                       >
-                        {tab} ({tabCounts[tab]})
+                        {t(tab.labelKey)} ({tabCounts[tab.key]})
                       </button>
                     ))}
                   </div>
@@ -342,7 +414,7 @@ export default function Header({ title }) {
                           !commodityFilter ? 'bg-[#004b72] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                         }`}
                       >
-                        All
+                        {t('header.search.filter.all')}
                       </button>
                       {ALL_COMMODITY_GROUPS.map(grp => (
                         <button
@@ -362,8 +434,8 @@ export default function Header({ title }) {
                   <div className="max-h-80 overflow-y-auto">
                     {searchResults.length === 0 ? (
                       <div className="px-4 py-6 text-center">
-                        <p className="text-sm text-slate-400">No matches for &quot;{searchQuery}&quot;</p>
-                        <p className="text-xs text-slate-300 mt-1">Try searching by article ID, customer name, or product type.</p>
+                        <p className="text-sm text-slate-400">{t('header.search.noResults', { query: searchQuery })}</p>
+                        <p className="text-xs text-slate-300 mt-1">{t('header.search.tryHint')}</p>
                       </div>
                     ) : (
                       searchResults.map((item, i) => (
@@ -392,7 +464,12 @@ export default function Header({ title }) {
                             item.category === 'Customer' ? 'bg-green-50 text-green-600' :
                             item.category === 'Category' ? 'bg-purple-50 text-purple-600' :
                             'bg-slate-100 text-slate-500'
-                          }`}>{item.category === 'Customer' ? 'CUST' : item.category}</span>
+                          }`}>{
+                            item.category === 'SKU' ? t('search.cat.sku') :
+                            item.category === 'Customer' ? t('search.cat.customer') :
+                            item.category === 'Category' ? t('search.cat.category') :
+                            t('search.cat.page')
+                          }</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-slate-800 truncate">{item.label}</p>
                             <p className="text-xs text-slate-400 truncate">{item.sublabel}</p>
@@ -405,12 +482,12 @@ export default function Header({ title }) {
                               {fmtPct(item.margin)}
                             </span>
                           )}
-                          {item.riskLabel && (
+                          {item.riskKey && (
                             <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold flex-shrink-0 ${
-                              item.riskLabel === 'At Risk' || item.riskLabel === 'Critical' || item.riskLabel === 'High' ? 'bg-red-50 text-red-600' :
-                              item.riskLabel === 'Monitor' || item.riskLabel === 'Medium' ? 'bg-amber-50 text-amber-600' :
+                              item.riskKey === 'risk.atRisk' || item.riskKey === 'risk.critical' || item.riskKey === 'risk.high' ? 'bg-red-50 text-red-600' :
+                              item.riskKey === 'risk.monitor' || item.riskKey === 'risk.medium' ? 'bg-amber-50 text-amber-600' :
                               'bg-green-50 text-green-600'
-                            }`}>{item.riskLabel}</span>
+                            }`}>{t(item.riskKey)}</span>
                           )}
                         </button>
                       ))
@@ -424,6 +501,9 @@ export default function Header({ title }) {
         </div>
       </div>
       <div className="flex items-center gap-6">
+        {/* Language Toggle */}
+        <LanguageToggle />
+
         {/* Notification Bell */}
         <div className="relative" ref={dropdownRef}>
           <button
@@ -449,14 +529,14 @@ export default function Header({ title }) {
               style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)' }}
             >
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-                <h3 className="text-sm font-bold text-slate-800">Notifications</h3>
+                <h3 className="text-sm font-bold text-slate-800">{t('header.notifications.title')}</h3>
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllRead}
                     className="flex items-center gap-1 text-xs font-medium text-[#0393da] hover:text-[#0280bd] transition-colors"
                   >
                     <Check size={12} />
-                    Mark all read
+                    {t('header.notifications.markAll')}
                   </button>
                 )}
               </div>
@@ -493,7 +573,7 @@ export default function Header({ title }) {
 
         <div className="flex items-center gap-3 pl-6 border-l border-slate-200">
           <div className="text-right">
-            <p className="text-sm font-bold leading-none">{user?.name || 'User'}</p>
+            <p className="text-sm font-bold leading-none">{user?.name || t('header.user.fallback')}</p>
             <p className="text-xs text-slate-500 mt-1">{user?.role || ''}</p>
           </div>
           <div className="size-10 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ background: 'linear-gradient(135deg, #0393da, #c1e8ff)' }}>
@@ -502,7 +582,7 @@ export default function Header({ title }) {
           <button
             onClick={logout}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-            title="Log Out"
+            title={t('header.logout')}
           >
             <LogOut size={16} />
           </button>

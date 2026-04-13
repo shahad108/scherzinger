@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Send, Square, ChevronDown, ArrowUpRight, Loader, ThumbsUp, ThumbsDown, History, Plus, Trash2 } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
 import { useUI } from '../context/UIContext';
+import { useLanguage } from '../context/LanguageContext';
 import renderMarkdown from '../utils/markdownRenderer';
 import { track, trackChatQuestion, trackChatRating } from '../utils/tracker';
 
@@ -16,6 +17,7 @@ export default function GlobalChatBar() {
     conversationHistory, loadConversation, deleteConversation,
   } = useChat();
   const { selectedItem, slideOver } = useUI();
+  const { t, lang } = useLanguage();
   const [input, setInput] = useState('');
   const [ratings, setRatings] = useState({});
   const [showHistory, setShowHistory] = useState(false);
@@ -126,27 +128,27 @@ export default function GlobalChatBar() {
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100/80">
                 <div className="flex items-center gap-2">
                   <Sparkles size={13} className="text-slate-400" />
-                  <span className="text-xs font-semibold text-slate-500 tracking-wide uppercase">PRYZM AI</span>
+                  <span className="text-xs font-semibold text-slate-500 tracking-wide uppercase">{t('chat.brand')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => { newChat(); track.event?.('chat_new'); }}
                     className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-[#0393da] hover:bg-blue-50 transition-colors"
-                    title="New conversation"
+                    title={t('chat.newConvo')}
                   >
                     <Plus size={14} />
                   </button>
                   <button
                     onClick={() => setShowHistory(prev => !prev)}
                     className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${showHistory ? 'text-[#0393da] bg-blue-50' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
-                    title="Conversation history"
+                    title={t('chat.history')}
                   >
                     <History size={14} />
                   </button>
                   <button
                     onClick={handleCollapse}
                     className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-                    title="Minimize"
+                    title={t('chat.minimize')}
                   >
                     <ChevronDown size={14} />
                   </button>
@@ -165,7 +167,7 @@ export default function GlobalChatBar() {
                   >
                     <div className="max-h-48 overflow-y-auto p-2 space-y-0.5">
                       {conversationHistory.length === 0 ? (
-                        <p className="text-xs text-slate-400 text-center py-3">No past conversations</p>
+                        <p className="text-xs text-slate-400 text-center py-3">{t('chat.noPast')}</p>
                       ) : conversationHistory.map(c => (
                         <div
                           key={c.id}
@@ -173,8 +175,8 @@ export default function GlobalChatBar() {
                           onClick={() => { loadConversation(c.id); setShowHistory(false); }}
                         >
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-slate-700 truncate">{c.title || 'Untitled'}</p>
-                            <p className="text-[10px] text-slate-400">{new Date(c.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                            <p className="text-xs font-medium text-slate-700 truncate">{c.title || t('chat.untitled')}</p>
+                            <p className="text-[10px] text-slate-400">{new Date(c.updated_at).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
                           </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); deleteConversation(c.id); }}
@@ -225,7 +227,7 @@ export default function GlobalChatBar() {
                                   onClick={() => handleViewDetailed(i)}
                                   className="flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors group"
                                 >
-                                  View Detailed Analysis
+                                  {t('chat.viewDetailed')}
                                   <ArrowUpRight size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                                 </button>
                                 <span className="text-slate-200">|</span>
@@ -237,7 +239,7 @@ export default function GlobalChatBar() {
                                     trackChatRating(null, userQ || '', 'thumbs_up');
                                   }}
                                   className={`p-1 rounded transition-colors ${ratings[i] === 'thumbs_up' ? 'text-green-500 bg-green-50' : 'text-slate-300 hover:text-green-500 hover:bg-green-50'}`}
-                                  title="Helpful"
+                                  title={t('chat.helpful')}
                                 >
                                   <ThumbsUp size={12} />
                                 </button>
@@ -249,7 +251,7 @@ export default function GlobalChatBar() {
                                     trackChatRating(null, userQ || '', 'thumbs_down');
                                   }}
                                   className={`p-1 rounded transition-colors ${ratings[i] === 'thumbs_down' ? 'text-red-500 bg-red-50' : 'text-slate-300 hover:text-red-500 hover:bg-red-50'}`}
-                                  title="Not helpful"
+                                  title={t('chat.notHelpful')}
                                 >
                                   <ThumbsDown size={12} />
                                 </button>
@@ -260,7 +262,7 @@ export default function GlobalChatBar() {
                           isStreaming && i === messages.length - 1 && (
                             <div className="flex items-center gap-2 text-slate-400 text-xs px-1 py-2">
                               <Loader size={12} className="animate-spin" />
-                              <span>Thinking...</span>
+                              <span>{t('chat.thinking')}</span>
                             </div>
                           )
                         )}
@@ -278,10 +280,10 @@ export default function GlobalChatBar() {
           <div className="flex items-center gap-1.5 px-3 py-1 text-[10px] text-slate-400 truncate" style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
             <span className="truncate">
-              {slideOver?.type === 'sku' ? `Viewing SKU: ${slideOver.id}` :
-               slideOver?.type === 'category' ? `Viewing category: ${slideOver.id}` :
-               slideOver?.type === 'customer' ? `Viewing customer: ${slideOver.id}` :
-               selectedItem ? `Selected: ${selectedItem.label || selectedItem.id}` : ''}
+              {slideOver?.type === 'sku' ? t('chat.viewSku', { id: slideOver.id }) :
+               slideOver?.type === 'category' ? t('chat.viewCategory', { id: slideOver.id }) :
+               slideOver?.type === 'customer' ? t('chat.viewCustomer', { id: slideOver.id }) :
+               selectedItem ? t('chat.selected', { label: selectedItem.label || selectedItem.id }) : ''}
             </span>
           </div>
         )}
@@ -292,7 +294,7 @@ export default function GlobalChatBar() {
             <button
               onClick={() => { track.chatOpen(); setIsOpen(true); }}
               className="flex-shrink-0 mb-1 w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-              title="Show conversation"
+              title={t('chat.showConvo')}
             >
               <ChevronDown size={14} className="rotate-180" />
             </button>
@@ -302,7 +304,7 @@ export default function GlobalChatBar() {
           <textarea
             ref={textareaRef}
             className="flex-1 resize-none bg-transparent text-[13px] text-slate-700 placeholder-slate-400 focus:outline-none py-1.5 leading-relaxed"
-            placeholder="Ask AI anything..."
+            placeholder={t('chat.placeholder')}
             rows={1}
             value={input}
             onChange={e => setInput(e.target.value)}

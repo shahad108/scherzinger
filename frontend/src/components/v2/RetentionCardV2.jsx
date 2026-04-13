@@ -1,4 +1,5 @@
 import { shadows, colors, radius, gradients } from '../../utils/designTokensV2';
+import { useLanguage } from '../../context/LanguageContext';
 
 const cardStyle = {
   background: colors.surface,
@@ -15,6 +16,7 @@ export default function RetentionCardV2({
   goal,
   footnote,
 }) {
+  const { t } = useLanguage();
   const pct = parseInt(value, 10) || 0;
 
   return (
@@ -45,7 +47,7 @@ export default function RetentionCardV2({
           </span>
           {goal && (
             <span className="text-xs font-semibold" style={{ color: '#a3a3a3' }}>
-              Goal: {goal}
+              {t('common.goal', { value: goal })}
             </span>
           )}
         </div>

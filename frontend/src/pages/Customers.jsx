@@ -17,6 +17,7 @@ import revenueMarginsDetail from '../data/revenue_margins_detail.json';
 import { formatEUR, formatPct } from '../utils/formatters';
 import { TOOLTIPS } from '../utils/tooltipContent';
 import { useUI } from '../context/UIContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const customers = customersData.customers;
 const churnSummary = customersData.churn_summary;
@@ -147,33 +148,34 @@ function actionScore(customer, enrichment) {
   return +(slopePenalty * 0.4 + lostRevPenalty * 0.3 + ltvRiskPenalty * 0.2 + inactivityPenalty * 0.1).toFixed(3);
 }
 
-function actionReasons(customer, enrichment) {
+function actionReasons(customer, enrichment, t) {
   const reasons = [];
   if (enrichment.margin_slope_pp != null && enrichment.margin_slope_pp < -1) {
-    reasons.push({ icon: '🔻', label: `margin ${enrichment.margin_slope_pp.toFixed(1)}pp/yr`, color: 'text-red-600 bg-red-50' });
+    reasons.push({ icon: '🔻', label: t('customers.action.reason.margin', { value: enrichment.margin_slope_pp.toFixed(1) }), color: 'text-red-600 bg-red-50' });
   }
   if (enrichment.lost_revenue_eur > 200000) {
-    reasons.push({ icon: '⚠️', label: `lost ${formatEUR(enrichment.lost_revenue_eur)}`, color: 'text-amber-700 bg-amber-50' });
+    reasons.push({ icon: '⚠️', label: t('customers.action.reason.lost', { value: formatEUR(enrichment.lost_revenue_eur) }), color: 'text-amber-700 bg-amber-50' });
   }
   if (HIGH_RISK_TIERS.includes(customer.risk_tier) && customer.ltv_estimated > 500000) {
-    reasons.push({ icon: '💰', label: `${formatEUR(customer.ltv_estimated)} LTV at risk`, color: 'text-orange-700 bg-orange-50' });
+    reasons.push({ icon: '💰', label: t('customers.action.reason.ltv', { value: formatEUR(customer.ltv_estimated) }), color: 'text-orange-700 bg-orange-50' });
   }
   if (enrichment.last_order != null && enrichment.last_order < 2025) {
-    reasons.push({ icon: '⏰', label: `last order ${enrichment.last_order}`, color: 'text-slate-600 bg-slate-100' });
+    reasons.push({ icon: '⏰', label: t('customers.action.reason.lastOrder', { year: enrichment.last_order }), color: 'text-slate-600 bg-slate-100' });
   }
   return reasons;
 }
 
-function suggestedAction(customer, enrichment) {
-  if (enrichment.lost_revenue_eur > 500000) return 'Review pricing vs. competitors';
-  if (enrichment.margin_slope_pp != null && enrichment.margin_slope_pp < -3) return 'Renegotiate contract terms';
-  if (enrichment.last_order != null && enrichment.last_order < 2025) return 'Re-engagement call';
-  if (HIGH_RISK_TIERS.includes(customer.risk_tier)) return 'Retention check-in';
-  return 'Routine account review';
+function suggestedAction(customer, enrichment, t) {
+  if (enrichment.lost_revenue_eur > 500000) return t('customers.action.reviewPricing');
+  if (enrichment.margin_slope_pp != null && enrichment.margin_slope_pp < -3) return t('customers.action.renegotiate');
+  if (enrichment.last_order != null && enrichment.last_order < 2025) return t('customers.action.reEngage');
+  if (HIGH_RISK_TIERS.includes(customer.risk_tier)) return t('customers.action.retention');
+  return t('customers.action.routine');
 }
 
 export default function Customers() {
   const { selectItem, selectedItem, openCustomerDetail } = useUI();
+  const { t } = useLanguage();
   const [segmentFilter, setSegmentFilter] = useState('All');
   const [churnFilter, setChurnFilter] = useState('All');
   const [customerSearch, setCustomerSearch] = useState('');
@@ -308,10 +310,10 @@ export default function Customers() {
       .slice(0, 8)
       .map((c) => ({
         ...c,
-        reasons: actionReasons(c, c),
-        action: suggestedAction(c, c),
+        reasons: actionReasons(c, c, t),
+        action: suggestedAction(c, c, t),
       })),
-    [enrichedCustomers]);
+    [enrichedCustomers, t]);
 
   // Table presets
   const marginSlopeCell = (v) => {
@@ -335,72 +337,72 @@ export default function Customers() {
 
   const columnPresets = {
     glance: [
-      { key: 'customer_id', label: 'ID', render: (v) => <span className="font-mono font-bold text-[#0393da]">{v}</span> },
-      { key: 'name', label: 'Customer' },
-      { key: 'segment', label: 'Segment', render: (v) => <StatusBadge label={v} variant={segmentVariant(v)} /> },
-      { key: 'total_revenue_eur', label: 'Revenue', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
-      { key: 'avg_db2_margin', label: 'Avg Margin', align: 'right', render: (v) => {
+      { key: 'customer_id', label: t('customers.col.id'), render: (v) => <span className="font-mono font-bold text-[#0393da]">{v}</span> },
+      { key: 'name', label: t('customers.col.customer') },
+      { key: 'segment', label: t('customers.col.segment'), render: (v) => <StatusBadge label={v} variant={segmentVariant(v)} /> },
+      { key: 'total_revenue_eur', label: t('customers.col.revenue'), align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
+      { key: 'avg_db2_margin', label: t('customers.col.avgMargin'), align: 'right', render: (v) => {
         const badge = marginBadge(v);
         return <span className="font-semibold" style={{ color: badge.color }}>{badge.label}</span>;
       } },
-      { key: 'margin_slope_pp', label: 'Margin Trend', align: 'right', tooltip: TOOLTIPS.margin_trend_slope, render: marginSlopeCell },
-      { key: 'risk_tier', label: 'Risk', render: (v) => <StatusBadge label={v} variant={riskVariant(v)} /> },
+      { key: 'margin_slope_pp', label: t('customers.col.marginTrend'), align: 'right', tooltip: TOOLTIPS.margin_trend_slope, render: marginSlopeCell },
+      { key: 'risk_tier', label: t('customers.col.risk'), render: (v) => <StatusBadge label={v} variant={riskVariant(v)} /> },
     ],
     risk: [
-      { key: 'customer_id', label: 'ID', render: (v) => <span className="font-mono font-bold text-[#0393da]">{v}</span> },
-      { key: 'name', label: 'Customer' },
-      { key: 'risk_score', label: 'Risk Score', align: 'right', render: (v) => v != null ? <span className="font-bold">{(v * 100).toFixed(0)}</span> : '—' },
-      { key: 'risk_tier', label: 'Risk Tier', render: (v) => <StatusBadge label={v} variant={riskVariant(v)} /> },
-      { key: 'margin_slope_pp', label: 'Margin Trend', align: 'right', render: marginSlopeCell },
-      { key: 'last_order', label: 'Last Order', align: 'right', tooltip: TOOLTIPS.last_order, render: lastOrderCell },
-      { key: 'ltv_estimated', label: 'Est. LTV', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
+      { key: 'customer_id', label: t('customers.col.id'), render: (v) => <span className="font-mono font-bold text-[#0393da]">{v}</span> },
+      { key: 'name', label: t('customers.col.customer') },
+      { key: 'risk_score', label: t('customers.col.riskScore'), align: 'right', render: (v) => v != null ? <span className="font-bold">{(v * 100).toFixed(0)}</span> : '—' },
+      { key: 'risk_tier', label: t('customers.col.riskTier'), render: (v) => <StatusBadge label={v} variant={riskVariant(v)} /> },
+      { key: 'margin_slope_pp', label: t('customers.col.marginTrend'), align: 'right', render: marginSlopeCell },
+      { key: 'last_order', label: t('customers.col.lastOrder'), align: 'right', tooltip: TOOLTIPS.last_order, render: lastOrderCell },
+      { key: 'ltv_estimated', label: t('customers.col.estLtv'), align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
     ],
     competitiveness: [
-      { key: 'customer_id', label: 'ID', render: (v) => <span className="font-mono font-bold text-[#0393da]">{v}</span> },
-      { key: 'name', label: 'Customer' },
-      { key: 'total_revenue_eur', label: 'Revenue', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
-      { key: 'win_rate', label: 'Win Rate', align: 'right', render: (v) => {
+      { key: 'customer_id', label: t('customers.col.id'), render: (v) => <span className="font-mono font-bold text-[#0393da]">{v}</span> },
+      { key: 'name', label: t('customers.col.customer') },
+      { key: 'total_revenue_eur', label: t('customers.col.revenue'), align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
+      { key: 'win_rate', label: t('customers.col.winRate'), align: 'right', render: (v) => {
         if (v == null) return '—';
         const c = v < 0.40 ? 'text-red-600' : v < 0.60 ? 'text-amber-600' : 'text-emerald-600';
         return <span className={`font-semibold ${c}`}>{(v * 100).toFixed(1)}%</span>;
       } },
-      { key: 'lost_revenue_eur', label: 'Lost Quote Rev', align: 'right', tooltip: TOOLTIPS.lost_revenue, render: (v) => <span className="font-bold text-red-600">{formatEUR(v)}</span> },
-      { key: 'quoted_gap_pp', label: 'Margin Gap', align: 'right', render: (v) => {
+      { key: 'lost_revenue_eur', label: t('customers.col.lostQuoteRev'), align: 'right', tooltip: TOOLTIPS.lost_revenue, render: (v) => <span className="font-bold text-red-600">{formatEUR(v)}</span> },
+      { key: 'quoted_gap_pp', label: t('customers.col.marginGap'), align: 'right', render: (v) => {
         if (v == null) return '—';
         const c = v >= 15 ? 'text-red-600' : v >= 10 ? 'text-amber-600' : 'text-slate-700';
         return <span className={`font-semibold ${c}`}>{v.toFixed(1)}pp</span>;
       } },
     ],
     portfolio: [
-      { key: 'customer_id', label: 'ID', render: (v) => <span className="font-mono font-bold text-[#0393da]">{v}</span> },
-      { key: 'name', label: 'Customer' },
-      { key: 'products', label: 'Products', align: 'right', tooltip: TOOLTIPS.customer_count, render: productsCell },
-      { key: 'total_invoices', label: 'Invoices', align: 'right' },
-      { key: 'total_revenue_eur', label: 'Revenue', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
-      { key: 'avg_db2_margin', label: 'Avg Margin', align: 'right', render: (v) => {
+      { key: 'customer_id', label: t('customers.col.id'), render: (v) => <span className="font-mono font-bold text-[#0393da]">{v}</span> },
+      { key: 'name', label: t('customers.col.customer') },
+      { key: 'products', label: t('customers.col.products'), align: 'right', tooltip: TOOLTIPS.customer_count, render: productsCell },
+      { key: 'total_invoices', label: t('customers.col.invoices'), align: 'right' },
+      { key: 'total_revenue_eur', label: t('customers.col.revenue'), align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
+      { key: 'avg_db2_margin', label: t('customers.col.avgMargin'), align: 'right', render: (v) => {
         const badge = marginBadge(v);
         return <span className="font-semibold" style={{ color: badge.color }}>{badge.label}</span>;
       } },
-      { key: 'segment', label: 'Segment', render: (v) => <StatusBadge label={v} variant={segmentVariant(v)} /> },
+      { key: 'segment', label: t('customers.col.segment'), render: (v) => <StatusBadge label={v} variant={segmentVariant(v)} /> },
     ],
     full: [
-      { key: 'customer_id', label: 'ID', render: (v) => <span className="font-mono font-bold text-[#0393da]">{v}</span> },
-      { key: 'name', label: 'Customer' },
-      { key: 'segment', label: 'Segment', render: (v) => <StatusBadge label={v} variant={segmentVariant(v)} /> },
-      { key: 'total_revenue_eur', label: 'Revenue', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
-      { key: 'avg_db2_margin', label: 'Margin', align: 'right', render: (v) => {
+      { key: 'customer_id', label: t('customers.col.id'), render: (v) => <span className="font-mono font-bold text-[#0393da]">{v}</span> },
+      { key: 'name', label: t('customers.col.customer') },
+      { key: 'segment', label: t('customers.col.segment'), render: (v) => <StatusBadge label={v} variant={segmentVariant(v)} /> },
+      { key: 'total_revenue_eur', label: t('customers.col.revenue'), align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
+      { key: 'avg_db2_margin', label: t('customers.col.margin'), align: 'right', render: (v) => {
         const badge = marginBadge(v);
         return <span className="font-semibold" style={{ color: badge.color }}>{badge.label}</span>;
       } },
-      { key: 'margin_slope_pp', label: 'Trend', align: 'right', render: marginSlopeCell },
-      { key: 'quoted_gap_pp', label: 'Gap', align: 'right', render: (v) => v == null ? '—' : <span>{v.toFixed(1)}pp</span> },
-      { key: 'win_rate', label: 'Win %', align: 'right', render: (v) => v == null ? '—' : `${(v * 100).toFixed(0)}%` },
-      { key: 'lost_revenue_eur', label: 'Lost', align: 'right', render: (v) => <span className="text-red-600">{formatEUR(v)}</span> },
-      { key: 'products', label: 'SKUs', align: 'right', render: productsCell },
-      { key: 'total_invoices', label: 'Inv', align: 'right' },
-      { key: 'last_order', label: 'Last', align: 'right', render: lastOrderCell },
-      { key: 'risk_tier', label: 'Risk', render: (v) => <StatusBadge label={v} variant={riskVariant(v)} /> },
-      { key: 'ltv_estimated', label: 'LTV', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
+      { key: 'margin_slope_pp', label: t('customers.col.trend'), align: 'right', render: marginSlopeCell },
+      { key: 'quoted_gap_pp', label: t('customers.col.gap'), align: 'right', render: (v) => v == null ? '—' : <span>{v.toFixed(1)}pp</span> },
+      { key: 'win_rate', label: t('customers.col.winPct'), align: 'right', render: (v) => v == null ? '—' : `${(v * 100).toFixed(0)}%` },
+      { key: 'lost_revenue_eur', label: t('customers.col.lost'), align: 'right', render: (v) => <span className="text-red-600">{formatEUR(v)}</span> },
+      { key: 'products', label: t('customers.col.skus'), align: 'right', render: productsCell },
+      { key: 'total_invoices', label: t('customers.col.inv'), align: 'right' },
+      { key: 'last_order', label: t('customers.col.last'), align: 'right', render: lastOrderCell },
+      { key: 'risk_tier', label: t('customers.col.risk'), render: (v) => <StatusBadge label={v} variant={riskVariant(v)} /> },
+      { key: 'ltv_estimated', label: t('customers.col.ltv'), align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
     ],
   };
 
@@ -409,14 +411,14 @@ export default function Customers() {
 
   return (
     <>
-      <Header title="Customers" />
+      <Header title={t('customers.title')} />
       <div className="p-8 space-y-6 max-w-[1440px] mx-auto">
         {/* Filter Bar */}
         <div className="flex flex-wrap items-center gap-4">
           <div className="relative flex-1 max-w-sm">
             <input
               type="text"
-              placeholder="Search customer ID, name, segment..."
+              placeholder={t('customers.search.placeholder')}
               value={customerSearch}
               onChange={(e) => setCustomerSearch(e.target.value)}
               className="w-full px-4 py-2 pl-10 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0393da]/30 focus:border-[#0393da]"
@@ -434,7 +436,7 @@ export default function Customers() {
                   segmentFilter === seg ? 'bg-[#0393da] text-white' : 'bg-white border border-slate-200 hover:border-[#0393da]'
                 }`}
               >
-                {seg === 'All' ? 'All Segments' : seg}
+                {seg === 'All' ? t('customers.filter.allSegments') : seg}
               </button>
             ))}
           </div>
@@ -452,7 +454,7 @@ export default function Customers() {
                     risk === 'High' ? 'bg-red-500' : risk === 'Medium' ? 'bg-amber-500' : 'bg-green-500'
                   }`} />
                 )}
-                {risk === 'All' ? 'All Risk' : `${risk} Risk`}
+                {risk === 'All' ? t('customers.filter.allRisk') : t('customers.filter.riskSuffix', { risk })}
               </button>
             ))}
           </div>
@@ -461,7 +463,7 @@ export default function Customers() {
               onClick={() => { setSegmentFilter('All'); setChurnFilter('All'); setCustomerSearch(''); }}
               className="text-xs text-[#0393da] font-medium hover:underline"
             >
-              Clear filters
+              {t('customers.filter.clear')}
             </button>
           )}
         </div>
@@ -475,23 +477,23 @@ export default function Customers() {
         >
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Total Customers"
+              label={t('customers.kpi.total')}
               value={filteredCount.toLocaleString()}
               tooltip={TOOLTIPS.active_customers}
               formulaId="customer_count"
               confidence="verified"
               bottomContent={
                 <div className="text-[10px] italic" style={{ color: '#737373' }}>
-                  of {TOTAL_CUSTOMERS_UNIVERSE.toLocaleString()} total
+                  {t('customers.kpi.total.bottom', { n: TOTAL_CUSTOMERS_UNIVERSE.toLocaleString() })}
                 </div>
               }
             />
           </motion.div>
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Customer Retention Rate"
+              label={t('customers.kpi.retention')}
               value={`${RETENTION_METRICS.retention_rate_pct.toFixed(1)}%`}
-              change={`−${formatEUR(RETENTION_METRICS.churned_revenue_eur)} churned`}
+              change={t('customers.kpi.retention.change', { value: formatEUR(RETENTION_METRICS.churned_revenue_eur) })}
               changeType="warning"
               tooltip={TOOLTIPS.retention_rate}
               formulaId="customer_segments"
@@ -505,9 +507,9 @@ export default function Customers() {
             className="cursor-pointer"
           >
             <KPICard
-              label="High / Critical Risk"
+              label={t('customers.kpi.highRisk')}
               value={highCriticalCount}
-              change={churnFilter === 'High' ? 'Click to clear' : 'Click to filter'}
+              change={churnFilter === 'High' ? t('customers.kpi.clickToClear') : t('customers.kpi.clickToFilter')}
               changeType="negative"
               tooltip={TOOLTIPS.churn_risk}
               formulaId="risk_distribution"
@@ -517,7 +519,7 @@ export default function Customers() {
           </motion.div>
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Avg DB II Margin"
+              label={t('customers.kpi.avgMargin')}
               value={formatPct(avgMargin)}
               change={marginYoYDeltaPp != null ? `${marginYoYDeltaPp >= 0 ? '▲' : '▼'}${Math.abs(marginYoYDeltaPp).toFixed(1)}pp YoY` : undefined}
               changeType={marginYoYDeltaPp >= 0 ? 'positive' : 'warning'}
@@ -531,8 +533,8 @@ export default function Customers() {
 
         {/* Row 1 — Revenue x Margin Scatter */}
         <ChartCard
-          title="Customer Revenue × Margin"
-          subtitle="X = total revenue · Y = avg DB II margin · color = risk tier · size = invoice count"
+          title={t('customers.scatter.title')}
+          subtitle={t('customers.scatter.subtitle')}
           formulaId="top_customers"
           confidence="verified"
           headerRight={
@@ -540,7 +542,7 @@ export default function Customers() {
               {Object.entries(RISK_COLORS).map(([tier, color]) => (
                 <div key={tier} className="flex items-center gap-1.5">
                   <span className="size-2 rounded-full" style={{ backgroundColor: color }} />
-                  <span className="uppercase tracking-wider text-slate-500">{tier}</span>
+                  <span className="uppercase tracking-wider text-slate-500">{t(`dashboard.tier.${tier}`)}</span>
                 </div>
               ))}
             </div>
@@ -557,7 +559,7 @@ export default function Customers() {
                   tickFormatter={(v) => formatEUR(v)}
                   tick={{ fontSize: 10, fill: '#94a3b8' }}
                   tickLine={false}
-                  label={{ value: 'Revenue (€)', position: 'bottom', fontSize: 10 }}
+                  label={{ value: t('customers.scatter.axis.revenue'), position: 'bottom', fontSize: 10 }}
                 />
                 <YAxis
                   type="number"
@@ -569,7 +571,7 @@ export default function Customers() {
                   axisLine={false}
                   domain={[0, 1]}
                   ticks={[0, 0.25, 0.5, 0.75, 1]}
-                  label={{ value: 'Margin (%)', angle: -90, position: 'insideLeft', fontSize: 10 }}
+                  label={{ value: t('customers.scatter.axis.margin'), angle: -90, position: 'insideLeft', fontSize: 10 }}
                 />
                 <ZAxis type="number" dataKey="z" range={[40, 400]} />
                 <ReferenceArea y1={0} y2={FLOOR_MARGIN} fill="#fef2f2" fillOpacity={0.6} />
@@ -579,13 +581,13 @@ export default function Customers() {
                   stroke="#10b981"
                   strokeDasharray="4 4"
                   strokeWidth={1.5}
-                  label={{ value: 'Target 60%', position: 'insideTopRight', fill: '#10b981', fontSize: 10, fontWeight: 700 }}
+                  label={{ value: t('customers.scatter.target60'), position: 'insideTopRight', fill: '#10b981', fontSize: 10, fontWeight: 700 }}
                 />
                 <ReferenceLine
                   y={FLOOR_MARGIN}
                   stroke="#EF4444"
                   strokeDasharray="5 5"
-                  label={{ value: 'Floor 25%', position: 'insideBottomRight', fill: '#EF4444', fontSize: 10, fontWeight: 700 }}
+                  label={{ value: t('customers.scatter.floor25'), position: 'insideBottomRight', fill: '#EF4444', fontSize: 10, fontWeight: 700 }}
                 />
                 <Tooltip
                   cursor={{ strokeDasharray: '3 3' }}
@@ -597,9 +599,9 @@ export default function Customers() {
                         <p className="font-bold text-slate-900 mb-1">{d.name}</p>
                         <p className="font-mono text-[10px] text-slate-400 mb-2 pb-2 border-b border-slate-100">{d.customer_id} · {d.segment}</p>
                         <div className="space-y-1">
-                          <div className="flex justify-between gap-4"><span className="text-slate-500">Revenue</span><span className="font-bold">{formatEUR(d.x)}</span></div>
-                          <div className="flex justify-between gap-4"><span className="text-slate-500">Margin</span><span className={`font-bold ${d.y < FLOOR_MARGIN ? 'text-red-500' : d.y < TARGET_MARGIN ? 'text-amber-600' : 'text-green-600'}`}>{formatPct(d.y)}</span></div>
-                          <div className="flex justify-between gap-4"><span className="text-slate-500">Invoices</span><span className="font-bold">{d.z}</span></div>
+                          <div className="flex justify-between gap-4"><span className="text-slate-500">{t('customers.scatter.tip.revenue')}</span><span className="font-bold">{formatEUR(d.x)}</span></div>
+                          <div className="flex justify-between gap-4"><span className="text-slate-500">{t('customers.scatter.tip.margin')}</span><span className={`font-bold ${d.y < FLOOR_MARGIN ? 'text-red-500' : d.y < TARGET_MARGIN ? 'text-amber-600' : 'text-green-600'}`}>{formatPct(d.y)}</span></div>
+                          <div className="flex justify-between gap-4"><span className="text-slate-500">{t('customers.scatter.tip.invoices')}</span><span className="font-bold">{d.z}</span></div>
                         </div>
                       </div>
                     );
@@ -621,57 +623,57 @@ export default function Customers() {
               </ScatterChart>
             </ResponsiveContainer>
             {/* Quadrant labels */}
-            <div className="pointer-events-none absolute top-6 left-[70px] text-[10px] font-bold uppercase tracking-wider text-slate-400/70">Profitable Niche</div>
-            <div className="pointer-events-none absolute top-6 right-6 text-[10px] font-bold uppercase tracking-wider text-emerald-600/80">⭐ Strategic Accounts</div>
-            <div className="pointer-events-none absolute bottom-14 left-[70px] text-[10px] font-bold uppercase tracking-wider text-slate-400/70">Review/Drop</div>
-            <div className="pointer-events-none absolute bottom-14 right-6 text-[10px] font-bold uppercase tracking-wider text-red-600/80">Fix or Reprice</div>
+            <div className="pointer-events-none absolute top-6 left-[70px] text-[10px] font-bold uppercase tracking-wider text-slate-400/70">{t('customers.scatter.q.profitable')}</div>
+            <div className="pointer-events-none absolute top-6 right-6 text-[10px] font-bold uppercase tracking-wider text-emerald-600/80">{t('customers.scatter.q.strategic')}</div>
+            <div className="pointer-events-none absolute bottom-14 left-[70px] text-[10px] font-bold uppercase tracking-wider text-slate-400/70">{t('customers.scatter.q.review')}</div>
+            <div className="pointer-events-none absolute bottom-14 right-6 text-[10px] font-bold uppercase tracking-wider text-red-600/80">{t('customers.scatter.q.fix')}</div>
           </div>
         </ChartCard>
 
         {/* Row 2 — Customer Movement */}
         <div>
           <div className="mb-3">
-            <h3 className="font-bold text-base" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>Customer Movement — Last 12 Months</h3>
-            <p className="text-xs mt-0.5" style={{ color: '#737373' }}>Churned = no invoice in 12 months. Net revenue change ~€0 despite 58% of 2022 base churning.</p>
+            <h3 className="font-bold text-base" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>{t('customers.movement.title')}</h3>
+            <p className="text-xs mt-0.5" style={{ color: '#737373' }}>{t('customers.movement.subtitle')}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="p-5 rounded-2xl shadow-sm" style={{ background: '#fff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
               <div className="flex justify-between items-start mb-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#737373' }}>Churned</p>
-                <span className="text-xs text-red-600 font-bold">−12mo</span>
+                <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#737373' }}>{t('customers.movement.churned')}</p>
+                <span className="text-xs text-red-600 font-bold">{t('customers.movement.churnedDelta')}</span>
               </div>
               <p className="text-2xl font-bold text-red-600">−{RETENTION_METRICS.churned_count}</p>
-              <p className="text-xs mt-1 text-slate-500">{formatEUR(-RETENTION_METRICS.churned_revenue_eur)} lost</p>
+              <p className="text-xs mt-1 text-slate-500">{t('customers.movement.lost', { value: formatEUR(-RETENTION_METRICS.churned_revenue_eur) })}</p>
             </div>
             <div className="p-5 rounded-2xl shadow-sm" style={{ background: '#fff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
               <div className="flex justify-between items-start mb-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#737373' }}>Retained</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#737373' }}>{t('customers.movement.retained')}</p>
               </div>
               <p className="text-2xl font-bold text-slate-700">{RETENTION_METRICS.retained_count}</p>
-              <p className="text-xs mt-1 text-slate-500">{(RETENTION_METRICS.retention_rate_pct).toFixed(1)}% of 2022 base</p>
+              <p className="text-xs mt-1 text-slate-500">{t('customers.movement.retainedSub', { pct: RETENTION_METRICS.retention_rate_pct.toFixed(1) })}</p>
             </div>
             <div className="p-5 rounded-2xl shadow-sm" style={{ background: '#fff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
               <div className="flex justify-between items-start mb-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#737373' }}>New</p>
-                <span className="text-xs text-emerald-600 font-bold">+12mo</span>
+                <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#737373' }}>{t('customers.movement.new')}</p>
+                <span className="text-xs text-emerald-600 font-bold">{t('customers.movement.newDelta')}</span>
               </div>
               <p className="text-2xl font-bold text-emerald-600">+{RETENTION_METRICS.new_count}</p>
-              <p className="text-xs mt-1 text-slate-500">+{formatEUR(RETENTION_METRICS.new_revenue_eur)} added</p>
+              <p className="text-xs mt-1 text-slate-500">{t('customers.movement.added', { value: formatEUR(RETENTION_METRICS.new_revenue_eur) })}</p>
             </div>
             <div className="p-5 rounded-2xl shadow-sm border-l-4 border-[#0393da]" style={{ background: '#fff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
               <div className="flex justify-between items-start mb-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#737373' }}>Net Change</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#737373' }}>{t('customers.movement.netChange')}</p>
               </div>
               <p className="text-2xl font-bold" style={{ color: '#1a1a2e' }}>{RETENTION_METRICS.net_change_count}</p>
-              <p className="text-xs mt-1 text-slate-500">{netRevDelta >= 0 ? '+' : ''}{formatEUR(netRevDelta)} net · {RETENTION_METRICS.end_count} active</p>
+              <p className="text-xs mt-1 text-slate-500">{t('customers.movement.netSub', { value: `${netRevDelta >= 0 ? '+' : ''}${formatEUR(netRevDelta)}`, n: RETENTION_METRICS.end_count })}</p>
             </div>
           </div>
         </div>
 
         {/* Row 3 — Growing vs Declining */}
         <ChartCard
-          title="Growing vs Declining Customers"
-          subtitle="Revenue delta 2022 → 2024 · top 5 growers (right) vs top 5 decliners (left)"
+          title={t('customers.growing.title')}
+          subtitle={t('customers.growing.subtitle')}
           tooltip={TOOLTIPS.growing_declining}
           formulaId="top_customers"
           confidence="verified"
@@ -728,14 +730,14 @@ export default function Customers() {
             </ResponsiveContainer>
           </div>
           <p className="text-[10px] italic text-slate-500 mt-2">
-            A decline may be a closed project, not churn — investigate before acting. 101580 dropped significantly and has high lost-quote revenue = active competitive displacement.
+            {t('customers.growing.note')}
           </p>
         </ChartCard>
 
         {/* Row 4 — Customer Concentration (enhanced) */}
         <ChartCard
-          title="Customer Concentration"
-          subtitle="Top 15 customers by estimated lifetime value · color = margin health"
+          title={t('customers.concentration.title')}
+          subtitle={t('customers.concentration.subtitle')}
           formulaId="customer_segments"
           confidence="verified"
         >
@@ -767,7 +769,7 @@ export default function Customers() {
 
         {/* Row 5 — Risk Matrix + Segments */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ChartCard title="Revenue at Risk by Segment × Risk Tier" subtitle="€ revenue per cell — visualize financial exposure, not customer counts" formulaId="risk_distribution" confidence="derived">
+          <ChartCard title={t('customers.risk.title')} subtitle={t('customers.risk.subtitle')} formulaId="risk_distribution" confidence="derived">
             <div className="space-y-4">
               {riskMatrix.map((row) => {
                 const highPct = (row.highRev / row.total) * 100;
@@ -800,14 +802,14 @@ export default function Customers() {
                 );
               })}
               <div className="flex items-center gap-4 pt-3 border-t border-slate-100 text-[10px]">
-                <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-red-500" />High/Critical</span>
-                <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-amber-500" />Medium</span>
-                <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500" />Low</span>
+                <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-red-500" />{t('customers.risk.legend.high')}</span>
+                <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-amber-500" />{t('customers.risk.legend.medium')}</span>
+                <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-emerald-500" />{t('customers.risk.legend.low')}</span>
               </div>
             </div>
           </ChartCard>
 
-          <ChartCard title="Customer Segments" formulaId="customer_segments" confidence="verified">
+          <ChartCard title={t('customers.segments.title')} formulaId="customer_segments" confidence="verified">
             <div className="space-y-3">
               {segmentsMeta.map((s) => {
                 const badge = marginBadge(s.avg_margin);
@@ -820,7 +822,7 @@ export default function Customers() {
                       </span>
                     </div>
                     <div className="flex justify-between text-xs text-slate-600">
-                      <span>{s.count.toLocaleString()} customers</span>
+                      <span>{t('customers.segments.count', { n: s.count.toLocaleString() })}</span>
                       <span className="font-semibold text-slate-800">{formatEUR(s.total_revenue)}</span>
                     </div>
                   </div>
@@ -833,7 +835,7 @@ export default function Customers() {
         {/* Row 6 — Customer Table with View Presets */}
         <motion.div variants={cardVariants}>
           <DataTable
-            title="Customer List"
+            title={t('customers.table.title')}
             columns={customerColumns}
             data={filteredCustomers}
             rowKey="customer_id"
@@ -844,11 +846,11 @@ export default function Customers() {
             headerRight={
               <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
                 {[
-                  { key: 'glance', label: 'At-a-glance' },
-                  { key: 'risk', label: 'Risk' },
-                  { key: 'competitiveness', label: 'Competitive' },
-                  { key: 'portfolio', label: 'Portfolio' },
-                  { key: 'full', label: 'Full' },
+                  { key: 'glance', label: t('customers.preset.glance') },
+                  { key: 'risk', label: t('customers.preset.risk') },
+                  { key: 'competitiveness', label: t('customers.preset.competitive') },
+                  { key: 'portfolio', label: t('customers.preset.portfolio') },
+                  { key: 'full', label: t('customers.preset.full') },
                 ].map((p) => (
                   <button
                     key={p.key}
@@ -870,13 +872,13 @@ export default function Customers() {
           <div className="flex justify-between items-start mb-4">
             <div>
               <h3 className="font-bold text-base" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>
-                Action List — This Week
+                {t('customers.action.title')}
               </h3>
               <p className="text-xs mt-0.5" style={{ color: '#737373' }}>
-                Ranked by margin slope · lost quotes · LTV at risk · inactivity
+                {t('customers.action.subtitle')}
               </p>
             </div>
-            <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-[#0393da] text-white">Monday Morning</span>
+            <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-[#0393da] text-white">{t('customers.action.monday')}</span>
           </div>
           <div className="space-y-2">
             {actionList.map((a, i) => (
@@ -891,7 +893,7 @@ export default function Customers() {
                   <p className="text-[11px] text-slate-500 truncate max-w-[100px]">{a.segment}</p>
                 </div>
                 <div className="flex flex-wrap gap-1.5 flex-1">
-                  {a.reasons.length === 0 && <span className="text-[11px] italic text-slate-400">baseline review</span>}
+                  {a.reasons.length === 0 && <span className="text-[11px] italic text-slate-400">{t('customers.action.baseline')}</span>}
                   {a.reasons.map((r, j) => (
                     <span key={j} className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${r.color}`}>
                       {r.icon} {r.label}

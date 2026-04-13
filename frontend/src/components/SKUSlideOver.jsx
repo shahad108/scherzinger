@@ -11,6 +11,7 @@ import {
   Link2, ArrowUpRight, ChevronRight, ChevronLeft,
 } from 'lucide-react';
 import { useUI } from '../context/UIContext';
+import { useT, useLanguage } from '../context/LanguageContext';
 import { getSKUDetail } from '../utils/skuDetailEngine';
 import { computeRiskScore, computePriority, getApprovalLevel, getMarginTrajectory, productsByArticle, costTrendsByArticle } from '../utils/pricingEngine';
 import { formatEUR, formatPct } from '../utils/formatters';
@@ -40,18 +41,21 @@ function MarginBar({ current }) {
 
 /* ── Risk Score Badge ── */
 function RiskScoreBadge({ score }) {
+  const t = useT();
   const bg = score >= 70 ? 'bg-red-100' : score >= 50 ? 'bg-amber-100' : score >= 30 ? 'bg-yellow-50' : 'bg-green-50';
   const text = score >= 70 ? 'text-red-700' : score >= 50 ? 'text-amber-700' : score >= 30 ? 'text-yellow-700' : 'text-green-700';
   const ring = score >= 70 ? 'ring-red-200' : score >= 50 ? 'ring-amber-200' : score >= 30 ? 'ring-yellow-200' : 'ring-green-200';
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ring-1 ${bg} ${text} ${ring}`}>
-      <Activity size={9} /> Risk {score}
+      <Activity size={9} /> {t('sku.risk')} {score}
     </span>
   );
 }
 
 /* ── Priority Badge ── */
+const PRIORITY_KEY = { Critical: 'sku.priority.critical', High: 'sku.priority.high', Medium: 'sku.priority.medium', Low: 'sku.priority.low' };
 function PriorityBadge({ priority }) {
+  const t = useT();
   const styles = {
     Critical: 'bg-red-100 text-red-700 ring-red-200',
     High: 'bg-amber-100 text-amber-700 ring-amber-200',
@@ -60,16 +64,17 @@ function PriorityBadge({ priority }) {
   };
   return (
     <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ring-1 ${styles[priority] || styles.Low}`}>
-      {priority}
+      {t(PRIORITY_KEY[priority] || 'sku.priority.low')}
     </span>
   );
 }
 
 /* ── Pricing Action Badge ── */
 function PricingActionBadge({ action }) {
-  if (action === 'Increase') return <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 ring-1 ring-red-200">Increase</span>;
-  if (action === 'Monitor') return <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 ring-1 ring-amber-200">Monitor</span>;
-  return <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 ring-1 ring-green-200">OK</span>;
+  const t = useT();
+  if (action === 'Increase') return <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 ring-1 ring-red-200">{t('sku.action.increase')}</span>;
+  if (action === 'Monitor') return <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 ring-1 ring-amber-200">{t('sku.action.monitor')}</span>;
+  return <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 ring-1 ring-green-200">{t('sku.action.ok')}</span>;
 }
 
 /* ── Section wrapper ── */
@@ -87,6 +92,7 @@ function Section({ icon: Icon, iconColor, title, children, className = '' }) {
 export default function SKUSlideOver() {
   const navigate = useNavigate();
   const { slideOver, closeSlideOver, setSidebarCollapsed, openCustomerDetail, openSKUDetail, panelHistory, goBackPanel } = useUI();
+  const { t } = useLanguage();
 
   const isOpen = slideOver.type === 'sku';
   const skuCode = slideOver.id;
@@ -172,10 +178,10 @@ export default function SKUSlideOver() {
             <div className="flex-shrink-0 px-6 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-2 text-xs">
               <button onClick={goBackPanel} className="flex items-center gap-1 text-[#0393da] hover:text-[#0270a8] font-medium transition-colors">
                 <ChevronLeft size={14} />
-                {prev.type === 'customer' ? `Customer ${prev.id}` : prev.type === 'category' ? prev.id : `SKU ${prev.id}`}
+                {prev.type === 'customer' ? t('sku.bc.customer', { id: prev.id }) : prev.type === 'category' ? prev.id : t('sku.bc.sku', { id: prev.id })}
               </button>
               <ChevronRight size={12} className="text-slate-300" />
-              <span className="text-slate-500">SKU {detail.article_id}</span>
+              <span className="text-slate-500">{t('sku.bc.sku', { id: detail.article_id })}</span>
             </div>
           );
         })()}
@@ -191,7 +197,7 @@ export default function SKUSlideOver() {
                 <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-50 text-slate-600">{detail.description}</span>
                 {detail.isAtRisk && (
                   <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 flex items-center gap-1">
-                    <AlertTriangle size={10} /> AT RISK
+                    <AlertTriangle size={10} /> {t('sku.atRisk')}
                   </span>
                 )}
                 {enrichedRec && (
@@ -217,7 +223,7 @@ export default function SKUSlideOver() {
           <motion.div variants={slideOverItemVariants} className="grid grid-cols-4 gap-3">
             <KPICard
               compact
-              label="Revenue"
+              label={t('sku.kpi.revenue')}
               value={formatEUR(detail.totalRevenue)}
               change={detail.yoyGrowth != null ? `${detail.yoyGrowth >= 0 ? '+' : ''}${detail.yoyGrowth.toFixed(1)}% YoY` : undefined}
               changeType={detail.yoyGrowth >= 0 ? 'positive' : 'negative'}
@@ -225,14 +231,14 @@ export default function SKUSlideOver() {
             />
             <KPICard
               compact
-              label="Units"
+              label={t('sku.kpi.units')}
               value={detail.totalUnits}
               changeType="neutral"
               accentGradient={gradients.navy}
             />
             <KPICard
               compact
-              label="Current Margin"
+              label={t('sku.kpi.currentMargin')}
               value={`${(detail.currentMargin * 100).toFixed(1)}%`}
               change={detail.marginTrend}
               changeType={detail.currentMargin < MARGIN_FLOOR ? 'negative' : detail.currentMargin < MARGIN_TARGET ? 'warning' : 'positive'}
@@ -240,7 +246,7 @@ export default function SKUSlideOver() {
             />
             <KPICard
               compact
-              label="Customers"
+              label={t('sku.kpi.customers')}
               value={detail.uniqueCustomers}
               change={detail.articleConcentration ? `${detail.articleConcentration}` : undefined}
               changeType={detail.articleConcentration === 'HIGH' || detail.articleConcentration?.includes('critical') ? 'warning' : 'neutral'}
@@ -250,7 +256,7 @@ export default function SKUSlideOver() {
 
           {/* ── Section 2: Revenue & Margin by Year ── */}
           {detail.revenueByYear.length > 0 && (
-            <Section icon={BarChart2} iconColor="text-[#0393da]" title="Revenue & Margin by Year">
+            <Section icon={BarChart2} iconColor="text-[#0393da]" title={t('sku.section.revByYear')}>
               <div className="h-44">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={detail.revenueByYear}>
@@ -266,8 +272,8 @@ export default function SKUSlideOver() {
                       </linearGradient>
                     </defs>
                     <Bar yAxisId="rev" dataKey="revenue" fill="url(#skuBarGrad)" radius={[6, 6, 0, 0]} name="Revenue" />
-                    <ReferenceLine yAxisId="margin" y={MARGIN_FLOOR} stroke="#EF4444" strokeDasharray="4 4" label={{ value: 'Floor', position: 'right', fill: '#EF4444', fontSize: 9 }} />
-                    <ReferenceLine yAxisId="margin" y={MARGIN_TARGET} stroke="#22C55E" strokeDasharray="4 4" label={{ value: 'Target', position: 'right', fill: '#22C55E', fontSize: 9 }} />
+                    <ReferenceLine yAxisId="margin" y={MARGIN_FLOOR} stroke="#EF4444" strokeDasharray="4 4" label={{ value: t('sku.label.floor'), position: 'right', fill: '#EF4444', fontSize: 9 }} />
+                    <ReferenceLine yAxisId="margin" y={MARGIN_TARGET} stroke="#22C55E" strokeDasharray="4 4" label={{ value: t('sku.label.target'), position: 'right', fill: '#22C55E', fontSize: 9 }} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -276,7 +282,7 @@ export default function SKUSlideOver() {
 
           {/* ── Section 3: Monthly Margin Trajectory ── */}
           {detail.monthlyMargins.length > 4 && (
-            <Section icon={TrendingDown} iconColor="text-red-500" title="Monthly Margin Trajectory">
+            <Section icon={TrendingDown} iconColor="text-red-500" title={t('sku.section.monthlyTraj')}>
               <div className="h-40">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={detail.monthlyMargins}>
@@ -294,22 +300,22 @@ export default function SKUSlideOver() {
           )}
 
           {/* ── Section 4: Quote Performance (NEW) ── */}
-          <Section icon={Target} iconColor="text-indigo-500" title="Quote Performance">
+          <Section icon={Target} iconColor="text-indigo-500" title={t('sku.section.quotePerf')}>
             {detail.quotePerformance ? (
               <div className="space-y-3">
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div>
-                    <p className="text-[10px] text-slate-400">Win Rate</p>
+                    <p className="text-[10px] text-slate-400">{t('sku.label.winRate')}</p>
                     <p className={`text-sm font-bold ${detail.quotePerformance.winRate < 0.4 ? 'text-red-600' : detail.quotePerformance.winRate < 0.6 ? 'text-amber-600' : 'text-green-600'}`}>
                       {detail.quotePerformance.win}/{detail.quotePerformance.total} ({(detail.quotePerformance.winRate * 100).toFixed(0)}%)
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400">Lost Revenue</p>
+                    <p className="text-[10px] text-slate-400">{t('sku.label.lostRevenue')}</p>
                     <p className="text-sm font-bold text-red-600">{formatEUR(detail.quotePerformance.lostRevenue)}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400">Won Avg Margin</p>
+                    <p className="text-[10px] text-slate-400">{t('sku.label.wonAvgMargin')}</p>
                     <p className="text-sm font-bold text-slate-700">
                       {detail.quotePerformance.wonAvgMargin != null ? `${(detail.quotePerformance.wonAvgMargin * 100).toFixed(1)}%` : '—'}
                     </p>
@@ -317,27 +323,27 @@ export default function SKUSlideOver() {
                 </div>
                 {detail.quotePerformance.wonAvgMargin != null && detail.quotePerformance.lostAvgMargin != null && (
                   <div className="flex items-center gap-2 text-[11px] text-slate-500 pt-2 border-t border-slate-100">
-                    <span>Won margin: <span className="font-bold text-green-600">{(detail.quotePerformance.wonAvgMargin * 100).toFixed(1)}%</span></span>
-                    <span>vs Lost: <span className="font-bold text-red-600">{(detail.quotePerformance.lostAvgMargin * 100).toFixed(1)}%</span></span>
+                    <span>{t('sku.text.wonMargin')} <span className="font-bold text-green-600">{(detail.quotePerformance.wonAvgMargin * 100).toFixed(1)}%</span></span>
+                    <span>{t('sku.text.vsLost')} <span className="font-bold text-red-600">{(detail.quotePerformance.lostAvgMargin * 100).toFixed(1)}%</span></span>
                     <span className="ml-auto font-bold text-slate-700">
-                      Gap: {((detail.quotePerformance.wonAvgMargin - detail.quotePerformance.lostAvgMargin) * 100).toFixed(1)}pp
+                      {t('sku.text.gap', { value: ((detail.quotePerformance.wonAvgMargin - detail.quotePerformance.lostAvgMargin) * 100).toFixed(1) })}
                     </span>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-xs text-slate-400 italic">No recent quotes — repeat order pattern.</p>
+              <p className="text-xs text-slate-400 italic">{t('sku.text.noQuotes')}</p>
             )}
           </Section>
 
           {/* ── Section 5: Customer List (NEW — clickable, concentration flag) ── */}
           {detail.uniqueCustomers > 0 && (
-            <Section icon={Users} iconColor="text-[#0393da]" title={`Customers (${detail.uniqueCustomers})`}>
+            <Section icon={Users} iconColor="text-[#0393da]" title={t('sku.section.customers', { n: detail.uniqueCustomers })}>
               {/* Concentration warning */}
               {detail.articleTopCustomerShare != null && detail.articleTopCustomerShare > 0.6 && (
                 <div className="flex items-start gap-2 bg-amber-50 rounded-lg p-2.5 text-[11px] text-amber-800 mb-3">
                   <AlertTriangle size={12} className="text-amber-500 mt-0.5 flex-shrink-0" />
-                  <span>Single-customer concentration: top customer = {(detail.articleTopCustomerShare * 100).toFixed(0)}% of revenue.</span>
+                  <span>{t('sku.text.concentration', { pct: (detail.articleTopCustomerShare * 100).toFixed(0) })}</span>
                 </div>
               )}
 
@@ -345,11 +351,11 @@ export default function SKUSlideOver() {
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="text-slate-400 uppercase text-[9px] font-bold border-b border-slate-100">
-                      <th className="py-2 pr-3">Customer</th>
-                      <th className="py-2 pr-3">Segment</th>
-                      <th className="py-2 pr-3 text-right">Revenue</th>
-                      <th className="py-2 pr-3 text-right">Share</th>
-                      <th className="py-2 text-right">Margin</th>
+                      <th className="py-2 pr-3">{t('sku.col.customer')}</th>
+                      <th className="py-2 pr-3">{t('sku.col.segment')}</th>
+                      <th className="py-2 pr-3 text-right">{t('sku.col.revenue')}</th>
+                      <th className="py-2 pr-3 text-right">{t('sku.col.share')}</th>
+                      <th className="py-2 text-right">{t('sku.col.margin')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -375,7 +381,7 @@ export default function SKUSlideOver() {
                 </table>
                 {detail.uniqueCustomers > 5 && (
                   <p className="text-[10px] text-[#0393da] mt-2 cursor-pointer hover:underline">
-                    and {detail.uniqueCustomers - 5} more →
+                    {t('sku.text.andMore', { n: detail.uniqueCustomers - 5 })}
                   </p>
                 )}
               </div>
@@ -384,15 +390,15 @@ export default function SKUSlideOver() {
 
           {/* ── Section 6: Price vs Cost Trend (NEW) ── */}
           {detail.priceCostByYear.length >= 2 && detail.priceCostByYear.some(y => y.costPerUnit) && (
-            <Section icon={DollarSign} iconColor="text-emerald-500" title="Price vs Cost (per unit)">
+            <Section icon={DollarSign} iconColor="text-emerald-500" title={t('sku.section.priceCost')}>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-center">
                   <thead>
                     <tr className="text-slate-400 uppercase text-[9px] font-bold border-b border-slate-100">
-                      <th className="py-2">Year</th>
-                      <th className="py-2">Price</th>
-                      <th className="py-2">Cost</th>
-                      <th className="py-2">Margin</th>
+                      <th className="py-2">{t('sku.col.year')}</th>
+                      <th className="py-2">{t('sku.col.price')}</th>
+                      <th className="py-2">{t('sku.col.cost')}</th>
+                      <th className="py-2">{t('sku.col.margin')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -430,10 +436,10 @@ export default function SKUSlideOver() {
               </div>
               {detail.costPassThrough != null && (
                 <div className="mt-3 pt-3 border-t border-slate-100 text-[11px] text-slate-600">
-                  <span className="font-bold">Cost Pass-Through Rate: {(detail.costPassThrough * 100).toFixed(0)}%</span>
+                  <span className="font-bold">{t('sku.text.passThrough', { pct: (detail.costPassThrough * 100).toFixed(0) })}</span>
                   {detail.costPassThrough < 1 && (
                     <span className="text-amber-700 ml-2">
-                      Absorbing {((1 - detail.costPassThrough) * 100).toFixed(0)}% of cost increases
+                      {t('sku.text.absorbing', { pct: ((1 - detail.costPassThrough) * 100).toFixed(0) })}
                     </span>
                   )}
                 </div>
@@ -442,22 +448,22 @@ export default function SKUSlideOver() {
           )}
 
           {/* ── Section 7: Cost Structure ── */}
-          <Section icon={Package} iconColor="text-amber-500" title="Cost Structure">
+          <Section icon={Package} iconColor="text-amber-500" title={t('sku.section.costStructure')}>
             <div className="grid grid-cols-4 gap-3 mt-1 text-center">
               <div>
-                <p className="text-[10px] text-slate-400">HKVoll/Unit</p>
+                <p className="text-[10px] text-slate-400">{t('sku.label.hkvoll')}</p>
                 <p className="text-xs font-bold text-slate-700">{detail.hkvollPerUnit != null ? formatEUR(detail.hkvollPerUnit) : '—'}</p>
               </div>
               <div>
-                <p className="text-[10px] text-slate-400">Material</p>
+                <p className="text-[10px] text-slate-400">{t('sku.label.material')}</p>
                 <p className="text-xs font-bold text-slate-700">{detail.materialShare != null ? `${(detail.materialShare * 100).toFixed(0)}%` : detail.materialPct != null ? `${(detail.materialPct * 100).toFixed(0)}%` : '—'}</p>
               </div>
               <div>
-                <p className="text-[10px] text-slate-400">Labor</p>
+                <p className="text-[10px] text-slate-400">{t('sku.label.labor')}</p>
                 <p className="text-xs font-bold text-slate-700">{detail.laborShare != null ? `${(detail.laborShare * 100).toFixed(0)}%` : detail.fekPct != null ? `${(detail.fekPct * 100).toFixed(0)}%` : '—'}</p>
               </div>
               <div>
-                <p className="text-[10px] text-slate-400">Cost Trend</p>
+                <p className="text-[10px] text-slate-400">{t('sku.label.costTrend')}</p>
                 <p className={`text-xs font-bold ${detail.costChangePct != null && detail.costChangePct > 0.05 ? 'text-red-600' : 'text-green-600'}`}>
                   {detail.costChangePct != null ? `${(detail.costChangePct * 100).toFixed(1)}%` : '—'}
                 </p>
@@ -466,24 +472,24 @@ export default function SKUSlideOver() {
             {(detail.materialShare || 0) > 0.40 && (
               <div className="flex items-start gap-2 bg-amber-50 rounded-lg p-2.5 text-[11px] text-amber-800 mt-3">
                 <span className="font-bold">!</span>
-                <span>Material costs are {((detail.materialShare || 0) * 100).toFixed(0)}% of production cost.</span>
+                <span>{t('sku.text.materialWarning', { pct: ((detail.materialShare || 0) * 100).toFixed(0) })}</span>
               </div>
             )}
           </Section>
 
           {/* ── Section 8: Order Frequency & Recency (NEW) ── */}
-          <Section icon={Clock} iconColor="text-blue-500" title="Order Activity">
+          <Section icon={Clock} iconColor="text-blue-500" title={t('sku.section.orderActivity')}>
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
-                <p className="text-[10px] text-slate-400">Last Order</p>
+                <p className="text-[10px] text-slate-400">{t('sku.label.lastOrder')}</p>
                 <p className="text-xs font-bold text-slate-700">{detail.orderActivity.lastOrderDate || '—'}</p>
               </div>
               <div>
-                <p className="text-[10px] text-slate-400">Avg Orders/Year</p>
+                <p className="text-[10px] text-slate-400">{t('sku.label.avgOrders')}</p>
                 <p className="text-xs font-bold text-slate-700">{detail.orderActivity.avgOrdersPerYear}</p>
               </div>
               <div>
-                <p className="text-[10px] text-slate-400">Total Orders</p>
+                <p className="text-[10px] text-slate-400">{t('sku.label.totalOrders')}</p>
                 <p className="text-xs font-bold text-slate-700">{detail.orderActivity.totalOrders}</p>
               </div>
             </div>
@@ -494,11 +500,14 @@ export default function SKUSlideOver() {
                 detail.orderActivity.status === 'Inactive' ? 'bg-red-50 text-red-700 ring-red-200' :
                 'bg-slate-50 text-slate-500 ring-slate-200'
               }`}>
-                {detail.orderActivity.status}
+                {detail.orderActivity.status === 'Active' ? t('sku.status.active') :
+                 detail.orderActivity.status === 'Slowing' ? t('sku.status.slowing') :
+                 detail.orderActivity.status === 'Inactive' ? t('sku.status.inactive') :
+                 detail.orderActivity.status}
               </span>
               {detail.orderActivity.isInactive && (
                 <span className="text-[11px] text-red-600 font-medium">
-                  No orders in {detail.orderActivity.monthsSinceLastOrder} months — previously {detail.orderActivity.avgOrdersPerYear}/year
+                  {t('sku.text.inactive', { n: detail.orderActivity.monthsSinceLastOrder, prev: detail.orderActivity.avgOrdersPerYear })}
                 </span>
               )}
             </div>
@@ -506,18 +515,18 @@ export default function SKUSlideOver() {
 
           {/* ── Section 9: Margin Gap — THIS ARTICLE (FIXED — was showing portfolio data) ── */}
           {detail.articleGap ? (
-            <Section icon={Target} iconColor="text-purple-500" title="Margin Gap (this article)">
+            <Section icon={Target} iconColor="text-purple-500" title={t('sku.section.marginGapArticle')}>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p className="text-[10px] text-slate-400">Quoted</p>
+                  <p className="text-[10px] text-slate-400">{t('sku.label.quoted')}</p>
                   <p className="text-sm font-bold text-slate-700">{(detail.articleGap.quoted * 100).toFixed(1)}%</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400">Actual</p>
+                  <p className="text-[10px] text-slate-400">{t('sku.label.actual')}</p>
                   <p className="text-sm font-bold text-slate-700">{(detail.articleGap.actual * 100).toFixed(1)}%</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400">Gap</p>
+                  <p className="text-[10px] text-slate-400">{t('sku.label.gap')}</p>
                   <p className={`text-sm font-bold ${detail.articleGap.gap > 0.03 ? 'text-red-600' : detail.articleGap.gap > 0.01 ? 'text-amber-600' : 'text-green-600'}`}>
                     {(detail.articleGap.gap * 100).toFixed(1)}pp
                   </p>
@@ -525,18 +534,18 @@ export default function SKUSlideOver() {
               </div>
               {detail.portfolioGap && (
                 <div className="mt-2 pt-2 border-t border-slate-100 text-center text-[10px] text-slate-400">
-                  vs portfolio avg gap: <span className="font-bold text-slate-600">{(detail.portfolioGap.mean_gap * 100).toFixed(1)}pp</span>
+                  {t('sku.text.vsPortfolio')} <span className="font-bold text-slate-600">{(detail.portfolioGap.mean_gap * 100).toFixed(1)}pp</span>
                   {detail.articleGap.gap > detail.portfolioGap.mean_gap * 2 && (
                     <span className="text-red-500 font-bold ml-1">
-                      — {(detail.articleGap.gap / detail.portfolioGap.mean_gap).toFixed(1)}× above average
+                      {t('sku.text.aboveAvg', { x: (detail.articleGap.gap / detail.portfolioGap.mean_gap).toFixed(1) })}
                     </span>
                   )}
                 </div>
               )}
             </Section>
           ) : detail.portfolioGap ? (
-            <Section icon={Target} iconColor="text-purple-500" title="Margin Gap">
-              <p className="text-xs text-slate-400 italic">No article-specific gap data available. Portfolio avg gap: {(detail.portfolioGap.mean_gap * 100).toFixed(1)}pp</p>
+            <Section icon={Target} iconColor="text-purple-500" title={t('sku.section.marginGap')}>
+              <p className="text-xs text-slate-400 italic">{t('sku.text.noGap', { pp: (detail.portfolioGap.mean_gap * 100).toFixed(1) })}</p>
             </Section>
           ) : null}
 
@@ -545,15 +554,15 @@ export default function SKUSlideOver() {
             <motion.div variants={slideOverItemVariants} className="rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: '#f8fafc' }}>
               <BarChart2 size={14} className="text-indigo-500" />
               <span className="text-xs text-slate-700">
-                <span className="font-bold">Rank: #{detail.marginRank.rank}</span> of {detail.marginRank.total} {detail.commodity_group} articles by margin
-                <span className="ml-1 font-bold text-[#0393da]">(top {100 - detail.marginRank.percentile}%)</span>
+                <span className="font-bold">{t('sku.rank.line', { rank: detail.marginRank.rank, total: detail.marginRank.total, group: detail.commodity_group })}</span>
+                <span className="ml-1 font-bold text-[#0393da]">{t('sku.rank.top', { pct: 100 - detail.marginRank.percentile })}</span>
               </span>
             </motion.div>
           )}
 
           {/* ── Section 11: Related / Similar SKUs (NEW) ── */}
           {detail.relatedSkus.length > 0 && (
-            <Section icon={Link2} iconColor="text-slate-500" title="Related Articles">
+            <Section icon={Link2} iconColor="text-slate-500" title={t('sku.section.related')}>
               <div className="space-y-2">
                 {detail.relatedSkus.map(rs => (
                   <div
@@ -570,7 +579,7 @@ export default function SKUSlideOver() {
                     <span className={`text-[10px] ${rs.marginTrend === 'improving' ? 'text-green-500' : rs.marginTrend === 'declining' ? 'text-red-500' : 'text-slate-400'}`}>
                       {rs.marginTrend === 'improving' ? '▲' : rs.marginTrend === 'declining' ? '▼' : '→'} {rs.marginTrend}
                     </span>
-                    {rs.isVariant && <span className="text-[9px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded font-bold">variant</span>}
+                    {rs.isVariant && <span className="text-[9px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded font-bold">{t('sku.related.variant')}</span>}
                   </div>
                 ))}
               </div>
@@ -584,23 +593,23 @@ export default function SKUSlideOver() {
             'bg-green-50/60 border-green-200'
           }`} style={{ boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
             <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-              <DollarSign size={14} style={{ color: colors.primary }} /> Pricing Recommendation
+              <DollarSign size={14} style={{ color: colors.primary }} /> {t('sku.section.pricingRec')}
             </h4>
             {enrichedRec ? (
               <div className="space-y-3">
                 <div className="grid grid-cols-4 gap-3 text-center">
                   <div>
-                    <p className="text-[10px] text-slate-400">Current Margin</p>
+                    <p className="text-[10px] text-slate-400">{t('sku.kpi.currentMargin')}</p>
                     <p className="text-xs font-bold text-slate-700">
                       {enrichedRec.currentMargin != null ? `${(enrichedRec.currentMargin * 100).toFixed(1)}%` : '—'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400">Action</p>
+                    <p className="text-[10px] text-slate-400">{t('sku.label.action')}</p>
                     <p className="text-xs font-bold"><PricingActionBadge action={enrichedRec.action} /></p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400">Approval</p>
+                    <p className="text-[10px] text-slate-400">{t('sku.label.approval')}</p>
                     <p className={`text-xs font-bold ${
                       enrichedRec.approvalColor === 'green' ? 'text-green-700' :
                       enrichedRec.approvalColor === 'amber' ? 'text-amber-700' :
@@ -608,12 +617,12 @@ export default function SKUSlideOver() {
                     }`}>{enrichedRec.approvalLevel}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400">Priority</p>
+                    <p className="text-[10px] text-slate-400">{t('sku.label.priority')}</p>
                     <p className="text-xs font-bold"><PriorityBadge priority={enrichedRec.priority} /></p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 pt-2 border-t border-slate-200/50">
-                  <span className="text-[10px] text-slate-400">Trajectory:</span>
+                  <span className="text-[10px] text-slate-400">{t('sku.label.trajectory')}</span>
                   <span className={`inline-flex items-center gap-1 text-xs font-bold ${
                     enrichedRec.trajectoryDirection === 'improving' ? 'text-green-600' :
                     enrichedRec.trajectoryDirection === 'declining' ? 'text-red-600' :
@@ -622,17 +631,19 @@ export default function SKUSlideOver() {
                     {enrichedRec.trajectoryDirection === 'improving' ? <TrendingUp size={12} /> :
                      enrichedRec.trajectoryDirection === 'declining' ? <TrendingDown size={12} /> :
                      <Minus size={12} />}
-                    {enrichedRec.trajectoryDirection.charAt(0).toUpperCase() + enrichedRec.trajectoryDirection.slice(1)}
+                    {enrichedRec.trajectoryDirection === 'improving' ? t('sku.text.trajectory.improving') :
+                     enrichedRec.trajectoryDirection === 'declining' ? t('sku.text.trajectory.declining') :
+                     t('sku.text.trajectory.stable')}
                   </span>
                   {enrichedRec.marginGapPct > 0 && (
                     <span className="text-[10px] text-slate-500 ml-auto">
-                      Gap to target: <span className="font-bold text-red-600">{enrichedRec.marginGapPct.toFixed(1)}pp</span>
+                      {t('sku.text.gapToTarget', { pp: enrichedRec.marginGapPct.toFixed(1) })}
                     </span>
                   )}
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-slate-400 italic">No pricing action needed</p>
+              <p className="text-xs text-slate-400 italic">{t('sku.text.noPricing')}</p>
             )}
           </motion.div>
 
@@ -642,7 +653,7 @@ export default function SKUSlideOver() {
               onClick={() => { closeSlideOver(); navigate('/products'); }}
               className="flex items-center gap-2 text-xs font-medium text-[#0393da] hover:text-[#0270a8] transition-colors"
             >
-              Open in Products & SKUs <ArrowUpRight size={12} />
+              {t('sku.openInProducts')} <ArrowUpRight size={12} />
             </button>
           </motion.div>
 

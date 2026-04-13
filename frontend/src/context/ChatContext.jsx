@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useRef, useCallback, useEffect } f
 import { streamChat } from '../utils/openrouter';
 import { SYSTEM_PROMPT_MINI } from '../utils/systemPromptMini';
 import { getSession } from '../utils/auth';
+import { useLanguage } from './LanguageContext';
+import { translations } from '../i18n/translations';
 import {
   createConversation,
   getConversations,
@@ -15,6 +17,10 @@ import {
 const ChatContext = createContext(null);
 
 export function ChatProvider({ children }) {
+  const { lang } = useLanguage();
+  const langRef = useRef(lang);
+  useEffect(() => { langRef.current = lang; }, [lang]);
+
   const [messages, setMessages] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -127,8 +133,11 @@ export function ChatProvider({ children }) {
       .filter(m => m.content && m.content.trim())
       .map(m => ({ role: m.role, content: m.content }));
     const currentContext = pageContextRef.current;
+    const currentLang = langRef.current;
+    const langDirective = currentLang === 'de' ? translations.de['ai.directive.de'] : null;
     const apiMessages = [
       { role: 'system', content: SYSTEM_PROMPT_MINI },
+      ...(langDirective ? [{ role: 'system', content: langDirective }] : []),
       ...(currentContext ? [{ role: 'system', content: currentContext }] : []),
       ...history,
     ];

@@ -16,6 +16,7 @@ import productsDetail from '../data/products_detail.json';
 import { formatEUR, formatPct } from '../utils/formatters';
 import { TOOLTIPS } from '../utils/tooltipContent';
 import { useUI } from '../context/UIContext';
+import { useLanguage } from '../context/LanguageContext';
 import { handleScatterClick } from '../utils/pageContextResolver';
 import { track } from '../utils/tracker';
 import PhaseNotice from '../components/shared/PhaseNotice';
@@ -54,6 +55,7 @@ function productTypeColor(m) {
 
 export default function ProductsSKUs() {
   const { selectItem, selectedItem, openSKUDetail } = useUI();
+  const { t } = useLanguage();
   const [selectedCommodity, setSelectedCommodity] = useState('All');
   const [selectedYear, setSelectedYear] = useState(2025);
   const [articleSearch, setArticleSearch] = useState('');
@@ -209,27 +211,27 @@ export default function ProductsSKUs() {
 
   const columnPresets = {
     margin: [
-      { key: 'ArticleID', label: 'Article ID', render: (v) => <span className="font-mono text-xs font-semibold text-[#0393da]">{v}</span> },
-      { key: 'description', label: 'Description', render: (v) => <span className="font-medium max-w-[200px] truncate block" title={v}>{v}</span> },
-      { key: 'commodity_group', label: 'Group' },
-      { key: 'margin_2023', label: 'M 2023', align: 'right', render: marginCol },
-      { key: 'margin_2024', label: 'M 2024', align: 'right', render: marginCol },
-      { key: 'margin_2025', label: 'M 2025', align: 'right', render: marginCol },
+      { key: 'ArticleID', label: t('products.col.articleId'), render: (v) => <span className="font-mono text-xs font-semibold text-[#0393da]">{v}</span> },
+      { key: 'description', label: t('products.col.description'), render: (v) => <span className="font-medium max-w-[200px] truncate block" title={v}>{v}</span> },
+      { key: 'commodity_group', label: t('products.col.group') },
+      { key: 'margin_2023', label: t('products.col.m2023'), align: 'right', render: marginCol },
+      { key: 'margin_2024', label: t('products.col.m2024'), align: 'right', render: marginCol },
+      { key: 'margin_2025', label: t('products.col.m2025'), align: 'right', render: marginCol },
       {
-        key: 'margin_trend', label: 'Trend', render: (v) => {
+        key: 'margin_trend', label: t('products.col.trend'), render: (v) => {
           if (v === 'up' || v === 'increasing') return <span className="text-green-500 font-bold">↑</span>;
           if (v === 'down' || v === 'declining') return <span className="text-red-500 font-bold">↓</span>;
           return <span className="text-slate-400">→</span>;
         },
       },
-      { key: 'revenue', label: 'Revenue', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
+      { key: 'revenue', label: t('products.col.revenue'), align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
     ],
     competitiveness: [
-      { key: 'ArticleID', label: 'Article ID', render: (v) => <span className="font-mono text-xs font-semibold text-[#0393da]">{v}</span> },
-      { key: 'description', label: 'Description', render: (v) => <span className="font-medium max-w-[220px] truncate block" title={v}>{v}</span> },
-      { key: 'revenue', label: 'Revenue', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
+      { key: 'ArticleID', label: t('products.col.articleId'), render: (v) => <span className="font-mono text-xs font-semibold text-[#0393da]">{v}</span> },
+      { key: 'description', label: t('products.col.description'), render: (v) => <span className="font-medium max-w-[220px] truncate block" title={v}>{v}</span> },
+      { key: 'revenue', label: t('products.col.revenue'), align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
       {
-        key: 'win_rate', label: 'Win Rate', align: 'right', tooltip: TOOLTIPS.win_rate,
+        key: 'win_rate', label: t('products.col.winRate'), align: 'right', tooltip: TOOLTIPS.win_rate,
         render: (v) => {
           if (v == null) return '—';
           const color = v < 0.30 ? 'text-red-600' : v < 0.50 ? 'text-amber-600' : 'text-green-600';
@@ -237,27 +239,27 @@ export default function ProductsSKUs() {
         },
       },
       {
-        key: 'lost_revenue_eur', label: 'Lost Revenue', align: 'right', tooltip: TOOLTIPS.lost_revenue,
+        key: 'lost_revenue_eur', label: t('products.col.lostRevenue'), align: 'right', tooltip: TOOLTIPS.lost_revenue,
         render: (v) => <span className="font-semibold text-red-600">{formatEUR(v)}</span>,
       },
-      { key: 'margin', label: 'Margin', align: 'right', render: marginCol },
+      { key: 'margin', label: t('products.col.margin'), align: 'right', render: marginCol },
     ],
     portfolio: [
-      { key: 'ArticleID', label: 'Article ID', render: (v) => <span className="font-mono text-xs font-semibold text-[#0393da]">{v}</span> },
-      { key: 'description', label: 'Description', render: (v) => <span className="font-medium max-w-[200px] truncate block" title={v}>{v}</span> },
+      { key: 'ArticleID', label: t('products.col.articleId'), render: (v) => <span className="font-mono text-xs font-semibold text-[#0393da]">{v}</span> },
+      { key: 'description', label: t('products.col.description'), render: (v) => <span className="font-medium max-w-[200px] truncate block" title={v}>{v}</span> },
       {
-        key: 'product_type', label: 'Product Type',
+        key: 'product_type', label: t('products.col.productType'),
         render: (v) => <span className="text-xs font-semibold text-slate-700">{v}</span>,
       },
       {
-        key: 'customer_count', label: '# Customers', align: 'right', tooltip: TOOLTIPS.customer_count,
+        key: 'customer_count', label: t('products.col.customers'), align: 'right', tooltip: TOOLTIPS.customer_count,
         render: (v) => {
           const cls = v === 1 ? 'text-red-600 font-bold' : 'font-semibold';
           return <span className={cls}>{v}{v === 1 && ' ⚠️'}</span>;
         },
       },
-      { key: 'revenue', label: 'Revenue', align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
-      { key: 'margin', label: 'Margin', align: 'right', render: marginCol },
+      { key: 'revenue', label: t('products.col.revenue'), align: 'right', render: (v) => <span className="font-semibold">{formatEUR(v)}</span> },
+      { key: 'margin', label: t('products.col.margin'), align: 'right', render: marginCol },
     ],
   };
 
@@ -268,7 +270,7 @@ export default function ProductsSKUs() {
 
   return (
     <>
-      <Header title="Products & Articles" />
+      <Header title={t('products.title')} />
       <motion.div className="p-8 space-y-6 max-w-[1440px] mx-auto" variants={containerVariants} initial="hidden" animate="visible">
         {/* Commodity Filters + Year Selector */}
         <div className="flex flex-wrap items-center gap-4">
@@ -283,7 +285,7 @@ export default function ProductsSKUs() {
                     : 'bg-white border border-slate-200 hover:border-[#0393da]'
                 }`}
               >
-                {commodity === 'All' ? 'All Groups' : commodity}
+                {commodity === 'All' ? t('products.filter.allGroups') : commodity}
               </button>
             ))}
           </div>
@@ -309,7 +311,7 @@ export default function ProductsSKUs() {
           <div className="relative flex-1 max-w-md">
             <input
               type="text"
-              placeholder="Search article ID or description..."
+              placeholder={t('products.search.placeholder')}
               value={articleSearch}
               onChange={(e) => setArticleSearch(e.target.value)}
               className="w-full px-4 py-2 pl-10 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0393da]/30 focus:border-[#0393da]"
@@ -325,10 +327,10 @@ export default function ProductsSKUs() {
           </div>
           <div className="flex gap-2">
             {[
-              { key: 'all', label: 'All Margins' },
-              { key: 'below_floor', label: '< 25% (Below Floor)', color: 'bg-red-500' },
-              { key: 'at_risk', label: '25-30% (At Risk)', color: 'bg-amber-500' },
-              { key: 'healthy', label: '> 30% (Healthy)', color: 'bg-green-500' },
+              { key: 'all', label: t('products.marginFilter.all') },
+              { key: 'below_floor', label: t('products.marginFilter.belowFloor'), color: 'bg-red-500' },
+              { key: 'at_risk', label: t('products.marginFilter.atRisk'), color: 'bg-amber-500' },
+              { key: 'healthy', label: t('products.marginFilter.healthy'), color: 'bg-green-500' },
             ].map((f) => (
               <button
                 key={f.key}
@@ -349,7 +351,7 @@ export default function ProductsSKUs() {
               onClick={() => { setArticleSearch(''); setMarginFilter('all'); }}
               className="text-xs text-[#0393da] font-medium hover:underline"
             >
-              Clear filters
+              {t('products.filter.clear')}
             </button>
           )}
         </div>
@@ -363,21 +365,21 @@ export default function ProductsSKUs() {
         >
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Total Active SKUs"
+              label={t('products.kpi.totalSkus')}
               value={kpis.total.toLocaleString()}
               tooltip={TOOLTIPS.total_skus}
               formulaId="top_products_revenue"
               confidence="verified"
               bottomContent={
                 <div className="text-[10px] italic" style={{ color: '#737373' }}>
-                  Top 10 SKUs = {(kpis.top10 * 100).toFixed(0)}% of revenue
+                  {t('products.kpi.totalSkus.bottom', { pct: (kpis.top10 * 100).toFixed(0) })}
                 </div>
               }
             />
           </motion.div>
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Avg DB II Margin"
+              label={t('products.kpi.avgDb2')}
               value={(kpis.avgDb2 * 100).toFixed(1) + '%'}
               tooltip={TOOLTIPS.gross_margin}
               formulaId="db2_margin"
@@ -387,7 +389,7 @@ export default function ProductsSKUs() {
           </motion.div>
           <motion.div variants={cardVariants}>
             <KPICard
-              label="SKUs Below Target"
+              label={t('products.kpi.skusBelow')}
               value={
                 <span>
                   <span className="text-amber-600">{kpis.below.warning}</span>
@@ -401,17 +403,16 @@ export default function ProductsSKUs() {
               changeType="warning"
               bottomContent={
                 <div className="text-[10px]" style={{ color: '#737373' }}>
-                  <span className="font-semibold text-amber-700">Warning</span> &lt;50% ·{' '}
-                  <span className="font-semibold text-red-700">Critical</span> &lt;25%
+                  {t('products.kpi.skusBelow.bottom')}
                 </div>
               }
             />
           </motion.div>
           <motion.div variants={cardVariants}>
             <KPICard
-              label="New Product Revenue"
+              label={t('products.kpi.newProduct')}
               value={formatEUR(kpis.newProduct.revenue_eur)}
-              change={`+${(kpis.newProduct.pct_of_total_revenue * 100).toFixed(1)}% of total`}
+              change={t('products.kpi.newProduct.change', { pct: (kpis.newProduct.pct_of_total_revenue * 100).toFixed(1) })}
               changeType="positive"
               tooltip={TOOLTIPS.new_product_revenue}
               formulaId="revenue_total"
@@ -423,7 +424,7 @@ export default function ProductsSKUs() {
 
         {(articleSearch || marginFilter !== 'all') && (
           <p className="text-sm text-slate-500">
-            Showing <span className="font-bold text-slate-800">{filteredProducts.length}</span> of {products.length} articles
+            {t('products.results.showing', { n: filteredProducts.length, total: products.length })}
           </p>
         )}
 
@@ -431,8 +432,8 @@ export default function ProductsSKUs() {
         <div className="grid grid-cols-12 gap-6">
           <div className="col-span-12 lg:col-span-8">
             <ChartCard
-              title="Article Margin vs Revenue"
-              subtitle={`Bubble size by Units · FY ${selectedYear} · target 60% · floor 25%`}
+              title={t('products.scatter.title')}
+              subtitle={t('products.scatter.subtitle', { year: selectedYear })}
               tooltip={TOOLTIPS.sku_margin_vs_revenue}
               formulaId="top_products_revenue"
               confidence="verified"
@@ -458,7 +459,7 @@ export default function ProductsSKUs() {
                       tickFormatter={(v) => formatEUR(v)}
                       tick={{ fontSize: 10, fill: '#94a3b8' }}
                       tickLine={false}
-                      label={{ value: 'Revenue (€)', position: 'bottom', fontSize: 10 }}
+                      label={{ value: t('products.scatter.axis.revenue'), position: 'bottom', fontSize: 10 }}
                     />
                     <YAxis
                       type="number"
@@ -470,7 +471,7 @@ export default function ProductsSKUs() {
                       axisLine={false}
                       domain={[0, 1]}
                       ticks={[0, 0.25, 0.5, 0.75, 1]}
-                      label={{ value: 'Margin (%)', angle: -90, position: 'insideLeft', fontSize: 10 }}
+                      label={{ value: t('products.scatter.axis.margin'), angle: -90, position: 'insideLeft', fontSize: 10 }}
                     />
                     <ZAxis type="number" dataKey="z" range={[30, 500]} />
                     {/* Below-floor red zone */}
@@ -483,14 +484,14 @@ export default function ProductsSKUs() {
                       stroke="#10b981"
                       strokeDasharray="4 4"
                       strokeWidth={1.5}
-                      label={{ value: 'Target 60%', position: 'insideTopRight', fill: '#10b981', fontSize: 10, fontWeight: 700 }}
+                      label={{ value: t('products.scatter.target60'), position: 'insideTopRight', fill: '#10b981', fontSize: 10, fontWeight: 700 }}
                     />
                     {/* Floor line (25%) */}
                     <ReferenceLine
                       y={FLOOR_MARGIN}
                       stroke="#EF4444"
                       strokeDasharray="5 5"
-                      label={{ value: 'Floor 25%', position: 'insideBottomRight', fill: '#EF4444', fontSize: 10, fontWeight: 700 }}
+                      label={{ value: t('products.scatter.floor25'), position: 'insideBottomRight', fill: '#EF4444', fontSize: 10, fontWeight: 700 }}
                     />
                     <Tooltip
                       cursor={{ strokeDasharray: '3 3' }}
@@ -502,9 +503,9 @@ export default function ProductsSKUs() {
                             <p className="font-bold text-slate-900 mb-1">{d.name}</p>
                             <p className="font-mono text-[10px] text-slate-400 mb-2 pb-2 border-b border-slate-100">{d.article_id}</p>
                             <div className="space-y-1">
-                              <div className="flex justify-between gap-4"><span className="text-slate-500">Revenue</span><span className="font-bold">{formatEUR(d.x)}</span></div>
-                              <div className="flex justify-between gap-4"><span className="text-slate-500">Margin</span><span className={`font-bold ${d.y < FLOOR_MARGIN ? 'text-red-500' : d.y < TARGET_MARGIN ? 'text-amber-600' : 'text-green-600'}`}>{formatPct(d.y)}</span></div>
-                              <div className="flex justify-between gap-4"><span className="text-slate-500">Units</span><span className="font-bold">{d.z}</span></div>
+                              <div className="flex justify-between gap-4"><span className="text-slate-500">{t('products.scatter.tip.revenue')}</span><span className="font-bold">{formatEUR(d.x)}</span></div>
+                              <div className="flex justify-between gap-4"><span className="text-slate-500">{t('products.scatter.tip.margin')}</span><span className={`font-bold ${d.y < FLOOR_MARGIN ? 'text-red-500' : d.y < TARGET_MARGIN ? 'text-amber-600' : 'text-green-600'}`}>{formatPct(d.y)}</span></div>
+                              <div className="flex justify-between gap-4"><span className="text-slate-500">{t('products.scatter.tip.units')}</span><span className="font-bold">{d.z}</span></div>
                             </div>
                           </div>
                         );
@@ -528,10 +529,10 @@ export default function ProductsSKUs() {
                   </ScatterChart>
                 </ResponsiveContainer>
                 {/* Quadrant labels — positioned inside plot area to avoid axis collisions */}
-                <div className="pointer-events-none absolute top-6 left-[70px] text-[10px] font-bold uppercase tracking-wider text-slate-400/70">Niche</div>
-                <div className="pointer-events-none absolute top-6 right-6 text-[10px] font-bold uppercase tracking-wider text-emerald-600/80">⭐ Stars</div>
-                <div className="pointer-events-none absolute bottom-14 left-[70px] text-[10px] font-bold uppercase tracking-wider text-slate-400/70">Review/Drop</div>
-                <div className="pointer-events-none absolute bottom-14 right-6 text-[10px] font-bold uppercase tracking-wider text-red-600/80">Fix or Reprice</div>
+                <div className="pointer-events-none absolute top-6 left-[70px] text-[10px] font-bold uppercase tracking-wider text-slate-400/70">{t('products.scatter.q.niche')}</div>
+                <div className="pointer-events-none absolute top-6 right-6 text-[10px] font-bold uppercase tracking-wider text-emerald-600/80">{t('products.scatter.q.stars')}</div>
+                <div className="pointer-events-none absolute bottom-14 left-[70px] text-[10px] font-bold uppercase tracking-wider text-slate-400/70">{t('products.scatter.q.review')}</div>
+                <div className="pointer-events-none absolute bottom-14 right-6 text-[10px] font-bold uppercase tracking-wider text-red-600/80">{t('products.scatter.q.fix')}</div>
               </div>
             </ChartCard>
           </div>
@@ -547,7 +548,7 @@ export default function ProductsSKUs() {
                     sidebarTab === 'at_risk' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
-                  At Risk
+                  {t('products.sidebar.atRisk')}
                 </button>
                 <button
                   onClick={() => setSidebarTab('declining')}
@@ -555,20 +556,20 @@ export default function ProductsSKUs() {
                     sidebarTab === 'declining' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
-                  Declining Fast
+                  {t('products.sidebar.declining')}
                 </button>
               </div>
 
               {sidebarTab === 'at_risk' ? (
                 <>
                   <div className="mb-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Unrealized Margin</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('products.sidebar.unrealized')}</p>
                     <p className="text-3xl font-bold">{formatEUR(totalAtRisk)}</p>
-                    <p className="text-xs text-slate-500">{atRiskProducts.length} articles below {(TARGET_MARGIN * 100).toFixed(0)}% target</p>
+                    <p className="text-xs text-slate-500">{t('products.sidebar.belowTarget', { n: atRiskProducts.length, pct: (TARGET_MARGIN * 100).toFixed(0) })}</p>
                   </div>
                   <div className="space-y-3 overflow-y-auto flex-1 pr-2 max-h-[340px]">
                     {atRiskProducts.length === 0 && (
-                      <p className="text-xs text-slate-400 italic">No at-risk articles in this filter.</p>
+                      <p className="text-xs text-slate-400 italic">{t('products.sidebar.noAtRisk')}</p>
                     )}
                     {atRiskProducts.map((item) => (
                       <div key={item.article_id} className={`p-3 bg-slate-50 rounded-lg border-l-4 ${severityColor(item._margin)}`}>
@@ -580,7 +581,7 @@ export default function ProductsSKUs() {
                         </div>
                         <p className="text-[11px] text-slate-600 truncate" title={item.description}>{item.description}</p>
                         <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-200/60">
-                          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Impact</span>
+                          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">{t('products.sidebar.impact')}</span>
                           <span className="text-xs font-bold text-red-600">{formatEUR(item._impact)}</span>
                         </div>
                       </div>
@@ -590,13 +591,13 @@ export default function ProductsSKUs() {
               ) : (
                 <>
                   <div className="mb-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Steepest YoY Drops</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t('products.sidebar.steepest')}</p>
                     <p className="text-3xl font-bold">{decliningList.length}</p>
-                    <p className="text-xs text-slate-500">articles with margin erosion</p>
+                    <p className="text-xs text-slate-500">{t('products.sidebar.erosion')}</p>
                   </div>
                   <div className="space-y-3 overflow-y-auto flex-1 pr-2 max-h-[340px]">
                     {decliningList.length === 0 && (
-                      <p className="text-xs text-slate-400 italic">No declining articles in this filter.</p>
+                      <p className="text-xs text-slate-400 italic">{t('products.sidebar.noDeclining')}</p>
                     )}
                     {decliningList.map((item) => {
                       const isCritical = item.margin_2024 < 0.10;
@@ -617,7 +618,7 @@ export default function ProductsSKUs() {
                             <span className="text-[10px] font-semibold text-slate-500">{formatEUR(item.revenue_eur)}</span>
                           </div>
                           {isCritical && (
-                            <p className="text-[10px] font-bold text-red-700 mt-1 italic">⚠️ Losing on full-cost basis</p>
+                            <p className="text-[10px] font-bold text-red-700 mt-1 italic">{t('products.sidebar.losingFullCost')}</p>
                           )}
                         </div>
                       );
@@ -630,7 +631,7 @@ export default function ProductsSKUs() {
                 to="/pricing"
                 className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 bg-[#c1e8ff]/30 text-[#0393da] text-xs font-bold rounded-lg hover:bg-[#c1e8ff]/50 transition-colors"
               >
-                View Price Recommendations
+                {t('products.sidebar.viewPricing')}
                 <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
               </Link>
             </div>
@@ -639,8 +640,8 @@ export default function ProductsSKUs() {
 
         {/* Row 2 — Product Type Performance */}
         <ChartCard
-          title="Product Type Performance"
-          subtitle="DB II margin by Warenart · sorted by revenue · color = margin health"
+          title={t('products.typePerf.title')}
+          subtitle={t('products.typePerf.subtitle')}
           tooltip={TOOLTIPS.product_type_performance}
           formulaId="db2_margin"
           confidence="verified"
@@ -673,9 +674,9 @@ export default function ProductsSKUs() {
                     return (
                       <div className="px-3 py-2 rounded-lg shadow-lg text-xs" style={{ background: '#fff', border: '1px solid #e5e5e5' }}>
                         <div className="font-bold mb-1">{d.type} <span className="text-slate-400 font-normal">({d.type_en})</span></div>
-                        <div>DB II: <span className="font-semibold">{(d.db2_margin * 100).toFixed(1)}%</span></div>
-                        <div>Revenue: <span className="font-semibold">{formatEUR(d.revenue_eur)}</span></div>
-                        <div>Articles: <span className="font-semibold">{d.articles}</span> · Orders: <span className="font-semibold">{d.orders.toLocaleString()}</span></div>
+                        <div>{t('products.typePerf.tip.db2')} <span className="font-semibold">{(d.db2_margin * 100).toFixed(1)}%</span></div>
+                        <div>{t('products.typePerf.tip.revenue')} <span className="font-semibold">{formatEUR(d.revenue_eur)}</span></div>
+                        <div>{t('products.typePerf.tip.articles')} <span className="font-semibold">{d.articles}</span> · {t('products.typePerf.tip.orders')} <span className="font-semibold">{d.orders.toLocaleString()}</span></div>
                       </div>
                     );
                   }}
@@ -701,7 +702,7 @@ export default function ProductsSKUs() {
               <div key={p.type} className="flex justify-between text-[10px]">
                 <span className="font-semibold text-slate-600">{p.type}</span>
                 <span className="text-slate-500">
-                  {p.articles} articles · {p.orders.toLocaleString()} orders · <span className="font-semibold text-slate-700">{formatEUR(p.revenue_eur)}</span>
+                  {t('products.typePerf.row', { articles: p.articles, orders: p.orders.toLocaleString() })} <span className="font-semibold text-slate-700">{formatEUR(p.revenue_eur)}</span>
                 </span>
               </div>
             ))}
@@ -715,18 +716,18 @@ export default function ProductsSKUs() {
           style={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}
         >
           <div className="p-6 pb-4">
-            <h3 className="font-bold text-base" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>Commodity Group Scorecard</h3>
-            <p className="text-xs mt-0.5" style={{ color: '#737373' }}>Click a row to filter the page to that group</p>
+            <h3 className="font-bold text-base" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>{t('products.scorecard.title')}</h3>
+            <p className="text-xs mt-0.5" style={{ color: '#737373' }}>{t('products.scorecard.subtitle')}</p>
           </div>
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="text-[10px] font-bold uppercase tracking-widest" style={{ background: 'rgba(248,250,252,0.5)', color: '#737373' }}>
-                <th className="px-6 py-3">Group</th>
-                <th className="px-6 py-3 text-right">Revenue</th>
-                <th className="px-6 py-3 text-right">DB II</th>
-                <th className="px-6 py-3 text-right">Win Rate</th>
-                <th className="px-6 py-3 text-right">SKUs</th>
-                <th className="px-6 py-3 text-right">Orders</th>
+                <th className="px-6 py-3">{t('products.scorecard.col.group')}</th>
+                <th className="px-6 py-3 text-right">{t('products.scorecard.col.revenue')}</th>
+                <th className="px-6 py-3 text-right">{t('products.scorecard.col.db2')}</th>
+                <th className="px-6 py-3 text-right">{t('products.scorecard.col.winRate')}</th>
+                <th className="px-6 py-3 text-right">{t('products.scorecard.col.skus')}</th>
+                <th className="px-6 py-3 text-right">{t('products.scorecard.col.orders')}</th>
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -774,12 +775,11 @@ export default function ProductsSKUs() {
           {/* Single-customer concentration callout */}
           {singleCustomerCount > 0 && tablePreset === 'portfolio' && (
             <div className="mb-3 px-4 py-2 bg-amber-50 border-l-4 border-amber-400 text-xs rounded-r-lg">
-              <span className="font-bold text-amber-800">⚠ {singleCustomerCount} SKU{singleCustomerCount !== 1 ? 's' : ''}</span>
-              <span className="text-amber-700"> sold to only 1 customer — concentration risk.</span>
+              <span className="font-bold text-amber-800">{t('products.singleCust.warning', { n: singleCustomerCount, s: singleCustomerCount !== 1 ? 's' : '' })}</span>
             </div>
           )}
           <DataTable
-            title="Product Performance Details"
+            title={t('products.table.title')}
             columns={productColumns}
             data={filteredProducts}
             rowKey="ArticleID"
@@ -793,9 +793,9 @@ export default function ProductsSKUs() {
             headerRight={
               <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
                 {[
-                  { key: 'margin', label: 'Margin' },
-                  { key: 'competitiveness', label: 'Competitiveness' },
-                  { key: 'portfolio', label: 'Portfolio' },
+                  { key: 'margin', label: t('products.preset.margin') },
+                  { key: 'competitiveness', label: t('products.preset.competitiveness') },
+                  { key: 'portfolio', label: t('products.preset.portfolio') },
                 ].map((p) => (
                   <button
                     key={p.key}

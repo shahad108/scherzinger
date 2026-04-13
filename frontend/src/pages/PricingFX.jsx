@@ -15,6 +15,7 @@ import analysis from '../data/pricing_analysis.json';
 import governance from '../data/price_governance.json';
 import { formatEUR, formatPct } from '../utils/formatters';
 import { useUI } from '../context/UIContext';
+import { useLanguage } from '../context/LanguageContext';
 import PhaseNotice from '../components/shared/PhaseNotice';
 import { handleChartContainerClick, handlePieClick } from '../utils/pageContextResolver';
 import { track } from '../utils/tracker';
@@ -261,6 +262,7 @@ function heatColor(value) {
    PRICING COMMAND CENTER (kept, empty-state aware)
    ══════════════════════════════════════════════════════════════════════════ */
 function PricingCommandCenter({ commodityFilter = 'All' }) {
+  const { t } = useLanguage();
   const { selectItem } = useUI();
   const enriched = useMemo(() => {
     const all = buildEnrichedRecommendations();
@@ -282,8 +284,8 @@ function PricingCommandCenter({ commodityFilter = 'All' }) {
       <motion.div id="pricing-command-center" variants={cardVariants} initial="hidden" animate="visible"
         className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-6 py-8 text-center">
-          <h3 className="text-base font-bold" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>Pricing Command Center</h3>
-          <p className="text-sm text-slate-400 mt-2">No enriched SKU-level recommendations available.</p>
+          <h3 className="text-base font-bold" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>{t('pricing.section.commandCenter')}</h3>
+          <p className="text-sm text-slate-400 mt-2">{t('pricing.section.commandCenter.empty')}</p>
         </div>
       </motion.div>
     );
@@ -303,12 +305,12 @@ function PricingCommandCenter({ commodityFilter = 'All' }) {
       <div className="px-6 pt-5 pb-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h3 className="text-base font-bold" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>Pricing Command Center</h3>
+            <h3 className="text-base font-bold" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>{t('pricing.section.commandCenter')}</h3>
             <div className="flex items-center gap-4 mt-2 text-[11px]">
-              <span className="flex items-center gap-1 text-red-600 font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-red-500" /> {summary.criticalCount} Critical</span>
-              <span className="flex items-center gap-1 text-amber-600 font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> {summary.highCount} High</span>
-              <span className="text-slate-400">Avg Risk: <span className="font-semibold text-slate-600">{summary.avgRisk}</span></span>
-              <span className="text-slate-400">At Risk: <span className="font-semibold text-slate-600">{formatEUR(summary.revenueAtRisk)}</span></span>
+              <span className="flex items-center gap-1 text-red-600 font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-red-500" /> {summary.criticalCount} {t('sku.priority.critical')}</span>
+              <span className="flex items-center gap-1 text-amber-600 font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> {summary.highCount} {t('sku.priority.high')}</span>
+              <span className="text-slate-400">{t('pricing.label.avgRisk')} <span className="font-semibold text-slate-600">{summary.avgRisk}</span></span>
+              <span className="text-slate-400">{t('pricing.label.atRisk')} <span className="font-semibold text-slate-600">{formatEUR(summary.revenueAtRisk)}</span></span>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -331,7 +333,7 @@ function PricingCommandCenter({ commodityFilter = 'All' }) {
             </div>
             <div className="relative overflow-hidden rounded-lg px-3 py-1.5 ml-1" style={{ background: '#ffffff', boxShadow: '0 2px 8px rgba(26,26,46,0.06)', border: '1px solid #e5e5e5' }}>
               <div className="absolute top-0 left-0 w-full h-0.5" style={{ background: 'linear-gradient(to right, #22c55e, #86efac)' }} />
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Recovery</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{t('pricing.label.recovery')}</p>
               <p className="text-sm font-bold" style={{ color: '#1a1a2e' }}>{formatEUR(summary.totalRecovery)}</p>
             </div>
           </div>
@@ -342,13 +344,13 @@ function PricingCommandCenter({ commodityFilter = 'All' }) {
           <thead>
             <tr style={{ background: '#fafafa', borderTop: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0' }}>
               <th className="px-3 py-2.5 w-6" />
-              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Article ID</th>
-              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Description</th>
-              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-right">Revenue</th>
-              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 w-32">Margin</th>
-              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Risk</th>
-              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-right">Recovery</th>
-              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-center">Priority</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{t('pricing.col.articleId')}</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{t('pricing.col.description')}</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-right">{t('pricing.col.revenue')}</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 w-32">{t('pricing.col.margin')}</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{t('sku.risk')}</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-right">{t('pricing.col.recovery')}</th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 text-center">{t('pricing.col.priority')}</th>
             </tr>
           </thead>
           <tbody className="text-sm">
@@ -754,6 +756,7 @@ const COMMODITY_FILTERS = ['All', 'BKAES', 'BKAGG', 'BKAIZ', 'SOPU'];
    ══════════════════════════════════════════════════════════════════════════ */
 export default function PricingFX() {
   const { selectItem, selectedItem } = useUI();
+  const { t } = useLanguage();
 
   /* State */
   const [pageTab, setPageTab] = useState('winrate');
@@ -816,7 +819,7 @@ export default function PricingFX() {
 
   return (
     <>
-      <Header title="Pricing & Quotes" />
+      <Header title={t('pricing.title')} />
       <div className="p-8 space-y-6 max-w-[1440px] mx-auto">
 
         {/* ══════════════════════════════════════════════════════════════
@@ -838,7 +841,7 @@ export default function PricingFX() {
             <label className="flex items-center gap-2 cursor-pointer text-xs">
               <input type="checkbox" checked={excludeAN} onChange={e => setExcludeAN(e.target.checked)}
                 className="rounded border-slate-300 text-[#0393da] focus:ring-[#0393da]" />
-              <span className="font-medium text-slate-600">Exclude inquiry-only (AN)</span>
+              <span className="font-medium text-slate-600">{t('pricing.excludeAN')}</span>
               {excludeAN && <span className="text-[10px] text-slate-400">138 quotes / {formatEUR(1168322)} excluded</span>}
             </label>
           </div>
@@ -851,7 +854,7 @@ export default function PricingFX() {
           {/* KPI 1: Win Rate */}
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Win Rate"
+              label={t('pricing.kpi.winRate')}
               value={`${((overallWinRate?.current || 0.371) * 100).toFixed(1)}%`}
               change={`+${((overallWinRate?.yoy_change || 0.024) * 100).toFixed(1)}pp YoY`}
               changeType="positive"
@@ -865,7 +868,7 @@ export default function PricingFX() {
           {/* KPI 2: Revenue Lost (Pricing-Related) */}
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Revenue Lost (Pricing)"
+              label={t('pricing.kpi.lost')}
               value={formatEUR(pricingRelatedLoss?.total || 971267)}
               change={`PA: ${formatEUR(pricingRelatedLoss?.pa_competitor_cheaper?.revenue || 793893)} + PR: ${formatEUR(pricingRelatedLoss?.pr_price_too_high?.revenue || 177374)}`}
               changeType="negative"
@@ -878,7 +881,7 @@ export default function PricingFX() {
           {/* KPI 3: Open Pipeline */}
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Open Pipeline"
+              label={t('pricing.kpi.pipeline')}
               value={`${formatEUR(pipelineSummary?.open_value || 957800)} open`}
               change={`Expected: ${formatEUR(pipelineSummary?.expected_value || 355343)} (${((pipelineSummary?.win_rate || 0.371) * 100).toFixed(1)}% win rate)`}
               changeType="neutral"
@@ -897,7 +900,7 @@ export default function PricingFX() {
           {/* KPI 4: Price Sensitivity */}
           <motion.div variants={cardVariants}>
             <KPICard
-              label="Price Sensitivity"
+              label={t('pricing.kpi.sensitivity')}
               value={`${((priceSensitivity?.margin_diff || 0.018) * 100).toFixed(1)}%`}
               change={`p=${(priceSensitivity?.p_value || 0.006).toFixed(3)} — ${priceSensitivity?.significant ? 'Statistically significant' : 'Not significant'}`}
               changeType={priceSensitivity?.significant ? 'negative' : 'neutral'}
@@ -929,7 +932,7 @@ export default function PricingFX() {
         <motion.div variants={chartVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-60px' }}
           style={{ background: colors.surface, borderRadius: radius.card, boxShadow: shadows.card, padding: '1.25rem 1.5rem' }}>
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <h3 className="font-bold text-sm" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>Pipeline Funnel</h3>
+            <h3 className="font-bold text-sm" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>{t('pricing.section.pipelineFunnel')}</h3>
             <div className="flex items-center gap-2 text-xs">
               {(pipelineSummary?.stages || []).map((stage, i) => (
                 <React.Fragment key={stage.stage}>
@@ -968,8 +971,8 @@ export default function PricingFX() {
 
             {/* 1.1 — Win Rate Trend by Quarter */}
             <ChartCard
-              title="Win Rate Trend by Quarter"
-              subtitle="Quarterly win rate with BKAES and BKAGG overlays — 2022-Q1 through 2024-Q4"
+              title={t('pricing.chart.winRateTrend.title')}
+              subtitle={t('pricing.chart.winRateTrend.subtitle')}
               confidence="verified"
               headerRight={
                 <div className="flex items-center gap-4 text-xs font-medium">
@@ -1002,7 +1005,7 @@ export default function PricingFX() {
             {/* 1.2 — Two side-by-side: Commodity bars + Margin Band with EMC */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Win Rate by Commodity Group */}
-              <ChartCard title="Win Rate by Commodity Group" subtitle="Overall win rates by product group" confidence="verified">
+              <ChartCard title={t('pricing.chart.winByCommodity.title')} subtitle={t('pricing.chart.winByCommodity.subtitle')} confidence="verified">
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <RechartsBarChart data={commodityWinRateData} layout="vertical" onClick={s => handleChartContainerClick('Commodity Win Rate', selectItem, commodityWinRateData, s)}>
@@ -1021,7 +1024,7 @@ export default function PricingFX() {
               </ChartCard>
 
               {/* Win Rate by Margin Band + EMC */}
-              <ChartCard title="Win Rate by Margin Band + EMC" subtitle="Win rate and Expected Margin Contribution by pricing band"
+              <ChartCard title={t('pricing.chart.winByBand.title')} subtitle={t('pricing.chart.winByBand.subtitle')}
                 confidence="verified"
                 headerRight={
                   <div className="flex items-center gap-3 text-xs font-medium">
@@ -1050,7 +1053,7 @@ export default function PricingFX() {
             </div>
 
             {/* 1.3 — Win Rate Seasonality */}
-            <ChartCard title="Win Rate Seasonality" subtitle="Monthly win rate patterns — seasonal pricing aggression opportunities" confidence="derived">
+            <ChartCard title={t('pricing.chart.seasonality.title')} subtitle={t('pricing.chart.seasonality.subtitle')} confidence="derived">
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsBarChart data={seasonalWinRateData} onClick={s => handleChartContainerClick('Seasonal Win Rate', selectItem, seasonalWinRateData, s)}>
@@ -1072,7 +1075,7 @@ export default function PricingFX() {
             </ChartCard>
 
             {/* 1.4 — Commodity × Margin Band Heatmap */}
-            <ChartCard title="Commodity Group × Margin Band Heatmap" subtitle="Win rate % by group and margin band — reveals group-specific pricing strategies" confidence="derived">
+            <ChartCard title={t('pricing.chart.heatmap.title')} subtitle={t('pricing.chart.heatmap.subtitle')} confidence="derived">
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
@@ -1109,7 +1112,7 @@ export default function PricingFX() {
             </ChartCard>
 
             {/* 1.5 — Quote Response Time vs Win Rate */}
-            <ChartCard title="Quote Response Time vs Win Rate" subtitle="Faster responses correlate with higher win rates — a process fix worth more than pricing changes" confidence="derived">
+            <ChartCard title={t('pricing.chart.responseTime.title')} subtitle={t('pricing.chart.responseTime.subtitle')} confidence="derived">
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsBarChart data={responseTimeData} onClick={s => handleChartContainerClick('Response Time', selectItem, responseTimeData, s)}>
@@ -1139,7 +1142,7 @@ export default function PricingFX() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="rounded-xl overflow-hidden" style={{ background: '#ffffff', boxShadow: '0 2px 12px rgba(26,26,46,0.06)' }}>
                 <div className="px-6 pt-5 pb-2">
-                  <h3 className="text-base font-bold" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>Revenue Lost by Reason</h3>
+                  <h3 className="text-base font-bold" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>{t('pricing.section.lostByReason')}</h3>
                   <p className="text-[11px] text-slate-400 mt-0.5">Grouped by pricing / process / market{excludeAN ? ' (AN excluded)' : ''}</p>
                 </div>
                 <div className="flex items-center justify-center px-4 py-4">
@@ -1154,7 +1157,7 @@ export default function PricingFX() {
                         </Pie>
                         <Tooltip content={<CustomTooltip formatter={v => formatEUR(v)} />} />
                         <text x="50%" y="46%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 18, fontWeight: 700, fill: '#1a1a2e' }}>{formatEUR(filteredTotalLost)}</text>
-                        <text x="50%" y="58%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 10, fill: '#737373' }}>Total Lost</text>
+                        <text x="50%" y="58%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 10, fill: '#737373' }}>{t('pricing.label.totalLost')}</text>
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -1181,7 +1184,7 @@ export default function PricingFX() {
               </div>
               <div className="lg:col-span-2">
                 <DataTable
-                  title="Rejection Codes Detail"
+                  title={t('pricing.chart.rejection.title')}
                   columns={rejectionColumns}
                   data={groupedRejections}
                   rowKey="code"
@@ -1193,7 +1196,7 @@ export default function PricingFX() {
             </div>
 
             {/* 2.2 — Lost Revenue by Deal Size */}
-            <ChartCard title="Lost Revenue by Deal Size" subtitle="Concentration of losses in large deals" confidence="derived"
+            <ChartCard title={t('pricing.chart.lostBySize.title')} subtitle={t('pricing.chart.lostBySize.subtitle')} confidence="derived"
               headerRight={
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 rounded-lg text-[11px] font-semibold text-red-700">
                   37 lost quotes &gt;€50K = €4.37M (48% of all lost revenue)
@@ -1222,7 +1225,7 @@ export default function PricingFX() {
 
             {/* 2.3 — Customer Win Rate Table */}
             <DataTable
-              title="Customer Win Rate Analysis (Top 15 by Lost Revenue)"
+              title={t('pricing.chart.customerWin.title')}
               columns={customerColumns}
               data={customerWinRates || []}
               rowKey="customer"
@@ -1236,7 +1239,7 @@ export default function PricingFX() {
             </div>
 
             {/* 2.4 — Won vs Lost Margin Comparison */}
-            <ChartCard title="Won vs Lost: Average Margin Comparison" subtitle="Side-by-side comparison of average margins"
+            <ChartCard title={t('pricing.chart.wonVsLost.title')} subtitle={t('pricing.chart.wonVsLost.subtitle')}
               confidence="verified"
               headerRight={
                 <div className="flex items-center gap-4 text-xs font-medium">
@@ -1273,7 +1276,7 @@ export default function PricingFX() {
 
             {/* 3.1 — Price Governance Rules */}
             <DataTable
-              title="Price Governance Rules"
+              title={t('pricing.section.governance')}
               columns={govRuleColumns}
               data={governance.price_rules || []}
               rowKey="rule"
@@ -1283,7 +1286,7 @@ export default function PricingFX() {
             />
 
             {/* 3.2 — Discount Distribution */}
-            <ChartCard title="Discount Distribution" subtitle="Percentage of quotes by discount level off list price" confidence="derived">
+            <ChartCard title={t('pricing.chart.discount.title')} subtitle={t('pricing.chart.discount.subtitle')} confidence="derived">
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsBarChart data={discountChartData} onClick={s => handleChartContainerClick('Discount Distribution', selectItem, discountChartData, s)}>
@@ -1305,7 +1308,7 @@ export default function PricingFX() {
             </ChartCard>
 
             {/* 3.3 — Price History (enhanced with margin overlay) */}
-            <ChartCard title="Price History (2022–2025)" subtitle="List price, quoted price, discount % with margin overlay"
+            <ChartCard title={t('pricing.chart.priceHistory.title')} subtitle={t('pricing.chart.priceHistory.subtitle')}
               confidence="derived"
               headerRight={
                 <div className="flex items-center gap-4 text-xs font-medium">
@@ -1345,15 +1348,15 @@ export default function PricingFX() {
             <SkuRecommendationsSection enrichedAll={enrichedAll} recSummary={recSummary} enrichedRecTableData={enrichedRecTableData} selectedItem={selectedItem} selectItem={selectItem} />
 
             {/* 3.6 — Price Elasticity by Product Type */}
-            <ChartCard title="Price Elasticity by Product Type" subtitle="Margin, win rate, and pricing power by product category" confidence="derived">
+            <ChartCard title={t('pricing.chart.elasticity.title')} subtitle={t('pricing.chart.elasticity.subtitle')} confidence="derived">
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-200">
-                      <th className="text-left py-2.5 px-3 font-semibold text-slate-600">Product Type</th>
-                      <th className="text-right py-2.5 px-3 font-semibold text-slate-600">Avg Margin</th>
-                      <th className="text-right py-2.5 px-3 font-semibold text-slate-600">Win Rate</th>
-                      <th className="text-center py-2.5 px-3 font-semibold text-slate-600">Pricing Power</th>
+                      <th className="text-left py-2.5 px-3 font-semibold text-slate-600">{t('pricing.col.productType')}</th>
+                      <th className="text-right py-2.5 px-3 font-semibold text-slate-600">{t('pricing.col.avgMargin')}</th>
+                      <th className="text-right py-2.5 px-3 font-semibold text-slate-600">{t('pricing.col.winRate')}</th>
+                      <th className="text-center py-2.5 px-3 font-semibold text-slate-600">{t('pricing.col.pricingPower')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1393,6 +1396,7 @@ export default function PricingFX() {
    PERSISTENT LOSSES ALERT (2.5)
    ══════════════════════════════════════════════════════════════════════════ */
 function PersistentLossesAlert() {
+  const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
   const data = persistentLosses || { total_pairs: 0, top_10: [] };
 
@@ -1405,7 +1409,7 @@ function PersistentLossesAlert() {
           <div className="flex items-center gap-3">
             <AlertTriangle size={18} className="text-red-500" />
             <div>
-              <h3 className="font-bold text-sm text-red-800">Persistent Losses Alert</h3>
+              <h3 className="font-bold text-sm text-red-800">{t('pricing.section.persistent')}</h3>
               <p className="text-[11px] text-red-600 mt-0.5">{data.total_pairs} customer-product pairs quoted multiple times with 0% win rate. Review pricing or stop quoting.</p>
             </div>
           </div>
@@ -1419,10 +1423,10 @@ function PersistentLossesAlert() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-red-200">
-                  <th className="text-left py-2 font-semibold text-red-700">Customer</th>
-                  <th className="text-left py-2 font-semibold text-red-700">Article</th>
-                  <th className="text-right py-2 font-semibold text-red-700">Quotes</th>
-                  <th className="text-right py-2 font-semibold text-red-700">Lost Revenue</th>
+                  <th className="text-left py-2 font-semibold text-red-700">{t('pricing.col.customer')}</th>
+                  <th className="text-left py-2 font-semibold text-red-700">{t('pricing.col.article')}</th>
+                  <th className="text-right py-2 font-semibold text-red-700">{t('pricing.col.quotes')}</th>
+                  <th className="text-right py-2 font-semibold text-red-700">{t('pricing.col.lostRevenue')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1447,6 +1451,7 @@ function PersistentLossesAlert() {
    MARGIN GAP TREND (3.4) — quarterly with annual toggle
    ══════════════════════════════════════════════════════════════════════════ */
 function MarginGapTrend() {
+  const { t } = useLanguage();
   const { selectItem } = useUI();
   const [viewMode, setViewMode] = useState('quarterly');
 
@@ -1454,7 +1459,7 @@ function MarginGapTrend() {
   const xKey = viewMode === 'quarterly' ? 'quarter' : 'year';
 
   return (
-    <ChartCard title="Margin Gap Trend" subtitle="Quoted vs actual margin with gap — canonical pricing accuracy view"
+    <ChartCard title={t('pricing.chart.gapTrend.title')} subtitle={t('pricing.chart.gapTrend.subtitle')}
       confidence="derived"
       headerRight={
         <div className="flex items-center gap-3">
@@ -1500,42 +1505,43 @@ function MarginGapTrend() {
    SKU RECOMMENDATIONS SECTION (3.5)
    ══════════════════════════════════════════════════════════════════════════ */
 function SkuRecommendationsSection({ enrichedAll, recSummary, enrichedRecTableData, selectedItem, selectItem }) {
+  const { t } = useLanguage();
   return (
     <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true }}>
       <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6" variants={containerVariants}>
         <motion.div variants={cardVariants}>
-          <KPICard label="Total Recommendations" value={recSummary.reactiveCount + recSummary.proactiveCount}
+          <KPICard label={t('pricing.kpi.totalRecs')} value={recSummary.reactiveCount + recSummary.proactiveCount}
             change={`${recSummary.reactiveCount} reactive, ${recSummary.proactiveCount} proactive`} changeType="neutral" confidence="derived"
             bottomContent={<MiniWave color="#0393da" />} />
         </motion.div>
         <motion.div variants={cardVariants}>
-          <KPICard label="Critical Count" value={recSummary.criticalCount}
+          <KPICard label={t('pricing.kpi.critical')} value={recSummary.criticalCount}
             change={`${recSummary.highCount} high priority`} changeType={recSummary.criticalCount > 0 ? 'negative' : 'neutral'} confidence="derived"
             bottomContent={<MiniProgress value={recSummary.criticalCount} max={Math.max(recSummary.reactiveCount + recSummary.proactiveCount, 1)} color="#EF4444" />} />
         </motion.div>
         <motion.div variants={cardVariants}>
-          <KPICard label="Avg Risk Score" value={recSummary.avgRisk}
+          <KPICard label={t('pricing.kpi.avgRisk')} value={recSummary.avgRisk}
             change={recSummary.avgRisk >= 70 ? 'Critical range' : recSummary.avgRisk >= 40 ? 'Elevated range' : 'Acceptable range'}
             changeType={recSummary.avgRisk >= 40 ? 'negative' : 'positive'} confidence="derived"
             bottomContent={<MiniProgress value={recSummary.avgRisk} color={recSummary.avgRisk >= 70 ? '#EF4444' : recSummary.avgRisk >= 40 ? '#F59E0B' : '#10b981'} />} />
         </motion.div>
         <motion.div variants={cardVariants}>
-          <KPICard label="Revenue at Risk" value={formatEUR(recSummary.revenueAtRisk)}
+          <KPICard label={t('pricing.kpi.revAtRisk')} value={formatEUR(recSummary.revenueAtRisk)}
             change="From reactive recommendations" changeType={recSummary.revenueAtRisk > 0 ? 'negative' : 'neutral'} confidence="derived"
             bottomContent={<MiniWave color="#EF4444" />} />
         </motion.div>
       </motion.div>
 
       {enrichedRecTableData.length > 0 ? (
-        <DataTable title="Top SKU Recommendations (by Risk Score)" columns={enrichedRecColumns}
+        <DataTable title={t('pricing.section.topRecs')} columns={enrichedRecColumns}
           data={enrichedRecTableData} rowKey="article_id" confidence="derived"
           selectedRowId={selectedItem?.id}
           onRowClick={row => selectItem({ type: 'article', id: row.article_id || row.sku, label: row.description, data: row })} />
       ) : (
         <motion.div variants={cardVariants} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-8 text-center">
-            <h3 className="text-base font-bold" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>SKU Recommendations</h3>
-            <p className="text-sm text-slate-400 mt-2">No enriched SKU-level recommendations available.</p>
+            <h3 className="text-base font-bold" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>{t('pricing.section.skuRecs')}</h3>
+            <p className="text-sm text-slate-400 mt-2">{t('pricing.section.commandCenter.empty')}</p>
           </div>
         </motion.div>
       )}

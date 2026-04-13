@@ -23,6 +23,7 @@ import DataTable from '../components/shared/DataTable';
 import PhaseNotice from '../components/shared/PhaseNotice';
 import MeasuredChartContainer from '../components/MeasuredChartContainer';
 import { useUI } from '../context/UIContext';
+import { useLanguage } from '../context/LanguageContext';
 import { handlePieClick } from '../utils/pageContextResolver';
 import data from '../data/dashboard_data.json';
 import forecastingData from '../data/forecasting.json';
@@ -87,37 +88,38 @@ const marginTrendFor = (tier) => {
 const revenueAtRisk = (customersData.customers || [])
   .filter((c) => c.risk_tier === 'high' || c.risk_tier === 'critical')
   .reduce((s, c) => s + (c.total_revenue_eur || 0), 0);
-const topCustomerColumns = [
-  { key: 'name', label: 'Customer' },
-  { key: 'revenue_eur', label: 'Revenue', align: 'right', render: (v) => formatEUR(v) },
-  { key: 'db2_margin_avg', label: 'Avg Margin', align: 'right', render: (v) => v != null ? `${(v * 100).toFixed(1)}%` : '—' },
+const buildTopCustomerColumns = (t) => [
+  { key: 'name', label: t('dashboard.col.customer') },
+  { key: 'revenue_eur', label: t('dashboard.col.revenue'), align: 'right', render: (v) => formatEUR(v) },
+  { key: 'db2_margin_avg', label: t('dashboard.col.avgMargin'), align: 'right', render: (v) => v != null ? `${(v * 100).toFixed(1)}%` : '—' },
   {
     key: 'trend',
-    label: 'Trend',
+    label: t('dashboard.col.trend'),
     align: 'center',
     render: (_v, row) => {
-      const t = marginTrendFor(row.risk_tier);
-      return <span style={{ color: t.color, fontWeight: 700, fontSize: 14 }}>{t.arrow}</span>;
+      const tr = marginTrendFor(row.risk_tier);
+      return <span style={{ color: tr.color, fontWeight: 700, fontSize: 14 }}>{tr.arrow}</span>;
     },
   },
   {
     key: 'risk_tier',
-    label: 'Risk',
+    label: t('dashboard.col.risk'),
     render: (v) => {
       const tierColors = { low: '#10B981', medium: '#F59E0B', high: '#EF4444', critical: '#991B1B' };
+      const tierLabel = v ? t(`dashboard.tier.${v}`) : '—';
       return (
         <span
           className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
           style={{ background: `${tierColors[v] || '#94A3B8'}15`, color: tierColors[v] || '#94A3B8' }}
         >
-          {v || '—'}
+          {tierLabel}
         </span>
       );
     },
   },
   {
     key: 'revenue_at_risk',
-    label: 'At Risk',
+    label: t('dashboard.col.atRisk'),
     align: 'right',
     render: (_v, row) => (row.risk_tier === 'high' || row.risk_tier === 'critical')
       ? <span style={{ color: '#EF4444', fontWeight: 600 }}>{formatEUR(row.revenue_eur)}</span>
@@ -156,214 +158,216 @@ const commodityMarginMap = Object.fromEntries(
   data.commodity_group_revenue.map((c) => [c.commodity_group, c.avg_db2_margin])
 );
 
-function generateInsights() {
+function generateInsights(t) {
   const insights = [];
 
-  // 1. Margin Erosion
   const marginDecline = annual2024 && annual2025 ? (annual2025.avg_db2_margin - annual2024.avg_db2_margin) * 100 : 0;
-  // Revenue by year for chart
   const revByYear = data.annual_summary.map((y) => ({ name: `FY${y.Year}`, value: y.revenue_eur, margin: +(y.avg_db2_margin * 100).toFixed(1) }));
 
   insights.push({
     id: 'margin',
-    type: 'Margin & FX Alert',
+    type: t('dashboard.insight.margin.type'),
     badgeColor: 'red',
     icon: AlertCircle,
     severity: Math.abs(marginDecline) > 1 ? 85 : 60,
     summary: (
       <>
-        <strong style={{ color: colors.critical, fontWeight: 700 }}>DB II margin at {(annual2025?.avg_db2_margin * 100).toFixed(1)}%</strong>, declining {Math.abs(marginDecline).toFixed(1)}pp YoY. Sustained erosion from 63.6% (2022) to 60.6% (2025).
+        <strong style={{ color: colors.critical, fontWeight: 700 }}>{t('dashboard.insight.margin.summaryStrong', { curr: (annual2025?.avg_db2_margin * 100).toFixed(1) })}</strong>{t('dashboard.insight.margin.summaryRest', { pp: Math.abs(marginDecline).toFixed(1) })}
       </>
     ),
     detail: {
-      title: `Margin Erosion — ${Math.abs(marginDecline).toFixed(1)}pp YoY Decline`,
-      subtitle: `DB II margin declined from 63.6% (FY22) to 60.6% (FY25). Cost inflation outpacing price adjustments.`,
+      title: t('dashboard.insight.margin.title', { pp: Math.abs(marginDecline).toFixed(1) }),
+      subtitle: t('dashboard.insight.margin.subtitle'),
       metrics: [
-        { label: 'Current Margin', value: `${(annual2025?.avg_db2_margin * 100).toFixed(1)}%`, color: colors.critical },
-        { label: 'YoY Change', value: `${marginDecline.toFixed(1)}pp`, color: '#d97706' },
-        { label: '4-Year Decline', value: '−3.0pp', change: '63.6% → 60.6%', color: colors.critical },
+        { label: t('dashboard.insight.margin.metric.curr'), value: `${(annual2025?.avg_db2_margin * 100).toFixed(1)}%`, color: colors.critical },
+        { label: t('dashboard.insight.margin.metric.yoy'), value: `${marginDecline.toFixed(1)}pp`, color: '#d97706' },
+        { label: t('dashboard.insight.margin.metric.4yr'), value: '−3.0pp', change: '63.6% → 60.6%', color: colors.critical },
       ],
-      chartTitle: 'Annual Revenue & Margin Progression',
+      chartTitle: t('dashboard.insight.margin.chartTitle'),
       chartData: revByYear,
       barColor: colors.primary,
       actions: [
-        'Review pricing strategy across all commodity groups — margins declining consistently',
-        'Focus on high-margin groups (BKAES 71%, BKAGG 68%) to offset weaker segments',
-        'Evaluate cost-pass-through mechanisms for raw material increases',
-        'Set margin floor alerts at 55% to prevent further erosion',
-        'Schedule quarterly pricing reviews with commodity group managers',
+        t('dashboard.insight.margin.action.1'),
+        t('dashboard.insight.margin.action.2'),
+        t('dashboard.insight.margin.action.3'),
+        t('dashboard.insight.margin.action.4'),
+        t('dashboard.insight.margin.action.5'),
       ],
     },
   });
 
-  // 2. High-Risk Customers
   const highRiskCount = churnHigh.count;
   const criticalCount = highRiskItems.filter(c => c.risk_level === 'Critical').reduce((s, c) => s + c.count, 0);
+  const ltvM = (churnHigh.total_ltv / 1000000).toFixed(2);
   insights.push({
     id: 'customers',
-    type: 'Customer Churn Risk',
+    type: t('dashboard.insight.customers.type'),
     badgeColor: 'orange',
     icon: UserMinus,
     severity: highRiskCount > 30 ? 75 : 50,
     summary: (
       <>
-        <strong style={{ fontWeight: 700 }}>{highRiskCount} High-Risk Customers</strong> flagged by ML model. {criticalCount} critical churners. LTV at risk: €{(churnHigh.total_ltv / 1000000).toFixed(2)}M.
+        <strong style={{ fontWeight: 700 }}>{t('dashboard.insight.customers.summaryStrong', { n: highRiskCount })}</strong>{t('dashboard.insight.customers.summaryRest', { crit: criticalCount, ltv: ltvM })}
       </>
     ),
     detail: {
-      title: `${highRiskCount} Customers Likely to Churn — Action Required`,
-      subtitle: `ML churn model flagged ${criticalCount} critical customers. Combined LTV exposure: €${(churnHigh.total_ltv / 1000000).toFixed(2)}M.`,
+      title: t('dashboard.insight.customers.title', { n: highRiskCount }),
+      subtitle: t('dashboard.insight.customers.subtitle', { crit: criticalCount, ltv: ltvM }),
       metrics: [
-        { label: 'High Risk', value: highRiskCount, color: '#ea580c' },
-        { label: 'LTV at Risk', value: `€${(churnHigh.total_ltv / 1000000).toFixed(2)}M`, color: colors.critical },
-        { label: 'Critical Customers', value: criticalCount, change: 'Needs immediate outreach', color: colors.critical },
+        { label: t('dashboard.insight.customers.metric.high'), value: highRiskCount, color: '#ea580c' },
+        { label: t('dashboard.insight.customers.metric.ltv'), value: `€${ltvM}M`, color: colors.critical },
+        { label: t('dashboard.insight.customers.metric.crit'), value: criticalCount, change: t('dashboard.insight.customers.metric.crit.note'), color: colors.critical },
       ],
-      chartTitle: 'Churn Risk by Tier',
-      chartData: riskDistribution.map((r) => ({ name: `${r.tier.charAt(0).toUpperCase() + r.tier.slice(1)}`, value: r.count })),
+      chartTitle: t('dashboard.insight.customers.chartTitle'),
+      chartData: riskDistribution.map((r) => ({ name: t(`dashboard.tier.${r.tier}`), value: r.count })),
       barColor: '#ea580c',
       actions: [
-        `Immediate: Personal outreach to ${criticalCount} critical-risk customers`,
-        'Prepare win-back offers for high-risk segment',
-        'Schedule quarterly business reviews with top accounts by LTV',
-        'Assign dedicated account managers to critical accounts',
-        'Launch satisfaction survey to detect issues before churn',
+        t('dashboard.insight.customers.action.1', { n: criticalCount }),
+        t('dashboard.insight.customers.action.2'),
+        t('dashboard.insight.customers.action.3'),
+        t('dashboard.insight.customers.action.4'),
+        t('dashboard.insight.customers.action.5'),
       ],
     },
   });
 
-  // 3. Revenue Trajectory
   const totalRev = data.annual_summary.reduce((s, y) => s + y.revenue_eur, 0);
   insights.push({
     id: 'revenue',
-    type: 'Revenue Trajectory',
+    type: t('dashboard.insight.revenue.type'),
     badgeColor: 'green',
     icon: TrendingUp,
     severity: 55,
     summary: (
       <>
-        FY25 revenue <strong style={{ fontWeight: 700 }}>{formatEUR(annual2025?.revenue_eur)}</strong> (+{(annual2025?.yoy_growth * 100).toFixed(1)}% YoY). Total 4-year revenue {formatEUR(totalRev)}. Recovery after FY24 dip.
+        {t('dashboard.insight.revenue.summaryPre')}<strong style={{ fontWeight: 700 }}>{formatEUR(annual2025?.revenue_eur)}</strong>{t('dashboard.insight.revenue.summaryPost', { yoy: (annual2025?.yoy_growth * 100).toFixed(1), total: formatEUR(totalRev) })}
       </>
     ),
     detail: {
-      title: 'Revenue Growth Trajectory & Seasonality',
-      subtitle: `FY22: €6.37M → FY23: €6.23M → FY24: €5.79M → FY25: €6.25M. Recovery in FY25.`,
+      title: t('dashboard.insight.revenue.title'),
+      subtitle: t('dashboard.insight.revenue.subtitle'),
       metrics: [
-        { label: 'FY25 Revenue', value: formatEUR(annual2025?.revenue_eur), color: colors.primary },
-        { label: 'YoY Growth', value: `+${(annual2025?.yoy_growth * 100).toFixed(1)}%`, color: '#10b981' },
-        { label: 'Total (4yr)', value: formatEUR(totalRev), color: colors.primary },
+        { label: t('dashboard.insight.revenue.metric.fy25'), value: formatEUR(annual2025?.revenue_eur), color: colors.primary },
+        { label: t('dashboard.insight.revenue.metric.yoy'), value: `+${(annual2025?.yoy_growth * 100).toFixed(1)}%`, color: '#10b981' },
+        { label: t('dashboard.insight.revenue.metric.total'), value: formatEUR(totalRev), color: colors.primary },
       ],
-      chartTitle: 'Annual Revenue & Margin',
+      chartTitle: t('dashboard.insight.revenue.chartTitle'),
       chartData: revByYear,
       barColor: colors.primary,
       actions: [
-        'Protect FY25 recovery — focus on converting pipeline to won deals',
-        'Monitor commodity groups with declining revenue share',
-        'Target new customer acquisition to grow beyond pre-FY24 levels',
-        'Review seasonal patterns for inventory and staffing optimization',
+        t('dashboard.insight.revenue.action.1'),
+        t('dashboard.insight.revenue.action.2'),
+        t('dashboard.insight.revenue.action.3'),
+        t('dashboard.insight.revenue.action.4'),
       ],
     },
   });
 
-  // 4. Forecast Update
   const forecast = forecastingData.overall_forecast;
   const ensembleModel = Array.isArray(forecastingData.model_accuracy) ? forecastingData.model_accuracy.find(m => m.model === 'ensemble') : null;
+  const f3 = (forecast?.forecast_3m?.predicted * 100).toFixed(1);
+  const f12 = (forecast?.forecast_12m?.predicted * 100).toFixed(1);
+  const fCurr = (forecast?.current_margin * 100).toFixed(1);
+  const ensembleMae = ensembleModel?.mae?.toFixed(3) || 'N/A';
   insights.push({
     id: 'forecast',
-    type: 'Forecast Update',
+    type: t('dashboard.insight.forecast.type'),
     badgeColor: 'blue',
     icon: Brain,
     severity: 40,
     summary: (
       <>
-        Margin forecast 3M: <strong style={{ color: colors.primary, fontWeight: 700 }}>{(forecast?.forecast_3m?.predicted * 100).toFixed(1)}%</strong>, 12M: {(forecast?.forecast_12m?.predicted * 100).toFixed(1)}%. Ensemble MAE = {ensembleModel?.mae?.toFixed(3) || 'N/A'}.
+        {t('dashboard.insight.forecast.summaryPre')}<strong style={{ color: colors.primary, fontWeight: 700 }}>{f3}%</strong>{t('dashboard.insight.forecast.summaryPost', { p12: f12, mae: ensembleMae })}
       </>
     ),
     detail: {
-      title: 'Margin Forecast — Full Picture',
-      subtitle: `Current: ${(forecast?.current_margin * 100).toFixed(1)}% | 3M: ${(forecast?.forecast_3m?.predicted * 100).toFixed(1)}% | 12M: ${(forecast?.forecast_12m?.predicted * 100).toFixed(1)}%`,
+      title: t('dashboard.insight.forecast.title'),
+      subtitle: t('dashboard.insight.forecast.subtitle', { curr: fCurr, p3: f3, p12: f12 }),
       metrics: [
-        { label: '3M Forecast', value: `${(forecast?.forecast_3m?.predicted * 100).toFixed(1)}%`, color: colors.primary },
-        { label: '12M Forecast', value: `${(forecast?.forecast_12m?.predicted * 100).toFixed(1)}%`, color: '#10b981' },
-        { label: 'Ensemble Accuracy', value: `${((ensembleModel?.directional_accuracy || 0) * 100).toFixed(0)}%`, change: `MAE: ${((ensembleModel?.mae || 0) * 100).toFixed(2)}pp`, color: colors.primary },
+        { label: t('dashboard.insight.forecast.metric.3m'), value: `${f3}%`, color: colors.primary },
+        { label: t('dashboard.insight.forecast.metric.12m'), value: `${f12}%`, color: '#10b981' },
+        { label: t('dashboard.insight.forecast.metric.acc'), value: `${((ensembleModel?.directional_accuracy || 0) * 100).toFixed(0)}%`, change: t('dashboard.insight.forecast.metric.acc.note', { mae: ((ensembleModel?.mae || 0) * 100).toFixed(2) }), color: colors.primary },
       ],
-      chartTitle: 'Forecast Confidence Range',
+      chartTitle: t('dashboard.insight.forecast.chartTitle'),
       chartData: [
-        { name: 'Current', value: +(forecast?.current_margin * 100).toFixed(1) },
-        { name: '3-Month', value: +(forecast?.forecast_3m?.predicted * 100).toFixed(1) },
-        { name: '6-Month', value: +(forecast?.forecast_6m?.predicted * 100).toFixed(1) },
-        { name: '12-Month', value: +(forecast?.forecast_12m?.predicted * 100).toFixed(1) },
+        { name: t('dashboard.insight.forecast.label.curr'), value: +(forecast?.current_margin * 100).toFixed(1) },
+        { name: t('dashboard.insight.forecast.label.3m'), value: +(forecast?.forecast_3m?.predicted * 100).toFixed(1) },
+        { name: t('dashboard.insight.forecast.label.6m'), value: +(forecast?.forecast_6m?.predicted * 100).toFixed(1) },
+        { name: t('dashboard.insight.forecast.label.12m'), value: +(forecast?.forecast_12m?.predicted * 100).toFixed(1) },
       ],
       barColor: colors.primary,
       actions: [
-        'Margins trending upward — current models predict recovery to 62.5% by 12M',
-        'Monitor ensemble model accuracy monthly — retrain if MAE exceeds 3pp',
-        'Use commodity-level forecasts to prioritize pricing actions',
-        'Confidence intervals widen at 12M — plan for downside scenario at 56%',
+        t('dashboard.insight.forecast.action.1'),
+        t('dashboard.insight.forecast.action.2'),
+        t('dashboard.insight.forecast.action.3'),
+        t('dashboard.insight.forecast.action.4'),
       ],
     },
   });
 
-  // 5. Pipeline & Deals
+  const wonValue = formatEUR(wonStage.value_eur || 0);
+  const totalQuotes = data.quote_summary?.total_quotes || 0;
+  const winRate = ((data.quote_summary?.win_rate || 0) * 100).toFixed(1);
+  const avgDays = pipelineData.avg_days_in_pipeline || 0;
   insights.push({
     id: 'pipeline',
-    type: 'Pipeline & Deals',
+    type: t('dashboard.insight.pipeline.type'),
     badgeColor: 'blue',
     icon: BarChart3,
     severity: 45,
     summary: (
       <>
-        <strong style={{ fontWeight: 700 }}>{formatEUR(wonStage.value_eur || 0)}</strong> won revenue. {data.quote_summary?.total_quotes || 0} quotes processed. Win rate: {((data.quote_summary?.win_rate || 0) * 100).toFixed(1)}%. Avg {pipelineData.avg_days_in_pipeline || 0} days in pipeline.
+        <strong style={{ fontWeight: 700 }}>{wonValue}</strong>{t('dashboard.insight.pipeline.summaryRest', { n: totalQuotes, wr: winRate, days: avgDays })}
       </>
     ),
     detail: {
-      title: 'Sales Pipeline — Deal Flow Analysis',
-      subtitle: `${data.quote_summary?.total_quotes || 0} quotes | ${((data.quote_summary?.win_rate || 0) * 100).toFixed(1)}% win rate | ${pipelineData.avg_days_in_pipeline || 0} day avg cycle`,
+      title: t('dashboard.insight.pipeline.title'),
+      subtitle: t('dashboard.insight.pipeline.subtitle', { n: totalQuotes, wr: winRate, days: avgDays }),
       metrics: [
-        { label: 'Won Revenue', value: formatEUR(wonStage.value_eur || 0), color: colors.primary },
-        { label: 'Win Rate', value: `${((data.quote_summary?.win_rate || 0) * 100).toFixed(1)}%`, color: '#10b981' },
-        { label: 'Avg Cycle', value: `${pipelineData.avg_days_in_pipeline || 0} days`, color: '#d97706' },
+        { label: t('dashboard.insight.pipeline.metric.won'), value: wonValue, color: colors.primary },
+        { label: t('dashboard.insight.pipeline.metric.wr'), value: `${winRate}%`, color: '#10b981' },
+        { label: t('dashboard.insight.pipeline.metric.cycle'), value: t('dashboard.insight.pipeline.metric.cycle.value', { n: avgDays }), color: '#d97706' },
       ],
-      chartTitle: 'Pipeline Value by Stage',
+      chartTitle: t('dashboard.insight.pipeline.chartTitle'),
       chartData: pipelineStages.filter((s) => s.stage !== 'Won' && s.stage !== 'Lost').map((s) => ({ name: s.stage, value: s.value_eur })),
       horizontal: true,
       barColor: colors.primary,
       actions: [
-        `Accelerate ${negotiationStage.count || 0} deals in Negotiation stage — highest conversion probability`,
-        `${quotedStage.count || 0} Quoted deals totaling ${formatEUR(quotedStage.value_eur || 0)} — follow up within 48hrs`,
-        `${pipelineData.avg_days_in_pipeline || 53}-day avg cycle — identify bottleneck stages`,
-        'Focus on improving win rate from 37.1% toward 45% target',
+        t('dashboard.insight.pipeline.action.1', { n: negotiationStage.count || 0 }),
+        t('dashboard.insight.pipeline.action.2', { n: quotedStage.count || 0, value: formatEUR(quotedStage.value_eur || 0) }),
+        t('dashboard.insight.pipeline.action.3', { n: pipelineData.avg_days_in_pipeline || 53 }),
+        t('dashboard.insight.pipeline.action.4'),
       ],
     },
   });
 
-  // 6. Cost Regime
   insights.push({
     id: 'cost',
-    type: 'Cost Plateau Detected',
+    type: t('dashboard.insight.cost.type'),
     badgeColor: 'amber',
     icon: Package,
     severity: 40,
     summary: (
       <>
-        Cost inflation <strong style={{ fontWeight: 700 }}>plateaued</strong> in 2025 after +12-13%/yr growth (2022-24). Material costs stabilizing but labor costs still rising.
+        {t('dashboard.insight.cost.summaryPre')}<strong style={{ fontWeight: 700 }}>{t('dashboard.insight.cost.summaryStrong')}</strong>{t('dashboard.insight.cost.summaryRest')}
       </>
     ),
     detail: {
-      title: 'Cost Regime Shift — Inflation Plateau',
-      subtitle: 'After 2 years of 12-13% annual cost growth, COGS increases have flattened in 2024-25.',
+      title: t('dashboard.insight.cost.title'),
+      subtitle: t('dashboard.insight.cost.subtitle'),
       metrics: [
-        { label: 'Cost Trend', value: 'Plateau', color: '#0393da' },
-        { label: '2022-24 Growth', value: '+12-13%/yr', color: '#d97706' },
-        { label: '2025 Trend', value: 'Stabilizing', color: '#10b981' },
+        { label: t('dashboard.insight.cost.metric.trend'), value: t('dashboard.insight.cost.metric.trend.value'), color: '#0393da' },
+        { label: t('dashboard.insight.cost.metric.growth'), value: t('dashboard.insight.cost.metric.growth.value'), color: '#d97706' },
+        { label: t('dashboard.insight.cost.metric.2025'), value: t('dashboard.insight.cost.metric.2025.value'), color: '#10b981' },
       ],
-      chartTitle: 'Annual Revenue (cost context)',
+      chartTitle: t('dashboard.insight.cost.chartTitle'),
       chartData: revByYear,
       barColor: '#d97706',
       actions: [
-        'Lock in supplier contracts while costs are stable — before next inflation cycle',
-        'Review material share vs labor share in cost structure',
-        'Renegotiate long-term supply agreements with volume commitments',
-        'Build strategic inventory for critical components at current prices',
+        t('dashboard.insight.cost.action.1'),
+        t('dashboard.insight.cost.action.2'),
+        t('dashboard.insight.cost.action.3'),
+        t('dashboard.insight.cost.action.4'),
       ],
     },
   });
@@ -371,56 +375,59 @@ function generateInsights() {
   return insights.sort((a, b) => b.severity - a.severity);
 }
 
-const insights = generateInsights();
-
-// Dashboard summary rows (clickable, each opens the corresponding insight slide-over)
 const overallForecast = forecastingData?.overall_forecast;
 const forecast3m = overallForecast?.forecast_3m?.predicted;
 const forecast12m = overallForecast?.forecast_12m?.predicted;
-const aiHighlights = [
+
+const buildAiHighlights = (t) => [
   {
     id: 'margin',
     icon: '🔴',
     bg: '#FEF2F2',
     color: '#991B1B',
-    text: `Margin Alert: DB2 declining ${Math.abs(marginChange).toFixed(1)}pp YoY, BKAGG primary driver`,
+    text: t('dashboard.hl.margin', { pp: Math.abs(marginChange).toFixed(1) }),
   },
   {
-    id: 'customers',  // matches insights[].id
+    id: 'customers',
     icon: '🟠',
     bg: '#FFF7ED',
     color: '#9A3412',
-    text: `${highCriticalCount} customers at High/Critical risk — €${(revenueAtRisk / 1000000).toFixed(2)}M revenue exposed`,
+    text: t('dashboard.hl.customers', { n: highCriticalCount, rev: (revenueAtRisk / 1000000).toFixed(2) }),
   },
   {
     id: 'forecast',
     icon: '🔵',
     bg: '#EFF6FF',
     color: '#1E40AF',
-    text: `Margin forecast: ${((forecast3m ?? 0) * 100).toFixed(1)}% (3M) → ${((forecast12m ?? 0) * 100).toFixed(1)}% (12M) · ensemble model recovering`,
+    text: t('dashboard.hl.forecast', { p3: ((forecast3m ?? 0) * 100).toFixed(1), p12: ((forecast12m ?? 0) * 100).toFixed(1) }),
   },
   {
     id: 'pipeline',
     icon: '🟢',
     bg: '#F0FDF4',
     color: '#166534',
-    text: `Win rate recovering: 64.4% in Q4 2024, up from 11.4% in Q3 2023`,
+    text: t('dashboard.hl.pipeline'),
   },
   {
     id: 'cost',
     icon: '🟡',
     bg: '#FFFBEB',
     color: '#92400E',
-    text: `Cost regime plateau — input costs stable after +12-13%/yr (2022-24), pricing power window open`,
+    text: t('dashboard.hl.cost'),
   },
 ];
 
 export default function DashboardOverviewV2() {
   const { selectItem } = useUI();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [activeInsight, setActiveInsight] = useState(null);
   const [timeRange, setTimeRange] = useState('FY');  // FY | QTD | MTD | Custom
   const lastUpdated = 'Dec 31, 2025 · 18:00 CET';
+
+  const insights = useMemo(() => generateInsights(t), [t]);
+  const aiHighlights = useMemo(() => buildAiHighlights(t), [t]);
+  const topCustomerColumns = useMemo(() => buildTopCustomerColumns(t), [t]);
 
   // Derive period-filtered metrics from monthly_revenue (Custom falls back to FY)
   const periodMetrics = useMemo(() => {
@@ -429,9 +436,9 @@ export default function DashboardOverviewV2() {
     const rangeKey = timeRange === 'Custom' ? 'FY' : timeRange;
 
     const slices = {
-      FY:  { current: all2025,          prior: all2024,          label: 'FY 2025',     rangeLabel: 'YoY' },
-      QTD: { current: all2025.slice(-3), prior: all2024.slice(-3), label: 'Q4 2025',    rangeLabel: 'vs Q4 2024' },
-      MTD: { current: all2025.slice(-1), prior: all2024.slice(-1), label: 'Dec 2025',   rangeLabel: 'vs Dec 2024' },
+      FY:  { current: all2025,          prior: all2024,          label: t('dashboard.period.fy', { year: 2025 }),  rangeLabel: t('dashboard.range.yoy') },
+      QTD: { current: all2025.slice(-3), prior: all2024.slice(-3), label: t('dashboard.period.q4', { year: 2025 }), rangeLabel: t('dashboard.range.vsQ4', { year: 2024 }) },
+      MTD: { current: all2025.slice(-1), prior: all2024.slice(-1), label: t('dashboard.period.dec', { year: 2025 }), rangeLabel: t('dashboard.range.vsDec', { year: 2024 }) },
     };
     const { current, prior, label, rangeLabel } = slices[rangeKey];
 
@@ -451,11 +458,11 @@ export default function DashboardOverviewV2() {
     const marginChangePp = (avgMargin - priorMargin) * 100;
 
     return { label, rangeLabel, revenue, avgMargin, revYoyPct, marginChangePp };
-  }, [timeRange]);
+  }, [timeRange, t]);
 
   return (
     <>
-      <Header title="Dashboard" />
+      <Header title={t('dashboard.title')} />
       <motion.div
         className="p-8 max-w-[1600px] mx-auto space-y-8"
         variants={containerVariants}
@@ -464,25 +471,30 @@ export default function DashboardOverviewV2() {
       >
         {/* Global Time-Range Header */}
         <div className="flex items-center justify-between pb-2">
-          <div role="group" aria-label="Time range" className="inline-flex rounded-lg bg-white border border-slate-200 p-1 shadow-sm">
-            {['FY', 'QTD', 'MTD', 'Custom'].map((r) => (
+          <div role="group" aria-label={t('dashboard.range.yoy')} className="inline-flex rounded-lg bg-white border border-slate-200 p-1 shadow-sm">
+            {[
+              { key: 'FY', label: t('dashboard.timeRange.fy') },
+              { key: 'QTD', label: t('dashboard.timeRange.qtd') },
+              { key: 'MTD', label: t('dashboard.timeRange.mtd') },
+              { key: 'Custom', label: t('dashboard.timeRange.custom') },
+            ].map((r) => (
               <button
-                key={r}
-                onClick={() => setTimeRange(r)}
-                aria-pressed={timeRange === r}
+                key={r.key}
+                onClick={() => setTimeRange(r.key)}
+                aria-pressed={timeRange === r.key}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-                  timeRange === r
+                  timeRange === r.key
                     ? 'bg-slate-900 text-white'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                {r}
+                {r.label}
               </button>
             ))}
           </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-500">
             <Clock size={12} />
-            <span>Last updated: {lastUpdated}</span>
+            <span>{t('dashboard.lastUpdated', { date: lastUpdated })}</span>
           </div>
         </div>
         {/* KPI Row */}
@@ -491,7 +503,7 @@ export default function DashboardOverviewV2() {
             <KPICardV2
               formulaId="revenue_total"
               confidence="verified"
-              label={`Revenue ${periodMetrics.label}`}
+              label={t('dashboard.kpi.revenue', { period: periodMetrics.label })}
               value={formatEUR(periodMetrics.revenue)}
               change={`${periodMetrics.revYoyPct >= 0 ? '+' : ''}${periodMetrics.revYoyPct.toFixed(1)}% ${periodMetrics.rangeLabel}`}
               changeType={periodMetrics.revYoyPct >= 0 ? 'positive' : 'warning'}
@@ -518,7 +530,7 @@ export default function DashboardOverviewV2() {
             <KPICardV2
               formulaId="db2_margin"
               confidence="verified"
-              label={`DB II Margin · ${periodMetrics.label}`}
+              label={t('dashboard.kpi.db2Margin', { period: periodMetrics.label })}
               value={`${(periodMetrics.avgMargin * 100).toFixed(1)}`}
               suffix="%"
               change={`${periodMetrics.marginChangePp >= 0 ? '+' : '▼'}${Math.abs(periodMetrics.marginChangePp).toFixed(1)}pp ${periodMetrics.rangeLabel}`}
@@ -537,7 +549,7 @@ export default function DashboardOverviewV2() {
             <KPICardV2
               formulaId="margin_gap"
               confidence="verified"
-              label="Margin Gap"
+              label={t('dashboard.kpi.marginGap')}
               value={currentGapPp.toFixed(1)}
               suffix="pp"
               change={`${gapIsClosing ? '▼' : '▲'}${Math.abs(gapChangePp).toFixed(1)}pp YoY`}
@@ -545,7 +557,11 @@ export default function DashboardOverviewV2() {
               accentGradient={gradients.tertiary}
               bottomContent={
                 <p className="text-[11px] italic" style={{ color: '#737373' }}>
-                  Quoted {((currentGap.avg_quoted_margin ?? 0) * 100).toFixed(1)}% vs Actual {((currentGap.avg_actual_margin ?? 0) * 100).toFixed(1)}% · {gapIsClosing ? 'closing' : 'widening'}
+                  {t('dashboard.kpi.gapBottom', {
+                    quoted: ((currentGap.avg_quoted_margin ?? 0) * 100).toFixed(1),
+                    actual: ((currentGap.avg_actual_margin ?? 0) * 100).toFixed(1),
+                    state: gapIsClosing ? t('dashboard.gap.closing') : t('dashboard.gap.widening'),
+                  })}
                 </p>
               }
             />
@@ -554,13 +570,16 @@ export default function DashboardOverviewV2() {
             <KPICardV2
               formulaId="win_rate"
               confidence="verified"
-              label="Win Rate"
+              label={t('dashboard.kpi.winRate')}
               value={`${((data.quote_summary?.win_rate || 0) * 100).toFixed(1)}%`}
-              suffix="Quote-to-Invoice"
+              suffix={t('dashboard.kpi.winRate.suffix')}
               accentGradient={gradients.navy}
               bottomContent={
                 <p className="text-[11px] italic" style={{ color: '#737373' }}>
-                  Won: {formatEUR(data.quote_summary?.won_revenue_eur || 0)} from {(data.quote_summary?.total_quotes || 0).toLocaleString()} quotes
+                  {t('dashboard.kpi.winBottom', {
+                    won: formatEUR(data.quote_summary?.won_revenue_eur || 0),
+                    count: (data.quote_summary?.total_quotes || 0).toLocaleString(),
+                  })}
                 </p>
               }
             />
@@ -572,7 +591,7 @@ export default function DashboardOverviewV2() {
           <motion.div variants={cardVariants}>
             <AlertCardV2
               icon={AlertTriangle}
-              label="Margin Erosion"
+              label={t('dashboard.alert.marginErosion')}
               value={`${marginChange >= 0 ? '+' : '−'}${Math.abs(marginChange).toFixed(1)}pp`}
               valueColor="#EF4444"
               borderColor="#EF4444"
@@ -580,14 +599,14 @@ export default function DashboardOverviewV2() {
               iconColor="#EF4444"
               progressPct={75}
               progressColor="#EF4444"
-              helperText="Driven by BKAGG cost structure and mix shift"
+              helperText={t('dashboard.alert.marginErosion.helper')}
               helperColor="#EF4444"
             />
           </motion.div>
           <motion.div variants={cardVariants}>
             <AlertCardV2
               icon={UserMinus}
-              label="High-Risk Customers"
+              label={t('dashboard.alert.highRisk')}
               value={String(highCriticalCount)}
               valueColor="#EA580C"
               borderColor="#F97316"
@@ -595,22 +614,22 @@ export default function DashboardOverviewV2() {
               iconColor="#EA580C"
               progressPct={Math.min(100, Math.round((highCriticalCount / (annual2025?.unique_customers || 411)) * 100))}
               progressColor="#F97316"
-              helperText={`Critical + High only · €${(revenueAtRisk / 1000000).toFixed(2)}M revenue exposed`}
+              helperText={t('dashboard.alert.highRisk.helper', { revenue: (revenueAtRisk / 1000000).toFixed(2) })}
               helperColor="#EA580C"
             />
           </motion.div>
           <motion.div variants={cardVariants}>
             <AlertCardV2
               icon={Package}
-              label="Cost Regime"
-              value="Plateau"
+              label={t('dashboard.alert.costRegime')}
+              value={t('dashboard.alert.plateau')}
               valueColor="#0393da"
               borderColor="#0393da"
               iconBg="#EFF6FF"
               iconColor="#0393da"
               progressPct={45}
               progressColor="#0393da"
-              helperText="Input costs stable 6 months — pricing power window"
+              helperText={t('dashboard.alert.costRegime.helper')}
               helperColor="#0393da"
             />
           </motion.div>
@@ -623,21 +642,21 @@ export default function DashboardOverviewV2() {
             <ChartCardV2
               formulaId="margin_gap"
               confidence="verified"
-              title="Quoted vs Actual Margin"
-              subtitle="Gap between what we promised and what we captured (closing)"
+              title={t('dashboard.chart.quotedVsActual')}
+              subtitle={t('dashboard.chart.quotedVsActual.subtitle', { state: gapIsClosing ? t('dashboard.gap.closing') : t('dashboard.gap.widening') })}
               headerRight={
                 <div className="flex items-center gap-4 text-[11px] font-semibold uppercase tracking-wider">
                   <span className="flex items-center gap-1.5">
                     <span className="w-3 h-0.5" style={{ background: colors.primary }} />
-                    Quoted
+                    {t('dashboard.legend.quoted')}
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-3 h-0.5" style={{ background: colors.tertiary }} />
-                    Actual
+                    {t('dashboard.legend.actual')}
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-3 h-3 rounded-sm" style={{ background: 'rgba(239,68,68,0.15)' }} />
-                    Gap
+                    {t('dashboard.legend.gap')}
                   </span>
                 </div>
               }
@@ -671,9 +690,13 @@ export default function DashboardOverviewV2() {
                 )}
               </MeasuredChartContainer>
               <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-500">Current gap:</span>
+                <span className="text-slate-500">{t('dashboard.gap.current')}</span>
                 <span className="font-bold" style={{ color: colors.darkNavy }}>
-                  {currentGapPp.toFixed(1)}pp ({gapIsClosing ? 'closing' : 'widening'} · {Math.abs(gapChangePp).toFixed(1)}pp YoY)
+                  {t('dashboard.gap.summary', {
+                    value: currentGapPp.toFixed(1),
+                    state: gapIsClosing ? t('dashboard.gap.closing') : t('dashboard.gap.widening'),
+                    delta: Math.abs(gapChangePp).toFixed(1),
+                  })}
                 </span>
               </div>
             </ChartCardV2>
@@ -681,7 +704,7 @@ export default function DashboardOverviewV2() {
 
           {/* Donut Chart — 1/3 width */}
           <div className="min-w-0">
-            <ChartCardV2 formulaId="commodity_group_revenue" confidence="verified" title="Revenue Distribution">
+            <ChartCardV2 formulaId="commodity_group_revenue" confidence="verified" title={t('dashboard.chart.revenueDist')}>
               <div className="flex flex-col items-center">
                 <div className="relative" style={{ width: 192, height: 192 }}>
                   <MeasuredChartContainer className="h-full min-w-0">
@@ -716,7 +739,7 @@ export default function DashboardOverviewV2() {
                       {formatEUR(totalCommodityRevenue)}
                     </span>
                     <span className="text-[10px] uppercase font-bold" style={{ color: '#a3a3a3' }}>
-                      Total
+                      {t('common.total')}
                     </span>
                   </div>
                 </div>
@@ -728,7 +751,7 @@ export default function DashboardOverviewV2() {
                         {c.name}
                       </span>
                       <span className="font-bold" style={{ color: colors.darkNavy }}>
-                        Rev {c.pct}% · Margin {((commodityMarginMap[c.name] || 0) * 100).toFixed(0)}%
+                        {t('dashboard.donut.legend', { pct: c.pct, margin: ((commodityMarginMap[c.name] || 0) * 100).toFixed(0) })}
                       </span>
                     </div>
                   ))}
@@ -742,28 +765,28 @@ export default function DashboardOverviewV2() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <motion.div variants={cardVariants}>
             <ActivityGridV2
-              title="Sales Activity Pipeline — FY 2025"
+              title={t('dashboard.activity.title', { year: 2025 })}
               items={[
                 {
                   icon: FileText,
                   iconBg: '#EFF6FF',
                   iconColor: '#0393da',
                   value: String(newQuoteStage.count || 62),
-                  label: 'New',
+                  label: t('dashboard.activity.new'),
                 },
                 {
                   icon: Receipt,
                   iconBg: '#FFF7ED',
                   iconColor: '#F97316',
                   value: String(quotedStage.count || 86),
-                  label: 'Quoted',
+                  label: t('dashboard.activity.quoted'),
                 },
                 {
                   icon: CheckCircle,
                   iconBg: '#F0FDF4',
                   iconColor: '#10B981',
                   value: String(wonStage.count || 1684),
-                  label: 'Won',
+                  label: t('dashboard.activity.won'),
                 },
                 {
                   icon: Truck,
@@ -771,7 +794,7 @@ export default function DashboardOverviewV2() {
                   iconColor: '#0393da',
                   value: formatEUR(wonStage.value_eur || 0),
                   valueSuffix: '',
-                  label: 'Won Revenue',
+                  label: t('dashboard.activity.wonRevenue'),
                   highlight: true,
                 },
               ]}
@@ -779,12 +802,12 @@ export default function DashboardOverviewV2() {
           </motion.div>
           <motion.div variants={cardVariants}>
             <RetentionCardV2
-              title="Quote Conversion"
-              subtitle="Win rate across all commodity groups"
+              title={t('dashboard.retention.title')}
+              subtitle={t('dashboard.retention.subtitle')}
               value={`${((data.quote_summary?.win_rate || 0) * 100).toFixed(0)}%`}
-              yoyChange="+2.4pp YoY"
+              yoyChange={t('dashboard.retention.yoy')}
               goal="45%"
-              footnote={`Win rate trending up — 64.4% in Q4 2024`}
+              footnote={t('dashboard.retention.footnote')}
             />
           </motion.div>
         </div>
@@ -796,13 +819,13 @@ export default function DashboardOverviewV2() {
               <Brain size={16} className="text-white" />
             </div>
             <h2 className="text-lg font-semibold" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>
-              AI Highlights
+              {t('dashboard.aiHighlights.title')}
             </h2>
             <button
               onClick={() => navigate('/ai-insights')}
               className="ml-auto text-xs font-semibold text-slate-600 hover:text-slate-900"
             >
-              Full analyses →
+              {t('dashboard.aiHighlights.full')}
             </button>
           </div>
           <div className="space-y-2">
@@ -818,7 +841,7 @@ export default function DashboardOverviewV2() {
                 >
                   <span className="text-base">{h.icon}</span>
                   <span className="flex-1 text-sm font-medium" style={{ color: h.color }}>{h.text}</span>
-                  <span className="text-xs font-semibold" style={{ color: h.color }}>View →</span>
+                  <span className="text-xs font-semibold" style={{ color: h.color }}>{t('common.viewArrow')}</span>
                 </button>
               );
             })}
@@ -829,7 +852,7 @@ export default function DashboardOverviewV2() {
         <DataTable
           formulaId="top_customers"
           confidence="verified"
-          title="Top 10 Customers"
+          title={t('dashboard.topCustomers.title')}
           columns={topCustomerColumns}
           data={topCustomers.slice(0, 10)}
           rowKey="customer_id"
@@ -840,7 +863,7 @@ export default function DashboardOverviewV2() {
             onClick={() => navigate('/customers')}
             className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
           >
-            View all customers →
+            {t('dashboard.topCustomers.viewAll')}
           </button>
         </div>
 
