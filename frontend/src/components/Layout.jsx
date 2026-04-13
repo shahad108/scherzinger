@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
 import Sidebar from './Sidebar';
 import Footer from './shared/Footer';
 import SKUSlideOver from './SKUSlideOver';
@@ -8,7 +7,6 @@ import CategorySlideOver from './CategorySlideOver';
 import CustomerSlideOver from './CustomerSlideOver';
 import GlobalChatBar from './GlobalChatBar';
 import { AnimatedGridPattern } from './ui/AnimatedGridPattern';
-import { pageTransitionVariants } from '../utils/animations';
 import { useUI } from '../context/UIContext';
 import { useChat } from '../context/ChatContext';
 import { buildContextMessage, buildContextLabel } from '../utils/pageContextResolver';
@@ -62,19 +60,17 @@ export default function Layout() {
           />
         </div>
         <div className="flex-1 min-w-0 overflow-y-auto relative z-10">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              className="min-w-0"
-              variants={pageTransitionVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              <Outlet />
-              <Footer />
-            </motion.div>
-          </AnimatePresence>
+          {/* Page wrapper — keyed by pathname so React remounts on route change.
+              The previous version used AnimatePresence with mode="wait" + an
+              opacity 0 → 1 enter animation. On heavy pages (AI Insights) the
+              enter animation could fail to start, leaving the wrapper stuck at
+              opacity 0 and the page invisible until a hard refresh. We render
+              the page immediately at full opacity — no fade-in, no fade-out —
+              which is more reliable and visually indistinguishable. */}
+          <div key={location.pathname} className="min-w-0">
+            <Outlet />
+            <Footer />
+          </div>
         </div>
         {/* Global AI Chat Bar */}
         <GlobalChatBar />
