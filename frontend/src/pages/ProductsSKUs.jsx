@@ -24,6 +24,7 @@ import { IS_DEMO } from '../utils/brand';
 import FloorPriceTable from '../components/phase45/FloorPriceTable';
 import BreakEvenChart from '../components/phase45/BreakEvenChart';
 import ProfitabilityQuadrant from '../components/phase45/ProfitabilityQuadrant';
+import SKUDeepDiveSlideOver from '../components/phase45/SKUDeepDiveSlideOver';
 
 const products = productsData.products;
 const { kpis: kpiData, product_type_performance, commodity_scorecard, declining_fast, article_enrichment } = productsDetail;
@@ -62,6 +63,7 @@ export default function ProductsSKUs() {
   const { t } = useLanguage();
   const [selectedCommodity, setSelectedCommodity] = useState('All');
   const [selectedYear, setSelectedYear] = useState(2025);
+  const [phase45SKU, setPhase45SKU] = useState(null);
   const [articleSearch, setArticleSearch] = useState('');
   const [marginFilter, setMarginFilter] = useState('all');
   const [sidebarTab, setSidebarTab] = useState('at_risk'); // 'at_risk' | 'declining'
@@ -791,6 +793,10 @@ export default function ProductsSKUs() {
             confidence="verified"
             selectedRowId={selectedItem?.id}
             onRowClick={(row) => {
+              if (IS_DEMO) {
+                setPhase45SKU(row.ArticleID);
+                return;
+              }
               selectItem({ type: 'article', id: row.ArticleID, label: row.description, data: row });
               openSKUDetail(row.ArticleID);
             }}
@@ -828,6 +834,7 @@ export default function ProductsSKUs() {
         )}
         <PhaseNotice type="derived" />
       </motion.div>
+      {IS_DEMO && <SKUDeepDiveSlideOver sku={phase45SKU} onClose={() => setPhase45SKU(null)} />}
     </>
   );
 }
