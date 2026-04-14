@@ -624,6 +624,7 @@ export default function MLAnalytics() {
         {/* ═══════════════════════════════════════════════════════════
             ROW 7 — Backtesting Panel (Phase 4 placeholder)
         ═══════════════════════════════════════════════════════════ */}
+        {!IS_DEMO && (
         <motion.div
           variants={tableVariants}
           initial="hidden"
@@ -663,6 +664,7 @@ export default function MLAnalytics() {
             </button>
           </div>
         </motion.div>
+        )}
 
         {IS_DEMO && <ChurnSurvivalCurve />}
 

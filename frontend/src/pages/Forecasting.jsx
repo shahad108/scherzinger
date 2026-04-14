@@ -735,6 +735,8 @@ export default function Forecasting() {
           </div>
         </ChartCard>
 
+        {!IS_DEMO && (
+        <>
         {/* ── Row 8: Phase 4 — Advanced Analytics Placeholder ── */}
         <div>
           <h3 className="font-bold text-base mb-4" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>
@@ -832,6 +834,8 @@ export default function Forecasting() {
             </motion.div>
           </div>
         </div>
+        </>
+        )}
 
         {IS_DEMO && <QuoteToCashTab />}
 
