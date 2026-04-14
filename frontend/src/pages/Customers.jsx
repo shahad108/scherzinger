@@ -18,6 +18,10 @@ import { formatEUR, formatPct } from '../utils/formatters';
 import { TOOLTIPS } from '../utils/tooltipContent';
 import { useUI } from '../context/UIContext';
 import { useLanguage } from '../context/LanguageContext';
+import { IS_DEMO } from '../utils/brand';
+import WTPBands from '../components/phase45/WTPBands';
+import CLVRanking from '../components/phase45/CLVRanking';
+import CrossSellPanel from '../components/phase45/CrossSellPanel';
 
 const customers = customersData.customers;
 const churnSummary = customersData.churn_summary;
@@ -906,6 +910,16 @@ export default function Customers() {
             ))}
           </div>
         </div>
+
+        {IS_DEMO && (
+          <div className="space-y-6 mt-8">
+            <WTPBands />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <CLVRanking />
+              <CrossSellPanel />
+            </div>
+          </div>
+        )}
 
         <PhaseNotice type="mixed" />
       </div>
