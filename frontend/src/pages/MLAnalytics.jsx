@@ -27,6 +27,8 @@ import { colors, shadows, radius } from '../utils/designTokensV2';
 
 import ml from '../data/ml_analytics.json';
 import forecastingData from '../data/forecasting.json';
+import { IS_DEMO } from '../utils/brand';
+import ChurnSurvivalCurve from '../components/phase45/ChurnSurvivalCurve';
 
 /* ── anonymize forecast model names ── */
 const MODEL_LABELS = { ema: 'Model A', linear_trend: 'Model B', seasonal_decomp: 'Model C', ensemble: 'Ensemble' };
@@ -661,6 +663,8 @@ export default function MLAnalytics() {
             </button>
           </div>
         </motion.div>
+
+        {IS_DEMO && <ChurnSurvivalCurve />}
 
       </motion.div>
     </>
