@@ -21,7 +21,7 @@ import { generateDynamicPrompts, generateQuickPrompts } from '../utils/dynamicPr
 import { quickChat } from '../utils/openrouter';
 import renderMarkdown from '../utils/markdownRenderer';
 import { colors } from '../utils/designTokensV2';
-import { BRAND } from '../utils/brand';
+import { BRAND, IS_DEMO } from '../utils/brand';
 
 const DETAIL_ANALYSIS_INSTRUCTION = `
 The user opened the dedicated AI Insights screen from "View Detailed Analysis".
@@ -651,6 +651,35 @@ export default function AIInsights() {
                 {/* Dynamic Suggested Prompts */}
                 <div className="w-full space-y-1.5">
                   {dynamicPrompts.slice(0, 6).map((prompt) => (
+                    <button
+                      key={prompt}
+                      onClick={() => handleSend(prompt)}
+                      disabled={isStreaming}
+                      className="block w-full text-left px-3 py-2 rounded-lg bg-slate-50 hover:bg-blue-50 hover:text-blue-700 transition-all text-xs text-slate-600 disabled:opacity-50 truncate"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                  {IS_DEMO && [
+                    lang === 'de'
+                      ? 'Führe einen Materialschock von +5% auf die Warengruppe PW aus'
+                      : 'Run a +5% material shock on commodity group PW',
+                    lang === 'de'
+                      ? 'Welche Kunden haben einen CLV > 1 Mio. € und eine Verbleiberate < 80%?'
+                      : 'Which customers have CLV > €1M and retention < 80%?',
+                    lang === 'de'
+                      ? 'Zeige mir die Top 5 Artikel unterhalb der Preisuntergrenze'
+                      : 'Show me the top 5 SKUs below their floor price',
+                    lang === 'de'
+                      ? 'Erkläre, warum die Gewinnquote in PW letzte Woche gefallen ist'
+                      : 'Explain why win rate dropped in PW last week',
+                    lang === 'de'
+                      ? 'Was ist das Break-even-Volumen für PS-2241 bei aktuellen Kosten?'
+                      : 'What is the break-even volume for PS-2241 at current cost?',
+                    lang === 'de'
+                      ? 'Zeige alle Anomalien der letzten 24 Stunden mit hoher Schwere'
+                      : 'List all anomalies from the last 24 hours with severity high',
+                  ].map((prompt) => (
                     <button
                       key={prompt}
                       onClick={() => handleSend(prompt)}
