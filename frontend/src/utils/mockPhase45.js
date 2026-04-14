@@ -34,6 +34,21 @@ export function getLostOpportunity()     { return data ? data.lostOpportunity   
 export function getChurn()               { return data ? data.churn                : null; }
 export function getMonteCarloHistogram() { return data ? data.monteCarloHistogram  : []; }
 export function getRegimeCurves()        { return data ? data.regimeCurves         : null; }
+export function getSkuImpactTable()       { return data ? data.skuImpactTable       : []; }
+export function getCommodityGroupImpact() { return data ? data.commodityGroupImpact : []; }
+
+// Compute margin after applying shocks to a per-entry profile.
+// Entry must have baseMargin, matShare, laborShare, outsourcingShare, volumeLeverage.
+export function shockProfile(entry, shocks) {
+  if (!entry) return 0;
+  return (
+    entry.baseMargin
+    - entry.matShare         * (shocks.material    / 100)
+    - entry.laborShare       * (shocks.labor       / 100)
+    - entry.outsourcingShare * (shocks.outsourcing / 100)
+    + entry.volumeLeverage   * (shocks.volume      / 100)
+  );
+}
 
 // Scenario Lab — single source of truth for the closed-form shock formula.
 // Positive shock on a cost component REDUCES margin proportional to that

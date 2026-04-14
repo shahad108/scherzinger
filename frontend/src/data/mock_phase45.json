@@ -7,6 +7,27 @@
     "outsourcingSharePct": 0.12,
     "volumeLeverage": 0.18
   },
+  "skuImpactTable": [
+    { "sku": "PS-1104", "cg": "PW", "baseMargin": 0.71, "matShare": 0.34, "laborShare": 0.26, "outsourcingShare": 0.11, "volumeLeverage": 0.18 },
+    { "sku": "PS-0882", "cg": "PW", "baseMargin": 0.58, "matShare": 0.41, "laborShare": 0.24, "outsourcingShare": 0.08, "volumeLeverage": 0.15 },
+    { "sku": "PS-2241", "cg": "PM", "baseMargin": 0.64, "matShare": 0.36, "laborShare": 0.31, "outsourcingShare": 0.14, "volumeLeverage": 0.20 },
+    { "sku": "PM-0431", "cg": "PM", "baseMargin": 0.49, "matShare": 0.44, "laborShare": 0.22, "outsourcingShare": 0.09, "volumeLeverage": 0.12 },
+    { "sku": "PK-0773", "cg": "MK", "baseMargin": 0.72, "matShare": 0.29, "laborShare": 0.28, "outsourcingShare": 0.13, "volumeLeverage": 0.22 },
+    { "sku": "MK-0122", "cg": "MK", "baseMargin": 0.41, "matShare": 0.48, "laborShare": 0.21, "outsourcingShare": 0.07, "volumeLeverage": 0.10 },
+    { "sku": "PW-0555", "cg": "PW", "baseMargin": 0.68, "matShare": 0.32, "laborShare": 0.29, "outsourcingShare": 0.12, "volumeLeverage": 0.19 },
+    { "sku": "PW-0661", "cg": "PW", "baseMargin": 0.55, "matShare": 0.38, "laborShare": 0.25, "outsourcingShare": 0.10, "volumeLeverage": 0.14 }
+  ],
+  "commodityGroupImpact": [
+    { "cg": "PW", "name": "Precision pumps",     "baseMargin": 0.66, "matShare": 0.35, "laborShare": 0.27, "outsourcingShare": 0.11, "volumeLeverage": 0.17 },
+    { "cg": "PM", "name": "Metering pumps",      "baseMargin": 0.58, "matShare": 0.40, "laborShare": 0.27, "outsourcingShare": 0.12, "volumeLeverage": 0.16 },
+    { "cg": "PS", "name": "Standard pumps",      "baseMargin": 0.62, "matShare": 0.38, "laborShare": 0.26, "outsourcingShare": 0.10, "volumeLeverage": 0.15 },
+    { "cg": "PK", "name": "Compact pumps",       "baseMargin": 0.65, "matShare": 0.33, "laborShare": 0.28, "outsourcingShare": 0.12, "volumeLeverage": 0.18 },
+    { "cg": "MK", "name": "Cooling modules",     "baseMargin": 0.70, "matShare": 0.30, "laborShare": 0.30, "outsourcingShare": 0.13, "volumeLeverage": 0.21 },
+    { "cg": "MS", "name": "Seal modules",        "baseMargin": 0.55, "matShare": 0.42, "laborShare": 0.23, "outsourcingShare": 0.09, "volumeLeverage": 0.13 },
+    { "cg": "MT", "name": "Motor assemblies",    "baseMargin": 0.52, "matShare": 0.45, "laborShare": 0.22, "outsourcingShare": 0.08, "volumeLeverage": 0.11 },
+    { "cg": "MV", "name": "Valve assemblies",    "baseMargin": 0.60, "matShare": 0.37, "laborShare": 0.25, "outsourcingShare": 0.11, "volumeLeverage": 0.15 },
+    { "cg": "OT", "name": "Other",               "baseMargin": 0.48, "matShare": 0.39, "laborShare": 0.24, "outsourcingShare": 0.13, "volumeLeverage": 0.12 }
+  ],
   "nlHeader": {
     "en": "Revenue of €6.25M in Q4 2025 held within 0.6pp of plan. Margin softened 0.6pp YoY driven by material cost plateau, while catalog share of orders slipped to 65%. Win rate recovered to 38.5% on the back of PR-coded renegotiations.",
     "de": "Der Umsatz von 6,25 Mio. € im 4. Quartal 2025 lag innerhalb von 0,6 Prozentpunkten vom Plan. Die Marge sank im Jahresvergleich um 0,6 Prozentpunkte, getrieben vom Material-Kostenplateau, während der Katalog-Anteil auf 65% fiel. Die Gewinnquote erholte sich auf 38,5% dank PR-kodierter Nachverhandlungen."

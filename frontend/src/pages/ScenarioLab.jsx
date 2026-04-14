@@ -1,14 +1,21 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
-import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
+import {
+  LineChart, Line, BarChart, Bar, Cell,
+  ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Legend,
+} from 'recharts';
 import { IS_DEMO } from '../utils/brand';
 import { useLanguage } from '../context/LanguageContext';
 import ChartCard from '../components/shared/ChartCard';
 import KPICard from '../components/shared/KPICard';
+import DataTable from '../components/shared/DataTable';
 import ShockSlider from '../components/phase45/ShockSlider';
 import MonteCarloHistogram from '../components/phase45/MonteCarloHistogram';
 import RegimeToggle from '../components/phase45/RegimeToggle';
-import { computeShockedMargin, getRegimeCurves, getBaseline } from '../utils/mockPhase45';
+import {
+  computeShockedMargin, getRegimeCurves, getBaseline,
+  getSkuImpactTable, getCommodityGroupImpact, shockProfile,
+} from '../utils/mockPhase45';
 
 export default function ScenarioLab() {
   if (!IS_DEMO) return null;
@@ -38,6 +45,51 @@ export default function ScenarioLab() {
   }, [curves, regime, shockedMargin, baseline]);
 
   const deltaPP = ((shockedMargin - baseline.marginPct) * 100);
+
+  const skuImpact = useMemo(() => {
+    return getSkuImpactTable()
+      .map((e) => {
+        const shocked = shockProfile(e, { material, labor, outsourcing, volume });
+        return { ...e, shocked, delta: shocked - e.baseMargin };
+      })
+      .sort((a, b) => a.delta - b.delta);
+  }, [material, labor, outsourcing, volume]);
+
+  const cgImpact = useMemo(() => {
+    return getCommodityGroupImpact()
+      .map((e) => {
+        const shocked = shockProfile(e, { material, labor, outsourcing, volume });
+        return { ...e, shocked, delta: shocked - e.baseMargin };
+      })
+      .sort((a, b) => a.delta - b.delta);
+  }, [material, labor, outsourcing, volume]);
+
+  const waterfall = useMemo(() => {
+    const m  = baseline.marginPct;
+    const m1 = m  - baseline.matSharePct         * (material    / 100);
+    const m2 = m1 - baseline.laborSharePct       * (labor       / 100);
+    const m3 = m2 - baseline.outsourcingSharePct * (outsourcing / 100);
+    const m4 = m3 + baseline.volumeLeverage      * (volume      / 100);
+    return [
+      { step: t('phase45.scenarioLab.waterfall.baseline'),   value: m  * 100 },
+      { step: t('phase45.scenarioLab.waterfall.afterMat'),   value: m1 * 100 },
+      { step: t('phase45.scenarioLab.waterfall.afterLabor'), value: m2 * 100 },
+      { step: t('phase45.scenarioLab.waterfall.afterOut'),   value: m3 * 100 },
+      { step: t('phase45.scenarioLab.waterfall.afterVol'),   value: m4 * 100 },
+      { step: t('phase45.scenarioLab.waterfall.final'),      value: m4 * 100 },
+    ];
+  }, [baseline, material, labor, outsourcing, volume, t]);
+
+  const scenarios = useMemo(() => {
+    const base = { material, labor, outsourcing, volume };
+    const opt  = { material: material / 2, labor: labor / 2, outsourcing: outsourcing / 2, volume: volume + 20 };
+    const pess = { material: material * 2, labor: labor * 2, outsourcing: outsourcing * 2, volume: volume - 20 };
+    return {
+      optimistic:  computeShockedMargin(opt),
+      baseline:    computeShockedMargin(base),
+      pessimistic: computeShockedMargin(pess),
+    };
+  }, [material, labor, outsourcing, volume]);
 
   const reset = () => { setMaterial(0); setLabor(0); setOutsourcing(0); setVolume(0); };
 
@@ -115,6 +167,99 @@ export default function ScenarioLab() {
 
       {/* Monte Carlo */}
       <MonteCarloHistogram />
+
+      {/* Cost waterfall */}
+      <ChartCard
+        title={t('phase45.scenarioLab.waterfall.title')}
+        subtitle={t('phase45.scenarioLab.waterfall.subtitle')}
+      >
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={waterfall}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+            <XAxis dataKey="step" tick={{ fontSize: 11, fill: '#737373' }} />
+            <YAxis tickFormatter={(v) => `${v.toFixed(0)}%`} tick={{ fontSize: 11, fill: '#737373' }} domain={[40, 80]} />
+            <Tooltip formatter={(v) => `${v.toFixed(1)}%`} />
+            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+              {waterfall.map((d, i) => (
+                <Cell key={i} fill={d.value >= baseline.marginPct * 100 ? '#16a34a' : '#dc2626'} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
+
+      {/* Per-SKU impact */}
+      <ChartCard
+        title={t('phase45.scenarioLab.sku.title')}
+        subtitle={t('phase45.scenarioLab.sku.subtitle')}
+      >
+        <DataTable
+          columns={[
+            { key: 'sku', label: t('phase45.scenarioLab.sku.col.sku') },
+            { key: 'cg',  label: t('phase45.scenarioLab.sku.col.cg') },
+            { key: 'baseMargin', label: t('phase45.scenarioLab.sku.col.base'),    render: (v) => `${(v * 100).toFixed(1)}%` },
+            { key: 'shocked',    label: t('phase45.scenarioLab.sku.col.shocked'), render: (v) => `${(v * 100).toFixed(1)}%` },
+            {
+              key: 'delta',
+              label: t('phase45.scenarioLab.sku.col.delta'),
+              render: (v) => (
+                <span style={{ color: v >= 0 ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+                  {v >= 0 ? '+' : ''}{(v * 100).toFixed(2)}pp
+                </span>
+              ),
+            },
+          ]}
+          data={skuImpact}
+          rowKey="sku"
+        />
+      </ChartCard>
+
+      {/* Commodity group impact */}
+      <ChartCard
+        title={t('phase45.scenarioLab.cg.title')}
+        subtitle={t('phase45.scenarioLab.cg.subtitle')}
+      >
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart data={cgImpact} layout="vertical">
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+            <XAxis type="number" tickFormatter={(v) => `${(v * 100).toFixed(1)}pp`} tick={{ fontSize: 11, fill: '#737373' }} />
+            <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 11, fill: '#737373' }} />
+            <Tooltip formatter={(v) => `${(v * 100).toFixed(2)}pp`} />
+            <Bar dataKey="delta" radius={[0, 4, 4, 0]}>
+              {cgImpact.map((d, i) => (
+                <Cell key={i} fill={d.delta >= 0 ? '#16a34a' : '#dc2626'} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
+
+      {/* Scenario comparison */}
+      <div>
+        <h3 className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: '#1a1a2e' }}>
+          {t('phase45.scenarioLab.compare.title')}
+        </h3>
+        <p className="text-xs mb-4" style={{ color: '#737373' }}>
+          {t('phase45.scenarioLab.compare.subtitle')}
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <KPICard
+            label={t('phase45.scenarioLab.compare.optimistic')}
+            value={`${(scenarios.optimistic * 100).toFixed(1)}%`}
+            changeType="positive"
+          />
+          <KPICard
+            label={t('phase45.scenarioLab.compare.baseline')}
+            value={`${(scenarios.baseline * 100).toFixed(1)}%`}
+            changeType="neutral"
+          />
+          <KPICard
+            label={t('phase45.scenarioLab.compare.pessimistic')}
+            value={`${(scenarios.pessimistic * 100).toFixed(1)}%`}
+            changeType="negative"
+          />
+        </div>
+      </div>
     </motion.div>
   );
 }
