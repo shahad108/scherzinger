@@ -9,6 +9,7 @@ import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
 import { track } from '../utils/tracker';
 import { logout } from '../utils/auth';
+import { BRAND } from '../utils/brand';
 
 const navItems = [
   { to: '/', tKey: 'nav.dashboard', icon: LayoutDashboard },
@@ -123,7 +124,7 @@ export default function Sidebar() {
           <AnimatePresence>
             {!sidebarCollapsed && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="flex-1 min-w-0">
-                <p className="text-xs font-bold truncate" style={{ color: '#1a1a2e' }}>Scherzinger</p>
+                <p className="text-xs font-bold truncate" style={{ color: '#1a1a2e' }}>{BRAND.company}</p>
                 <p className="text-[10px]" style={{ color: '#737373' }}>{t('sidebar.userRole')}</p>
               </motion.div>
             )}

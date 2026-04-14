@@ -21,6 +21,7 @@ import { generateDynamicPrompts, generateQuickPrompts } from '../utils/dynamicPr
 import { quickChat } from '../utils/openrouter';
 import renderMarkdown from '../utils/markdownRenderer';
 import { colors } from '../utils/designTokensV2';
+import { BRAND } from '../utils/brand';
 
 const DETAIL_ANALYSIS_INSTRUCTION = `
 The user opened the dedicated AI Insights screen from "View Detailed Analysis".
@@ -28,7 +29,7 @@ The user opened the dedicated AI Insights screen from "View Detailed Analysis".
 Use any prior mini-chat messages only as hidden context. Do not mention the handoff mechanics.
 Provide a deeper, decision-ready answer to the user's latest question.
 When the question involves comparison, trend, distribution, ranking, forecast, or performance, include exactly one valid \`\`\`chart block.
-End with a numbered list of concrete recommended actions tailored to Scherzinger.
+End with a numbered list of concrete recommended actions tailored to ${BRAND.tailoredTo}.
 `;
 
 // ── Conversation helpers ──
@@ -266,7 +267,7 @@ export default function AIInsights() {
     quickChat([
       {
         role: 'system',
-        content: 'You generate follow-up questions for a business analytics conversation at Scherzinger GmbH (German pump manufacturer). Based on the user question and AI answer, suggest exactly 3 short follow-up questions the user might want to ask next. Each question should be specific — reference customer IDs, article numbers, commodity groups, or metrics from the conversation. Return ONLY a JSON array of 3 strings. Example: ["Question 1?","Question 2?","Question 3?"]',
+        content: `You generate follow-up questions for a business analytics conversation at ${BRAND.companyDescriptionShort}. Based on the user question and AI answer, suggest exactly 3 short follow-up questions the user might want to ask next. Each question should be specific — reference customer IDs, article numbers, commodity groups, or metrics from the conversation. Return ONLY a JSON array of 3 strings. Example: ["Question 1?","Question 2?","Question 3?"]`,
       },
       { role: 'user', content: `User asked: "${lastUser}"\n\nAI responded: "${truncated}"\n\nGenerate 3 follow-up questions:` },
     ], { maxTokens: 250, signal: controller.signal })
