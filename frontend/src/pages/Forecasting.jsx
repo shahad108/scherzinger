@@ -21,6 +21,8 @@ import { handleChartContainerClick } from '../utils/pageContextResolver';
 import { track } from '../utils/tracker';
 import { TrendingDown, TrendingUp, ChevronDown, ChevronUp, Bell, BarChart3, Users, FlaskConical } from 'lucide-react';
 import { colors, shadows, radius } from '../utils/designTokensV2';
+import { IS_DEMO } from '../utils/brand';
+import QuoteToCashTab from '../components/phase45/QuoteToCashTab';
 
 /* ── Data references ── */
 const quarterlyMargins = forecastingData.quarterly_margins;
@@ -830,6 +832,8 @@ export default function Forecasting() {
             </motion.div>
           </div>
         </div>
+
+        {IS_DEMO && <QuoteToCashTab />}
 
         {/* ── Footer: Assumptions ── */}
         <div className="border-t border-slate-100 pt-4 pb-2">
