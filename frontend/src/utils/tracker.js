@@ -1,5 +1,12 @@
 // ─── Scherzinger Analytics Tracker ──────────────────────────────
 // Lightweight tracker that batches events and sends to server → Supabase
+//
+// When the bundle is built as a sub-path demo (vite --base=/demo/), we
+// are hosted on another domain that doesn't have the /api/track/*
+// backend routes. Skip every network call in that mode so the console
+// stays clean. Shorthand helpers still work — they just no-op.
+
+const TRACKER_DISABLED = import.meta.env.BASE_URL === '/demo/';
 
 let sessionId = null;
 let eventQueue = [];
@@ -14,6 +21,7 @@ let sessionStartTime = Date.now();
 // ─── Session management ──────────────────────────────────────────
 
 export async function startSession() {
+  if (TRACKER_DISABLED) return null;
   try {
     const res = await fetch('/api/track/session-start', {
       method: 'POST',
@@ -48,7 +56,7 @@ export function endSession() {
     sendPageView(currentPage, duration, maxScrollDepth);
   }
 
-  if (!sessionId) return;
+  if (!sessionId || TRACKER_DISABLED) return;
   const payload = JSON.stringify({
     session_id: sessionId,
     duration_seconds: Math.round((Date.now() - sessionStartTime) / 1000),
@@ -90,6 +98,7 @@ export function trackPageEnter(path) {
 }
 
 function sendPageView(path, duration, scrollDepth) {
+  if (TRACKER_DISABLED) return;
   fetch('/api/track/pageview', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -154,6 +163,7 @@ if (typeof window !== 'undefined') {
 }
 
 function flushClicks() {
+  if (TRACKER_DISABLED) { clickQueue = []; return; }
   if (clickQueue.length === 0) return;
   const batch = [...clickQueue];
   clickQueue = [];
@@ -191,6 +201,7 @@ export function trackEvent(eventType, category, targetElement, detail = null) {
 }
 
 function flushEvents() {
+  if (TRACKER_DISABLED) { eventQueue = []; return; }
   if (eventQueue.length === 0) return;
   const batch = [...eventQueue];
   eventQueue = [];
@@ -222,6 +233,7 @@ export function trackKPIHoverEnd(cardName, clicked = false) {
 
   const duration = Date.now() - startTime;
   if (duration < 200) return; // ignore accidental hovers
+  if (TRACKER_DISABLED) return;
 
   fetch('/api/track/kpi', {
     method: 'POST',
@@ -239,6 +251,7 @@ export function trackKPIHoverEnd(cardName, clicked = false) {
 // ─── AI Chat analytics ───────────────────────────────────────────
 
 export function trackChatQuestion({ chatSessionId, pageContext, source, suggestionText, questionText }) {
+  if (TRACKER_DISABLED) return;
   fetch('/api/track/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -253,6 +266,7 @@ export function trackChatQuestion({ chatSessionId, pageContext, source, suggesti
 }
 
 export function trackChatRating(chatSessionId, questionText, rating) {
+  if (TRACKER_DISABLED) return;
   fetch('/api/track/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -278,7 +292,7 @@ function startActivityMonitor() {
   setInterval(() => {
     isUserActive = (Date.now() - lastActivityAt) < 60000;
 
-    if (sessionId) {
+    if (sessionId && !TRACKER_DISABLED) {
       fetch('/api/track/ping', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
