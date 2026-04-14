@@ -33,6 +33,9 @@ import pricingAnalysisData from '../data/pricing_analysis.json';
 import { formatEUR } from '../utils/formatters';
 import { containerVariants, cardVariants } from '../utils/animations';
 import { colors, gradients } from '../utils/designTokensV2';
+import { IS_DEMO } from '../utils/brand';
+import LiveAlertStrip from '../components/phase45/LiveAlertStrip';
+import AnomalyFeedCard from '../components/phase45/AnomalyFeedCard';
 
 // ── Data preparation ──
 const annual2025 = data.annual_summary.find((y) => y.Year === 2025);
@@ -469,6 +472,7 @@ export default function DashboardOverviewV2() {
         initial="hidden"
         animate="visible"
       >
+        {IS_DEMO && <LiveAlertStrip />}
         {/* Global Time-Range Header */}
         <div className="flex items-center justify-between pb-2">
           <div role="group" aria-label={t('dashboard.range.yoy')} className="inline-flex rounded-lg bg-white border border-slate-200 p-1 shadow-sm">
@@ -866,6 +870,8 @@ export default function DashboardOverviewV2() {
             {t('dashboard.topCustomers.viewAll')}
           </button>
         </div>
+
+        {IS_DEMO && <AnomalyFeedCard />}
 
         <PhaseNotice type="mixed" />
       </motion.div>
