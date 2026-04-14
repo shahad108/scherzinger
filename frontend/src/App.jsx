@@ -1,4 +1,6 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { IS_DEMO } from './utils/brand';
 import { UserProvider } from './context/UserContext';
 import { UIProvider } from './context/UIContext';
 import { ChatProvider } from './context/ChatContext';
@@ -22,6 +24,10 @@ import AdminChatIntel from './pages/admin/AdminChatIntel';
 import AdminSessions from './pages/admin/AdminSessions';
 import AdminHeatmaps from './pages/admin/AdminHeatmaps';
 import AdminAIInsights from './pages/admin/AdminAIInsights';
+
+const DemoOnlyScenarioLab = IS_DEMO
+  ? lazy(() => import(/* @vite-ignore */ './pages/ScenarioLab'))
+  : () => null;
 
 function ProtectedRoute({ children }) {
   if (!isAuthenticated()) {
@@ -58,6 +64,16 @@ export default function App() {
                 <Route path="/pricing-fx" element={<Navigate to="/pricing" replace />} />
                 <Route path="/ml-analytics" element={<MLAnalytics />} />
                 <Route path="/ai-insights" element={<AIInsights />} />
+                {IS_DEMO && (
+                  <Route
+                    path="/scenario-lab"
+                    element={
+                      <Suspense fallback={null}>
+                        <DemoOnlyScenarioLab />
+                      </Suspense>
+                    }
+                  />
+                )}
               </Route>
             </Routes>
           </BrowserRouter>
