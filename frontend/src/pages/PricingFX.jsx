@@ -27,6 +27,12 @@ import {
 } from '../utils/pricingEngine';
 import { colors, shadows, radius } from '../utils/designTokensV2';
 import { TrendingDown, TrendingUp, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { IS_DEMO } from '../utils/brand';
+import PriceOptimizer from '../components/phase45/PriceOptimizer';
+import WinProbabilityScorer from '../components/phase45/WinProbabilityScorer';
+import ElasticityCurve from '../components/phase45/ElasticityCurve';
+import CompetitiveMap from '../components/phase45/CompetitiveMap';
+import LostOpportunitySunburst from '../components/phase45/LostOpportunitySunburst';
 
 /* ══════════════════════════════════════════════════════════════════════════
    DATA EXTRACTION
@@ -1383,6 +1389,20 @@ export default function PricingFX() {
                 Pumpenkopf has strong pricing power (74.3% margin, 58.2% win rate). Innenzahnringpumpe faces competitive pressure — different strategy needed.
               </p>
             </ChartCard>
+          </div>
+        )}
+
+        {IS_DEMO && (
+          <div className="space-y-6 mt-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ElasticityCurve />
+              <CompetitiveMap />
+            </div>
+            <PriceOptimizer />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <WinProbabilityScorer />
+              <LostOpportunitySunburst />
+            </div>
           </div>
         )}
 
