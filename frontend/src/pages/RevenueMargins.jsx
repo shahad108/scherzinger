@@ -21,6 +21,8 @@ import revenueMarginsDetail from '../data/revenue_margins_detail.json';
 import { formatEUR, formatPct, formatMonth } from '../utils/formatters';
 import { TOOLTIPS } from '../utils/tooltipContent';
 import { track } from '../utils/tracker';
+import { IS_DEMO } from '../utils/brand';
+import NLHeaderCard from '../components/phase45/NLHeaderCard';
 
 const monthlyTotals = Array.isArray(monthlyData) ? monthlyData : monthlyData.monthly_totals || [];
 const products = productsData.products;
@@ -297,6 +299,7 @@ export default function RevenueMargins() {
     <>
       <Header title={t('revenue.title')} />
       <div className="p-8 space-y-6 max-w-[1440px] mx-auto">
+        {IS_DEMO && <NLHeaderCard />}
         {/* Global Filter Row */}
         <div className="flex flex-wrap items-center gap-4 justify-between">
           <div className="flex flex-wrap items-center gap-4">
