@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, ReferenceLine, ReferenceArea, BarChart, Bar, Cell, LabelList,
@@ -64,15 +64,6 @@ export default function ProductsSKUs() {
   const [selectedCommodity, setSelectedCommodity] = useState('All');
   const [selectedYear, setSelectedYear] = useState(2025);
   const [phase45SKU, setPhase45SKU] = useState(null);
-  const [phase45Tab, setPhase45Tab] = useState('pricing');
-  const location = useLocation();
-  useEffect(() => {
-    if (IS_DEMO && location.state?.openSku) {
-      setPhase45SKU(location.state.openSku);
-      setPhase45Tab(location.state.tab || 'pricing');
-      window.history.replaceState({}, '');
-    }
-  }, [location.state]);
   const [articleSearch, setArticleSearch] = useState('');
   const [marginFilter, setMarginFilter] = useState('all');
   const [sidebarTab, setSidebarTab] = useState('at_risk'); // 'at_risk' | 'declining'
@@ -843,7 +834,7 @@ export default function ProductsSKUs() {
         )}
         <PhaseNotice type="derived" />
       </motion.div>
-      {IS_DEMO && <SKUDeepDiveSlideOver sku={phase45SKU} initialTab={phase45Tab} onClose={() => setPhase45SKU(null)} />}
+      {IS_DEMO && <SKUDeepDiveSlideOver sku={phase45SKU} onClose={() => setPhase45SKU(null)} />}
     </>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from 'recharts';
@@ -10,11 +10,10 @@ import { colors } from '../../utils/designTokensV2';
 
 const tabs = ['pricing', 'breakEven', 'shock', 'anomalies', 'crossSell'];
 
-export default function SKUDeepDiveSlideOver({ sku, onClose, initialTab = 'pricing' }) {
+export default function SKUDeepDiveSlideOver({ sku, onClose }) {
   if (!IS_DEMO || !sku) return null;
   const { t } = useLanguage();
-  const [tab, setTab] = useState(initialTab);
-  useEffect(() => { setTab(initialTab); }, [sku, initialTab]);
+  const [tab, setTab] = useState('pricing');
 
   const rawDetail = findSKUDetail(sku);
   const hasData = rawDetail && (rawDetail.floorPrice || rawDetail.optimizer || rawDetail.breakEven);
