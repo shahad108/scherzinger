@@ -22,8 +22,6 @@ import { track } from '../utils/tracker';
 import PhaseNotice from '../components/shared/PhaseNotice';
 import { IS_DEMO } from '../utils/brand';
 import FloorPriceTable from '../components/phase45/FloorPriceTable';
-import BreakEvenChart from '../components/phase45/BreakEvenChart';
-import ProfitabilityQuadrant from '../components/phase45/ProfitabilityQuadrant';
 import SKUDeepDiveSlideOver from '../components/phase45/SKUDeepDiveSlideOver';
 
 const products = productsData.products;
@@ -826,10 +824,6 @@ export default function ProductsSKUs() {
         {IS_DEMO && (
           <motion.div variants={cardVariants} className="space-y-6 mt-6">
             <FloorPriceTable />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <BreakEvenChart />
-              <ProfitabilityQuadrant />
-            </div>
           </motion.div>
         )}
         <PhaseNotice type="derived" />

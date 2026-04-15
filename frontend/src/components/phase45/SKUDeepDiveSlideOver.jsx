@@ -1,14 +1,88 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
-import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from 'recharts';
+import {
+  LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid,
+  BarChart, Bar, ReferenceLine, ScatterChart, Scatter, Cell, ZAxis,
+} from 'recharts';
 import { IS_DEMO } from '../../utils/brand';
-import { findSKUDetail } from '../../utils/mockPhase45';
+import {
+  findSKUDetail, getFloorPrices, getProfitability, getSkuImpactTable,
+} from '../../utils/mockPhase45';
 import { useLanguage } from '../../context/LanguageContext';
 import { formatEUR } from '../../utils/formatters';
 import { colors } from '../../utils/designTokensV2';
 
-const tabs = ['pricing', 'breakEven', 'shock', 'anomalies', 'crossSell'];
+const tabs = ['pricing', 'breakEven', 'profitability', 'shock', 'anomalies', 'crossSell'];
+
+const QUADRANT_COLOR = {
+  star:         '#16a34a',
+  cashcow:      '#0393da',
+  questionmark: '#d97706',
+  dog:          '#dc2626',
+};
+
+// Synthesize a break-even curve for any SKU. Uses the clicked SKU's full
+// cost + current price if we have it in mock data, otherwise falls back to
+// PS-1104's numbers so the panel always shows something plausible.
+function buildBreakEven(sku) {
+  const floor = getFloorPrices().find((f) => f.sku === sku);
+  const base = floor || getFloorPrices()[0];
+  if (!base) return null;
+
+  const unitPrice    = base.current;
+  const unitVarCost  = Math.round(base.hkvoll * 0.62);          // ~62% variable
+  const fixedCost    = Math.round(base.hkvoll * 0.38 * 48);     // ~38% × typical volume
+  const breakEvenUnits = Math.ceil(fixedCost / (unitPrice - unitVarCost));
+  const maxUnits = Math.max(100, breakEvenUnits * 2);
+
+  const curve = [];
+  for (let u = 0; u <= maxUnits; u += Math.max(5, Math.round(maxUnits / 12))) {
+    curve.push({
+      units: u,
+      revenue: u * unitPrice,
+      cost:    fixedCost + u * unitVarCost,
+    });
+  }
+  return {
+    sku: base.sku,
+    name: base.name,
+    unitPrice,
+    unitVarCost,
+    fixedCost,
+    breakEvenUnits,
+    breakEvenRevenue: breakEvenUnits * unitPrice,
+    curve,
+  };
+}
+
+// Build a profitability dataset that always includes the clicked SKU as
+// a highlighted dot, even if it wasn't in the canned 8-SKU quadrant data.
+function buildProfitability(sku) {
+  const base = getProfitability();
+  const hasSku = base.some((p) => p.sku === sku);
+  if (hasSku) {
+    return { points: base, highlightSku: sku };
+  }
+  // Synthesize a dot for the clicked SKU from its floor + optimizer data.
+  const floor = getFloorPrices().find((f) => f.sku === sku);
+  if (!floor) {
+    return { points: base, highlightSku: base[0]?.sku };
+  }
+  const margin = (floor.current - floor.hkvoll) / floor.current;
+  const revenue = floor.current * 520;                 // plausible annual volume
+  return {
+    points: [...base, { sku: floor.sku, revenue, margin, quadrant: 'questionmark' }],
+    highlightSku: floor.sku,
+  };
+}
+
+function quadrantForPoint(p, medianRev, medianMargin) {
+  if (p.revenue >= medianRev && p.margin >= medianMargin) return 'star';
+  if (p.revenue >= medianRev && p.margin <  medianMargin) return 'cashcow';
+  if (p.revenue <  medianRev && p.margin >= medianMargin) return 'questionmark';
+  return 'dog';
+}
 
 export default function SKUDeepDiveSlideOver({ sku, onClose }) {
   if (!IS_DEMO || !sku) return null;
@@ -19,6 +93,10 @@ export default function SKUDeepDiveSlideOver({ sku, onClose }) {
   const hasData = rawDetail && (rawDetail.floorPrice || rawDetail.optimizer || rawDetail.breakEven);
   const effectiveSku = hasData ? sku : 'PS-1104';
   const detail = hasData ? rawDetail : findSKUDetail('PS-1104');
+
+  const breakEven = useMemo(() => buildBreakEven(effectiveSku), [effectiveSku]);
+  const prof = useMemo(() => buildProfitability(effectiveSku), [effectiveSku]);
+
   if (!detail) return null;
 
   return (
@@ -55,12 +133,12 @@ export default function SKUDeepDiveSlideOver({ sku, onClose }) {
         </div>
 
         {/* Tabs */}
-        <div className="flex-shrink-0 px-6 pt-4 flex items-center gap-1" style={{ borderBottom: '1px solid #f8fafc' }}>
+        <div className="flex-shrink-0 px-6 pt-4 flex items-center gap-1 overflow-x-auto" style={{ borderBottom: '1px solid #f8fafc' }}>
           {tabs.map((k) => (
             <button
               key={k}
               onClick={() => setTab(k)}
-              className="px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors"
+              className="px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors whitespace-nowrap"
               style={{
                 color: tab === k ? '#0393da' : '#737373',
                 borderBottom: tab === k ? '2px solid #0393da' : '2px solid transparent',
@@ -93,19 +171,54 @@ export default function SKUDeepDiveSlideOver({ sku, onClose }) {
             </div>
           )}
 
-          {tab === 'breakEven' && (
-            detail.breakEven ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={detail.breakEven.curve}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="units" tick={{ fontSize: 11, fill: '#737373' }} />
-                  <YAxis tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11, fill: '#737373' }} />
-                  <Tooltip formatter={(v) => `€${v.toLocaleString()}`} />
-                  <Line type="monotone" dataKey="revenue" stroke="#0393da" strokeWidth={2.5} dot={false} />
-                  <Line type="monotone" dataKey="cost"    stroke="#dc2626" strokeWidth={2}   dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : <p className="text-sm text-slate-500">No break-even data.</p>
+          {tab === 'breakEven' && breakEven && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <KpiTile label="Break-even units" value={`${breakEven.breakEvenUnits}`} color="#0393da" emphasis />
+                <KpiTile label="Fixed cost"       value={formatEUR(breakEven.fixedCost)} color="#525252" />
+                <KpiTile label="Unit contribution" value={formatEUR(breakEven.unitPrice - breakEven.unitVarCost)} color="#16a34a" />
+              </div>
+              <div className="rounded-xl p-4" style={{ background: '#f8fafc' }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: '#525252' }}>
+                  Cost-volume-profit curve
+                </p>
+                <ResponsiveContainer width="100%" height={240}>
+                  <LineChart data={breakEven.curve}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="units" tick={{ fontSize: 10, fill: '#94a3b8' }} label={{ value: 'Units', position: 'insideBottom', offset: -4, fill: '#94a3b8', fontSize: 10 }} />
+                    <YAxis tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                    <Tooltip formatter={(v) => formatEUR(v)} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                    <ReferenceLine
+                      x={breakEven.breakEvenUnits}
+                      stroke="#16a34a"
+                      strokeDasharray="4 4"
+                      label={{ value: `Break-even @ ${breakEven.breakEvenUnits}u`, fill: '#16a34a', fontSize: 10 }}
+                    />
+                    <Line type="monotone" dataKey="revenue" stroke="#0393da" strokeWidth={2.5} dot={false} name="Revenue" />
+                    <Line type="monotone" dataKey="cost"    stroke="#dc2626" strokeWidth={2}   dot={false} name="Total cost" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="rounded-xl p-4" style={{ background: 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%)', border: '1px solid #e0f2fe' }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#0393da' }}>How it's calculated</p>
+                <p className="font-mono text-xs mt-2" style={{ color: '#1a1a2e' }}>
+                  Break-even = Fixed cost / (Price − Variable cost)
+                </p>
+                <p className="font-mono text-xs" style={{ color: '#1a1a2e' }}>
+                  &nbsp;&nbsp;&nbsp;&nbsp; = {formatEUR(breakEven.fixedCost)} / ({formatEUR(breakEven.unitPrice)} − {formatEUR(breakEven.unitVarCost)})
+                </p>
+                <p className="font-mono text-xs font-bold" style={{ color: '#0393da' }}>
+                  &nbsp;&nbsp;&nbsp;&nbsp; = {breakEven.breakEvenUnits} units
+                </p>
+                <p className="text-xs mt-2 leading-relaxed" style={{ color: '#525252' }}>
+                  Fixed cost assumes ~38% of full cost times typical annual volume. Variable cost is ~62% of full cost per unit. Below this volume the SKU loses money; above it, each additional unit contributes {formatEUR(breakEven.unitPrice - breakEven.unitVarCost)} to overhead.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {tab === 'profitability' && (
+            <ProfitabilityTab data={prof} />
           )}
 
           {tab === 'shock' && (
@@ -164,11 +277,128 @@ export default function SKUDeepDiveSlideOver({ sku, onClose }) {
   );
 }
 
+function ProfitabilityTab({ data }) {
+  const { points, highlightSku } = data;
+  const median = useMemo(() => {
+    if (!points.length) return { revenue: 0, margin: 0 };
+    const revs = points.map((p) => p.revenue).sort((a, b) => a - b);
+    return { revenue: revs[Math.floor(revs.length / 2)], margin: 0.62 };
+  }, [points]);
+
+  const me = points.find((p) => p.sku === highlightSku);
+  const myQuadrant = me ? quadrantForPoint(me, median.revenue, median.margin) : null;
+
+  const quadLabels = {
+    star:         { title: 'Star',          sub: 'High revenue, high margin' },
+    cashcow:      { title: 'Cash cow',      sub: 'High revenue, lower margin' },
+    questionmark: { title: 'Question mark', sub: 'Lower revenue, high margin' },
+    dog:          { title: 'Dog',           sub: 'Lower revenue, lower margin' },
+  };
+
+  return (
+    <div className="space-y-4">
+      {me && (
+        <div className="grid grid-cols-3 gap-3">
+          <KpiTile label="Revenue" value={`€${(me.revenue / 1e6).toFixed(2)}M`} color="#0393da" />
+          <KpiTile label="DB2 margin" value={`${(me.margin * 100).toFixed(1)}%`} color="#16a34a" />
+          <KpiTile
+            label="Quadrant"
+            value={quadLabels[myQuadrant]?.title || '—'}
+            color={QUADRANT_COLOR[myQuadrant] || '#737373'}
+            emphasis
+          />
+        </div>
+      )}
+      <div className="rounded-xl p-4" style={{ background: '#f8fafc' }}>
+        <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: '#525252' }}>
+          Revenue vs DB2 margin — this SKU highlighted
+        </p>
+        <ResponsiveContainer width="100%" height={260}>
+          <ScatterChart margin={{ top: 10, right: 24, bottom: 24, left: 24 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis
+              dataKey="revenue"
+              type="number"
+              tickFormatter={(v) => `€${(v / 1e6).toFixed(1)}M`}
+              tick={{ fontSize: 10, fill: '#94a3b8' }}
+              label={{ value: 'Annual revenue', position: 'insideBottom', offset: -6, fill: '#94a3b8', fontSize: 10 }}
+            />
+            <YAxis
+              dataKey="margin"
+              type="number"
+              domain={[0.3, 0.8]}
+              tickFormatter={(v) => `${Math.round(v * 100)}%`}
+              tick={{ fontSize: 10, fill: '#94a3b8' }}
+              label={{ value: 'DB2 margin', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }}
+            />
+            <ZAxis range={[80, 80]} />
+            <Tooltip
+              formatter={(v, name) => name === 'margin' ? `${(v * 100).toFixed(1)}%` : `€${Number(v).toLocaleString()}`}
+              contentStyle={{ fontSize: 11, borderRadius: 8 }}
+              cursor={{ strokeDasharray: '3 3' }}
+            />
+            <ReferenceLine x={median.revenue} stroke="#cbd5e1" strokeDasharray="4 4" />
+            <ReferenceLine y={median.margin} stroke="#cbd5e1" strokeDasharray="4 4" />
+            <Scatter data={points}>
+              {points.map((p, i) => {
+                const q = quadrantForPoint(p, median.revenue, median.margin);
+                const isMe = p.sku === highlightSku;
+                return (
+                  <Cell
+                    key={i}
+                    fill={QUADRANT_COLOR[q]}
+                    fillOpacity={isMe ? 1 : 0.35}
+                    stroke={isMe ? '#1a1a2e' : 'transparent'}
+                    strokeWidth={isMe ? 2 : 0}
+                  />
+                );
+              })}
+            </Scatter>
+          </ScatterChart>
+        </ResponsiveContainer>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+          {Object.entries(QUADRANT_COLOR).map(([k, color]) => (
+            <span key={k} className="inline-flex items-center gap-1.5 text-[10px]" style={{ color: '#525252' }}>
+              <span className="inline-block size-2 rounded-full" style={{ background: color }} />
+              {quadLabels[k].title}
+            </span>
+          ))}
+        </div>
+      </div>
+      {me && myQuadrant && (
+        <div className="rounded-xl p-4" style={{ background: 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%)', border: '1px solid #e0f2fe' }}>
+          <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#0393da' }}>
+            Quadrant interpretation
+          </p>
+          <p className="text-sm font-semibold mt-1" style={{ color: '#1a1a2e' }}>
+            {quadLabels[myQuadrant].title} — {quadLabels[myQuadrant].sub}
+          </p>
+          <p className="text-xs mt-2 leading-relaxed" style={{ color: '#525252' }}>
+            {myQuadrant === 'star' && 'High revenue, high margin. Protect volume, defend pricing, monitor competitive threats.'}
+            {myQuadrant === 'cashcow' && 'High revenue, lower margin. Milk for cash flow, avoid overinvesting. Test price increases in safe segments.'}
+            {myQuadrant === 'questionmark' && 'Strong margin but modest revenue. Evaluate whether marketing or cross-sell can grow the revenue footprint without diluting margin.'}
+            {myQuadrant === 'dog' && 'Below median on both axes. Candidate for price increase, cost engineering, or discontinuation if volumes do not justify the fixed-cost absorption.'}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MetricRow({ label, value, emphasis }) {
   return (
     <div className="flex items-center justify-between py-2">
       <span className="text-xs uppercase tracking-wider" style={{ color: '#737373' }}>{label}</span>
       <span className="text-sm tabular-nums" style={{ color: emphasis ? '#0393da' : '#1a1a2e', fontWeight: emphasis ? 700 : 500 }}>{value}</span>
+    </div>
+  );
+}
+
+function KpiTile({ label, value, color, emphasis }) {
+  return (
+    <div className="rounded-xl p-3" style={{ background: '#f8fafc', border: emphasis ? '1px solid #bae6fd' : '1px solid transparent' }}>
+      <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#94a3b8' }}>{label}</p>
+      <p className="text-sm font-bold tabular-nums mt-1" style={{ color, fontFamily: "'Manrope', sans-serif" }}>{value}</p>
     </div>
   );
 }

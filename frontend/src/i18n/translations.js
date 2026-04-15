@@ -1240,6 +1240,7 @@ export const translations = {
       'phase45.skuDeepDive.tab.shock': 'Shock sensitivity',
       'phase45.skuDeepDive.tab.anomalies': 'Anomalies',
       'phase45.skuDeepDive.tab.crossSell': 'Cross-sell',
+      'phase45.skuDeepDive.tab.profitability': 'Profitability',
     } : {}),
   },
 
@@ -2470,6 +2471,7 @@ export const translations = {
       'phase45.skuDeepDive.tab.shock': 'Schock-Sensitivität',
       'phase45.skuDeepDive.tab.anomalies': 'Anomalien',
       'phase45.skuDeepDive.tab.crossSell': 'Cross-Sell',
+      'phase45.skuDeepDive.tab.profitability': 'Rentabilität',
     } : {}),
   },
 };
