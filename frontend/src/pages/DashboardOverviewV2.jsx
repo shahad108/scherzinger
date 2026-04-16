@@ -755,7 +755,11 @@ export default function DashboardOverviewV2() {
                           cornerRadius={3}
                           animationDuration={800}
                           cursor="pointer"
-                          onClick={(d) => handlePieClick('Revenue Distribution', selectItem, d)}
+                          style={{ cursor: 'pointer' }}
+                          onClick={(slice) => {
+                            const commodityId = (slice.name || slice.payload?.name || '').toLowerCase();
+                            navigate(`/products?commodity=${encodeURIComponent(commodityId)}`);
+                          }}
                         >
                           {commodityData.slice(0, 5).map((entry, i) => (
                             <Cell key={i} fill={entry.color} />
