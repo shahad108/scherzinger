@@ -53,7 +53,10 @@ export function getCustomerDetail(customerId) {
   const rawWonQuotes = quotes.filter(q => q.status === 'Won');
   const rawLostQuotes = quotes.filter(q => q.status === 'Lost');
   const totalQuotes = customer.total_quotes || quotes.length;
-  const winRateValue = customer.win_rate ?? (totalQuotes > 0 ? rawWonQuotes.length / totalQuotes : null);
+  // Source data has ~34 customers with win_rate > 1.0 (ratio artifact from
+  // invoices/quotes with partial data). Clamp to [0, 1] so display is sane.
+  const rawWinRate = customer.win_rate ?? (totalQuotes > 0 ? rawWonQuotes.length / totalQuotes : null);
+  const winRateValue = rawWinRate != null ? Math.min(1, Math.max(0, rawWinRate)) : null;
 
   const hasRealQuoteData = quotes.length > 0;
   const synthWonCount  = Math.round((totalQuotes || 0) * (winRateValue || 0));
