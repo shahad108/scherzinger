@@ -3,6 +3,8 @@ import { IS_DEMO } from '../../utils/brand';
 import { getLostOpportunity } from '../../utils/mockPhase45';
 import ChartCard from '../shared/ChartCard';
 import { useLanguage } from '../../context/LanguageContext';
+import { useUI } from '../../context/UIContext';
+import { handlePieClick } from '../../utils/pageContextResolver';
 import { formatEUR } from '../../utils/formatters';
 
 const SLICE_COLORS = ['#0393da', '#1a1a2e', '#d97706', '#16a34a', '#7c3aed', '#dc2626'];
@@ -10,6 +12,7 @@ const SLICE_COLORS = ['#0393da', '#1a1a2e', '#d97706', '#16a34a', '#7c3aed', '#d
 export default function LostOpportunitySunburst() {
   if (!IS_DEMO) return null;
   const { t } = useLanguage();
+  const { selectItem } = useUI();
   const lost = getLostOpportunity();
   if (!lost) return null;
   const reasons = lost.byReason || [];
@@ -34,6 +37,7 @@ export default function LostOpportunitySunburst() {
                 paddingAngle={2}
                 stroke="#ffffff"
                 strokeWidth={2}
+                onClick={(data) => handlePieClick('Lost opportunity by reason', selectItem, data)}
               >
                 {pieData.map((_, i) => (
                   <Cell key={i} fill={SLICE_COLORS[i % SLICE_COLORS.length]} />
@@ -62,7 +66,16 @@ export default function LostOpportunitySunburst() {
         </div>
         <div className="flex-1 space-y-2">
           {reasons.map((r, i) => (
-            <div key={r.code} className="flex items-center gap-2 text-xs">
+            <div
+              key={r.code}
+              className="flex items-center gap-2 text-xs cursor-pointer hover:bg-slate-50 rounded-md px-1 py-1"
+              onClick={() => selectItem({
+                type: 'chart',
+                id: `Lost opportunity: ${r.code}`,
+                label: `Lost opportunity: ${r.code} ${r.label} · ${formatEUR(r.amount)}`,
+                data: { code: r.code, reason: r.label, amount: r.amount, total_lost: lost.total, share: ((r.amount / lost.total) * 100).toFixed(1) + '%' },
+              })}
+            >
               <span
                 style={{
                   display: 'inline-block',

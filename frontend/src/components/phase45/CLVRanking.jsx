@@ -2,7 +2,9 @@ import { IS_DEMO } from '../../utils/brand';
 import { getCLVRanking } from '../../utils/mockPhase45';
 import DataTable from '../shared/DataTable';
 import { useLanguage } from '../../context/LanguageContext';
+import { useUI } from '../../context/UIContext';
 import { formatEUR } from '../../utils/formatters';
+import { buildCLVInsight } from '../../utils/insightBuilders';
 
 const TIER_COLORS = {
   platinum: '#1a1a2e',
@@ -14,6 +16,7 @@ const TIER_COLORS = {
 export default function CLVRanking() {
   if (!IS_DEMO) return null;
   const { t } = useLanguage();
+  const { selectItem, openInsight } = useUI();
   const data = getCLVRanking();
 
   const columns = [
@@ -62,6 +65,21 @@ export default function CLVRanking() {
       columns={columns}
       data={data}
       rowKey="customer"
+      onRowClick={(row) => {
+        selectItem({
+          type: 'customer',
+          id: row.customer,
+          label: `${row.customer} · CLV ${formatEUR(row.clv)} · ${row.tier} · retention ${Math.round(row.retentionProb * 100)}%`,
+          data: {
+            customer: row.customer,
+            clv: row.clv,
+            tier: row.tier,
+            retention_prob_pct: Math.round(row.retentionProb * 100),
+            months_active: row.monthsActive,
+          },
+        });
+        openInsight(buildCLVInsight(row));
+      }}
     />
   );
 }

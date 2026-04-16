@@ -2,10 +2,13 @@ import { IS_DEMO } from '../../utils/brand';
 import { getWTPBands } from '../../utils/mockPhase45';
 import ChartCard from '../shared/ChartCard';
 import { useLanguage } from '../../context/LanguageContext';
+import { useUI } from '../../context/UIContext';
+import { buildWTPInsight } from '../../utils/insightBuilders';
 
 export default function WTPBands() {
   if (!IS_DEMO) return null;
   const { t } = useLanguage();
+  const { selectItem, openInsight } = useUI();
   const rows = getWTPBands();
   if (!rows.length) return null;
 
@@ -26,7 +29,28 @@ export default function WTPBands() {
           const highPct = pct(r.highWTP);
           const curPct = pct(r.current);
           return (
-            <div key={r.customer} className="flex items-center gap-3">
+            <div
+              key={r.customer}
+              className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 rounded-md px-1"
+              onClick={() => {
+                selectItem({
+                  type: 'customer',
+                  id: r.customer,
+                  label: `WTP — ${r.customer} (${r.segment}): current €${r.current} · band €${r.lowWTP}–€${r.highWTP}`,
+                  data: {
+                    customer: r.customer,
+                    segment: r.segment,
+                    current_price: r.current,
+                    wtp_low: r.lowWTP,
+                    wtp_mid: r.midWTP,
+                    wtp_high: r.highWTP,
+                    headroom_to_mid: r.midWTP - r.current,
+                    headroom_to_high: r.highWTP - r.current,
+                  },
+                });
+                openInsight(buildWTPInsight(r));
+              }}
+            >
               <div className="w-28 flex-shrink-0">
                 <div className="text-xs font-semibold" style={{ color: '#1a1a2e' }}>{r.customer}</div>
                 <div className="text-[10px]" style={{ color: '#737373' }}>{r.segment}</div>

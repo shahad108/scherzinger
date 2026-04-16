@@ -6,6 +6,7 @@ import { IS_DEMO } from '../../utils/brand';
 import { getAnomalies, findSKUDetail } from '../../utils/mockPhase45';
 import ChartCard from '../shared/ChartCard';
 import { useLanguage } from '../../context/LanguageContext';
+import { useUI } from '../../context/UIContext';
 import { colors } from '../../utils/designTokensV2';
 
 const SEVERITY_BADGE = {
@@ -35,49 +36,39 @@ function buildTimeline(anomaly) {
   return noise;
 }
 
-function suggestedAction(anomaly) {
-  if (anomaly.metric.toLowerCase().includes('material')) {
-    return {
-      title: 'Check with procurement',
-      detail: 'Validate whether the material cost spike reflects a supplier price change or a one-off batch cost.',
-    };
-  }
-  if (anomaly.metric.toLowerCase().includes('margin')) {
-    return {
-      title: 'Review last invoice batch',
-      detail: 'Confirm whether a mis-priced order or rebate is driving the margin drop. Open the deal in ERP to inspect line items.',
-    };
-  }
-  if (anomaly.metric.toLowerCase().includes('volume')) {
-    return {
-      title: 'Sales follow-up',
-      detail: 'Order volume is significantly below trend. Check with the account owner whether the customer is drifting.',
-    };
-  }
-  if (anomaly.metric.toLowerCase().includes('price')) {
-    return {
-      title: 'Validate pricing override',
-      detail: 'Unit price moved outside its normal band. Confirm the override was intentional and documented.',
-    };
-  }
-  if (anomaly.metric.toLowerCase().includes('rejection')) {
-    return {
-      title: 'Review win-loss codes',
-      detail: 'PA-share doubled over the last two weeks. Check whether a specific customer or commodity group is driving it.',
-    };
-  }
-  return {
-    title: 'Investigate with the account owner',
-    detail: 'Signal is outside the historical band — confirm the root cause before it shows up in monthly reports.',
-  };
+function suggestedActionKey(anomaly) {
+  const m = anomaly.metric.toLowerCase();
+  if (m.includes('material'))  return 'procurement';
+  if (m.includes('margin'))    return 'invoice';
+  if (m.includes('volume'))    return 'volume';
+  if (m.includes('price'))     return 'override';
+  if (m.includes('rejection')) return 'rejection';
+  return 'generic';
 }
 
 export default function AnomalyFeedCard() {
   if (!IS_DEMO) return null;
   const { t } = useLanguage();
+  const { selectItem } = useUI();
   const rows = getAnomalies();
   const [selected, setSelected] = useState(null);
   if (!rows.length) return null;
+
+  const handleAnomalyClick = (a) => {
+    setSelected(a);
+    selectItem({
+      type: 'sku',
+      id: a.sku,
+      label: `${a.sku} · ${a.metric} · z=${a.zscore.toFixed(1)}σ (${a.severity})`,
+      data: {
+        sku: a.sku,
+        metric: a.metric,
+        zscore: a.zscore,
+        severity: a.severity,
+        note: a.note,
+      },
+    });
+  };
 
   return (
     <>
@@ -92,7 +83,7 @@ export default function AnomalyFeedCard() {
             return (
               <button
                 key={a.id}
-                onClick={() => setSelected(a)}
+                onClick={() => handleAnomalyClick(a)}
                 className="w-full text-left flex items-center gap-4 py-3 transition-colors hover:bg-slate-50 group cursor-pointer"
               >
                 <span
@@ -146,7 +137,9 @@ function AnomalyDetailPanel({ anomaly, onClose }) {
   const sev = SEVERITY_BADGE[anomaly.severity] || SEVERITY_BADGE.low;
   const SevIcon = SEVERITY_ICON[anomaly.severity] || Activity;
   const zPos = anomaly.zscore >= 0;
-  const action = suggestedAction(anomaly);
+  const actionKey = suggestedActionKey(anomaly);
+  const zAbs = Math.abs(anomaly.zscore);
+  const zHintKey = zAbs >= 2.5 ? 'extreme' : zAbs >= 1.5 ? 'moderate' : 'mild';
 
   return (
     <AnimatePresence>
@@ -193,21 +186,21 @@ function AnomalyDetailPanel({ anomaly, onClose }) {
           {/* KPI strip */}
           <div className="grid grid-cols-3 gap-3">
             <KpiTile
-              label="Z-score"
+              label={t('phase45.anomalies.panel.zscore')}
               value={`${zPos ? '+' : ''}${anomaly.zscore.toFixed(1)}σ`}
-              hint={Math.abs(anomaly.zscore) >= 2.5 ? 'Extreme' : Math.abs(anomaly.zscore) >= 1.5 ? 'Moderate' : 'Mild'}
+              hint={t(`phase45.anomalies.panel.zscoreHint.${zHintKey}`)}
               color={zPos ? '#dc2626' : '#0393da'}
             />
             <KpiTile
-              label="Severity"
+              label={t('phase45.anomalies.panel.severity')}
               value={t(`phase45.anomalies.severity.${anomaly.severity}`)}
-              hint={anomaly.severity === 'high' ? 'Act today' : anomaly.severity === 'medium' ? 'Act this week' : 'Monitor'}
+              hint={t(`phase45.anomalies.panel.severityHint.${anomaly.severity}`)}
               color={sev.color}
             />
             <KpiTile
-              label="Direction"
-              value={zPos ? 'Above' : 'Below'}
-              hint="vs 4yr baseline"
+              label={t('phase45.anomalies.panel.direction')}
+              value={zPos ? t('phase45.anomalies.panel.direction.above') : t('phase45.anomalies.panel.direction.below')}
+              hint={t('phase45.anomalies.panel.directionHint')}
               color={zPos ? '#dc2626' : '#0393da'}
               icon={zPos ? TrendingUp : TrendingDown}
             />
@@ -215,7 +208,7 @@ function AnomalyDetailPanel({ anomaly, onClose }) {
 
           {/* Timeline */}
           <div>
-            <SectionHeading icon={Clock} label="Z-score timeline (last 12 months)" />
+            <SectionHeading icon={Clock} label={t('phase45.anomalies.panel.timelineTitle')} />
             <div className="mt-3 rounded-xl p-4" style={{ background: '#f8fafc' }}>
               <ResponsiveContainer width="100%" height={160}>
                 <BarChart data={timeline}>
@@ -232,7 +225,7 @@ function AnomalyDetailPanel({ anomaly, onClose }) {
                 </BarChart>
               </ResponsiveContainer>
               <p className="text-[10px] mt-2" style={{ color: '#94a3b8' }}>
-                Shaded band = normal range (±1.5σ). Bars outside it = flagged.
+                {t('phase45.anomalies.panel.timelineHint')}
               </p>
             </div>
           </div>
@@ -250,17 +243,21 @@ function AnomalyDetailPanel({ anomaly, onClose }) {
             </div>
             <div className="flex-1">
               <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#0393da' }}>
-                Suggested action
+                {t('phase45.anomalies.panel.actionTitle')}
               </p>
-              <p className="text-sm font-semibold mt-1" style={{ color: '#1a1a2e' }}>{action.title}</p>
-              <p className="text-xs mt-1 leading-relaxed" style={{ color: '#525252' }}>{action.detail}</p>
+              <p className="text-sm font-semibold mt-1" style={{ color: '#1a1a2e' }}>
+                {t(`phase45.anomalies.panel.action.${actionKey}.title`)}
+              </p>
+              <p className="text-xs mt-1 leading-relaxed" style={{ color: '#525252' }}>
+                {t(`phase45.anomalies.panel.action.${actionKey}.detail`)}
+              </p>
             </div>
           </div>
 
           {/* Related anomalies on same SKU */}
           {related.length > 0 && (
             <div>
-              <SectionHeading icon={Activity} label={`Other flags on ${anomaly.sku}`} />
+              <SectionHeading icon={Activity} label={t('phase45.anomalies.panel.otherFlags', { sku: anomaly.sku })} />
               <ul className="mt-3 space-y-2">
                 {related.map((r) => {
                   const rsev = SEVERITY_BADGE[r.severity] || SEVERITY_BADGE.low;
@@ -291,25 +288,25 @@ function AnomalyDetailPanel({ anomaly, onClose }) {
           {/* SKU context */}
           {sku && (sku.floorPrice || sku.optimizer) && (
             <div>
-              <SectionHeading icon={Activity} label="SKU context" />
+              <SectionHeading icon={Activity} label={t('phase45.anomalies.panel.skuContext')} />
               <div className="mt-3 grid grid-cols-2 gap-3">
                 {sku.floorPrice && (
-                  <ContextRow label="Full cost"   value={`€${sku.floorPrice.hkvoll.toLocaleString()}`} />
+                  <ContextRow label={t('phase45.anomalies.panel.ctx.fullCost')}   value={`€${sku.floorPrice.hkvoll.toLocaleString()}`} />
                 )}
                 {sku.floorPrice && (
-                  <ContextRow label="Floor price" value={`€${sku.floorPrice.floor.toLocaleString()}`} />
+                  <ContextRow label={t('phase45.anomalies.panel.ctx.floor')} value={`€${sku.floorPrice.floor.toLocaleString()}`} />
                 )}
                 {sku.optimizer && (
-                  <ContextRow label="Current"   value={`€${sku.optimizer.current.toLocaleString()}`} />
+                  <ContextRow label={t('phase45.anomalies.panel.ctx.current')}   value={`€${sku.optimizer.current.toLocaleString()}`} />
                 )}
                 {sku.optimizer && (
-                  <ContextRow label="Suggested" value={`€${sku.optimizer.suggested.toLocaleString()}`} emphasis />
+                  <ContextRow label={t('phase45.anomalies.panel.ctx.suggested')} value={`€${sku.optimizer.suggested.toLocaleString()}`} emphasis />
                 )}
                 {sku.optimizer && (
-                  <ContextRow label="Expected margin" value={`${(sku.optimizer.expectedMargin * 100).toFixed(1)}%`} />
+                  <ContextRow label={t('phase45.anomalies.panel.ctx.expectedMargin')} value={`${(sku.optimizer.expectedMargin * 100).toFixed(1)}%`} />
                 )}
                 {sku.competitive && (
-                  <ContextRow label="Market position" value={sku.competitive.position} />
+                  <ContextRow label={t('phase45.anomalies.panel.ctx.marketPosition')} value={sku.competitive.position} />
                 )}
               </div>
             </div>

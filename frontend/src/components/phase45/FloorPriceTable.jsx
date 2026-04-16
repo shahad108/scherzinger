@@ -6,6 +6,7 @@ import { IS_DEMO } from '../../utils/brand';
 import { getFloorPrices, getSkuImpactTable, getCompetitive } from '../../utils/mockPhase45';
 import DataTable from '../shared/DataTable';
 import { useLanguage } from '../../context/LanguageContext';
+import { useUI } from '../../context/UIContext';
 import { formatEUR } from '../../utils/formatters';
 import { colors } from '../../utils/designTokensV2';
 
@@ -19,32 +20,31 @@ const COST_OVERRUN_BUFFER = 0.05; // 5% buffer inside HKvoll for cost noise
 // when available, falls back to industry averages otherwise.
 function decomposeCost(row, impactEntry) {
   const hk = row.hkvoll;
+  // Names use stable keys — component resolves display labels via t() at render time.
   if (impactEntry) {
     const matShare    = impactEntry.matShare;
     const laborShare  = impactEntry.laborShare;
     const outShare    = impactEntry.outsourcingShare;
     const accountedShare = matShare + laborShare + outShare;
-    // Whatever isn't attributed to direct inputs is overhead/depreciation/other.
     const overheadShare = Math.max(0, (1 - accountedShare) * 0.62);
     const depShare      = Math.max(0, (1 - accountedShare) * 0.26);
     const otherShare    = Math.max(0, (1 - accountedShare) * 0.12);
     return [
-      { name: 'Material',     value: Math.round(hk * matShare),    color: '#0393da', share: matShare },
-      { name: 'Labor',        value: Math.round(hk * laborShare),  color: '#16a34a', share: laborShare },
-      { name: 'Outsourcing',  value: Math.round(hk * outShare),    color: '#d97706', share: outShare },
-      { name: 'Overhead',     value: Math.round(hk * overheadShare),color: '#64748b', share: overheadShare },
-      { name: 'Depreciation', value: Math.round(hk * depShare),    color: '#94a3b8', share: depShare },
-      { name: 'Other',        value: Math.round(hk * otherShare),  color: '#cbd5e1', share: otherShare },
+      { key: 'material',     value: Math.round(hk * matShare),     color: '#0393da', share: matShare },
+      { key: 'labor',        value: Math.round(hk * laborShare),   color: '#16a34a', share: laborShare },
+      { key: 'outsourcing',  value: Math.round(hk * outShare),     color: '#d97706', share: outShare },
+      { key: 'overhead',     value: Math.round(hk * overheadShare),color: '#64748b', share: overheadShare },
+      { key: 'depreciation', value: Math.round(hk * depShare),     color: '#94a3b8', share: depShare },
+      { key: 'other',        value: Math.round(hk * otherShare),   color: '#cbd5e1', share: otherShare },
     ];
   }
-  // Fallback — industry-average split
   return [
-    { name: 'Material',     value: Math.round(hk * 0.40), color: '#0393da', share: 0.40 },
-    { name: 'Labor',        value: Math.round(hk * 0.26), color: '#16a34a', share: 0.26 },
-    { name: 'Outsourcing',  value: Math.round(hk * 0.11), color: '#d97706', share: 0.11 },
-    { name: 'Overhead',     value: Math.round(hk * 0.14), color: '#64748b', share: 0.14 },
-    { name: 'Depreciation', value: Math.round(hk * 0.06), color: '#94a3b8', share: 0.06 },
-    { name: 'Other',        value: Math.round(hk * 0.03), color: '#cbd5e1', share: 0.03 },
+    { key: 'material',     value: Math.round(hk * 0.40), color: '#0393da', share: 0.40 },
+    { key: 'labor',        value: Math.round(hk * 0.26), color: '#16a34a', share: 0.26 },
+    { key: 'outsourcing',  value: Math.round(hk * 0.11), color: '#d97706', share: 0.11 },
+    { key: 'overhead',     value: Math.round(hk * 0.14), color: '#64748b', share: 0.14 },
+    { key: 'depreciation', value: Math.round(hk * 0.06), color: '#94a3b8', share: 0.06 },
+    { key: 'other',        value: Math.round(hk * 0.03), color: '#cbd5e1', share: 0.03 },
   ];
 }
 
@@ -64,39 +64,37 @@ function computeFloorSensitivity(row) {
 
 function recommendation(row) {
   const gapPct = (row.current - row.floor) / row.floor;
-  if (gapPct < 0) {
-    return {
-      tone: 'danger',
-      title: 'Price below floor — raise immediately',
-      detail: `Current price of ${formatEUR(row.current)} is ${formatEUR(Math.abs(row.gap))} below the floor. Every unit sold erodes contribution. Raise to at least the floor price within the next pricing cycle.`,
-    };
-  }
-  if (gapPct < 0.04) {
-    return {
-      tone: 'warning',
-      title: 'Tight cushion above floor',
-      detail: `Only ${(gapPct * 100).toFixed(1)}% headroom above floor. A 5% material cost shock would push this SKU below its floor. Review contract and lock in a price floor with the customer.`,
-    };
-  }
-  if (gapPct < 0.09) {
-    return {
-      tone: 'ok',
-      title: 'Healthy margin — maintain',
-      detail: `${(gapPct * 100).toFixed(1)}% headroom above the floor is within the target operating band (5–10%). No action needed unless cost assumptions change.`,
-    };
-  }
-  return {
-    tone: 'positive',
-    title: 'Premium positioning — watch volume sensitivity',
-    detail: `${(gapPct * 100).toFixed(1)}% above floor implies significant pricing power. Verify with win-rate data that we're not leaving volume on the table. Consider a controlled -2% test if win rate < 35%.`,
-  };
+  if (gapPct < 0)    return { tone: 'danger',   gapPct };
+  if (gapPct < 0.04) return { tone: 'warning',  gapPct };
+  if (gapPct < 0.09) return { tone: 'ok',       gapPct };
+  return                   { tone: 'positive', gapPct };
 }
 
 export default function FloorPriceTable() {
   if (!IS_DEMO) return null;
   const { t } = useLanguage();
+  const { selectItem } = useUI();
   const data = getFloorPrices();
   const [selected, setSelected] = useState(null);
+
+  const handleRowClick = (row) => {
+    setSelected(row);
+    selectItem({
+      type: 'sku',
+      id: row.sku,
+      label: `${row.sku} — ${row.name} · Floor ${formatEUR(row.floor)} · Current ${formatEUR(row.current)}`,
+      data: {
+        sku: row.sku,
+        name: row.name,
+        commodity_group: row.cg,
+        full_cost: row.hkvoll,
+        floor_price: row.floor,
+        current_price: row.current,
+        gap: row.gap,
+        headroom_pct: ((row.current - row.floor) / row.floor * 100).toFixed(1) + '%',
+      },
+    });
+  };
 
   const columns = [
     { key: 'sku',     label: t('phase45.floorPrice.col.sku') },
@@ -123,7 +121,7 @@ export default function FloorPriceTable() {
         columns={columns}
         data={data}
         rowKey="sku"
-        onRowClick={(row) => setSelected(row)}
+        onRowClick={handleRowClick}
         selectedRowId={selected?.sku}
       />
       <FloorPriceDetailPanel row={selected} onClose={() => setSelected(null)} />
@@ -182,7 +180,7 @@ function FloorPriceDetailPanel({ row, onClose }) {
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full" style={{ background: '#eff6ff', color: '#2563eb' }}>
                 <Calculator size={11} />
-                Floor price breakdown
+                {t('phase45.floorPrice.panel.badge')}
               </span>
               <span className="font-mono text-xs font-semibold" style={{ color: '#1a1a2e' }}>{row.sku}</span>
               <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded" style={{ background: '#f1f5f9', color: '#525252' }}>{row.cg}</span>
@@ -200,11 +198,11 @@ function FloorPriceDetailPanel({ row, onClose }) {
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
           {/* KPI strip */}
           <div className="grid grid-cols-4 gap-3">
-            <Kpi label="Full cost"    value={formatEUR(row.hkvoll)}  color="#525252" />
-            <Kpi label="Floor price"  value={formatEUR(row.floor)}   color="#0393da" emphasis />
-            <Kpi label="Current"      value={formatEUR(row.current)} color="#1a1a2e" />
+            <Kpi label={t('phase45.floorPrice.panel.kpi.fullCost')}   value={formatEUR(row.hkvoll)}  color="#525252" />
+            <Kpi label={t('phase45.floorPrice.panel.kpi.floor')}      value={formatEUR(row.floor)}   color="#0393da" emphasis />
+            <Kpi label={t('phase45.floorPrice.panel.kpi.current')}    value={formatEUR(row.current)} color="#1a1a2e" />
             <Kpi
-              label="Headroom"
+              label={t('phase45.floorPrice.panel.kpi.headroom')}
               value={`${headroomPct >= 0 ? '+' : ''}${(headroomPct * 100).toFixed(1)}%`}
               color={headroomPct < 0 ? '#dc2626' : headroomPct < 0.04 ? '#d97706' : '#16a34a'}
             />
@@ -217,11 +215,11 @@ function FloorPriceDetailPanel({ row, onClose }) {
           >
             <div className="flex items-center gap-2 mb-3">
               <DollarSign size={14} style={{ color: '#0393da' }} />
-              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#0393da' }}>How the floor is calculated</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#0393da' }}>{t('phase45.floorPrice.panel.how.title')}</span>
             </div>
             <div className="font-mono text-sm space-y-1" style={{ color: '#1a1a2e' }}>
               <div>
-                <span style={{ color: '#737373' }}>Floor</span> = HKvoll / (1 − target margin)
+                <span style={{ color: '#737373' }}>{t('phase45.floorPrice.panel.how.floor')}</span> = HKvoll / (1 − {t('phase45.floorPrice.panel.how.targetMargin')})
               </div>
               <div>
                 <span style={{ color: '#737373' }}>    </span>= {formatEUR(row.hkvoll)} / (1 − {(TARGET_MARGIN * 100).toFixed(1)}%)
@@ -231,16 +229,16 @@ function FloorPriceDetailPanel({ row, onClose }) {
               </div>
             </div>
             <p className="text-xs mt-3 leading-relaxed" style={{ color: '#525252' }}>
-              The target margin of {(TARGET_MARGIN * 100).toFixed(1)}% is the minimum DB2 contribution that keeps the SKU profitable after absorbing variable overhead, depreciation, and a {(COST_OVERRUN_BUFFER * 100).toFixed(0)}% cost-overrun buffer. Below this price the SKU loses its share of fixed-cost coverage.
+              {t('phase45.floorPrice.panel.how.explain', { target: (TARGET_MARGIN * 100).toFixed(1), buffer: (COST_OVERRUN_BUFFER * 100).toFixed(0) })}
             </p>
           </div>
 
           {/* Cost component breakdown */}
           <div>
-            <SectionLabel label={`Full cost breakdown — ${formatEUR(row.hkvoll)}`} />
+            <SectionLabel label={t('phase45.floorPrice.panel.costBreakdown', { total: formatEUR(row.hkvoll) })} />
             <div className="mt-3 rounded-xl p-4" style={{ background: '#f8fafc' }}>
               <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={costStack} layout="vertical" margin={{ left: 10, right: 30 }}>
+                <BarChart data={costStack.map(c => ({ ...c, name: t(`phase45.floorPrice.panel.cost.${c.key}`) }))} layout="vertical" margin={{ left: 10, right: 30 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
                   <XAxis type="number" tickFormatter={(v) => `€${v}`} tick={{ fontSize: 10, fill: '#94a3b8' }} />
                   <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11, fill: '#525252' }} axisLine={false} tickLine={false} />
@@ -254,9 +252,9 @@ function FloorPriceDetailPanel({ row, onClose }) {
               </ResponsiveContainer>
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
                 {costStack.map((c) => (
-                  <span key={c.name} className="inline-flex items-center gap-1.5 text-[10px]" style={{ color: '#525252' }}>
+                  <span key={c.key} className="inline-flex items-center gap-1.5 text-[10px]" style={{ color: '#525252' }}>
                     <span className="inline-block size-2 rounded-full" style={{ background: c.color }} />
-                    {c.name} {(c.share * 100).toFixed(0)}%
+                    {t(`phase45.floorPrice.panel.cost.${c.key}`)} {(c.share * 100).toFixed(0)}%
                   </span>
                 ))}
               </div>
@@ -265,18 +263,18 @@ function FloorPriceDetailPanel({ row, onClose }) {
 
           {/* Margin comparison: floor vs current */}
           <div>
-            <SectionLabel label="Margin comparison" />
+            <SectionLabel label={t('phase45.floorPrice.panel.marginCompare')} />
             <div className="mt-3 grid grid-cols-2 gap-3">
               <MarginCard
-                label="Margin at floor"
+                label={t('phase45.floorPrice.panel.marginAtFloor')}
                 pct={floorMargin}
-                sub="Minimum viable (target)"
+                sub={t('phase45.floorPrice.panel.marginAtFloorSub')}
                 color="#0393da"
               />
               <MarginCard
-                label="Margin at current price"
+                label={t('phase45.floorPrice.panel.marginAtCurrent')}
                 pct={currentMargin}
-                sub={headroomPct >= 0 ? 'Above floor — profitable' : 'Below floor — loss'}
+                sub={headroomPct >= 0 ? t('phase45.floorPrice.panel.aboveFloor') : t('phase45.floorPrice.panel.belowFloor')}
                 color={headroomPct >= 0 ? '#16a34a' : '#dc2626'}
               />
             </div>
@@ -284,7 +282,7 @@ function FloorPriceDetailPanel({ row, onClose }) {
 
           {/* Cost sensitivity */}
           <div>
-            <SectionLabel label="Floor under cost shock" />
+            <SectionLabel label={t('phase45.floorPrice.panel.shockTitle')} />
             <div className="mt-3 rounded-xl p-4" style={{ background: '#f8fafc' }}>
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={sensitivity}>
@@ -292,12 +290,12 @@ function FloorPriceDetailPanel({ row, onClose }) {
                   <XAxis dataKey="scenario" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <YAxis tickFormatter={(v) => `€${(v / 1000).toFixed(1)}k`} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <Tooltip formatter={(v) => formatEUR(v)} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
-                  <ReferenceLine y={row.current} stroke="#16a34a" strokeDasharray="4 4" label={{ value: 'Current', fill: '#16a34a', fontSize: 10 }} />
-                  <Line type="monotone" dataKey="floor" stroke="#0393da" strokeWidth={2.5} dot={{ r: 4, fill: '#0393da' }} name="Floor price" />
+                  <ReferenceLine y={row.current} stroke="#16a34a" strokeDasharray="4 4" label={{ value: t('phase45.floorPrice.panel.shockRefLabel'), fill: '#16a34a', fontSize: 10 }} />
+                  <Line type="monotone" dataKey="floor" stroke="#0393da" strokeWidth={2.5} dot={{ r: 4, fill: '#0393da' }} name={t('phase45.floorPrice.panel.shockLineName')} />
                 </LineChart>
               </ResponsiveContainer>
               <p className="text-[10px] mt-2" style={{ color: '#94a3b8' }}>
-                Shows how the floor price moves as full cost drifts ±10% around today's baseline. Green dashed line = current price.
+                {t('phase45.floorPrice.panel.shockHint')}
               </p>
             </div>
           </div>
@@ -305,14 +303,14 @@ function FloorPriceDetailPanel({ row, onClose }) {
           {/* Market context */}
           {compMarket && (
             <div>
-              <SectionLabel label="Market context" />
+              <SectionLabel label={t('phase45.floorPrice.panel.marketCtx')} />
               <div className="mt-3 grid grid-cols-3 gap-3">
-                <ContextTile label="Market low"  value={formatEUR(compMarket.marketLow)}  color="#94a3b8" />
-                <ContextTile label="Our price"   value={formatEUR(compMarket.our)}        color="#0393da" emphasis />
-                <ContextTile label="Market high" value={formatEUR(compMarket.marketHigh)} color="#94a3b8" />
+                <ContextTile label={t('phase45.floorPrice.panel.marketLow')}  value={formatEUR(compMarket.marketLow)}  color="#94a3b8" />
+                <ContextTile label={t('phase45.floorPrice.panel.ourPrice')}   value={formatEUR(compMarket.our)}        color="#0393da" emphasis />
+                <ContextTile label={t('phase45.floorPrice.panel.marketHigh')} value={formatEUR(compMarket.marketHigh)} color="#94a3b8" />
               </div>
               <p className="text-[11px] mt-2" style={{ color: '#525252' }}>
-                Inferred from PA-coded loss quotes — we sit in the {compMarket.position} segment of the observable market band.
+                {t('phase45.floorPrice.panel.marketHint', { position: compMarket.position })}
               </p>
             </div>
           )}
@@ -330,10 +328,18 @@ function FloorPriceDetailPanel({ row, onClose }) {
             </div>
             <div className="flex-1">
               <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: TONE_COLORS[rec.tone].color }}>
-                Recommendation
+                {t('phase45.floorPrice.panel.recommendation')}
               </p>
-              <p className="text-sm font-semibold mt-1" style={{ color: '#1a1a2e' }}>{rec.title}</p>
-              <p className="text-xs mt-1 leading-relaxed" style={{ color: '#525252' }}>{rec.detail}</p>
+              <p className="text-sm font-semibold mt-1" style={{ color: '#1a1a2e' }}>
+                {t(`phase45.floorPrice.panel.rec.${rec.tone}.title`)}
+              </p>
+              <p className="text-xs mt-1 leading-relaxed" style={{ color: '#525252' }}>
+                {t(`phase45.floorPrice.panel.rec.${rec.tone}.detail`, {
+                  current: formatEUR(row.current),
+                  gap: formatEUR(Math.abs(row.gap)),
+                  pct: (rec.gapPct * 100).toFixed(1),
+                })}
+              </p>
             </div>
           </div>
         </div>

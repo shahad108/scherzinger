@@ -2,11 +2,13 @@ import { IS_DEMO } from '../../utils/brand';
 import { getCompetitive } from '../../utils/mockPhase45';
 import ChartCard from '../shared/ChartCard';
 import { useLanguage } from '../../context/LanguageContext';
+import { useUI } from '../../context/UIContext';
 import { formatEUR } from '../../utils/formatters';
 
 export default function CompetitiveMap() {
   if (!IS_DEMO) return null;
   const { t } = useLanguage();
+  const { selectItem } = useUI();
   const all = getCompetitive();
   if (!all.length) return null;
   const min = Math.min(...all.flatMap((r) => [r.marketLow, r.our]));
@@ -23,7 +25,22 @@ export default function CompetitiveMap() {
           const leftPct = pct(r.marketLow);
           const widthPct = pct(r.marketHigh) - leftPct;
           return (
-            <div key={r.sku} className="flex items-center gap-3 py-2">
+            <div
+              key={r.sku}
+              className="flex items-center gap-3 py-2 cursor-pointer hover:bg-slate-50 rounded-md px-1"
+              onClick={() => selectItem({
+                type: 'sku',
+                id: r.sku,
+                label: `${r.sku} · Our ${formatEUR(r.our)} vs market ${formatEUR(r.marketLow)}–${formatEUR(r.marketHigh)} (${r.position})`,
+                data: {
+                  sku: r.sku,
+                  our_price: r.our,
+                  market_low: r.marketLow,
+                  market_high: r.marketHigh,
+                  market_position: r.position,
+                },
+              })}
+            >
               <span className="w-20 text-xs font-mono" style={{ color: '#1a1a2e' }}>{r.sku}</span>
               <div className="relative flex-1 h-6">
                 <div

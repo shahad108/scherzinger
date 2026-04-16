@@ -2,10 +2,18 @@ import { IS_DEMO } from '../../utils/brand';
 import { getCrossSell } from '../../utils/mockPhase45';
 import DataTable from '../shared/DataTable';
 import { useLanguage } from '../../context/LanguageContext';
+import { useUI } from '../../context/UIContext';
+import { buildCrossSellInsight } from '../../utils/insightBuilders';
+import productsData from '../../data/products.json';
+
+const realSkuSet = new Set(
+  (Array.isArray(productsData) ? productsData : productsData.products || []).map((p) => p.article_id)
+);
 
 export default function CrossSellPanel() {
   if (!IS_DEMO) return null;
   const { t } = useLanguage();
+  const { selectItem, openInsight } = useUI();
   const data = getCrossSell();
 
   const columns = [
@@ -42,6 +50,20 @@ export default function CrossSellPanel() {
       columns={columns}
       data={data}
       rowKey="sku"
+      onRowClick={(row) => {
+        selectItem({
+          type: 'sku',
+          id: row.sku,
+          label: `Cross-sell: ${row.sku} → ${row.customer} · ${Math.round(row.confidence * 100)}% confidence`,
+          data: {
+            sku: row.sku,
+            target_customer: row.customer,
+            confidence_pct: Math.round(row.confidence * 100),
+            reason: row.reason,
+          },
+        });
+        openInsight(buildCrossSellInsight(row, realSkuSet.has(row.sku)));
+      }}
     />
   );
 }

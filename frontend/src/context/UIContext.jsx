@@ -14,6 +14,10 @@ export function UIProvider({ children }) {
   const selectItem = useCallback((item) => setSelectedItem(item), []);
   const clearSelection = useCallback(() => setSelectedItem(null), []);
 
+  const [activeInsight, setActiveInsight] = useState(null);
+  const openInsight = useCallback((insight) => setActiveInsight(insight), []);
+  const closeInsight = useCallback(() => setActiveInsight(null), []);
+
   const pushAndOpen = useCallback((next) => {
     setSlideOver(prev => {
       if (prev.type && prev.id) {
@@ -50,6 +54,7 @@ export function UIProvider({ children }) {
       openSKUDetail, openCategoryDetail, openCustomerDetail, openCommodityDetail, openQuoteDetail,
       goBackPanel, closeSlideOver,
       selectedItem, selectItem, clearSelection,
+      activeInsight, openInsight, closeInsight,
     }}>
       {children}
     </UIContext.Provider>

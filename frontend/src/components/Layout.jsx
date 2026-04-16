@@ -7,6 +7,7 @@ import CategorySlideOver from './CategorySlideOver';
 import CustomerSlideOver from './CustomerSlideOver';
 import CommoditySlideOver from './CommoditySlideOver';
 import QuoteDetailSlideOver from './phase45/QuoteDetailSlideOver';
+import InsightSlideOver from './phase45/InsightSlideOver';
 import GlobalChatBar from './GlobalChatBar';
 import { AnimatedGridPattern } from './ui/AnimatedGridPattern';
 import { useUI } from '../context/UIContext';
@@ -83,6 +84,7 @@ export default function Layout() {
       <CustomerSlideOver />
       <CommoditySlideOver />
       <QuoteDetailSlideOver />
+      <InsightSlideOver />
     </div>
   );
 }

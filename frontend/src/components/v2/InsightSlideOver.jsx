@@ -7,6 +7,7 @@ import {
 import { slideOverVariants, backdropVariants, slideOverSectionVariants, slideOverItemVariants } from '../../utils/animations';
 import { colors, shadows, radius } from '../../utils/designTokensV2';
 import { formatEUR } from '../../utils/formatters';
+import { useLanguage } from '../../context/LanguageContext';
 
 const badgeColors = {
   green: { bg: '#f0fdf4', text: '#16a34a' },
@@ -17,6 +18,7 @@ const badgeColors = {
 };
 
 export default function InsightSlideOver({ insight, onClose }) {
+  const { t } = useLanguage();
   if (!insight) return null;
   const d = insight.detail;
   const badge = badgeColors[insight.badgeColor] || badgeColors.blue;
@@ -107,7 +109,7 @@ export default function InsightSlideOver({ insight, onClose }) {
                   style={{ background: '#f8f9fa', borderRadius: '1rem' }}
                 >
                   <p className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: '#737373' }}>
-                    {d.chartTitle || 'Analysis'}
+                    {d.chartTitle || t('insight.slideOver.analysis')}
                   </p>
                   <div className="h-48">
                     <ResponsiveContainer width="100%" height="100%">
@@ -153,7 +155,7 @@ export default function InsightSlideOver({ insight, onClose }) {
               {d.actions && d.actions.length > 0 && (
                 <motion.div variants={slideOverItemVariants}>
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3">
-                    Recommended Actions
+                    {t('insight.slideOver.recommendedActions')}
                   </p>
                   <ol className="space-y-2">
                     {d.actions.map((action, j) => (
@@ -175,7 +177,7 @@ export default function InsightSlideOver({ insight, onClose }) {
               {d.dataRows && d.dataRows.length > 0 && (
                 <motion.div variants={slideOverItemVariants}>
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3">
-                    {d.tableTitle || 'Affected Items'}
+                    {d.tableTitle || t('insight.slideOver.affectedItems')}
                   </p>
                   <div className="overflow-x-auto rounded-lg" style={{ background: '#f8f9fa' }}>
                     <table className="w-full text-left text-xs">

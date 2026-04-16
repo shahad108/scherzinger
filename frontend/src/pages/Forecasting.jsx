@@ -23,6 +23,7 @@ import { TrendingDown, TrendingUp, ChevronDown, ChevronUp, Bell, BarChart3, User
 import { colors, shadows, radius } from '../utils/designTokensV2';
 import { IS_DEMO } from '../utils/brand';
 import QuoteToCashTab from '../components/phase45/QuoteToCashTab';
+import SKUForecastSection from '../components/phase45/SKUForecastSection';
 
 /* ── Data references ── */
 const quarterlyMargins = forecastingData.quarterly_margins;
@@ -96,6 +97,7 @@ function projectWMA(wmaValues, quarters = 4) {
 
 /* ── Year range filter options ── */
 const YEAR_RANGES = [
+  { label: 'Last 1Y', tKey: 'forecast.range.1y', startYear: 2024 },
   { label: 'Last 2Y', tKey: 'forecast.range.2y', startYear: 2023 },
   { label: 'Last 3Y', tKey: 'forecast.range.3y', startYear: 2022 },
   { label: 'All', tKey: 'forecast.range.all', startYear: 0 },
@@ -836,6 +838,8 @@ export default function Forecasting() {
         </div>
         </>
         )}
+
+        {IS_DEMO && <SKUForecastSection />}
 
         {IS_DEMO && <QuoteToCashTab />}
 
