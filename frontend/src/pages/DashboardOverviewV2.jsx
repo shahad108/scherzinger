@@ -389,7 +389,7 @@ const buildAiHighlights = (t) => [
     bg: '#FEF2F2',
     color: '#991B1B',
     text: t('dashboard.hl.margin', { pp: Math.abs(marginChange).toFixed(1) }),
-    drillTo: { type: 'sku', id: 'SKU-1042', initialTab: 'profitability' },
+    drillTo: { type: 'sku', id: '300143', initialTab: 'profitability' },
   },
   {
     id: 'customers',
@@ -397,7 +397,7 @@ const buildAiHighlights = (t) => [
     bg: '#FFF7ED',
     color: '#9A3412',
     text: t('dashboard.hl.customers', { n: highCriticalCount, rev: (revenueAtRisk / 1000000).toFixed(2) }),
-    drillTo: { type: 'customer', id: 'CUST-042', initialTab: 'risk' },
+    drillTo: { type: 'customer', id: '101690', initialTab: 'risk' },
   },
   {
     id: 'forecast',
@@ -405,7 +405,7 @@ const buildAiHighlights = (t) => [
     bg: '#EFF6FF',
     color: '#1E40AF',
     text: t('dashboard.hl.forecast', { p3: ((forecast3m ?? 0) * 100).toFixed(1), p12: ((forecast12m ?? 0) * 100).toFixed(1) }),
-    drillTo: { type: 'sku', id: 'SKU-1201', initialTab: 'profitability' },
+    drillTo: { type: 'sku', id: '201924-F', initialTab: 'profitability' },
   },
   {
     id: 'pipeline',
@@ -413,7 +413,7 @@ const buildAiHighlights = (t) => [
     bg: '#F0FDF4',
     color: '#166534',
     text: t('dashboard.hl.pipeline'),
-    drillTo: { type: 'sku', id: 'SKU-1234', initialTab: 'pricing' },
+    drillTo: { type: 'sku', id: '206028-01', initialTab: 'pricing' },
   },
   {
     id: 'cost',
@@ -421,7 +421,7 @@ const buildAiHighlights = (t) => [
     bg: '#FFFBEB',
     color: '#92400E',
     text: t('dashboard.hl.cost'),
-    drillTo: { type: 'commodity', id: 'silver', initialTab: 'shock' },
+    drillTo: { type: 'sku', id: '204430', initialTab: 'shock' },
   },
 ];
 
@@ -510,7 +510,7 @@ export default function DashboardOverviewV2() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <motion.div
             variants={cardVariants}
-            onClick={() => openSKUDetail('SKU-1201')}
+            onClick={() => openSKUDetail('201924-F')}
             className="cursor-pointer hover:ring-2 hover:ring-blue-400/40 rounded transition"
           >
             <KPICardV2
@@ -541,7 +541,7 @@ export default function DashboardOverviewV2() {
           </motion.div>
           <motion.div
             variants={cardVariants}
-            onClick={() => openSKUDetail('SKU-1042')}
+            onClick={() => openSKUDetail('300143')}
             className="cursor-pointer hover:ring-2 hover:ring-blue-400/40 rounded transition"
           >
             <KPICardV2
@@ -564,7 +564,7 @@ export default function DashboardOverviewV2() {
           </motion.div>
           <motion.div
             variants={cardVariants}
-            onClick={() => openSKUDetail('SKU-1087')}
+            onClick={() => openSKUDetail('201885')}
             className="cursor-pointer hover:ring-2 hover:ring-blue-400/40 rounded transition"
           >
             <KPICardV2
@@ -589,7 +589,7 @@ export default function DashboardOverviewV2() {
           </motion.div>
           <motion.div
             variants={cardVariants}
-            onClick={() => openSKUDetail('SKU-1234')}
+            onClick={() => openSKUDetail('206028-01')}
             className="cursor-pointer hover:ring-2 hover:ring-blue-400/40 rounded transition"
           >
             <KPICardV2
@@ -615,7 +615,7 @@ export default function DashboardOverviewV2() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <motion.div
             variants={cardVariants}
-            onClick={() => openSKUDetail('SKU-1042', 'profitability')}
+            onClick={() => openSKUDetail('300143', 'profitability')}
             className="cursor-pointer hover:ring-2 hover:ring-blue-400/40 rounded transition"
           >
             <AlertCardV2
@@ -634,7 +634,7 @@ export default function DashboardOverviewV2() {
           </motion.div>
           <motion.div
             variants={cardVariants}
-            onClick={() => openCustomerDetail('CUST-042', 'risk')}
+            onClick={() => openCustomerDetail('101690', 'risk')}
             className="cursor-pointer hover:ring-2 hover:ring-blue-400/40 rounded transition"
           >
             <AlertCardV2
@@ -653,7 +653,7 @@ export default function DashboardOverviewV2() {
           </motion.div>
           <motion.div
             variants={cardVariants}
-            onClick={() => openSKUDetail('SKU-1087', 'anomalies')}
+            onClick={() => openSKUDetail('201885', 'anomalies')}
             className="cursor-pointer hover:ring-2 hover:ring-blue-400/40 rounded transition"
           >
             <AlertCardV2
