@@ -389,6 +389,7 @@ const buildAiHighlights = (t) => [
     bg: '#FEF2F2',
     color: '#991B1B',
     text: t('dashboard.hl.margin', { pp: Math.abs(marginChange).toFixed(1) }),
+    prompt: 'Why did margin drop 1.2% this quarter?',
   },
   {
     id: 'customers',
@@ -396,6 +397,7 @@ const buildAiHighlights = (t) => [
     bg: '#FFF7ED',
     color: '#9A3412',
     text: t('dashboard.hl.customers', { n: highCriticalCount, rev: (revenueAtRisk / 1000000).toFixed(2) }),
+    prompt: 'Which customers are at highest churn risk?',
   },
   {
     id: 'forecast',
@@ -403,6 +405,7 @@ const buildAiHighlights = (t) => [
     bg: '#EFF6FF',
     color: '#1E40AF',
     text: t('dashboard.hl.forecast', { p3: ((forecast3m ?? 0) * 100).toFixed(1), p12: ((forecast12m ?? 0) * 100).toFixed(1) }),
+    prompt: 'What does the margin forecast look like for the next 12 months?',
   },
   {
     id: 'pipeline',
@@ -410,6 +413,7 @@ const buildAiHighlights = (t) => [
     bg: '#F0FDF4',
     color: '#166534',
     text: t('dashboard.hl.pipeline'),
+    prompt: 'Which SKUs should we reprice?',
   },
   {
     id: 'cost',
@@ -417,6 +421,7 @@ const buildAiHighlights = (t) => [
     bg: '#FFFBEB',
     color: '#92400E',
     text: t('dashboard.hl.cost'),
+    prompt: "What's the impact of a 15% material cost shock?",
   },
 ];
 
@@ -866,13 +871,12 @@ export default function DashboardOverviewV2() {
           </div>
           <div className="space-y-2">
             {aiHighlights.map((h) => {
-              const matchedInsight = insights.find((i) => i.id === h.id);
               return (
                 <button
                   key={h.id}
                   type="button"
-                  onClick={() => matchedInsight && setActiveInsight(matchedInsight)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer hover:shadow-sm transition-shadow text-left"
+                  onClick={() => navigate(`/ai-insights?prompt=${encodeURIComponent(h.prompt)}`)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer hover:ring-2 hover:ring-blue-400/40 hover:shadow-sm transition text-left"
                   style={{ background: h.bg }}
                 >
                   <span className="text-base">{h.icon}</span>
