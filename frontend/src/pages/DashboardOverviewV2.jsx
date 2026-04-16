@@ -397,7 +397,7 @@ const buildAiHighlights = (t) => [
     bg: '#FFF7ED',
     color: '#9A3412',
     text: t('dashboard.hl.customers', { n: highCriticalCount, rev: (revenueAtRisk / 1000000).toFixed(2) }),
-    drillTo: { type: 'customer', id: '101690', initialTab: 'risk' },
+    drillTo: { type: 'customer', id: '101456', initialTab: 'risk' },
   },
   {
     id: 'forecast',
@@ -634,7 +634,7 @@ export default function DashboardOverviewV2() {
           </motion.div>
           <motion.div
             variants={cardVariants}
-            onClick={() => openCustomerDetail('101690', 'risk')}
+            onClick={() => openCustomerDetail('101456', 'risk')}
             className="cursor-pointer hover:ring-2 hover:ring-blue-400/40 rounded transition"
           >
             <AlertCardV2
