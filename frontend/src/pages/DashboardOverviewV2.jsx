@@ -862,12 +862,6 @@ export default function DashboardOverviewV2() {
             <h2 className="text-lg font-semibold" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>
               {t('dashboard.aiHighlights.title')}
             </h2>
-            <button
-              onClick={() => navigate('/ai-insights')}
-              className="ml-auto text-xs font-semibold text-slate-600 hover:text-slate-900"
-            >
-              {t('dashboard.aiHighlights.full')}
-            </button>
           </div>
           <div className="space-y-2">
             {aiHighlights.map((h) => {
