@@ -13,6 +13,7 @@ import IntelligenceFeed from '../components/IntelligenceFeed';
 import InsightReportSlideOver from '../components/InsightReportSlideOver';
 import { useChat } from '../context/ChatContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useUrlFilters } from '../hooks/useUrlFilters';
 import { translations } from '../i18n/translations';
 import { streamChat } from '../utils/openrouter';
 import { SYSTEM_PROMPT } from '../utils/systemPrompt';
@@ -499,6 +500,24 @@ export default function AIInsights() {
     const question = `Tell me more about this alert: "${report.title}". ${report.summary}`;
     handleSend(question);
   }, [handleSend]);
+
+  // Auto-submit ?prompt= from URL (e.g. dashboard drill-through). Fires once per mount.
+  const { filters: urlFilters, clearFilter: clearUrlFilter } = useUrlFilters();
+  const didAutoSubmit = useRef(false);
+  useEffect(() => {
+    if (didAutoSubmit.current) return;
+    if (!urlFilters.prompt) return;
+    // Don't clobber an active conversation
+    if (activeConv?.messages?.length > 0) { clearUrlFilter('prompt'); return; }
+    didAutoSubmit.current = true;
+    const promptText = urlFilters.prompt;
+    const id = setTimeout(() => {
+      handleSend(promptText);
+      clearUrlFilter('prompt');
+    }, 50);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlFilters.prompt]);
 
   const handleChatFeedback = (msgIndex, type) => {
     setChatFeedback((prev) => ({
