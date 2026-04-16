@@ -1,0 +1,135 @@
+[
+  {
+    "id": "Q-2025-0417",
+    "value": 84200,
+    "winProbability": 0.72,
+    "customerId": "C-4021",
+    "customerName": "MetalWorks GmbH",
+    "status": "Negotiation",
+    "lineItems": [
+      { "skuCode": "SKU-1042", "qty": 120 },
+      { "skuCode": "SKU-1087", "qty": 40 }
+    ],
+    "winReasons": [
+      "Customer is a repeat buyer with 82% historical win rate",
+      "Quoted price is within 3% of last won quote for this SKU mix",
+      "Lead time commitment matches customer RFQ window"
+    ]
+  },
+  {
+    "id": "Q-2025-0418",
+    "value": 156800,
+    "winProbability": 0.48,
+    "customerId": "C-3187",
+    "customerName": "Bosch Rexroth",
+    "status": "Quoted",
+    "lineItems": [
+      { "skuCode": "SKU-1201", "qty": 300 },
+      { "skuCode": "SKU-1234", "qty": 150 }
+    ],
+    "winReasons": [
+      "Price is 7% above market median for this commodity group",
+      "Customer has 3 open RFQs — price-sensitive",
+      "Competing quote suspected from low-cost supplier"
+    ]
+  },
+  {
+    "id": "Q-2025-0419",
+    "value": 42500,
+    "winProbability": 0.85,
+    "customerId": "C-5502",
+    "customerName": "Siemens Energy",
+    "status": "Under Review",
+    "lineItems": [
+      { "skuCode": "SKU-1087", "qty": 60 }
+    ],
+    "winReasons": [
+      "Strategic account with 91% historical win rate",
+      "Quote sits inside customer's framework agreement band",
+      "No competing suppliers qualified for this grade"
+    ]
+  },
+  {
+    "id": "Q-2025-0420",
+    "value": 98200,
+    "winProbability": 0.31,
+    "customerId": "C-2990",
+    "customerName": "ZF Friedrichshafen",
+    "status": "New Quote",
+    "lineItems": [
+      { "skuCode": "SKU-1234", "qty": 200 },
+      { "skuCode": "SKU-1042", "qty": 80 }
+    ],
+    "winReasons": [
+      "Customer historically awards to 2 suppliers — we are #3 on panel",
+      "Quote price 9% above customer target",
+      "Payment terms mismatch (we: 30d, customer requires: 60d)"
+    ]
+  },
+  {
+    "id": "Q-2025-0421",
+    "value": 215400,
+    "winProbability": 0.64,
+    "customerId": "C-4021",
+    "customerName": "MetalWorks GmbH",
+    "status": "Negotiation",
+    "lineItems": [
+      { "skuCode": "SKU-1201", "qty": 480 },
+      { "skuCode": "SKU-1087", "qty": 120 },
+      { "skuCode": "SKU-1042", "qty": 90 }
+    ],
+    "winReasons": [
+      "Large-basket quote — customer typically consolidates with one supplier",
+      "Margin already trimmed 1.8pp vs baseline — limited room",
+      "Delivery flexibility is our strongest lever on this account"
+    ]
+  },
+  {
+    "id": "Q-2025-0422",
+    "value": 31800,
+    "winProbability": 0.79,
+    "customerId": "C-6113",
+    "customerName": "Schaeffler AG",
+    "status": "Quoted",
+    "lineItems": [
+      { "skuCode": "SKU-1042", "qty": 75 }
+    ],
+    "winReasons": [
+      "Small, routine reorder — 88% of similar quotes won",
+      "Price held flat vs last quote — no customer resistance expected"
+    ]
+  },
+  {
+    "id": "Q-2025-0423",
+    "value": 178900,
+    "winProbability": 0.42,
+    "customerId": "C-7745",
+    "customerName": "Knorr-Bremse",
+    "status": "Negotiation",
+    "lineItems": [
+      { "skuCode": "SKU-1234", "qty": 340 },
+      { "skuCode": "SKU-1201", "qty": 180 }
+    ],
+    "winReasons": [
+      "Customer has pushed back twice on pricing",
+      "Cost base moved against us 2.1pp since initial quote",
+      "Discount of 3% would raise win probability to ~65%"
+    ]
+  },
+  {
+    "id": "Q-2025-0424",
+    "value": 67300,
+    "winProbability": 0.58,
+    "customerId": "C-3187",
+    "customerName": "Bosch Rexroth",
+    "status": "Under Review",
+    "lineItems": [
+      { "skuCode": "SKU-1087", "qty": 90 },
+      { "skuCode": "SKU-1042", "qty": 50 }
+    ],
+    "winReasons": [
+      "Customer is mid-cycle on a similar RFQ with competitor",
+      "Technical fit is strong — price is the decisive lever"
+    ]
+  }
+]

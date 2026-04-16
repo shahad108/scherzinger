@@ -6,7 +6,7 @@ export function UIProvider({ children }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const toggleSidebar = useCallback(() => setSidebarCollapsed(prev => !prev), []);
 
-  // type: 'sku' | 'category' | 'customer' | 'commodity' | null
+  // type: 'sku' | 'category' | 'customer' | 'commodity' | 'quote' | null
   const [slideOver, setSlideOver] = useState({ type: null, id: null, initialTab: null });
   const [panelHistory, setPanelHistory] = useState([]);
 
@@ -27,6 +27,7 @@ export function UIProvider({ children }) {
   const openCategoryDetail = useCallback((categoryName, initialTab = null) => pushAndOpen({ type: 'category', id: categoryName, initialTab }), [pushAndOpen]);
   const openCustomerDetail = useCallback((customerId, initialTab = null)   => pushAndOpen({ type: 'customer', id: customerId,  initialTab }), [pushAndOpen]);
   const openCommodityDetail= useCallback((commodityId, initialTab = null)  => pushAndOpen({ type: 'commodity',id: commodityId, initialTab }), [pushAndOpen]);
+  const openQuoteDetail    = useCallback((quoteId, initialTab = null)      => pushAndOpen({ type: 'quote',    id: quoteId,     initialTab }), [pushAndOpen]);
 
   const goBackPanel = useCallback(() => {
     setPanelHistory(h => {
@@ -46,7 +47,7 @@ export function UIProvider({ children }) {
     <UIContext.Provider value={{
       sidebarCollapsed, toggleSidebar, setSidebarCollapsed,
       slideOver, panelHistory,
-      openSKUDetail, openCategoryDetail, openCustomerDetail, openCommodityDetail,
+      openSKUDetail, openCategoryDetail, openCustomerDetail, openCommodityDetail, openQuoteDetail,
       goBackPanel, closeSlideOver,
       selectedItem, selectItem, clearSelection,
     }}>

@@ -5,12 +5,16 @@ import { Clock } from 'lucide-react';
 import { IS_DEMO } from '../../utils/brand';
 import { getQuoteToCash } from '../../utils/mockPhase45';
 import { useLanguage } from '../../context/LanguageContext';
+import { useUI } from '../../context/UIContext';
+import { handleChartContainerClick } from '../../utils/pageContextResolver';
 import ChartCard from '../shared/ChartCard';
 import KPICard from '../shared/KPICard';
+import quotes from '../../data/quotes.json';
 
 export default function QuoteToCashTab() {
   if (!IS_DEMO) return null;
   const { t } = useLanguage();
+  const { selectItem, openQuoteDetail } = useUI();
   const q = getQuoteToCash();
   if (!q) return null;
 
@@ -56,7 +60,7 @@ export default function QuoteToCashTab() {
           subtitle={t('phase45.quoteToCash.subtitle')}
         >
           <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={q.timeline} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+            <LineChart data={q.timeline} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} onClick={(state) => handleChartContainerClick('Quote-to-Cash timeline', selectItem, q.timeline, state)}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
               <XAxis
                 dataKey="day"
@@ -92,7 +96,16 @@ export default function QuoteToCashTab() {
             const absWidth = (Math.abs(d.coef) / driverMax) * 100;
             const positive = d.coef >= 0;
             return (
-              <div key={d.name} className="flex items-center gap-3">
+              <div
+                key={d.name}
+                className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 rounded-md px-1"
+                onClick={() => selectItem({
+                  type: 'chart',
+                  id: `Quote-to-Cash driver: ${d.name}`,
+                  label: `Quote-to-Cash driver: ${d.name} (coef ${d.coef >= 0 ? '+' : ''}${d.coef.toFixed(2)})`,
+                  data: { driver: d.name, coefficient: d.coef, direction: d.coef >= 0 ? 'slows quote-to-cash' : 'speeds up quote-to-cash' },
+                })}
+              >
                 <span className="w-48 text-xs flex-shrink-0" style={{ color: '#1a1a2e' }}>{d.name}</span>
                 <div className="relative flex-1 h-5 flex items-center">
                   <div style={{ position: 'absolute', top: '50%', left: '50%', width: '1px', height: '100%', background: '#e2e8f0', transform: 'translateX(-50%)' }} />
@@ -118,6 +131,43 @@ export default function QuoteToCashTab() {
               </div>
             );
           })}
+        </div>
+      </ChartCard>
+
+      {/* Open quotes table — rows open quote detail slide-over */}
+      <ChartCard title="Open quotes" subtitle="Click a row to see why win probability is what it is">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b">
+                <th className="px-3 py-2">Quote</th>
+                <th className="px-3 py-2">Customer</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2 text-right">Value</th>
+                <th className="px-3 py-2 text-right">Win prob.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {quotes.map((row) => (
+                <tr
+                  key={row.id}
+                  onClick={() => openQuoteDetail(row.id)}
+                  className="cursor-pointer hover:bg-slate-50 border-b border-slate-50"
+                >
+                  <td className="px-3 py-2 font-semibold text-slate-800">{row.id}</td>
+                  <td className="px-3 py-2 text-slate-600">{row.customerName}</td>
+                  <td className="px-3 py-2 text-slate-500">{row.status}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">€{row.value.toLocaleString()}</td>
+                  <td
+                    className="px-3 py-2 text-right tabular-nums font-semibold"
+                    style={{ color: row.winProbability >= 0.6 ? '#16a34a' : row.winProbability >= 0.4 ? '#d97706' : '#dc2626' }}
+                  >
+                    {Math.round(row.winProbability * 100)}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </ChartCard>
     </div>
