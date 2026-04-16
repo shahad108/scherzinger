@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import {
@@ -9,7 +9,14 @@ import { IS_DEMO } from '../../utils/brand';
 import {
   findSKUDetail, getFloorPrices, getProfitability, getSkuImpactTable,
 } from '../../utils/mockPhase45';
+import productsData from '../../data/products.json';
+
+const realProductMap = Object.fromEntries(
+  (Array.isArray(productsData) ? productsData : productsData.products || [])
+    .map((p) => [p.article_id, p])
+);
 import { useLanguage } from '../../context/LanguageContext';
+import { useUI } from '../../context/UIContext';
 import { formatEUR } from '../../utils/formatters';
 import { colors } from '../../utils/designTokensV2';
 
@@ -85,19 +92,53 @@ function quadrantForPoint(p, medianRev, medianMargin) {
 }
 
 export default function SKUDeepDiveSlideOver({ sku, onClose }) {
-  if (!IS_DEMO || !sku) return null;
+  // Hooks must run every render — no early return before them.
   const { t } = useLanguage();
+  const { selectItem } = useUI();
   const [tab, setTab] = useState('pricing');
 
-  const rawDetail = findSKUDetail(sku);
+  const rawDetail = sku ? findSKUDetail(sku) : null;
   const hasData = rawDetail && (rawDetail.floorPrice || rawDetail.optimizer || rawDetail.breakEven);
-  const effectiveSku = hasData ? sku : 'PS-1104';
-  const detail = hasData ? rawDetail : findSKUDetail('PS-1104');
+  const effectiveSku = sku ? (hasData ? sku : 'PS-1104') : null;
+  const detail = sku ? (hasData ? rawDetail : findSKUDetail('PS-1104')) : null;
+  const realProduct = sku ? realProductMap[sku] : null;
+  const displaySku = sku;
+  const displayName = realProduct?.description || detail?.floorPrice?.name || sku;
 
-  const breakEven = useMemo(() => buildBreakEven(effectiveSku), [effectiveSku]);
-  const prof = useMemo(() => buildProfitability(effectiveSku), [effectiveSku]);
+  const breakEven = useMemo(() => (effectiveSku ? buildBreakEven(effectiveSku) : null), [effectiveSku]);
+  const prof = useMemo(() => (effectiveSku ? buildProfitability(effectiveSku) : null), [effectiveSku]);
 
-  if (!detail) return null;
+  // Push SKU context to global AI chat whenever the slide-over opens or switches SKU.
+  // Only depend on effectiveSku — `detail` is a fresh object on every render and
+  // `selectItem` would loop if included in deps.
+  useEffect(() => {
+    if (!effectiveSku) return;
+    const d = findSKUDetail(effectiveSku);
+    if (!d) return;
+    const fp = d.floorPrice;
+    const opt = d.optimizer;
+    const realP = realProductMap[sku];
+    selectItem({
+      type: 'sku',
+      id: sku,
+      label: `${sku}${realP?.description ? ' — ' + realP.description : fp?.name ? ' — ' + fp.name : ''}${fp ? ` · Floor ${formatEUR(fp.floor)} · Current ${formatEUR(fp.current)}` : ''}`,
+      data: {
+        sku,
+        name: realP?.description || fp?.name,
+        commodity_group: realP?.commodity_group || fp?.cg,
+        full_cost: fp?.hkvoll,
+        floor_price: fp?.floor,
+        current_price: fp?.current ?? opt?.current,
+        suggested_price: opt?.suggested,
+        expected_margin_pct: opt?.expectedMargin != null ? (opt.expectedMargin * 100).toFixed(1) + '%' : undefined,
+        anomalies_count: d.anomalies?.length || 0,
+        cross_sell_count: d.crossSell?.length || 0,
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sku, effectiveSku]);
+
+  if (!IS_DEMO || !sku || !detail) return null;
 
   return (
     <AnimatePresence>
@@ -123,9 +164,9 @@ export default function SKUDeepDiveSlideOver({ sku, onClose }) {
               {t('phase45.skuDeepDive.title')}
             </span>
             <h2 className="text-lg font-bold mt-2" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>
-              {detail.floorPrice?.name || effectiveSku}
+              {displayName}
             </h2>
-            <p className="text-xs mt-1" style={{ color: '#737373' }}>{effectiveSku}</p>
+            <p className="text-xs mt-1" style={{ color: '#737373' }}>{displaySku}{realProduct?.commodity_group ? ` · ${realProduct.commodity_group}` : ''}</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-[#f8f9fa] transition-colors" style={{ color: '#a3a3a3' }}>
             <X size={20} />
@@ -155,17 +196,17 @@ export default function SKUDeepDiveSlideOver({ sku, onClose }) {
             <div className="space-y-4">
               {detail.optimizer ? (
                 <>
-                  <MetricRow label="Current" value={formatEUR(detail.optimizer.current)} />
-                  <MetricRow label="Suggested" value={formatEUR(detail.optimizer.suggested)} emphasis />
-                  <MetricRow label="Range" value={`${formatEUR(detail.optimizer.min)} – ${formatEUR(detail.optimizer.max)}`} />
-                  <MetricRow label="Expected margin" value={`${(detail.optimizer.expectedMargin * 100).toFixed(1)}%`} />
+                  <MetricRow label={t('phase45.skuDeepDive.pricing.current')} value={formatEUR(detail.optimizer.current)} />
+                  <MetricRow label={t('phase45.skuDeepDive.pricing.suggested')} value={formatEUR(detail.optimizer.suggested)} emphasis />
+                  <MetricRow label={t('phase45.skuDeepDive.pricing.range')} value={`${formatEUR(detail.optimizer.min)} – ${formatEUR(detail.optimizer.max)}`} />
+                  <MetricRow label={t('phase45.skuDeepDive.pricing.expectedMargin')} value={`${(detail.optimizer.expectedMargin * 100).toFixed(1)}%`} />
                 </>
-              ) : <p className="text-sm text-slate-500">No optimizer data for this SKU.</p>}
+              ) : <p className="text-sm text-slate-500">{t('phase45.skuDeepDive.pricing.noData')}</p>}
               {detail.floorPrice && (
                 <>
                   <div className="h-px bg-slate-100 my-3" />
-                  <MetricRow label="Floor price" value={formatEUR(detail.floorPrice.floor)} />
-                  <MetricRow label="Full cost"   value={formatEUR(detail.floorPrice.hkvoll)} />
+                  <MetricRow label={t('phase45.skuDeepDive.pricing.floorPrice')} value={formatEUR(detail.floorPrice.floor)} />
+                  <MetricRow label={t('phase45.skuDeepDive.pricing.fullCost')}   value={formatEUR(detail.floorPrice.hkvoll)} />
                 </>
               )}
             </div>
@@ -174,44 +215,44 @@ export default function SKUDeepDiveSlideOver({ sku, onClose }) {
           {tab === 'breakEven' && breakEven && (
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-3">
-                <KpiTile label="Break-even units" value={`${breakEven.breakEvenUnits}`} color="#0393da" emphasis />
-                <KpiTile label="Fixed cost"       value={formatEUR(breakEven.fixedCost)} color="#525252" />
-                <KpiTile label="Unit contribution" value={formatEUR(breakEven.unitPrice - breakEven.unitVarCost)} color="#16a34a" />
+                <KpiTile label={t('phase45.skuDeepDive.breakEven.units')} value={`${breakEven.breakEvenUnits}`} color="#0393da" emphasis />
+                <KpiTile label={t('phase45.skuDeepDive.breakEven.fixedCost')}       value={formatEUR(breakEven.fixedCost)} color="#525252" />
+                <KpiTile label={t('phase45.skuDeepDive.breakEven.unitContribution')} value={formatEUR(breakEven.unitPrice - breakEven.unitVarCost)} color="#16a34a" />
               </div>
               <div className="rounded-xl p-4" style={{ background: '#f8fafc' }}>
                 <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: '#525252' }}>
-                  Cost-volume-profit curve
+                  {t('phase45.skuDeepDive.breakEven.cvpCurve')}
                 </p>
                 <ResponsiveContainer width="100%" height={240}>
                   <LineChart data={breakEven.curve}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="units" tick={{ fontSize: 10, fill: '#94a3b8' }} label={{ value: 'Units', position: 'insideBottom', offset: -4, fill: '#94a3b8', fontSize: 10 }} />
+                    <XAxis dataKey="units" tick={{ fontSize: 10, fill: '#94a3b8' }} label={{ value: t('phase45.skuDeepDive.breakEven.axisUnits'), position: 'insideBottom', offset: -4, fill: '#94a3b8', fontSize: 10 }} />
                     <YAxis tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10, fill: '#94a3b8' }} />
                     <Tooltip formatter={(v) => formatEUR(v)} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
                     <ReferenceLine
                       x={breakEven.breakEvenUnits}
                       stroke="#16a34a"
                       strokeDasharray="4 4"
-                      label={{ value: `Break-even @ ${breakEven.breakEvenUnits}u`, fill: '#16a34a', fontSize: 10 }}
+                      label={{ value: t('phase45.skuDeepDive.breakEven.refLabel', { u: breakEven.breakEvenUnits }), fill: '#16a34a', fontSize: 10 }}
                     />
-                    <Line type="monotone" dataKey="revenue" stroke="#0393da" strokeWidth={2.5} dot={false} name="Revenue" />
-                    <Line type="monotone" dataKey="cost"    stroke="#dc2626" strokeWidth={2}   dot={false} name="Total cost" />
+                    <Line type="monotone" dataKey="revenue" stroke="#0393da" strokeWidth={2.5} dot={false} name={t('phase45.skuDeepDive.breakEven.revenue')} />
+                    <Line type="monotone" dataKey="cost"    stroke="#dc2626" strokeWidth={2}   dot={false} name={t('phase45.skuDeepDive.breakEven.totalCost')} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
               <div className="rounded-xl p-4" style={{ background: 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%)', border: '1px solid #e0f2fe' }}>
-                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#0393da' }}>How it's calculated</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#0393da' }}>{t('phase45.skuDeepDive.breakEven.howTitle')}</p>
                 <p className="font-mono text-xs mt-2" style={{ color: '#1a1a2e' }}>
-                  Break-even = Fixed cost / (Price − Variable cost)
+                  {t('phase45.skuDeepDive.breakEven.formulaTop')}
                 </p>
                 <p className="font-mono text-xs" style={{ color: '#1a1a2e' }}>
                   &nbsp;&nbsp;&nbsp;&nbsp; = {formatEUR(breakEven.fixedCost)} / ({formatEUR(breakEven.unitPrice)} − {formatEUR(breakEven.unitVarCost)})
                 </p>
                 <p className="font-mono text-xs font-bold" style={{ color: '#0393da' }}>
-                  &nbsp;&nbsp;&nbsp;&nbsp; = {breakEven.breakEvenUnits} units
+                  &nbsp;&nbsp;&nbsp;&nbsp; = {breakEven.breakEvenUnits} {t('phase45.skuDeepDive.breakEven.unitsSuffix')}
                 </p>
                 <p className="text-xs mt-2 leading-relaxed" style={{ color: '#525252' }}>
-                  Fixed cost assumes ~38% of full cost times typical annual volume. Variable cost is ~62% of full cost per unit. Below this volume the SKU loses money; above it, each additional unit contributes {formatEUR(breakEven.unitPrice - breakEven.unitVarCost)} to overhead.
+                  {t('phase45.skuDeepDive.breakEven.explain', { contrib: formatEUR(breakEven.unitPrice - breakEven.unitVarCost) })}
                 </p>
               </div>
             </div>
@@ -224,10 +265,10 @@ export default function SKUDeepDiveSlideOver({ sku, onClose }) {
           {tab === 'shock' && (
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={[
-                { name: 'Material',    delta: -2.1 },
-                { name: 'Labor',       delta: -1.4 },
-                { name: 'Outsourcing', delta: -0.9 },
-                { name: 'Volume',      delta:  1.8 },
+                { name: t('phase45.skuDeepDive.shock.material'),    delta: -2.1 },
+                { name: t('phase45.skuDeepDive.shock.labor'),       delta: -1.4 },
+                { name: t('phase45.skuDeepDive.shock.outsourcing'), delta: -0.9 },
+                { name: t('phase45.skuDeepDive.shock.volume'),      delta:  1.8 },
               ]}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#737373' }} />
@@ -245,7 +286,7 @@ export default function SKUDeepDiveSlideOver({ sku, onClose }) {
                   <li key={a.id} className="p-3 rounded-lg" style={{ background: '#f8f9fa' }}>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase" style={{ color: a.severity === 'high' ? '#dc2626' : a.severity === 'medium' ? '#d97706' : '#737373' }}>
-                        {a.severity}
+                        {t(`phase45.anomalies.severity.${a.severity}`)}
                       </span>
                       <span className="text-xs font-mono" style={{ color: '#737373' }}>z={a.zscore}</span>
                     </div>
@@ -253,7 +294,7 @@ export default function SKUDeepDiveSlideOver({ sku, onClose }) {
                   </li>
                 ))}
               </ul>
-            ) : <p className="text-sm text-slate-500">No anomalies detected.</p>
+            ) : <p className="text-sm text-slate-500">{t('phase45.skuDeepDive.anomalies.none')}</p>
           )}
 
           {tab === 'crossSell' && (
@@ -269,7 +310,7 @@ export default function SKUDeepDiveSlideOver({ sku, onClose }) {
                   </li>
                 ))}
               </ul>
-            ) : <p className="text-sm text-slate-500">No cross-sell candidates.</p>
+            ) : <p className="text-sm text-slate-500">{t('phase45.skuDeepDive.crossSell.none')}</p>
           )}
         </div>
       </motion.div>
@@ -278,6 +319,7 @@ export default function SKUDeepDiveSlideOver({ sku, onClose }) {
 }
 
 function ProfitabilityTab({ data }) {
+  const { t } = useLanguage();
   const { points, highlightSku } = data;
   const median = useMemo(() => {
     if (!points.length) return { revenue: 0, margin: 0 };
@@ -289,20 +331,20 @@ function ProfitabilityTab({ data }) {
   const myQuadrant = me ? quadrantForPoint(me, median.revenue, median.margin) : null;
 
   const quadLabels = {
-    star:         { title: 'Star',          sub: 'High revenue, high margin' },
-    cashcow:      { title: 'Cash cow',      sub: 'High revenue, lower margin' },
-    questionmark: { title: 'Question mark', sub: 'Lower revenue, high margin' },
-    dog:          { title: 'Dog',           sub: 'Lower revenue, lower margin' },
+    star:         { title: t('phase45.skuDeepDive.profit.star.title'),         sub: t('phase45.skuDeepDive.profit.star.sub') },
+    cashcow:      { title: t('phase45.skuDeepDive.profit.cashcow.title'),      sub: t('phase45.skuDeepDive.profit.cashcow.sub') },
+    questionmark: { title: t('phase45.skuDeepDive.profit.questionmark.title'), sub: t('phase45.skuDeepDive.profit.questionmark.sub') },
+    dog:          { title: t('phase45.skuDeepDive.profit.dog.title'),          sub: t('phase45.skuDeepDive.profit.dog.sub') },
   };
 
   return (
     <div className="space-y-4">
       {me && (
         <div className="grid grid-cols-3 gap-3">
-          <KpiTile label="Revenue" value={`€${(me.revenue / 1e6).toFixed(2)}M`} color="#0393da" />
-          <KpiTile label="DB2 margin" value={`${(me.margin * 100).toFixed(1)}%`} color="#16a34a" />
+          <KpiTile label={t('phase45.skuDeepDive.profit.revenue')} value={`€${(me.revenue / 1e6).toFixed(2)}M`} color="#0393da" />
+          <KpiTile label={t('phase45.skuDeepDive.profit.margin')} value={`${(me.margin * 100).toFixed(1)}%`} color="#16a34a" />
           <KpiTile
-            label="Quadrant"
+            label={t('phase45.skuDeepDive.profit.quadrant')}
             value={quadLabels[myQuadrant]?.title || '—'}
             color={QUADRANT_COLOR[myQuadrant] || '#737373'}
             emphasis
@@ -311,7 +353,7 @@ function ProfitabilityTab({ data }) {
       )}
       <div className="rounded-xl p-4" style={{ background: '#f8fafc' }}>
         <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: '#525252' }}>
-          Revenue vs DB2 margin — this SKU highlighted
+          {t('phase45.skuDeepDive.profit.chartTitle')}
         </p>
         <ResponsiveContainer width="100%" height={260}>
           <ScatterChart margin={{ top: 10, right: 24, bottom: 24, left: 24 }}>
@@ -321,7 +363,7 @@ function ProfitabilityTab({ data }) {
               type="number"
               tickFormatter={(v) => `€${(v / 1e6).toFixed(1)}M`}
               tick={{ fontSize: 10, fill: '#94a3b8' }}
-              label={{ value: 'Annual revenue', position: 'insideBottom', offset: -6, fill: '#94a3b8', fontSize: 10 }}
+              label={{ value: t('phase45.skuDeepDive.profit.xLabel'), position: 'insideBottom', offset: -6, fill: '#94a3b8', fontSize: 10 }}
             />
             <YAxis
               dataKey="margin"
@@ -329,7 +371,7 @@ function ProfitabilityTab({ data }) {
               domain={[0.3, 0.8]}
               tickFormatter={(v) => `${Math.round(v * 100)}%`}
               tick={{ fontSize: 10, fill: '#94a3b8' }}
-              label={{ value: 'DB2 margin', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }}
+              label={{ value: t('phase45.skuDeepDive.profit.yLabel'), angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }}
             />
             <ZAxis range={[80, 80]} />
             <Tooltip
@@ -368,16 +410,13 @@ function ProfitabilityTab({ data }) {
       {me && myQuadrant && (
         <div className="rounded-xl p-4" style={{ background: 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%)', border: '1px solid #e0f2fe' }}>
           <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#0393da' }}>
-            Quadrant interpretation
+            {t('phase45.skuDeepDive.profit.interp')}
           </p>
           <p className="text-sm font-semibold mt-1" style={{ color: '#1a1a2e' }}>
             {quadLabels[myQuadrant].title} — {quadLabels[myQuadrant].sub}
           </p>
           <p className="text-xs mt-2 leading-relaxed" style={{ color: '#525252' }}>
-            {myQuadrant === 'star' && 'High revenue, high margin. Protect volume, defend pricing, monitor competitive threats.'}
-            {myQuadrant === 'cashcow' && 'High revenue, lower margin. Milk for cash flow, avoid overinvesting. Test price increases in safe segments.'}
-            {myQuadrant === 'questionmark' && 'Strong margin but modest revenue. Evaluate whether marketing or cross-sell can grow the revenue footprint without diluting margin.'}
-            {myQuadrant === 'dog' && 'Below median on both axes. Candidate for price increase, cost engineering, or discontinuation if volumes do not justify the fixed-cost absorption.'}
+            {t(`phase45.skuDeepDive.profit.${myQuadrant}.text`)}
           </p>
         </div>
       )}
