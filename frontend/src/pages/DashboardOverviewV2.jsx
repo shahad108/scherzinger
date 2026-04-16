@@ -608,7 +608,11 @@ export default function DashboardOverviewV2() {
 
         {/* Alert Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <motion.div variants={cardVariants}>
+          <motion.div
+            variants={cardVariants}
+            onClick={() => openSKUDetail('SKU-1042', 'profitability')}
+            className="cursor-pointer hover:ring-2 hover:ring-blue-400/40 rounded transition"
+          >
             <AlertCardV2
               icon={AlertTriangle}
               label={t('dashboard.alert.marginErosion')}
@@ -623,7 +627,11 @@ export default function DashboardOverviewV2() {
               helperColor="#EF4444"
             />
           </motion.div>
-          <motion.div variants={cardVariants}>
+          <motion.div
+            variants={cardVariants}
+            onClick={() => openCustomerDetail('CUST-042', 'risk')}
+            className="cursor-pointer hover:ring-2 hover:ring-blue-400/40 rounded transition"
+          >
             <AlertCardV2
               icon={UserMinus}
               label={t('dashboard.alert.highRisk')}
@@ -638,7 +646,11 @@ export default function DashboardOverviewV2() {
               helperColor="#EA580C"
             />
           </motion.div>
-          <motion.div variants={cardVariants}>
+          <motion.div
+            variants={cardVariants}
+            onClick={() => openSKUDetail('SKU-1087', 'anomalies')}
+            className="cursor-pointer hover:ring-2 hover:ring-blue-400/40 rounded transition"
+          >
             <AlertCardV2
               icon={Package}
               label={t('dashboard.alert.costRegime')}
