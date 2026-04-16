@@ -17,6 +17,7 @@ import { formatEUR, formatPct } from '../utils/formatters';
 import { TOOLTIPS } from '../utils/tooltipContent';
 import { useUI } from '../context/UIContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useUrlFilters } from '../hooks/useUrlFilters';
 import { handleScatterClick } from '../utils/pageContextResolver';
 import { track } from '../utils/tracker';
 import PhaseNotice from '../components/shared/PhaseNotice';
@@ -59,6 +60,7 @@ function productTypeColor(m) {
 export default function ProductsSKUs() {
   const { selectItem, selectedItem, openSKUDetail } = useUI();
   const { t } = useLanguage();
+  const { filters } = useUrlFilters();
   const [selectedCommodity, setSelectedCommodity] = useState('All');
   const [selectedYear, setSelectedYear] = useState(2025);
   const [phase45SKU, setPhase45SKU] = useState(null);
@@ -66,6 +68,20 @@ export default function ProductsSKUs() {
   const [marginFilter, setMarginFilter] = useState('all');
   const [sidebarTab, setSidebarTab] = useState('at_risk'); // 'at_risk' | 'declining'
   const [tablePreset, setTablePreset] = useState('margin'); // 'margin' | 'competitiveness' | 'portfolio'
+
+  // Read URL filters on mount (e.g. from dashboard drill-through: ?commodity=BKAES&risk=high)
+  useEffect(() => {
+    if (filters.commodity) {
+      // Match case-insensitively against known commodities
+      const match = commodities.find(
+        (c) => c.toLowerCase() === filters.commodity.toLowerCase()
+      );
+      if (match) setSelectedCommodity(match);
+    }
+    if (filters.risk === 'high') {
+      setMarginFilter('below_floor');
+    }
+  }, [filters.commodity, filters.risk]);
 
   const revKey = `revenue_${selectedYear}`;
   const marginKey = `margin_${selectedYear}`;
