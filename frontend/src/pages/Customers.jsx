@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, ReferenceLine, ReferenceArea, BarChart, Bar, Cell, LabelList,
@@ -18,6 +18,7 @@ import { formatEUR, formatPct } from '../utils/formatters';
 import { TOOLTIPS } from '../utils/tooltipContent';
 import { useUI } from '../context/UIContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useUrlFilters } from '../hooks/useUrlFilters';
 import { IS_DEMO } from '../utils/brand';
 import WTPBands from '../components/phase45/WTPBands';
 import CLVRanking from '../components/phase45/CLVRanking';
@@ -180,10 +181,18 @@ function suggestedAction(customer, enrichment, t) {
 export default function Customers() {
   const { selectItem, selectedItem, openCustomerDetail } = useUI();
   const { t } = useLanguage();
+  const { filters } = useUrlFilters();
   const [segmentFilter, setSegmentFilter] = useState('All');
   const [churnFilter, setChurnFilter] = useState('All');
   const [customerSearch, setCustomerSearch] = useState('');
   const [tablePreset, setTablePreset] = useState('glance'); // 'glance' | 'risk' | 'competitiveness' | 'portfolio' | 'full'
+
+  // Read URL filters on mount (e.g. from dashboard drill-through: ?risk=high)
+  useEffect(() => {
+    if (filters.risk === 'high') {
+      setChurnFilter('High');
+    }
+  }, [filters.risk]);
 
   // Customer enrichment
   const enrichedCustomers = useMemo(() =>
