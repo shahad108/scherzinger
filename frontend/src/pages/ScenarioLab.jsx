@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import { IS_DEMO } from '../utils/brand';
 import { useLanguage } from '../context/LanguageContext';
+import { useUI } from '../context/UIContext';
 import ChartCard from '../components/shared/ChartCard';
 import KPICard from '../components/shared/KPICard';
 import DataTable from '../components/shared/DataTable';
@@ -20,6 +21,7 @@ import {
 export default function ScenarioLab() {
   if (!IS_DEMO) return null;
   const { t } = useLanguage();
+  const { openSKUDetail } = useUI();
   const [material, setMaterial]       = useState(0);
   const [labor, setLabor]             = useState(0);
   const [outsourcing, setOutsourcing] = useState(0);
@@ -211,6 +213,7 @@ export default function ScenarioLab() {
           ]}
           data={skuImpact}
           rowKey="sku"
+          onRowClick={(row) => openSKUDetail(row.sku, 'shock')}
         />
       </ChartCard>
 
