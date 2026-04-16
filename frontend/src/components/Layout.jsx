@@ -5,6 +5,7 @@ import Footer from './shared/Footer';
 import SKUSlideOver from './SKUSlideOver';
 import CategorySlideOver from './CategorySlideOver';
 import CustomerSlideOver from './CustomerSlideOver';
+import CommoditySlideOver from './CommoditySlideOver';
 import GlobalChatBar from './GlobalChatBar';
 import { AnimatedGridPattern } from './ui/AnimatedGridPattern';
 import { useUI } from '../context/UIContext';
@@ -79,6 +80,7 @@ export default function Layout() {
       <SKUSlideOver />
       <CategorySlideOver />
       <CustomerSlideOver />
+      <CommoditySlideOver />
     </div>
   );
 }
