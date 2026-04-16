@@ -3,78 +3,52 @@ import { createContext, useContext, useState, useCallback } from 'react';
 const UIContext = createContext(null);
 
 export function UIProvider({ children }) {
-  // ── Sidebar collapse ──
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const toggleSidebar = useCallback(() => setSidebarCollapsed(prev => !prev), []);
 
-  // ── Slide-over panel with history stack for breadcrumb navigation ──
-  // type: 'sku' | 'category' | 'customer' | null
-  // id: SKU code, category name, or customer ID
-  const [slideOver, setSlideOver] = useState({ type: null, id: null });
+  // type: 'sku' | 'category' | 'customer' | 'commodity' | null
+  const [slideOver, setSlideOver] = useState({ type: null, id: null, initialTab: null });
   const [panelHistory, setPanelHistory] = useState([]);
 
-  // ── Selected item (lightweight click awareness for AI chat) ──
   const [selectedItem, setSelectedItem] = useState(null);
   const selectItem = useCallback((item) => setSelectedItem(item), []);
   const clearSelection = useCallback(() => setSelectedItem(null), []);
 
-  const openSKUDetail = useCallback((skuCode) => {
+  const pushAndOpen = useCallback((next) => {
     setSlideOver(prev => {
-      // Push current panel to history if there is one (max 2 levels)
       if (prev.type && prev.id) {
-        setPanelHistory(h => [...h.slice(-1), { type: prev.type, id: prev.id }]);
+        setPanelHistory(h => [...h.slice(-1), prev]);
       }
-      return { type: 'sku', id: skuCode };
+      return next;
     });
   }, []);
 
-  const openCategoryDetail = useCallback((categoryName) => {
-    setSlideOver(prev => {
-      if (prev.type && prev.id) {
-        setPanelHistory(h => [...h.slice(-1), { type: prev.type, id: prev.id }]);
-      }
-      return { type: 'category', id: categoryName };
-    });
-  }, []);
-
-  const openCustomerDetail = useCallback((customerId) => {
-    setSlideOver(prev => {
-      if (prev.type && prev.id) {
-        setPanelHistory(h => [...h.slice(-1), { type: prev.type, id: prev.id }]);
-      }
-      return { type: 'customer', id: customerId };
-    });
-  }, []);
+  const openSKUDetail      = useCallback((skuCode, initialTab = null)     => pushAndOpen({ type: 'sku',       id: skuCode,     initialTab }), [pushAndOpen]);
+  const openCategoryDetail = useCallback((categoryName, initialTab = null) => pushAndOpen({ type: 'category', id: categoryName, initialTab }), [pushAndOpen]);
+  const openCustomerDetail = useCallback((customerId, initialTab = null)   => pushAndOpen({ type: 'customer', id: customerId,  initialTab }), [pushAndOpen]);
+  const openCommodityDetail= useCallback((commodityId, initialTab = null)  => pushAndOpen({ type: 'commodity',id: commodityId, initialTab }), [pushAndOpen]);
 
   const goBackPanel = useCallback(() => {
     setPanelHistory(h => {
       if (h.length === 0) return h;
       const prev = h[h.length - 1];
-      setSlideOver({ type: prev.type, id: prev.id });
+      setSlideOver(prev);
       return h.slice(0, -1);
     });
   }, []);
 
   const closeSlideOver = useCallback(() => {
-    setSlideOver({ type: null, id: null });
+    setSlideOver({ type: null, id: null, initialTab: null });
     setPanelHistory([]);
   }, []);
 
   return (
     <UIContext.Provider value={{
-      sidebarCollapsed,
-      toggleSidebar,
-      setSidebarCollapsed,
-      slideOver,
-      panelHistory,
-      openSKUDetail,
-      openCategoryDetail,
-      openCustomerDetail,
-      goBackPanel,
-      closeSlideOver,
-      selectedItem,
-      selectItem,
-      clearSelection,
+      sidebarCollapsed, toggleSidebar, setSidebarCollapsed,
+      slideOver, panelHistory,
+      openSKUDetail, openCategoryDetail, openCustomerDetail, openCommodityDetail,
+      goBackPanel, closeSlideOver,
+      selectedItem, selectItem, clearSelection,
     }}>
       {children}
     </UIContext.Provider>
