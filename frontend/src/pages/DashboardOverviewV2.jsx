@@ -421,7 +421,7 @@ const buildAiHighlights = (t) => [
 ];
 
 export default function DashboardOverviewV2() {
-  const { selectItem } = useUI();
+  const { selectItem, openSKUDetail, openCustomerDetail } = useUI();
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [activeInsight, setActiveInsight] = useState(null);
@@ -503,7 +503,11 @@ export default function DashboardOverviewV2() {
         </div>
         {/* KPI Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <motion.div variants={cardVariants}>
+          <motion.div
+            variants={cardVariants}
+            onClick={() => openSKUDetail('SKU-1201')}
+            className="cursor-pointer hover:ring-2 hover:ring-blue-400/40 rounded transition"
+          >
             <KPICardV2
               formulaId="revenue_total"
               confidence="verified"
@@ -530,7 +534,11 @@ export default function DashboardOverviewV2() {
               }
             />
           </motion.div>
-          <motion.div variants={cardVariants}>
+          <motion.div
+            variants={cardVariants}
+            onClick={() => openSKUDetail('SKU-1042')}
+            className="cursor-pointer hover:ring-2 hover:ring-blue-400/40 rounded transition"
+          >
             <KPICardV2
               formulaId="db2_margin"
               confidence="verified"
@@ -549,7 +557,11 @@ export default function DashboardOverviewV2() {
               }
             />
           </motion.div>
-          <motion.div variants={cardVariants}>
+          <motion.div
+            variants={cardVariants}
+            onClick={() => openSKUDetail('SKU-1087')}
+            className="cursor-pointer hover:ring-2 hover:ring-blue-400/40 rounded transition"
+          >
             <KPICardV2
               formulaId="margin_gap"
               confidence="verified"
@@ -570,7 +582,11 @@ export default function DashboardOverviewV2() {
               }
             />
           </motion.div>
-          <motion.div variants={cardVariants}>
+          <motion.div
+            variants={cardVariants}
+            onClick={() => openSKUDetail('SKU-1234')}
+            className="cursor-pointer hover:ring-2 hover:ring-blue-400/40 rounded transition"
+          >
             <KPICardV2
               formulaId="win_rate"
               confidence="verified"
