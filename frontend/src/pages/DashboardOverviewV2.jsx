@@ -900,7 +900,7 @@ export default function DashboardOverviewV2() {
         />
         <div className="flex justify-end -mt-4">
           <button
-            onClick={() => navigate('/customers')}
+            onClick={() => navigate('/customers?risk=high')}
             className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
           >
             {t('dashboard.topCustomers.viewAll')}
