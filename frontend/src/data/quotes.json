@@ -3,12 +3,12 @@
     "id": "Q-2025-0417",
     "value": 84200,
     "winProbability": 0.72,
-    "customerId": "C-4021",
-    "customerName": "MetalWorks GmbH",
+    "customerId": "101690",
+    "customerName": "Customer 101690",
     "status": "Negotiation",
     "lineItems": [
-      { "skuCode": "SKU-1042", "qty": 120 },
-      { "skuCode": "SKU-1087", "qty": 40 }
+      { "skuCode": "201924-F", "qty": 120 },
+      { "skuCode": "300143", "qty": 40 }
     ],
     "winReasons": [
       "Customer is a repeat buyer with 82% historical win rate",
@@ -20,12 +20,12 @@
     "id": "Q-2025-0418",
     "value": 156800,
     "winProbability": 0.48,
-    "customerId": "C-3187",
-    "customerName": "Bosch Rexroth",
+    "customerId": "100883",
+    "customerName": "Customer 100883",
     "status": "Quoted",
     "lineItems": [
-      { "skuCode": "SKU-1201", "qty": 300 },
-      { "skuCode": "SKU-1234", "qty": 150 }
+      { "skuCode": "201885", "qty": 300 },
+      { "skuCode": "206028-01", "qty": 150 }
     ],
     "winReasons": [
       "Price is 7% above market median for this commodity group",
@@ -37,11 +37,11 @@
     "id": "Q-2025-0419",
     "value": 42500,
     "winProbability": 0.85,
-    "customerId": "C-5502",
-    "customerName": "Siemens Energy",
+    "customerId": "101487",
+    "customerName": "Customer 101487",
     "status": "Under Review",
     "lineItems": [
-      { "skuCode": "SKU-1087", "qty": 60 }
+      { "skuCode": "204430", "qty": 60 }
     ],
     "winReasons": [
       "Strategic account with 91% historical win rate",
@@ -53,12 +53,12 @@
     "id": "Q-2025-0420",
     "value": 98200,
     "winProbability": 0.31,
-    "customerId": "C-2990",
-    "customerName": "ZF Friedrichshafen",
+    "customerId": "101858",
+    "customerName": "Customer 101858",
     "status": "New Quote",
     "lineItems": [
-      { "skuCode": "SKU-1234", "qty": 200 },
-      { "skuCode": "SKU-1042", "qty": 80 }
+      { "skuCode": "206028-01", "qty": 200 },
+      { "skuCode": "300143", "qty": 80 }
     ],
     "winReasons": [
       "Customer historically awards to 2 suppliers — we are #3 on panel",
@@ -70,13 +70,13 @@
     "id": "Q-2025-0421",
     "value": 215400,
     "winProbability": 0.64,
-    "customerId": "C-4021",
-    "customerName": "MetalWorks GmbH",
+    "customerId": "101690",
+    "customerName": "Customer 101690",
     "status": "Negotiation",
     "lineItems": [
-      { "skuCode": "SKU-1201", "qty": 480 },
-      { "skuCode": "SKU-1087", "qty": 120 },
-      { "skuCode": "SKU-1042", "qty": 90 }
+      { "skuCode": "201924-F", "qty": 480 },
+      { "skuCode": "201885", "qty": 120 },
+      { "skuCode": "300143", "qty": 90 }
     ],
     "winReasons": [
       "Large-basket quote — customer typically consolidates with one supplier",
@@ -88,11 +88,11 @@
     "id": "Q-2025-0422",
     "value": 31800,
     "winProbability": 0.79,
-    "customerId": "C-6113",
-    "customerName": "Schaeffler AG",
+    "customerId": "101580",
+    "customerName": "Customer 101580",
     "status": "Quoted",
     "lineItems": [
-      { "skuCode": "SKU-1042", "qty": 75 }
+      { "skuCode": "204430", "qty": 75 }
     ],
     "winReasons": [
       "Small, routine reorder — 88% of similar quotes won",
@@ -103,12 +103,12 @@
     "id": "Q-2025-0423",
     "value": 178900,
     "winProbability": 0.42,
-    "customerId": "C-7745",
-    "customerName": "Knorr-Bremse",
+    "customerId": "101181",
+    "customerName": "Customer 101181",
     "status": "Negotiation",
     "lineItems": [
-      { "skuCode": "SKU-1234", "qty": 340 },
-      { "skuCode": "SKU-1201", "qty": 180 }
+      { "skuCode": "206028-01", "qty": 340 },
+      { "skuCode": "201924-F", "qty": 180 }
     ],
     "winReasons": [
       "Customer has pushed back twice on pricing",
@@ -120,12 +120,12 @@
     "id": "Q-2025-0424",
     "value": 67300,
     "winProbability": 0.58,
-    "customerId": "C-3187",
-    "customerName": "Bosch Rexroth",
+    "customerId": "100883",
+    "customerName": "Customer 100883",
     "status": "Under Review",
     "lineItems": [
-      { "skuCode": "SKU-1087", "qty": 90 },
-      { "skuCode": "SKU-1042", "qty": 50 }
+      { "skuCode": "300143", "qty": 90 },
+      { "skuCode": "201885", "qty": 50 }
     ],
     "winReasons": [
       "Customer is mid-cycle on a similar RFQ with competitor",
