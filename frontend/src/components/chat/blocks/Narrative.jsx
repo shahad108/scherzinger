@@ -1,12 +1,13 @@
 import { TONE_RING } from './formatters';
 
-export default function Narrative({ spec }) {
+export default function Narrative({ spec, compact = false }) {
   const { text, tone } = spec;
+  const textCls = compact ? 'text-xs leading-snug' : 'text-sm leading-relaxed';
   if (!tone || tone === 'neutral') {
-    return <p className="text-sm leading-relaxed text-slate-700 my-2">{text}</p>;
+    return <p className={`${textCls} text-slate-700 my-1.5`}>{text}</p>;
   }
   return (
-    <div className={`text-sm leading-relaxed ring-1 rounded-lg px-3 py-2 my-2 ${TONE_RING[tone] || TONE_RING.neutral}`}>
+    <div className={`${textCls} ring-1 rounded-lg px-3 py-2 my-1.5 ${TONE_RING[tone] || TONE_RING.neutral}`}>
       {text}
     </div>
   );
