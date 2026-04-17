@@ -7,7 +7,6 @@ import { parse, ALL as PARTIAL_ALL } from 'partial-json';
  */
 export function createStreamParser() {
   let buf = '';
-  let lastBlocksLen = 0;
   let lastReadyIdx = -1; // index of last block known to be complete
 
   function computeFromBuffer(closed) {
@@ -28,7 +27,6 @@ export function createStreamParser() {
     if (closed && blocks.length > 0) {
       lastReadyIdx = blocks.length - 1;
     }
-    lastBlocksLen = blocks.length;
 
     const status = blocks.map((_, i) => (i <= lastReadyIdx ? 'ready' : 'pending'));
     return { blocks, status };
