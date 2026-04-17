@@ -6,6 +6,7 @@ import { useChat } from '../context/ChatContext';
 import { useUI } from '../context/UIContext';
 import { useLanguage } from '../context/LanguageContext';
 import renderMarkdown from '../utils/markdownRenderer';
+import StructuredReplyRenderer from './chat/StructuredReplyRenderer';
 import { track, trackChatQuestion, trackChatRating } from '../utils/tracker';
 
 export default function GlobalChatBar() {
@@ -16,7 +17,12 @@ export default function GlobalChatBar() {
     pageContext, newChat,
     conversationHistory, loadConversation, deleteConversation,
   } = useChat();
-  const { selectedItem, slideOver } = useUI();
+  const { selectedItem, slideOver, openCustomerDetail, openSKUDetail } = useUI();
+
+  const handleEntityClick = useCallback(({ entityType, id }) => {
+    if (entityType === 'customer') openCustomerDetail(id);
+    else if (entityType === 'sku' || entityType === 'product') openSKUDetail(id);
+  }, [openCustomerDetail, openSKUDetail]);
   const { t, lang } = useLanguage();
   const [input, setInput] = useState('');
   const [ratings, setRatings] = useState({});
@@ -61,8 +67,14 @@ export default function GlobalChatBar() {
   const handleViewDetailed = useCallback((aiMsgIndex) => {
     const threadMessages = messages
       .slice(0, aiMsgIndex + 1)
-      .filter((msg) => msg.content?.trim())
-      .map((msg) => ({ role: msg.role, content: msg.content }));
+      .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
+      .map((msg) => {
+        if (msg.format === 'structured') {
+          return { role: msg.role, content: JSON.stringify({ blocks: msg.blocks || [] }) };
+        }
+        return { role: msg.role, content: msg.content };
+      })
+      .filter((msg) => typeof msg.content === 'string' && msg.content.trim());
 
     const userQuestion = [...threadMessages].reverse().find((msg) => msg.role === 'user')?.content;
     if (!userQuestion) return;
@@ -214,7 +226,65 @@ export default function GlobalChatBar() {
                   ) : (
                     <div key={i} className="flex justify-start">
                       <div className="max-w-[90%] min-w-0">
-                        {msg.content ? (
+                        {msg.format === 'structured' ? (
+                          ((msg.blocks && msg.blocks.length > 0) || msg.finalized) ? (
+                            <>
+                              <div className="bg-slate-50/80 px-3.5 py-2.5 rounded-2xl rounded-tl-md border border-slate-100/60">
+                                <div className="text-[13px] leading-relaxed text-slate-700">
+                                  <StructuredReplyRenderer
+                                    blocks={msg.blocks || []}
+                                    status={msg.status || []}
+                                    finalized={!!msg.finalized}
+                                    onEntityClick={handleEntityClick}
+                                  />
+                                </div>
+                              </div>
+                              {msg.finalized && !(isStreaming && i === messages.length - 1) && (
+                                <div className="flex items-center gap-3 mt-1.5 ml-1">
+                                  <button
+                                    onClick={() => handleViewDetailed(i)}
+                                    className="flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors group"
+                                  >
+                                    {t('chat.viewDetailed')}
+                                    <ArrowUpRight size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                                  </button>
+                                  <span className="text-slate-200">|</span>
+                                  <button
+                                    onClick={() => {
+                                      if (ratings[i] === 'thumbs_up') return;
+                                      setRatings(r => ({ ...r, [i]: 'thumbs_up' }));
+                                      const userQ = [...messages].slice(0, i).reverse().find(m => m.role === 'user')?.content;
+                                      trackChatRating(null, userQ || '', 'thumbs_up');
+                                    }}
+                                    className={`p-1 rounded transition-colors ${ratings[i] === 'thumbs_up' ? 'text-green-500 bg-green-50' : 'text-slate-300 hover:text-green-500 hover:bg-green-50'}`}
+                                    title={t('chat.helpful')}
+                                  >
+                                    <ThumbsUp size={12} />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (ratings[i] === 'thumbs_down') return;
+                                      setRatings(r => ({ ...r, [i]: 'thumbs_down' }));
+                                      const userQ = [...messages].slice(0, i).reverse().find(m => m.role === 'user')?.content;
+                                      trackChatRating(null, userQ || '', 'thumbs_down');
+                                    }}
+                                    className={`p-1 rounded transition-colors ${ratings[i] === 'thumbs_down' ? 'text-red-500 bg-red-50' : 'text-slate-300 hover:text-red-500 hover:bg-red-50'}`}
+                                    title={t('chat.notHelpful')}
+                                  >
+                                    <ThumbsDown size={12} />
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            isStreaming && i === messages.length - 1 && (
+                              <div className="flex items-center gap-2 text-slate-400 text-xs px-1 py-2">
+                                <Loader size={12} className="animate-spin" />
+                                <span>{t('chat.thinking')}</span>
+                              </div>
+                            )
+                          )
+                        ) : msg.content ? (
                           <>
                             <div className="bg-slate-50/80 px-3.5 py-2.5 rounded-2xl rounded-tl-md border border-slate-100/60">
                               <div className="text-[13px] leading-relaxed text-slate-700 [&_strong]:text-slate-900 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-slate-800 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:text-slate-700">
