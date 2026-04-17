@@ -43,6 +43,7 @@ export default function StructuredReplyRenderer({
   blocks = [],
   status = [],
   onEntityClick,
+  onSuggestionClick,
   finalized = false,
   conversationMessages = [],
   compact = false,
@@ -68,6 +69,9 @@ export default function StructuredReplyRenderer({
               compact={compact}
             />
           );
+        }
+        if (spec.type === 'clarification') {
+          return <Cmp key={i} spec={spec} compact={compact} onSuggestionClick={onSuggestionClick} />;
         }
         return <Cmp key={i} spec={spec} onEntityClick={onEntityClick} compact={compact} />;
       })}

@@ -65,8 +65,22 @@ export default function GlobalChatBar() {
   }, [handleSend]);
 
   const handleViewDetailed = useCallback((aiMsgIndex) => {
+    // Find the user message that triggered this assistant reply.
+    let triggeringUserIdx = aiMsgIndex - 1;
+    while (triggeringUserIdx >= 0 && messages[triggeringUserIdx]?.role !== 'user') {
+      triggeringUserIdx -= 1;
+    }
+    if (triggeringUserIdx < 0) return;
+    const triggeringUserMsg = messages[triggeringUserIdx];
+    const userQuestion = typeof triggeringUserMsg?.content === 'string' ? triggeringUserMsg.content.trim() : '';
+    if (!userQuestion) return;
+
+    // History = prior turns only. Exclude the triggering user question AND the
+    // shallow assistant reply the user wants to improve on — otherwise the AI
+    // sees the same question twice (once here, once as the new request) and
+    // responds "you've already asked this."
     const threadMessages = messages
-      .slice(0, aiMsgIndex + 1)
+      .slice(0, triggeringUserIdx)
       .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
       .map((msg) => {
         if (msg.format === 'structured') {
@@ -75,9 +89,6 @@ export default function GlobalChatBar() {
         return { role: msg.role, content: msg.content };
       })
       .filter((msg) => typeof msg.content === 'string' && msg.content.trim());
-
-    const userQuestion = [...threadMessages].reverse().find((msg) => msg.role === 'user')?.content;
-    if (!userQuestion) return;
 
     track.chatViewDetailed();
     const handoffData = {
@@ -93,7 +104,7 @@ export default function GlobalChatBar() {
     navigate(`/ai-insights?q=${encodeURIComponent(userQuestion)}`, {
       state: { detailedAnalysisHandoff: handoffData },
     });
-  }, [messages, navigate, setDetailedAnalysisHandoff, setIsOpen]);
+  }, [messages, navigate, setDetailedAnalysisHandoff, setIsOpen, pageContext]);
 
   const handleCollapse = useCallback(() => {
     track.chatClose();
@@ -236,6 +247,7 @@ export default function GlobalChatBar() {
                                     status={msg.status || []}
                                     finalized={!!msg.finalized}
                                     onEntityClick={handleEntityClick}
+                                    onSuggestionClick={sendMessage}
                                     conversationMessages={messages}
                                     compact={true}
                                   />

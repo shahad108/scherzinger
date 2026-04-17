@@ -1,7 +1,7 @@
-import { useChat } from '../../../context/ChatContext';
-
-export default function Clarification({ spec, compact = false }) {
-  const { sendMessage } = useChat();
+export default function Clarification({ spec, compact = false, onSuggestionClick }) {
+  // Chips are routed via onSuggestionClick — mini-chat and AI Insights each
+  // pass a handler that targets the correct conversation. If absent, chips
+  // are disabled (should never happen in production).
   const titleCls = compact ? 'text-xs' : 'text-sm';
   const chipCls = compact ? 'text-[11px] px-2.5 py-1' : 'text-xs px-3 py-1.5';
   return (
@@ -13,8 +13,9 @@ export default function Clarification({ spec, compact = false }) {
             <button
               key={i}
               type="button"
-              onClick={() => sendMessage(s)}
-              className={`${chipCls} rounded-full bg-white ring-1 ring-blue-200 text-blue-800 hover:bg-blue-100`}
+              disabled={!onSuggestionClick}
+              onClick={() => onSuggestionClick?.(s)}
+              className={`${chipCls} rounded-full bg-white ring-1 ring-blue-200 text-blue-800 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {s}
             </button>

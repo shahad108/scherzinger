@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, fireEvent } from '@testing-library/react';
 import StructuredReplyRenderer from '../StructuredReplyRenderer';
 
 describe('StructuredReplyRenderer (compact)', () => {
@@ -69,5 +69,36 @@ describe('StructuredReplyRenderer (compact)', () => {
       <StructuredReplyRenderer blocks={blocks} finalized />
     );
     expect(container.textContent).toContain('Weekly Report');
+  });
+
+  it('clarification chip calls onSuggestionClick with the chip text', () => {
+    const onSuggestionClick = vi.fn();
+    const blocks = [
+      { type: 'clarification', question: 'Which cut of churn?', suggestions: ['Top 10 at-risk', 'By segment'] },
+    ];
+    const { container } = render(
+      <StructuredReplyRenderer
+        blocks={blocks}
+        finalized
+        onSuggestionClick={onSuggestionClick}
+      />
+    );
+    const buttons = [...container.querySelectorAll('button')].filter(b => !b.disabled);
+    expect(buttons).toHaveLength(2);
+    fireEvent.click(buttons[0]);
+    expect(onSuggestionClick).toHaveBeenCalledWith('Top 10 at-risk');
+    fireEvent.click(buttons[1]);
+    expect(onSuggestionClick).toHaveBeenCalledWith('By segment');
+  });
+
+  it('clarification chips are disabled when onSuggestionClick is absent', () => {
+    const blocks = [
+      { type: 'clarification', question: 'Which cut of churn?', suggestions: ['Top 10 at-risk'] },
+    ];
+    const { container } = render(
+      <StructuredReplyRenderer blocks={blocks} finalized />
+    );
+    const button = container.querySelector('button');
+    expect(button.disabled).toBe(true);
   });
 });
