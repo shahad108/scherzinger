@@ -47,3 +47,12 @@ body {
   font-weight: 500;
 }
 
+
+/* Indeterminate progress bar for report generation */
+@keyframes report-progress {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.animate-report-progress {
+  animation: report-progress 1.2s ease-in-out infinite;
+}

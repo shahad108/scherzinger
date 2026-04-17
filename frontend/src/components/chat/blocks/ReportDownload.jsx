@@ -11,7 +11,8 @@ const FORMAT_META = {
 
 export default function ReportDownload({ spec, messageBlocks = [], conversationMessages = [] }) {
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [busyFormat, setBusyFormat] = useState(null); // null | 'pdf' | 'xlsx' | 'docx' | 'preview'
+  const busy = busyFormat !== null;
   const [previewUrl, setPreviewUrl] = useState(null);
   const [error, setError] = useState(null);
 
@@ -21,19 +22,19 @@ export default function ReportDownload({ spec, messageBlocks = [], conversationM
   }, [spec.scope, messageBlocks, conversationMessages]);
 
   const doDownload = async (format) => {
-    setBusy(true); setError(null); setOpen(false);
+    setBusyFormat(format); setError(null); setOpen(false);
     try {
       const blob = await generateReport(format, spec, sourceBlocks);
       downloadBlob(blob, filenameFor(spec, format));
     } catch (e) {
       setError(e.message || 'Report generation failed.');
     } finally {
-      setBusy(false);
+      setBusyFormat(null);
     }
   };
 
   const doPreview = async () => {
-    setBusy(true); setError(null);
+    setBusyFormat('preview'); setError(null);
     try {
       const blob = await generateReport('pdf', spec, sourceBlocks);
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -41,7 +42,7 @@ export default function ReportDownload({ spec, messageBlocks = [], conversationM
     } catch (e) {
       setError(e.message || 'Preview failed.');
     } finally {
-      setBusy(false);
+      setBusyFormat(null);
     }
   };
 
@@ -49,15 +50,26 @@ export default function ReportDownload({ spec, messageBlocks = [], conversationM
   const altFormats = ['pdf', 'xlsx', 'docx'].filter(f => f !== spec.defaultFormat);
 
   return (
-    <div className="my-3 rounded-xl ring-1 ring-slate-200 bg-white p-4">
+    <div className="my-3 rounded-xl ring-1 ring-slate-200 bg-white p-4 relative overflow-hidden">
+      {busy && (
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-100 overflow-hidden">
+          <div className="h-full w-1/3 bg-blue-600 animate-report-progress" />
+        </div>
+      )}
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-          <PrimaryIcon className="w-5 h-5 text-blue-700" />
+          {busy ? <Loader className="w-5 h-5 text-blue-700 animate-spin" /> : <PrimaryIcon className="w-5 h-5 text-blue-700" />}
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold text-slate-900 truncate">{spec.title}</div>
           {spec.subtitle && <div className="text-xs text-slate-500 truncate">{spec.subtitle}</div>}
           {spec.audience && <div className="text-xs text-slate-400">Audience: {spec.audience}</div>}
+          {busy && (
+            <div className="mt-1 flex items-center gap-2 text-xs text-blue-700">
+              <Loader className="w-3 h-3 animate-spin" />
+              Generating {busyFormat === 'preview' ? 'PDF preview' : FORMAT_META[busyFormat]?.label || busyFormat}… this can take a few seconds.
+            </div>
+          )}
           {error && <div className="mt-2 text-xs text-red-600">{error}</div>}
         </div>
         <div className="relative flex items-center gap-2">
@@ -65,10 +77,12 @@ export default function ReportDownload({ spec, messageBlocks = [], conversationM
             type="button"
             disabled={busy}
             onClick={() => doDownload(spec.defaultFormat)}
-            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-wait"
           >
             {busy ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-            Download {FORMAT_META[spec.defaultFormat]?.label}
+            {busy && busyFormat === spec.defaultFormat
+              ? `Generating ${FORMAT_META[spec.defaultFormat]?.label}…`
+              : `Download ${FORMAT_META[spec.defaultFormat]?.label}`}
           </button>
           <button
             type="button"
