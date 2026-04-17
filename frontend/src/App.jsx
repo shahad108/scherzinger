@@ -15,6 +15,7 @@ import Forecasting from './pages/Forecasting';
 import PricingFX from './pages/PricingFX';
 import MLAnalytics from './pages/MLAnalytics';
 import AIInsights from './pages/AIInsights';
+import ChatDebug from './pages/ChatDebug';
 import Login from './pages/Login';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminCommandCenter from './pages/admin/AdminCommandCenter';
@@ -64,6 +65,7 @@ export default function App() {
                 <Route path="/pricing-fx" element={<Navigate to="/pricing" replace />} />
                 <Route path="/ml-analytics" element={<MLAnalytics />} />
                 <Route path="/ai-insights" element={<AIInsights />} />
+                <Route path="/chat-debug" element={<ChatDebug />} />
                 {IS_DEMO && (
                   <Route
                     path="/scenario-lab"
