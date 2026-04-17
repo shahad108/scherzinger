@@ -11,6 +11,7 @@ import Callout from './blocks/Callout';
 import ActionPlan from './blocks/ActionPlan';
 import DataTable from './blocks/DataTable';
 import Clarification from './blocks/Clarification';
+import ReportDownload from './blocks/ReportDownload';
 
 const COMPONENTS = {
   narrative: Narrative,
@@ -24,6 +25,7 @@ const COMPONENTS = {
   action_plan: ActionPlan,
   data_table: DataTable,
   clarification: Clarification,
+  report_download: ReportDownload,
 };
 
 function BlockError({ reason }) {
@@ -34,7 +36,7 @@ function BlockError({ reason }) {
   );
 }
 
-export default function StructuredReplyRenderer({ blocks = [], status = [], onEntityClick, finalized = false }) {
+export default function StructuredReplyRenderer({ blocks = [], status = [], onEntityClick, finalized = false, conversationMessages = [] }) {
   return (
     <div className="space-y-0">
       {blocks.map((spec, i) => {
@@ -45,6 +47,9 @@ export default function StructuredReplyRenderer({ blocks = [], status = [], onEn
         const v = validateBlock(spec);
         if (!v.ok) return <BlockError key={i} reason={v.reason} />;
         const Cmp = COMPONENTS[spec.type];
+        if (spec.type === 'report_download') {
+          return <Cmp key={i} spec={spec} messageBlocks={blocks} conversationMessages={conversationMessages} />;
+        }
         return <Cmp key={i} spec={spec} onEntityClick={onEntityClick} />;
       })}
     </div>
