@@ -792,6 +792,7 @@ export default function AIInsights() {
                               status={msg.status || []}
                               finalized={!!msg.finalized}
                               onEntityClick={handleEntityClick}
+                              conversationMessages={activeConv?.messages || []}
                             />
                           </div>
                           {msg.finalized && !isStreaming && (
