@@ -104,4 +104,56 @@ describe('validateBlock', () => {
     expect(BLOCK_TYPES).toContain('comparison_cards');
     expect(BLOCK_TYPES).toContain('clarification');
   });
+
+  it('accepts a minimal report_download', () => {
+    const spec = {
+      type: 'report_download',
+      title: 'Customer 101580 — Weekly Health Report',
+      scope: 'reply',
+      defaultFormat: 'pdf',
+    };
+    expect(validateBlock(spec).ok).toBe(true);
+  });
+
+  it('rejects report_download without title', () => {
+    expect(validateBlock({ type: 'report_download', scope: 'reply', defaultFormat: 'pdf' }).ok).toBe(false);
+  });
+
+  it('rejects report_download with invalid scope', () => {
+    expect(validateBlock({
+      type: 'report_download', title: 'x', scope: 'history', defaultFormat: 'pdf',
+    }).ok).toBe(false);
+  });
+
+  it('rejects report_download with invalid defaultFormat', () => {
+    expect(validateBlock({
+      type: 'report_download', title: 'x', scope: 'reply', defaultFormat: 'txt',
+    }).ok).toBe(false);
+  });
+
+  it('accepts report_download with sections', () => {
+    const spec = {
+      type: 'report_download',
+      title: 'x',
+      scope: 'reply',
+      defaultFormat: 'pdf',
+      sections: [{ label: 'Risks', blockIndex: 0 }, { label: 'Actions', blockIndex: 2 }],
+    };
+    expect(validateBlock(spec).ok).toBe(true);
+  });
+
+  it('rejects report_download with non-integer blockIndex', () => {
+    const spec = {
+      type: 'report_download',
+      title: 'x',
+      scope: 'reply',
+      defaultFormat: 'pdf',
+      sections: [{ label: 'Risks', blockIndex: 'zero' }],
+    };
+    expect(validateBlock(spec).ok).toBe(false);
+  });
+
+  it('includes report_download in BLOCK_TYPES', () => {
+    expect(BLOCK_TYPES).toContain('report_download');
+  });
 });

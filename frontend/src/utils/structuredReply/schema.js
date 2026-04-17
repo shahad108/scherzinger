@@ -10,6 +10,7 @@ export const BLOCK_TYPES = [
   'action_plan',
   'data_table',
   'clarification',
+  'report_download',
 ];
 
 const FACTOR_STATUSES = ['critical', 'moderate', 'stable', 'strong', 'weak'];
@@ -17,6 +18,8 @@ const CALLOUT_TONES = ['insight', 'warning', 'success'];
 const CHART_VARIANTS = ['line', 'bar', 'donut'];
 const PRIORITIES = ['high', 'medium', 'low'];
 const BADGE_TONES = ['critical', 'warning', 'success', 'neutral'];
+const REPORT_FORMATS = ['pdf', 'xlsx', 'docx'];
+const REPORT_SCOPES = ['reply', 'conversation'];
 
 const fail = (reason) => ({ ok: false, reason });
 const pass = () => ({ ok: true });
@@ -105,6 +108,21 @@ function validateClarification(b) {
   if (!isStr(b.question)) return fail('clarification: question required');
   return pass();
 }
+function validateReportDownload(b) {
+  if (!isStr(b.title)) return fail('report_download: title required');
+  if (!REPORT_SCOPES.includes(b.scope)) return fail('report_download: bad scope');
+  if (!REPORT_FORMATS.includes(b.defaultFormat)) return fail('report_download: bad defaultFormat');
+  if (b.sections !== undefined) {
+    if (!Array.isArray(b.sections)) return fail('report_download: sections must be array');
+    for (const s of b.sections) {
+      if (!isStr(s.label)) return fail('report_download: section.label required');
+      if (!Number.isInteger(s.blockIndex) || s.blockIndex < 0) {
+        return fail('report_download: section.blockIndex must be non-negative integer');
+      }
+    }
+  }
+  return pass();
+}
 
 const VALIDATORS = {
   narrative: validateNarrative,
@@ -118,6 +136,7 @@ const VALIDATORS = {
   action_plan: validateActionPlan,
   data_table: validateDataTable,
   clarification: validateClarification,
+  report_download: validateReportDownload,
 };
 
 export function validateBlock(block) {
