@@ -234,7 +234,8 @@ export async function generatePdf(spec, sourceBlocks) {
     defaultStyle: { font: 'Roboto' },
   };
 
-  return new Promise((resolve) => {
-    pdfMake.createPdf(doc).getBlob(blob => resolve(blob));
-  });
+  // pdfmake 0.3.x: getBlob() is Promise-returning (not callback-based as in
+  // 0.2.x). Awaiting the returned Promise is the supported pattern.
+  const pdfDoc = pdfMake.createPdf(doc);
+  return pdfDoc.getBlob();
 }
