@@ -3,8 +3,26 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import renderMarkdown from '../../../utils/markdownRenderer';
 import { STATUS_DOT, STATUS_LABEL } from './formatters';
 
-export default function FactorBreakdown({ spec }) {
+export default function FactorBreakdown({ spec, compact = false }) {
   const [open, setOpen] = useState({});
+  if (compact) {
+    return (
+      <div className="my-2 rounded-xl ring-1 ring-slate-200 bg-white overflow-hidden">
+        <ul>
+          {spec.factors.map((f, i) => (
+            <li key={i} className="flex items-center gap-2 px-3 py-1.5 border-t border-slate-100 first:border-t-0">
+              <span className={`w-2 h-2 rounded-full ${STATUS_DOT[f.status] || 'bg-slate-300'}`} />
+              <span className="flex-1 min-w-0 truncate text-[11px] font-medium text-slate-800">{f.label}</span>
+              {f.weight != null && (
+                <span className="text-[10px] text-slate-500 tabular-nums">{(f.weight * 100).toFixed(0)}%</span>
+              )}
+              <span className="text-[10px] text-slate-500">{STATUS_LABEL[f.status]}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
   return (
     <div className="my-3 rounded-xl ring-1 ring-slate-200 bg-white overflow-hidden">
       <ul>
