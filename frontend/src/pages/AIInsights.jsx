@@ -11,8 +11,12 @@ import Header from '../components/Header';
 import ChatChart from '../components/ChatChart';
 import IntelligenceFeed from '../components/IntelligenceFeed';
 import InsightReportSlideOver from '../components/InsightReportSlideOver';
-import { useChat } from '../context/ChatContext';
+import { useChat, STRUCTURED_CHAT } from '../context/ChatContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useUI } from '../context/UIContext';
+import { createStreamParser } from '../utils/structuredReply/streamParser';
+import { STRUCTURED_RESPONSE_PROMPT } from '../utils/structuredReply/prompt';
+import StructuredReplyRenderer from '../components/chat/StructuredReplyRenderer';
 import { useUrlFilters } from '../hooks/useUrlFilters';
 import { translations } from '../i18n/translations';
 import { streamChat } from '../utils/openrouter';
@@ -59,8 +63,14 @@ function buildConversationTitle(text) {
 
 function sanitizeHistoryMessages(messages = []) {
   return messages
-    .filter((m) => (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
-    .map((m) => ({ role: m.role, content: m.content }));
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .map((m) => {
+      if (m.format === 'structured') {
+        return { role: m.role, content: JSON.stringify({ blocks: m.blocks || [] }) };
+      }
+      return { role: m.role, content: m.content };
+    })
+    .filter((m) => typeof m.content === 'string' && m.content.trim());
 }
 
 function loadConversations() {
@@ -80,7 +90,7 @@ function saveConversations(conversations) {
       id: c.id,
       title: c.title,
       createdAt: c.createdAt || Date.now(),
-      messages: c.messages.filter((m) => m.content && m.content.trim()),
+      messages: c.messages.filter((m) => (m.format === 'structured' && Array.isArray(m.blocks)) || (m.content && m.content.trim())),
     }));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
   } catch { /* localStorage full — silently fail */ }
@@ -333,7 +343,9 @@ export default function AIInsights() {
         : buildConversationTitle(msg));
 
     const userMessage = { role: 'user', content: msg };
-    const assistantPlaceholder = { role: 'assistant', content: '' };
+    const assistantPlaceholder = STRUCTURED_CHAT
+      ? { role: 'assistant', format: 'structured', blocks: [], status: [], finalized: false, raw: '' }
+      : { role: 'assistant', content: '' };
 
     setInput('');
     setError(null);
@@ -367,8 +379,11 @@ export default function AIInsights() {
 
     const effectiveContext = options.handoffPageContext || pageContext;
     const langDirective = langRef.current === 'de' ? translations.de['ai.directive.de'] : null;
+    const systemPrompt = STRUCTURED_CHAT
+      ? `${SYSTEM_PROMPT}\n\n${STRUCTURED_RESPONSE_PROMPT}`
+      : SYSTEM_PROMPT;
     const apiMessages = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       ...(langDirective ? [{ role: 'system', content: langDirective }] : []),
       ...historyMessages,
       ...(effectiveContext ? [{ role: 'system', content: effectiveContext }] : []),
@@ -376,18 +391,51 @@ export default function AIInsights() {
       userMessage,
     ];
 
+    let fullResponse = '';
+    const parser = STRUCTURED_CHAT ? createStreamParser() : null;
+
     await streamChat(apiMessages, {
       onChunk(chunk) {
-        setConversations((prev) => prev.map((c) => {
-          if (c.id !== conversationId) return c;
-          const msgs = [...c.messages];
-          const last = msgs[msgs.length - 1];
-          if (!last || last.role !== 'assistant') return c;
-          msgs[msgs.length - 1] = { ...last, content: last.content + chunk };
-          return { ...c, messages: msgs };
-        }));
+        fullResponse += chunk;
+        if (STRUCTURED_CHAT) {
+          const r = parser.feed(chunk);
+          setConversations((prev) => prev.map((c) => {
+            if (c.id !== conversationId) return c;
+            const msgs = [...c.messages];
+            const last = msgs[msgs.length - 1];
+            if (!last || last.role !== 'assistant') return c;
+            msgs[msgs.length - 1] = { ...last, blocks: r.blocks, status: r.status, raw: fullResponse };
+            return { ...c, messages: msgs };
+          }));
+        } else {
+          setConversations((prev) => prev.map((c) => {
+            if (c.id !== conversationId) return c;
+            const msgs = [...c.messages];
+            const last = msgs[msgs.length - 1];
+            if (!last || last.role !== 'assistant') return c;
+            msgs[msgs.length - 1] = { ...last, content: last.content + chunk };
+            return { ...c, messages: msgs };
+          }));
+        }
       },
-      onDone() { setIsStreaming(false); isStreamingRef.current = false; abortRef.current = null; },
+      onDone() {
+        setIsStreaming(false); isStreamingRef.current = false; abortRef.current = null;
+        if (STRUCTURED_CHAT && parser) {
+          const r = parser.finalize();
+          setConversations((prev) => prev.map((c) => {
+            if (c.id !== conversationId) return c;
+            const msgs = [...c.messages];
+            const last = msgs[msgs.length - 1];
+            if (!last || last.role !== 'assistant') return c;
+            if (r.ok) {
+              msgs[msgs.length - 1] = { ...last, blocks: r.blocks, status: r.status, finalized: true, raw: r.raw };
+            } else {
+              msgs[msgs.length - 1] = { role: 'assistant', format: 'markdown', content: r.raw || fullResponse, fallback: true };
+            }
+            return { ...c, messages: msgs };
+          }));
+        }
+      },
       onError(err) {
         setIsStreaming(false); isStreamingRef.current = false; abortRef.current = null;
         if (err.name === 'AbortError') return;
@@ -396,8 +444,12 @@ export default function AIInsights() {
           if (c.id !== conversationId) return c;
           const msgs = [...c.messages];
           const last = msgs[msgs.length - 1];
-          if (!last || last.role !== 'assistant' || last.content) return c;
-          msgs[msgs.length - 1] = { ...last, content: '_Unable to generate a response right now. Use Retry to try again._' };
+          if (!last || last.role !== 'assistant') return c;
+          if (STRUCTURED_CHAT && !fullResponse) {
+            msgs[msgs.length - 1] = { role: 'assistant', format: 'markdown', content: '_Unable to generate a response right now. Use Retry to try again._', fallback: true };
+          } else if (!STRUCTURED_CHAT && !last.content) {
+            msgs[msgs.length - 1] = { ...last, content: '_Unable to generate a response right now. Use Retry to try again._' };
+          }
           return { ...c, messages: msgs };
         }));
       },
@@ -525,6 +577,12 @@ export default function AIInsights() {
       [msgIndex]: prev[msgIndex] === type ? null : type,
     }));
   };
+
+  const { openCustomerDetail, openSKUDetail } = useUI();
+  const handleEntityClick = useCallback(({ entityType, id }) => {
+    if (entityType === 'customer') openCustomerDetail(id);
+    else if (entityType === 'sku' || entityType === 'product') openSKUDetail(id);
+  }, [openCustomerDetail, openSKUDetail]);
 
   return (
     <>
@@ -725,7 +783,47 @@ export default function AIInsights() {
                     <Bot size={12} style={{ color: colors.primary }} />
                   </div>
                   <div className="max-w-[88%] min-w-0">
-                    {msg.content ? (
+                    {msg.format === 'structured' ? (
+                      ((msg.blocks && msg.blocks.length > 0) || msg.finalized) ? (
+                        <>
+                          <div className="prose-chat text-xs">
+                            <StructuredReplyRenderer
+                              blocks={msg.blocks || []}
+                              status={msg.status || []}
+                              finalized={!!msg.finalized}
+                              onEntityClick={handleEntityClick}
+                            />
+                          </div>
+                          {msg.finalized && !isStreaming && (
+                            <div className="flex items-center gap-1 mt-1.5">
+                              <button
+                                onClick={() => handleChatFeedback(i, 'up')}
+                                className={`p-0.5 rounded transition-colors ${
+                                  chatFeedback[i] === 'up' ? 'text-green-600' : 'text-slate-300 hover:text-slate-400'
+                                }`}
+                              >
+                                <ThumbsUp size={10} />
+                              </button>
+                              <button
+                                onClick={() => handleChatFeedback(i, 'down')}
+                                className={`p-0.5 rounded transition-colors ${
+                                  chatFeedback[i] === 'down' ? 'text-red-500' : 'text-slate-300 hover:text-slate-400'
+                                }`}
+                              >
+                                <ThumbsDown size={10} />
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        isStreaming && i === activeConv.messages.length - 1 && (
+                          <div className="flex items-center gap-2 text-slate-400 text-xs">
+                            <Loader size={12} className="animate-spin" />
+                            {t('ai.thinking')}
+                          </div>
+                        )
+                      )
+                    ) : msg.content ? (
                       <>
                         {parseMessageContent(msg.content).map((part, j) => (
                           part.type === 'chart' ? (
@@ -736,7 +834,6 @@ export default function AIInsights() {
                             </div>
                           )
                         ))}
-                        {/* Per-response feedback */}
                         {msg.content && !isStreaming && (
                           <div className="flex items-center gap-1 mt-1.5">
                             <button
