@@ -14,16 +14,20 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.102.1",
+    "docx": "^9.6.1",
+    "html-to-image": "^1.11.13",
     "lucide-react": "^0.576.0",
     "motion": "^12.34.4",
     "partial-json": "^0.1.7",
+    "pdfmake": "^0.3.7",
     "posthog-js": "^1.363.1",
     "react": "^19.2.0",
     "react-countup": "^6.5.3",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.1",
     "recharts": "^3.7.0",
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "^3.5.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
