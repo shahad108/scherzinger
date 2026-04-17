@@ -4,9 +4,25 @@ let pdfMakePromise = null;
 async function loadPdfMake() {
   if (!pdfMakePromise) {
     pdfMakePromise = (async () => {
-      const pdfMake = (await import('pdfmake/build/pdfmake')).default;
-      const pdfFonts = await import('pdfmake/build/vfs_fonts');
-      pdfMake.vfs = pdfFonts.pdfMake?.vfs || pdfFonts.default?.pdfMake?.vfs || pdfFonts.vfs;
+      const pdfMakeModule = await import('pdfmake/build/pdfmake');
+      const pdfMake = pdfMakeModule.default || pdfMakeModule;
+      const fontsModule = await import('pdfmake/build/vfs_fonts');
+      // pdfmake 0.3.x exports the font map directly at module top level
+      // (keys like "Roboto-Regular.ttf"). Older 0.2.x nested it under
+      // .pdfMake.vfs. Probe every shape and pick whichever actually has Roboto.
+      const candidates = [
+        fontsModule.pdfMake?.vfs,
+        fontsModule.default?.pdfMake?.vfs,
+        fontsModule.default?.vfs,
+        fontsModule.vfs,
+        fontsModule.default,
+        fontsModule,
+      ];
+      const vfs = candidates.find(c => c && typeof c === 'object' && c['Roboto-Regular.ttf']);
+      if (!vfs) {
+        throw new Error('pdfmake: could not locate Roboto fonts in vfs_fonts module');
+      }
+      pdfMake.vfs = vfs;
       return pdfMake;
     })();
   }
