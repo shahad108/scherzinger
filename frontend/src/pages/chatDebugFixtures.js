@@ -84,6 +84,36 @@ export const FIXTURES = {
   clarification: { blocks: [
     { type: 'clarification', question: 'Which cut of churn would you like?', suggestions: ['Top 10 at-risk customers', 'Churn trend by segment', 'A specific customer\'s risk factors'] },
   ]},
+  report_download: { blocks: [
+    { type: 'narrative', text: 'Customer 101580 is a high-value enterprise account at elevated churn risk, driven by low transaction frequency.', tone: 'insight' },
+    { type: 'metric_grid', tiles: [
+      { label: 'LTV', value: '€726,128' },
+      { label: 'Active Revenue', value: '€726,128' },
+      { label: 'DB2 Margin', value: '67.8%' },
+      { label: 'Win Rate', value: '78%' },
+    ]},
+    { type: 'factor_breakdown', factors: [
+      { label: 'Order recency', weight: 0.218, status: 'critical', detail: 'Only 13 invoices in the full period — extremely low touchpoint frequency for a €726K customer.' },
+      { label: 'Margin trend', weight: 0.175, status: 'stable' },
+      { label: 'Quote win rate', weight: 0.112, status: 'strong', value: '78%' },
+    ]},
+    { type: 'action_plan', actions: [
+      { title: 'Schedule QBR with account lead', priority: 'high', timeline: '30 days', impact: '€150K–300K', rationale: 'Low invoice count; a single project unlocks outsized value.' },
+      { title: 'Identify upcoming capex cycles', priority: 'medium', timeline: '60 days' },
+    ]},
+    { type: 'report_download',
+      title: 'Customer 101580 — Weekly Health Report',
+      subtitle: 'Week of 14 Apr 2026',
+      audience: 'Account management team',
+      scope: 'reply',
+      defaultFormat: 'pdf',
+      sections: [
+        { label: 'Summary metrics', blockIndex: 1 },
+        { label: 'Risk factors', blockIndex: 2 },
+        { label: 'Recommended actions', blockIndex: 3 },
+      ],
+    },
+  ]},
 };
 
 export const REPLAY_STREAM = JSON.stringify(FIXTURES.comparison_cards);
