@@ -1,8 +1,40 @@
 import { formatValue } from './formatters';
 import EntityChip from './EntityChip';
 
-export default function ComparisonCards({ spec, onEntityClick }) {
+export default function ComparisonCards({ spec, onEntityClick, compact = false }) {
   const { subjects, metrics, caption } = spec;
+
+  if (compact) {
+    return (
+      <div className="my-2 rounded-xl ring-1 ring-slate-200 bg-white overflow-hidden">
+        <table className="w-full text-[11px]">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="text-left px-3 py-1.5 font-semibold text-slate-600">Metric</th>
+              {subjects.map(s => (
+                <th key={s.id} className="text-right px-3 py-1.5 font-semibold text-slate-800 whitespace-nowrap">
+                  <EntityChip {...s} onEntityClick={onEntityClick} />
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {metrics.map(m => (
+              <tr key={m.key} className="border-t border-slate-100">
+                <td className="px-3 py-1.5 text-slate-500">{m.label}</td>
+                {m.values.map((v, si) => (
+                  <td key={si} className="px-3 py-1.5 text-right font-semibold text-slate-900 tabular-nums whitespace-nowrap">
+                    {formatValue(v, m.format)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
   const cols = subjects.length >= 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2';
   return (
     <div className="my-3">
