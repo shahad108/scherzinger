@@ -237,6 +237,7 @@ export default function GlobalChatBar() {
                                     finalized={!!msg.finalized}
                                     onEntityClick={handleEntityClick}
                                     conversationMessages={messages}
+                                    compact={true}
                                   />
                                 </div>
                               </div>
