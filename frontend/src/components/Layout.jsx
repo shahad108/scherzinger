@@ -6,6 +6,9 @@ import SKUSlideOver from './SKUSlideOver';
 import CategorySlideOver from './CategorySlideOver';
 import CustomerSlideOver from './CustomerSlideOver';
 import GlobalChatBar from './GlobalChatBar';
+import CommoditySlideOver from './CommoditySlideOver';
+import QuoteDetailSlideOver from './phase45/QuoteDetailSlideOver';
+import InsightSlideOver from './phase45/InsightSlideOver';
 import { AnimatedGridPattern } from './ui/AnimatedGridPattern';
 import { useUI } from '../context/UIContext';
 import { useChat } from '../context/ChatContext';
@@ -79,6 +82,9 @@ export default function Layout() {
       <SKUSlideOver />
       <CategorySlideOver />
       <CustomerSlideOver />
+      <CommoditySlideOver />
+      <QuoteDetailSlideOver />
+      <InsightSlideOver />
     </div>
   );
 }

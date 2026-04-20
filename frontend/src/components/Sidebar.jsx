@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   LayoutDashboard, TrendingUp, Package, Users, LineChart,
   DollarSign, Brain, Sparkles, ChevronsLeft, ChevronsRight, LogOut, ClipboardList,
+  FlaskConical,
 } from 'lucide-react';
 import { useUI } from '../context/UIContext';
 import { useUser } from '../context/UserContext';
@@ -21,6 +22,7 @@ const navItems = [
   { to: '/ml-analytics', tKey: 'nav.ml', icon: Brain },
   { to: '/ai-insights', tKey: 'nav.aiInsights', icon: Sparkles },
   { to: '/measures', tKey: 'nav.measures', icon: ClipboardList },
+  ...(import.meta.env.BASE_URL === '/demo/' ? [{ to: '/scenario-lab', tKey: 'phase45.nav.scenarioLab', icon: FlaskConical }] : []),
 ];
 
 export default function Sidebar() {
