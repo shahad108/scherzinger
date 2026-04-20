@@ -253,11 +253,25 @@ export default function AIInsights() {
     if (msgs.length < 2) return;
 
     // Find last user + assistant pair
+    // Structured-mode assistant messages keep text in .raw (or .blocks[].text),
+    // not .content — so fall back across both to cover structured + plain modes.
+    const extractText = (m) => {
+      if (m.content?.trim()) return m.content;
+      if (m.raw?.trim()) return m.raw;
+      if (Array.isArray(m.blocks) && m.blocks.length > 0) {
+        return m.blocks
+          .map((b) => b?.text || b?.title || b?.caption || '')
+          .filter(Boolean)
+          .join(' ');
+      }
+      return '';
+    };
     let lastUser = '';
     let lastAssistant = '';
     for (let i = msgs.length - 1; i >= 0; i--) {
-      if (!lastAssistant && msgs[i].role === 'assistant' && msgs[i].content?.trim()) {
-        lastAssistant = msgs[i].content;
+      if (!lastAssistant && msgs[i].role === 'assistant') {
+        const text = extractText(msgs[i]);
+        if (text) lastAssistant = text;
       }
       if (!lastUser && msgs[i].role === 'user' && msgs[i].content?.trim()) {
         lastUser = msgs[i].content;
