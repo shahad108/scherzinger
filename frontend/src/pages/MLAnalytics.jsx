@@ -19,7 +19,6 @@ import DataTable from '../components/shared/DataTable';
 import StatusBadge from '../components/shared/StatusBadge';
 import CustomTooltip from '../components/shared/CustomTooltip';
 import LastUpdated from '../components/shared/LastUpdated';
-import { Info } from 'lucide-react';
 import { formatEUR, formatPct } from '../utils/formatters';
 import { TOOLTIPS } from '../utils/tooltipContent';
 import { useUI } from '../context/UIContext';
