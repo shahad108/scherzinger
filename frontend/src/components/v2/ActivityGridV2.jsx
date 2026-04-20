@@ -20,7 +20,9 @@ export default function ActivityGridV2({ title, items }) {
         {items.map((item, i) => (
           <div
             key={i}
-            className="flex items-center gap-4 p-6 rounded-2xl"
+            title={item.tooltip}
+            onClick={item.onClick}
+            className={`flex items-center gap-4 p-6 rounded-2xl ${item.onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
             style={{
               background: colors.background,
               ...(item.highlight ? { border: `2px solid rgba(3, 147, 218, 0.1)` } : {}),
