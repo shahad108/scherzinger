@@ -15,7 +15,7 @@ function formatDate(iso, lang) {
  * Preferred usage: pass `dashboardKey` — dates come from dataFreshness helper.
  * Escape hatch: pass `dataAsOf` / `modelAsOf` directly if a caller has its own source.
  */
-export default function LastUpdated({ dashboardKey, dataAsOf, modelAsOf, className = '' }) {
+export default function LastUpdated({ dashboardKey, dataAsOf, modelAsOf, className = '', dataLabelKey }) {
   const { t, lang } = useLanguage();
 
   let resolvedData = dataAsOf ?? null;
@@ -26,10 +26,18 @@ export default function LastUpdated({ dashboardKey, dataAsOf, modelAsOf, classNa
     resolvedModel = resolvedModel ?? f.modelAsOf;
   }
 
+  // When a model date exists, the data line shifts to "Daten-Stand" for clarity
+  // (Manuel's 7.4 feedback on ML page). Callers can override with dataLabelKey.
+  const dataLabel = dataLabelKey
+    ? t(dataLabelKey)
+    : resolvedModel
+      ? t('common.dataAsOf')
+      : t('common.lastUpdated');
+
   return (
     <div className={`text-[11px] text-slate-500 leading-tight ${className}`}>
       <div>
-        <span className="text-slate-400">{t('common.lastUpdated')}:</span>{' '}
+        <span className="text-slate-400">{dataLabel}:</span>{' '}
         <span className="font-medium text-slate-600">{formatDate(resolvedData, lang)}</span>
       </div>
       {resolvedModel ? (
