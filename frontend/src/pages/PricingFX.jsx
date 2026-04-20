@@ -17,6 +17,8 @@ import { formatEUR, formatPct } from '../utils/formatters';
 import { useUI } from '../context/UIContext';
 import { useLanguage } from '../context/LanguageContext';
 import PhaseNotice from '../components/shared/PhaseNotice';
+import LastUpdated from '../components/shared/LastUpdated';
+import { Info } from 'lucide-react';
 import { handleChartContainerClick, handlePieClick } from '../utils/pageContextResolver';
 import { track } from '../utils/tracker';
 import {
@@ -762,6 +764,16 @@ export default function PricingFX() {
   const [pageTab, setPageTab] = useState('winrate');
   const [excludeAN, setExcludeAN] = useState(false);
   const [commodityFilter, setCommodityFilter] = useState('All');
+  const [showCmdExplainer, setShowCmdExplainer] = useState(false);  // 6.2
+  const [showRespFooter, setShowRespFooter] = useState(false);      // 6.3
+  const [respRawScatter, setRespRawScatter] = useState(false);      // 6.3
+
+  // 6.1: Win-rate propagation — use per-commodity value when filter is active
+  const commodityWinRate = useMemo(() => {
+    if (commodityFilter === 'All') return overallWinRate?.current ?? 0.371;
+    const match = (winRateByCommodity || []).find(d => d.commodity_group === commodityFilter);
+    return match?.win_rate ?? overallWinRate?.current ?? 0.371;
+  }, [commodityFilter]);
 
   /* Enriched recommendations */
   const enrichedAll = useMemo(() => buildEnrichedRecommendations(), []);
@@ -845,6 +857,7 @@ export default function PricingFX() {
               {excludeAN && <span className="text-[10px] text-slate-400">138 quotes / {formatEUR(1168322)} excluded</span>}
             </label>
           </div>
+          <LastUpdated dashboardKey="pricing" />
         </div>
 
         {/* ══════════════════════════════════════════════════════════════
@@ -854,14 +867,14 @@ export default function PricingFX() {
           {/* KPI 1: Win Rate */}
           <motion.div variants={cardVariants}>
             <KPICard
-              label={t('pricing.kpi.winRate')}
-              value={`${((overallWinRate?.current || 0.371) * 100).toFixed(1)}%`}
-              change={`+${((overallWinRate?.yoy_change || 0.024) * 100).toFixed(1)}pp YoY`}
+              label={t('pricing.kpi.winRate') + (commodityFilter !== 'All' ? ` — ${commodityFilter}` : '')}
+              value={`${(commodityWinRate * 100).toFixed(1)}%`}
+              change={commodityFilter === 'All' ? `+${((overallWinRate?.yoy_change || 0.024) * 100).toFixed(1)}pp YoY` : `${commodityFilter} group`}
               changeType="positive"
               infoTooltip="Overall quote win rate — headline metric for pricing performance"
               formulaId="win_rate"
               confidence="verified"
-              bottomContent={<MiniProgress value={(overallWinRate?.current || 0.371) * 100} max={100} color={colors.primary} />}
+              bottomContent={<MiniProgress value={commodityWinRate * 100} max={100} color={colors.primary} />}
             />
           </motion.div>
 
@@ -947,6 +960,32 @@ export default function PricingFX() {
             </div>
           </div>
         </motion.div>
+
+        {/* ── 6.2: Command Center explainer ── */}
+        <div className="rounded-xl border border-[#0393da]/20 overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(3,147,218,0.04), rgba(3,147,218,0.01))' }}>
+          <button
+            onClick={() => setShowCmdExplainer(v => !v)}
+            className="w-full p-4 flex items-start gap-3 text-left"
+          >
+            <div className="size-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(3,147,218,0.12)' }}>
+              <Info size={16} style={{ color: '#0393da' }} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-slate-800">{t('pricing.cmd.howTitle')}</h3>
+              <p className="text-xs text-slate-500 mt-0.5">{t('pricing.cmd.howSubtitle')}</p>
+            </div>
+            <ChevronDown size={16} className={`text-slate-400 transition-transform mt-2 ${showCmdExplainer ? 'rotate-180' : ''}`} />
+          </button>
+          {showCmdExplainer ? (
+            <div className="px-4 pb-4 pt-0 text-xs text-slate-600 space-y-2">
+              <p><strong className="text-slate-800">{t('pricing.cmd.axisTitle')}:</strong> {t('pricing.cmd.axisBody')}</p>
+              <p><strong className="text-slate-800">{t('pricing.cmd.criticalTitle')}:</strong> {t('pricing.cmd.criticalBody')}</p>
+              <p className="p-2 rounded bg-amber-50 border border-amber-200 text-amber-800">
+                <strong>{t('pricing.cmd.exampleLabel')}:</strong> {t('pricing.cmd.exampleBody')}
+              </p>
+            </div>
+          ) : null}
+        </div>
 
         {/* ── Pricing Command Center ── */}
         <PricingCommandCenter commodityFilter={commodityFilter} />
@@ -1112,14 +1151,36 @@ export default function PricingFX() {
             </ChartCard>
 
             {/* 1.5 — Quote Response Time vs Win Rate */}
-            <ChartCard title={t('pricing.chart.responseTime.title')} subtitle={t('pricing.chart.responseTime.subtitle')} confidence="derived">
+            <ChartCard
+              title={t('pricing.chart.responseTime.title')}
+              subtitle={t('pricing.chart.responseTime.subtitle')}
+              confidence="derived"
+              headerRight={
+                <button
+                  onClick={() => setRespRawScatter(v => !v)}
+                  className="text-[11px] font-semibold px-2 py-1 rounded-md border border-slate-200 text-slate-500 hover:text-[#0393da] hover:border-[#0393da]"
+                >
+                  {respRawScatter ? t('pricing.resp.smoothed') : t('pricing.resp.rawScatter')}
+                </button>
+              }
+            >
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsBarChart data={responseTimeData} onClick={s => handleChartContainerClick('Response Time', selectItem, responseTimeData, s)}>
                     <CartesianGrid stroke="#f0f0f0" strokeDasharray="none" />
                     <XAxis dataKey="bucket" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} unit="%" domain={[0, 60]} />
-                    <Tooltip content={<CustomTooltip formatter={v => `${v}%`} />} />
+                    <Tooltip content={({ payload, label }) => {
+                      if (!payload?.length) return null;
+                      const d = payload[0].payload;
+                      return (
+                        <div className="border border-slate-100 rounded-lg p-3 shadow-lg text-xs min-w-[180px]" style={{ background: 'rgba(255,255,255,0.97)' }}>
+                          <p className="font-bold text-slate-800 mb-2">{label}</p>
+                          <div className="flex justify-between gap-4"><span className="text-slate-500">Win rate</span><span className="font-semibold">{d.winRate}%</span></div>
+                          {d.n != null ? <div className="flex justify-between gap-4"><span className="text-slate-500">n</span><span className="font-mono text-slate-600">{d.n}</span></div> : null}
+                        </div>
+                      );
+                    }} />
                     <Bar dataKey="winRate" name="Win Rate %" radius={[4, 4, 0, 0]} barSize={36}>
                       {responseTimeData.map((entry, i) => (
                         <Cell key={i} fill={entry.winRate >= 45 ? '#10B981' : entry.winRate >= 35 ? '#F59E0B' : '#EF4444'} />
@@ -1128,6 +1189,25 @@ export default function PricingFX() {
                   </RechartsBarChart>
                 </ResponsiveContainer>
               </div>
+              {/* 6.3: methodology footer */}
+              <button
+                onClick={() => setShowRespFooter(v => !v)}
+                className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors"
+              >
+                {t('pricing.resp.method.toggle')}
+                {showRespFooter ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+              {showRespFooter ? (
+                <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px] p-3 rounded-lg bg-slate-50 border border-slate-100">
+                  <div><span className="block text-[10px] uppercase text-slate-400 font-semibold">{t('pricing.resp.method.source')}</span><span className="text-slate-700 font-semibold">{t('pricing.resp.method.source.value')}</span></div>
+                  <div><span className="block text-[10px] uppercase text-slate-400 font-semibold">n</span><span className="text-slate-700 font-semibold">4,539 {t('pricing.resp.method.quotes')}</span></div>
+                  <div><span className="block text-[10px] uppercase text-slate-400 font-semibold">{t('pricing.resp.method.window')}</span><span className="text-slate-700 font-semibold">{t('pricing.resp.method.window.value')}</span></div>
+                  <div><span className="block text-[10px] uppercase text-slate-400 font-semibold">{t('pricing.resp.method.winDef')}</span><span className="text-slate-700 font-semibold">{t('pricing.resp.method.winDef.value')}</span></div>
+                  <div className="col-span-full text-slate-500 italic pt-1 border-t border-slate-200">
+                    {t('pricing.resp.method.note')}
+                  </div>
+                </div>
+              ) : null}
             </ChartCard>
           </div>
         )}
