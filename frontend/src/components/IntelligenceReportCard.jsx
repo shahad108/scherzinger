@@ -41,6 +41,7 @@ export default function IntelligenceReportCard({
   onExpand,
   isPinned,
   onTogglePin,
+  onCreateMeasure,
 }) {
   const [feedback, setFeedback] = useState(null); // 'up' | 'down' | null
   const navigate = useNavigate();
@@ -158,6 +159,16 @@ export default function IntelligenceReportCard({
           >
             {t('feed.askAbout')} <MessageSquare size={10} />
           </button>
+
+          {onCreateMeasure ? (
+            <button
+              onClick={(e) => { e.stopPropagation(); onCreateMeasure(report); }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-semibold text-[#0393da] hover:bg-blue-50 transition-colors"
+              title={t('common.createMeasure')}
+            >
+              {t('common.createMeasure')}
+            </button>
+          ) : null}
 
           <div className="ml-auto flex items-center gap-0.5">
             <button

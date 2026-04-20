@@ -4,10 +4,13 @@ import {
   Send, Bot, Plus, Loader, Square, RotateCcw,
   ChevronDown, ChevronUp, MessageSquare, Lightbulb,
   ThumbsUp, ThumbsDown, PanelLeftClose, PanelLeftOpen, Zap,
-  Trash2, History,
+  Trash2, History, Settings, X, EyeOff,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Header from '../components/Header';
+import LastUpdated from '../components/shared/LastUpdated';
+import MeasureCreateModal from '../components/measures/MeasureCreateModal';
+import { useMeasures } from '../hooks/useMeasures';
 import ChatChart from '../components/ChatChart';
 import IntelligenceFeed from '../components/IntelligenceFeed';
 import InsightReportSlideOver from '../components/InsightReportSlideOver';
@@ -142,7 +145,46 @@ export default function AIInsights() {
   useEffect(() => { langRef.current = lang; }, [lang]);
 
   // Intelligence feed — re-generate when language changes so titles/summaries follow
-  const feedReports = useMemo(() => generateIntelligenceFeed(t), [t]);
+  const feedReportsAll = useMemo(() => generateIntelligenceFeed(t), [t]);
+
+  // 8.2: topic preferences — muted topic ids persist in localStorage
+  const [mutedTopics, setMutedTopics] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ai-insights-muted-topics') || '[]'); } catch { return []; }
+  });
+  const [showTopicPrefs, setShowTopicPrefs] = useState(false);
+  const [showMeasureFromInsight, setShowMeasureFromInsight] = useState(null); // report object or null
+  useEffect(() => {
+    try { localStorage.setItem('ai-insights-muted-topics', JSON.stringify(mutedTopics)); } catch {}
+  }, [mutedTopics]);
+  const toggleMuteTopic = useCallback((id) => {
+    setMutedTopics(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }, []);
+
+  // 8.3: measure-linked suppression — insight id → open measure id
+  const { measures, listMeasures } = useMeasures();
+  const insightsWithOpenMeasure = useMemo(() => {
+    const openMeasures = listMeasures().filter(m => m.status !== 'done' && m.status !== 'dismissed');
+    const set = new Set();
+    for (const m of openMeasures) {
+      if (m.sourceDashboard === 'ai-insights' && m.sourceElementId) set.add(m.sourceElementId);
+    }
+    return set;
+  }, [measures, listMeasures]);
+
+  const feedReports = useMemo(() => feedReportsAll.filter(r =>
+    !mutedTopics.includes(r.id) && !insightsWithOpenMeasure.has(r.id)
+  ), [feedReportsAll, mutedTopics, insightsWithOpenMeasure]);
+
+  const suppressedByMeasureCount = useMemo(() =>
+    feedReportsAll.filter(r => insightsWithOpenMeasure.has(r.id)).length,
+    [feedReportsAll, insightsWithOpenMeasure]
+  );
+  const [showSuppressed, setShowSuppressed] = useState(false);
+  const suppressedReports = useMemo(() =>
+    feedReportsAll.filter(r => insightsWithOpenMeasure.has(r.id)),
+    [feedReportsAll, insightsWithOpenMeasure]
+  );
+
   const dynamicPrompts = useMemo(() => generateDynamicPrompts(feedReports, 8, t), [feedReports, t]);
   const quickPrompts = useMemo(() => generateQuickPrompts(feedReports, t), [feedReports, t]);
   const [expandedReport, setExpandedReport] = useState(null);
@@ -543,11 +585,34 @@ export default function AIInsights() {
           ) : (
             /* ── Expanded feed ── */
             <>
+              {/* 8.3: suppressed-by-measure counter */}
+              {suppressedByMeasureCount > 0 ? (
+                <div className="px-4 pt-3 pb-1">
+                  <button
+                    onClick={() => setShowSuppressed(v => !v)}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                  >
+                    <EyeOff size={12} />
+                    <span className="flex-1 text-left">{t('ai.suppressed.count', { n: suppressedByMeasureCount })}</span>
+                    <ChevronDown size={12} className={showSuppressed ? 'rotate-180 transition-transform' : 'transition-transform'} />
+                  </button>
+                  {showSuppressed ? (
+                    <div className="mt-2 space-y-1">
+                      {suppressedReports.map(r => (
+                        <div key={r.id} className="text-[10px] text-slate-500 px-2 py-1 rounded bg-white/60">
+                          <span className="font-semibold text-slate-700">{r.type}</span> — {r.title}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               <IntelligenceFeed
                 reports={feedReports}
                 onAskAbout={handleAskAboutReport}
                 onExpandReport={setExpandedReport}
                 onCollapse={toggleFeed}
+                onCreateMeasure={(report) => setShowMeasureFromInsight(report)}
               />
             </>
           )}
@@ -579,14 +644,52 @@ export default function AIInsights() {
                   </span>
                 )}
               </div>
-              <button
-                onClick={handleNewChat}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors flex-shrink-0"
-              >
-                <Plus size={12} />
-                {t('ai.newChat')}
-              </button>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <LastUpdated dashboardKey="ai-insights" />
+                <button
+                  onClick={() => setShowTopicPrefs(v => !v)}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-50 border border-slate-200 transition-colors"
+                  title={t('ai.topicPrefs.open')}
+                  aria-pressed={showTopicPrefs}
+                >
+                  <Settings size={13} />
+                </button>
+                <button
+                  onClick={handleNewChat}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  <Plus size={12} />
+                  {t('ai.newChat')}
+                </button>
+              </div>
             </div>
+
+            {/* 8.2: Topic preferences panel */}
+            {showTopicPrefs ? (
+              <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-bold text-slate-700">{t('ai.topicPrefs.title')}</h4>
+                  <button onClick={() => setShowTopicPrefs(false)} className="text-slate-400 hover:text-slate-600"><X size={14} /></button>
+                </div>
+                <p className="text-[10px] text-slate-500 mb-3">{t('ai.topicPrefs.subtitle')}</p>
+                <div className="space-y-1.5">
+                  {feedReportsAll.map(r => {
+                    const muted = mutedTopics.includes(r.id);
+                    return (
+                      <label key={r.id} className="flex items-center gap-2 cursor-pointer text-xs py-1">
+                        <input
+                          type="checkbox"
+                          checked={!muted}
+                          onChange={() => toggleMuteTopic(r.id)}
+                          className="rounded border-slate-300 text-[#0393da] focus:ring-[#0393da]"
+                        />
+                        <span className={muted ? 'text-slate-400 line-through' : 'text-slate-700'}>{r.type}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
 
             {/* Collapsible Recent Chats */}
             <AnimatePresence>
@@ -845,6 +948,17 @@ export default function AIInsights() {
           />
         )}
       </AnimatePresence>
+
+      {/* 8.3: Measure-from-insight modal — tagging sourceElementId with the insight id
+          means useMeasures-based filtering immediately suppresses it from the feed. */}
+      <MeasureCreateModal
+        open={!!showMeasureFromInsight}
+        onClose={() => setShowMeasureFromInsight(null)}
+        sourceDashboard="ai-insights"
+        sourceElementId={showMeasureFromInsight?.id}
+        sourceKpi={showMeasureFromInsight?.type}
+        defaultTitle={showMeasureFromInsight?.title || ''}
+      />
     </>
   );
 }

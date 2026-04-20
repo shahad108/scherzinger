@@ -14,7 +14,7 @@ const FILTER_OPTIONS = [
   { key: 'positive', tKey: 'feed.filter.positive', color: '#10b981' },
 ];
 
-export default function IntelligenceFeed({ reports, onAskAbout, onExpandReport, onCollapse }) {
+export default function IntelligenceFeed({ reports, onAskAbout, onExpandReport, onCollapse, onCreateMeasure }) {
   const { t } = useLanguage();
   const [activeFilter, setActiveFilter] = useState('all');
   const [pinnedIds, setPinnedIds] = useState(() => {
@@ -150,6 +150,7 @@ export default function IntelligenceFeed({ reports, onAskAbout, onExpandReport, 
               onExpand={onExpandReport}
               isPinned={pinnedIds.has(report.id)}
               onTogglePin={() => togglePin(report.id)}
+              onCreateMeasure={onCreateMeasure}
             />
           ))
         )}
