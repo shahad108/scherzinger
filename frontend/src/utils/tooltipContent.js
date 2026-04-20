@@ -1,3 +1,5 @@
+import { BRAND } from './brand';
+
 export const TOOLTIPS = {
   // Dashboard
   revenue_ytd: 'Total invoiced revenue for the calendar year to date, in EUR.',
@@ -65,7 +67,7 @@ export const TOOLTIPS = {
   win_probability: 'ML-estimated likelihood of closing the deal, based on stage, age, and deal attributes.',
 
   // Column headers
-  col_article_id: 'Unique article identifier (Artikelnummer) in the Scherzinger ERP system.',
+  col_article_id: `Unique article identifier (Artikelnummer) in the ${BRAND.company} ERP system.`,
   col_description: 'Product or article description.',
   col_commodity_group: 'Warengruppe — product commodity group classification.',
   col_hkvoll: 'Per-unit full manufacturing cost (HKvoll) in EUR.',

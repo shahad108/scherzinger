@@ -9,6 +9,7 @@ import monthly from '../data/monthly_detail.json';
 import pricingAnalysis from '../data/pricing_analysis.json';
 import mlAnalytics from '../data/ml_analytics.json';
 import cogs from '../data/cogs_detail.json';
+import { BRAND } from './brand';
 
 function fmt(v) { return typeof v === 'number' ? v.toLocaleString('en', { maximumFractionDigits: 2 }) : v; }
 
@@ -158,7 +159,7 @@ const mlCoverageStr = ml.data_coverage.map(d =>
   `${d.category}: ${(d.coverage * 100).toFixed(1)}% — ${d.note}`
 ).join('\n');
 
-export const SYSTEM_PROMPT = `You are PRYZM AI, the analytics assistant for Scherzinger GmbH — German pump manufacturing company specializing in high-precision industrial pumps. You analyze sales, margin, cost, pipeline, pricing, and forecasting data.
+export const SYSTEM_PROMPT = `You are PRYZM AI, the analytics assistant for ${BRAND.companyDescription}. You analyze sales, margin, cost, pipeline, pricing, and forecasting data.${BRAND.isDemo ? '\n\n**Do not mention the name "Scherzinger" in any response — this is an anonymised demo environment.**' : ''}
 
 ## Response Formatting Rules
 

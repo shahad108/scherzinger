@@ -2,13 +2,14 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LayoutDashboard, TrendingUp, Package, Users, LineChart,
-  DollarSign, Brain, Sparkles, ChevronsLeft, ChevronsRight, LogOut,
+  DollarSign, Brain, Sparkles, ChevronsLeft, ChevronsRight, LogOut, ClipboardList,
 } from 'lucide-react';
 import { useUI } from '../context/UIContext';
 import { useUser } from '../context/UserContext';
 import { useLanguage } from '../context/LanguageContext';
 import { track } from '../utils/tracker';
 import { logout } from '../utils/auth';
+import { BRAND } from '../utils/brand';
 
 const navItems = [
   { to: '/', tKey: 'nav.dashboard', icon: LayoutDashboard },
@@ -19,6 +20,7 @@ const navItems = [
   { to: '/pricing', tKey: 'nav.pricing', icon: DollarSign },
   { to: '/ml-analytics', tKey: 'nav.ml', icon: Brain },
   { to: '/ai-insights', tKey: 'nav.aiInsights', icon: Sparkles },
+  { to: '/measures', tKey: 'nav.measures', icon: ClipboardList },
 ];
 
 export default function Sidebar() {
@@ -123,7 +125,7 @@ export default function Sidebar() {
           <AnimatePresence>
             {!sidebarCollapsed && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="flex-1 min-w-0">
-                <p className="text-xs font-bold truncate" style={{ color: '#1a1a2e' }}>Scherzinger</p>
+                <p className="text-xs font-bold truncate" style={{ color: '#1a1a2e' }}>{BRAND.company}</p>
                 <p className="text-[10px]" style={{ color: '#737373' }}>{t('sidebar.userRole')}</p>
               </motion.div>
             )}

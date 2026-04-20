@@ -1,6 +1,9 @@
+import { IS_DEMO } from './brand';
+
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_KEY;
 const MODEL = 'anthropic/claude-sonnet-4-6';
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const X_TITLE = IS_DEMO ? 'PRYZM Demo Analytics' : 'Scherzinger Analytics Platform';
 
 export async function streamChat(messages, { onChunk, onDone, onError, signal }) {
   try {
@@ -10,7 +13,7 @@ export async function streamChat(messages, { onChunk, onDone, onError, signal })
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
         'HTTP-Referer': window.location.origin,
-        'X-Title': 'Scherzinger Analytics Platform',
+        'X-Title': X_TITLE,
       },
       body: JSON.stringify({
         model: MODEL,
@@ -71,7 +74,7 @@ export async function quickChat(messages, { maxTokens = 300, signal } = {}) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
       'HTTP-Referer': window.location.origin,
-      'X-Title': 'Scherzinger Analytics Platform',
+      'X-Title': X_TITLE,
     },
     body: JSON.stringify({
       model: MODEL,

@@ -5,6 +5,7 @@ import { Eye, EyeOff, Lock, User, ShieldCheck } from 'lucide-react';
 import { authenticate, isAuthenticated } from '../utils/auth';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageToggle from '../components/LanguageToggle';
+import { IS_DEMO } from '../utils/brand';
 
 export default function Login() {
   const { t } = useLanguage();
@@ -15,8 +16,24 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Redirect if already logged in
+  // Redirect if already logged in.
+  // In demo-subpath mode we never want to show the Scherzinger login
+  // form — if the session was cleared (e.g. user hit logout), re-seed
+  // a demo session synchronously and bounce them back to the dashboard.
   useEffect(() => {
+    if (IS_DEMO) {
+      try {
+        localStorage.setItem('pryzm_session', JSON.stringify({
+          username: 'demo',
+          name: 'Demo',
+          role: 'Guest',
+          initials: 'DE',
+          expires: Date.now() + 365 * 24 * 60 * 60 * 1000,
+        }));
+      } catch { /* localStorage blocked */ }
+      navigate('/', { replace: true });
+      return;
+    }
     if (isAuthenticated()) navigate('/', { replace: true });
   }, [navigate]);
 
