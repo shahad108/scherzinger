@@ -1,15 +1,22 @@
 // ─── Scherzinger Analytics Tracker ──────────────────────────────
-// Lightweight tracker that batches events and sends to server → Supabase
-//
-// When the bundle is built as a sub-path demo (vite --base=/demo/), we
-// are hosted on another domain that doesn't have the /api/track/*
-// backend routes. Skip every network call in that mode so the console
-// stays clean. Shorthand helpers still work — they just no-op.
+// Writes sessions / pageviews / clicks / events directly to Supabase
+// (login_sessions + user_activity tables). The old /api/track/* backend
+// was removed; everything is batched straight to the database via
+// supabaseService. If Supabase is unreachable the calls fail silently —
+// tracking is best-effort, never blocks UX.
 
-const TRACKER_DISABLED = import.meta.env.BASE_URL === '/demo/';
+import {
+  createLoginSession,
+  endLoginSession,
+  trackActivity,
+  setActiveSessionId,
+  getActiveSessionId,
+  clearActiveSessionId,
+} from './supabaseService';
+import { getSession } from './auth';
 
-let sessionId = null;
 let eventQueue = [];
+let clickQueue = [];
 let currentPage = null;
 let pageEnteredAt = null;
 let pageVisitOrder = 0;
@@ -18,54 +25,42 @@ let lastActivityAt = Date.now();
 let isUserActive = true;
 let sessionStartTime = Date.now();
 
+function getUsername() {
+  const s = getSession();
+  return s?.username || 'anonymous';
+}
+
 // ─── Session management ──────────────────────────────────────────
 
 export async function startSession() {
-  if (TRACKER_DISABLED) return null;
   try {
-    const res = await fetch('/api/track/session-start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_agent: navigator.userAgent,
-        screen_width: window.screen.width,
-        screen_height: window.screen.height,
-      }),
-    });
-    const data = await res.json();
-    sessionId = data.id;
+    const row = await createLoginSession(getUsername());
+    if (row?.id) setActiveSessionId(row.id);
     sessionStartTime = Date.now();
-
-    // Start activity monitor
     startActivityMonitor();
-
-    // End session on tab close
     window.addEventListener('beforeunload', endSession);
-
-    return sessionId;
+    return row?.id || null;
   } catch { return null; }
 }
 
 export function endSession() {
-  // Flush remaining events
   flushEvents();
+  flushClicks();
 
-  // Send final page view
   if (currentPage && pageEnteredAt) {
     const duration = Math.round((Date.now() - pageEnteredAt) / 1000);
     sendPageView(currentPage, duration, maxScrollDepth);
   }
 
-  if (!sessionId || TRACKER_DISABLED) return;
-  const payload = JSON.stringify({
-    session_id: sessionId,
-    duration_seconds: Math.round((Date.now() - sessionStartTime) / 1000),
-  });
-  navigator.sendBeacon('/api/track/session-end', new Blob([payload], { type: 'application/json' }));
+  const id = getActiveSessionId();
+  if (id) {
+    endLoginSession(id).catch(() => {});
+    clearActiveSessionId();
+  }
 }
 
 export function getSessionId() {
-  return sessionId;
+  return getActiveSessionId();
 }
 
 // ─── Page tracking ───────────────────────────────────────────────
@@ -81,39 +76,36 @@ const PAGE_NAMES = {
   '/inventory': 'Cost Intelligence',
   '/ml-analytics': 'ML Analytics',
   '/ai-insights': 'AI Insights',
+  '/measures': 'Measures',
   '/admin': 'Admin Dashboard',
 };
 
 export function trackPageEnter(path) {
-  // Save previous page duration
   if (currentPage && pageEnteredAt) {
     const duration = Math.round((Date.now() - pageEnteredAt) / 1000);
     sendPageView(currentPage, duration, maxScrollDepth);
   }
-
   currentPage = path;
   pageEnteredAt = Date.now();
   pageVisitOrder++;
   maxScrollDepth = 0;
-}
-
-function sendPageView(path, duration, scrollDepth) {
-  if (TRACKER_DISABLED) return;
-  fetch('/api/track/pageview', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      session_id: sessionId,
-      page_path: path,
-      page_name: PAGE_NAMES[path] || path,
-      duration_seconds: duration,
-      scroll_depth_percent: scrollDepth,
-      visit_order: pageVisitOrder,
-    }),
+  // Emit an immediate page_enter so single-pageview sessions also land.
+  trackActivity(getUsername(), 'page_enter', path, {
+    page_name: PAGE_NAMES[path] || path,
+    visit_order: pageVisitOrder,
   }).catch(() => {});
 }
 
-// ─── Scroll depth tracking ───────────────────────────────────────
+function sendPageView(path, duration, scrollDepth) {
+  trackActivity(getUsername(), 'page_view', path, {
+    page_name: PAGE_NAMES[path] || path,
+    duration_seconds: duration,
+    scroll_depth_percent: scrollDepth,
+    visit_order: pageVisitOrder,
+  }).catch(() => {});
+}
+
+// ─── Scroll depth ────────────────────────────────────────────────
 
 if (typeof window !== 'undefined') {
   window.addEventListener('scroll', () => {
@@ -128,8 +120,6 @@ if (typeof window !== 'undefined') {
 }
 
 // ─── Click coordinate tracking (for heatmaps) ───────────────────
-
-let clickQueue = [];
 
 function getElementZone(el) {
   if (!el) return 'unknown';
@@ -155,27 +145,17 @@ if (typeof window !== 'undefined') {
     const y = Math.round(((e.clientY + window.scrollY) / document.documentElement.scrollHeight) * 100 * 10) / 10;
     const zone = getElementZone(e.target);
     const elId = e.target.id || e.target.closest('[id]')?.id || e.target.tagName.toLowerCase();
-
     clickQueue.push({ x_percent: x, y_percent: y, element_id: elId, element_zone: zone });
-
     if (clickQueue.length >= 5) flushClicks();
   }, { passive: true });
 }
 
 function flushClicks() {
-  if (TRACKER_DISABLED) { clickQueue = []; return; }
   if (clickQueue.length === 0) return;
   const batch = [...clickQueue];
   clickQueue = [];
-
-  fetch('/api/track/clicks', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      session_id: sessionId,
-      page_path: currentPage || window.location.pathname,
-      clicks: batch,
-    }),
+  trackActivity(getUsername(), 'click_batch', currentPage || window.location.pathname, {
+    clicks: batch,
   }).catch(() => {});
 }
 
@@ -193,27 +173,19 @@ export function trackEvent(eventType, category, targetElement, detail = null) {
     target_element: targetElement,
     target_detail: detail,
   });
-
   lastActivityAt = Date.now();
-
-  // Flush every 10 events
   if (eventQueue.length >= 10) flushEvents();
 }
 
 function flushEvents() {
-  if (TRACKER_DISABLED) { eventQueue = []; return; }
   if (eventQueue.length === 0) return;
   const batch = [...eventQueue];
   eventQueue = [];
-
-  fetch('/api/track', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, events: batch }),
+  trackActivity(getUsername(), 'event_batch', currentPage || window.location.pathname, {
+    events: batch,
   }).catch(() => {});
 }
 
-// Flush events periodically
 if (typeof window !== 'undefined') {
   setInterval(flushEvents, 5000);
 }
@@ -230,52 +202,31 @@ export function trackKPIHoverEnd(cardName, clicked = false) {
   const startTime = hoverTimers.get(cardName);
   if (!startTime) return;
   hoverTimers.delete(cardName);
-
   const duration = Date.now() - startTime;
-  if (duration < 200) return; // ignore accidental hovers
-  if (TRACKER_DISABLED) return;
-
-  fetch('/api/track/kpi', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      session_id: sessionId,
-      page_path: currentPage || window.location.pathname,
-      card_name: cardName,
-      hover_duration_ms: duration,
-      clicked,
-    }),
+  if (duration < 200) return;
+  trackActivity(getUsername(), 'kpi_hover', currentPage || window.location.pathname, {
+    card_name: cardName,
+    hover_duration_ms: duration,
+    clicked,
   }).catch(() => {});
 }
 
 // ─── AI Chat analytics ───────────────────────────────────────────
 
 export function trackChatQuestion({ chatSessionId, pageContext, source, suggestionText, questionText }) {
-  if (TRACKER_DISABLED) return;
-  fetch('/api/track/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_session_id: chatSessionId,
-      page_context: pageContext,
-      question_source: source,
-      suggestion_text: suggestionText,
-      question_text: questionText,
-    }),
+  trackActivity(getUsername(), 'chat_question', pageContext || currentPage || window.location.pathname, {
+    chat_session_id: chatSessionId,
+    question_source: source,
+    suggestion_text: suggestionText,
+    question_text: questionText,
   }).catch(() => {});
 }
 
 export function trackChatRating(chatSessionId, questionText, rating) {
-  if (TRACKER_DISABLED) return;
-  fetch('/api/track/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_session_id: chatSessionId,
-      question_source: 'chat_rating',
-      question_text: questionText || 'rating',
-      response_rating: rating,
-    }),
+  trackActivity(getUsername(), 'chat_rating', currentPage || window.location.pathname, {
+    chat_session_id: chatSessionId,
+    question_text: questionText || 'rating',
+    response_rating: rating,
   }).catch(() => {});
 }
 
@@ -288,97 +239,63 @@ function startActivityMonitor() {
   window.addEventListener('click', markActive, { passive: true });
   window.addEventListener('touchstart', markActive, { passive: true });
 
-  // Send ping every 60 seconds
   setInterval(() => {
     isUserActive = (Date.now() - lastActivityAt) < 60000;
-
-    if (sessionId && !TRACKER_DISABLED) {
-      fetch('/api/track/ping', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: sessionId,
-          page_path: currentPage || window.location.pathname,
-          is_active: isUserActive,
-        }),
-      }).catch(() => {});
-    }
+    if (!getActiveSessionId()) return;
+    trackActivity(getUsername(), 'ping', currentPage || window.location.pathname, {
+      is_active: isUserActive,
+      session_duration_seconds: Math.round((Date.now() - sessionStartTime) / 1000),
+    }).catch(() => {});
   }, 60000);
 }
 
-// ─── Shorthand helpers for common events ─────────────────────────
+// ─── Shorthand helpers ───────────────────────────────────────────
 
 export const track = {
-  // Charts
-  chartClick: (chartName, detail) =>
-    trackEvent('chart_click', 'chart', chartName, detail),
-  chartHover: (chartName, detail) =>
-    trackEvent('chart_hover', 'chart', chartName, detail),
-  chartDrilldown: (chartName, detail) =>
-    trackEvent('chart_drilldown', 'chart', chartName, detail),
+  chartClick: (chartName, detail) => trackEvent('chart_click', 'chart', chartName, detail),
+  chartHover: (chartName, detail) => trackEvent('chart_hover', 'chart', chartName, detail),
+  chartDrilldown: (chartName, detail) => trackEvent('chart_drilldown', 'chart', chartName, detail),
 
-  // Tables
-  tableSort: (tableName, column, direction) =>
-    trackEvent('table_sort', 'table', tableName, { column, direction }),
-  tableSearch: (tableName, query) =>
-    trackEvent('table_search', 'table', tableName, { query }),
-  tableRowClick: (tableName, rowId) =>
-    trackEvent('table_row_click', 'table', tableName, { row_id: rowId }),
-  tablePaginate: (tableName, page) =>
-    trackEvent('table_paginate', 'table', tableName, { page }),
+  tableSort: (tableName, column, direction) => trackEvent('table_sort', 'table', tableName, { column, direction }),
+  tableSearch: (tableName, query) => trackEvent('table_search', 'table', tableName, { query }),
+  tableRowClick: (tableName, rowId) => trackEvent('table_row_click', 'table', tableName, { row_id: rowId }),
+  tablePaginate: (tableName, page) => trackEvent('table_paginate', 'table', tableName, { page }),
 
-  // Drilldowns
-  skuDrilldown: (skuCode) =>
-    trackEvent('sku_drilldown', 'drilldown', skuCode),
-  customerDrilldown: (customerCode) =>
-    trackEvent('customer_drilldown', 'drilldown', customerCode),
-  categoryDrilldown: (categoryName) =>
-    trackEvent('category_drilldown', 'drilldown', categoryName),
-  slideoverClose: (type) =>
-    trackEvent('slideover_close', 'drilldown', type),
+  skuDrilldown: (skuCode) => trackEvent('sku_drilldown', 'drilldown', skuCode),
+  customerDrilldown: (customerCode) => trackEvent('customer_drilldown', 'drilldown', customerCode),
+  categoryDrilldown: (categoryName) => trackEvent('category_drilldown', 'drilldown', categoryName),
+  slideoverClose: (type) => trackEvent('slideover_close', 'drilldown', type),
 
-  // Navigation
-  sidebarNavigate: (page) =>
-    trackEvent('sidebar_navigate', 'navigation', page),
-  sidebarCollapse: () =>
-    trackEvent('sidebar_collapse', 'navigation', 'sidebar'),
-  sidebarExpand: () =>
-    trackEvent('sidebar_expand', 'navigation', 'sidebar'),
+  sidebarNavigate: (page) => trackEvent('sidebar_navigate', 'navigation', page),
+  sidebarCollapse: () => trackEvent('sidebar_collapse', 'navigation', 'sidebar'),
+  sidebarExpand: () => trackEvent('sidebar_expand', 'navigation', 'sidebar'),
 
-  // Notifications
-  notificationOpen: () =>
-    trackEvent('notification_open', 'notification', 'bell'),
-  notificationClick: (alertText) =>
-    trackEvent('notification_click', 'notification', alertText),
-  notificationDismiss: (alertText) =>
-    trackEvent('notification_dismiss', 'notification', alertText),
+  notificationOpen: () => trackEvent('notification_open', 'notification', 'bell'),
+  notificationClick: (alertText) => trackEvent('notification_click', 'notification', alertText),
+  notificationDismiss: (alertText) => trackEvent('notification_dismiss', 'notification', alertText),
 
-  // Filters
-  filterApply: (filterName, value) =>
-    trackEvent('filter_apply', 'filter', filterName, { value }),
-  filterClear: (filterName) =>
-    trackEvent('filter_clear', 'filter', filterName),
+  filterApply: (filterName, value) => trackEvent('filter_apply', 'filter', filterName, { value }),
+  filterClear: (filterName) => trackEvent('filter_clear', 'filter', filterName),
 
-  // Search
-  globalSearch: (query) =>
-    trackEvent('search_global', 'search', query),
-  searchResultClick: (result) =>
-    trackEvent('search_result_click', 'search', result),
+  globalSearch: (query) => trackEvent('search_global', 'search', query),
+  searchResultClick: (result) => trackEvent('search_result_click', 'search', result),
 
-  // Chat
   chatOpen: () => trackEvent('chat_open', 'ai_chat', 'global_chat'),
   chatClose: () => trackEvent('chat_close', 'ai_chat', 'global_chat'),
   chatSend: (text) => trackEvent('chat_send', 'ai_chat', text),
-  chatSuggestionClick: (text) =>
-    trackEvent('chat_suggestion_click', 'ai_chat', text),
-  chatViewDetailed: () =>
-    trackEvent('chat_view_detailed', 'ai_chat', 'view_analysis_link'),
-  chatNewConversation: () =>
-    trackEvent('chat_new_conversation', 'ai_chat', 'new_chat'),
+  chatSuggestionClick: (text) => trackEvent('chat_suggestion_click', 'ai_chat', text),
+  chatViewDetailed: () => trackEvent('chat_view_detailed', 'ai_chat', 'view_analysis_link'),
+  chatNewConversation: () => trackEvent('chat_new_conversation', 'ai_chat', 'new_chat'),
 
-  // KPI
-  kpiCardHover: (cardName) =>
-    trackEvent('kpi_card_hover', 'kpi', cardName),
-  kpiCardClick: (cardName) =>
-    trackEvent('kpi_card_click', 'kpi', cardName),
+  kpiCardHover: (cardName) => trackEvent('kpi_card_hover', 'kpi', cardName),
+  kpiCardClick: (cardName) => trackEvent('kpi_card_click', 'kpi', cardName),
+
+  measureCreate: (measure) => trackEvent('measure_create', 'measures', measure?.title || 'measure', {
+    id: measure?.id,
+    source_dashboard: measure?.sourceDashboard,
+    source_element_id: measure?.sourceElementId,
+    status: measure?.status,
+  }),
+  measureUpdate: (id, patch) => trackEvent('measure_update', 'measures', id, patch),
+  measureDelete: (id) => trackEvent('measure_delete', 'measures', id),
 };

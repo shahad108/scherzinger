@@ -140,6 +140,118 @@ export async function trackActivity(username, eventType, page, metadata = {}) {
   if (error) console.error('trackActivity error:', error);
 }
 
+// ─── Measures ───
+// Remote persistence for the action-tracking framework. Rows are mirrored
+// from/to the useMeasures hook's localStorage so offline still works.
+
+function toRow(m) {
+  return {
+    id: m.id,
+    title: m.title,
+    description: m.description ?? '',
+    source_kpi: m.sourceKpi ?? null,
+    source_dashboard: m.sourceDashboard ?? null,
+    source_element_id: m.sourceElementId ?? null,
+    owner: m.owner ?? null,
+    due_date: m.dueDate ?? null,
+    status: m.status ?? 'open',
+    username: m.username ?? null,
+    created_at: m.createdAt ?? undefined,
+    updated_at: m.updatedAt ?? undefined,
+  };
+}
+
+function fromRow(r) {
+  return {
+    id: r.id,
+    title: r.title,
+    description: r.description ?? '',
+    sourceKpi: r.source_kpi ?? null,
+    sourceDashboard: r.source_dashboard ?? null,
+    sourceElementId: r.source_element_id ?? null,
+    owner: r.owner ?? null,
+    dueDate: r.due_date ?? null,
+    status: r.status ?? 'open',
+    username: r.username ?? null,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+    history: [],
+  };
+}
+
+// Returns { ok:true, data } on success; { ok:false, missing:true } when the
+// measures table isn't yet provisioned. Callers fall back to localStorage.
+async function safeMeasuresCall(fn) {
+  try {
+    const r = await fn();
+    if (r.error) {
+      const code = r.error.code || '';
+      // 42P01 = undefined_table; PGRST205 = schema cache miss
+      if (code === '42P01' || String(r.error.message || '').includes('does not exist') || String(r.error.message || '').includes('schema cache')) {
+        return { ok: false, missing: true, error: r.error };
+      }
+      console.warn('[measures] supabase error:', r.error);
+      return { ok: false, missing: false, error: r.error };
+    }
+    return { ok: true, data: r.data };
+  } catch (e) {
+    console.warn('[measures] supabase exception:', e);
+    return { ok: false, missing: false, error: e };
+  }
+}
+
+export async function listMeasuresRemote() {
+  const r = await safeMeasuresCall(() =>
+    supabase.from('measures').select('*').order('created_at', { ascending: false })
+  );
+  if (!r.ok) return { ok: false, missing: !!r.missing, data: [] };
+  return { ok: true, missing: false, data: (r.data || []).map(fromRow) };
+}
+
+export async function upsertMeasureRemote(measure) {
+  return safeMeasuresCall(() =>
+    supabase.from('measures').upsert(toRow(measure), { onConflict: 'id' }).select().single()
+  );
+}
+
+export async function deleteMeasureRemote(id) {
+  return safeMeasuresCall(() =>
+    supabase.from('measures').delete().eq('id', id)
+  );
+}
+
+export async function appendMeasureHistoryRemote(measureId, entry) {
+  return safeMeasuresCall(() =>
+    supabase.from('measure_history').insert({
+      measure_id: measureId,
+      author: entry.author ?? null,
+      note: entry.note ?? null,
+      status_from: entry.statusFrom ?? null,
+      status_to: entry.statusTo ?? null,
+      ts: entry.ts ?? new Date().toISOString(),
+    })
+  );
+}
+
+// ─── KPI snapshots ───
+
+export async function recordKpiSnapshot(snapshot) {
+  return safeMeasuresCall(() =>
+    supabase.from('kpi_snapshots').insert({
+      dashboard: snapshot.dashboard,
+      element_id: snapshot.elementId ?? null,
+      kpi_name: snapshot.kpiName,
+      value: snapshot.value ?? null,
+      target: snapshot.target ?? null,
+      comparator: snapshot.comparator ?? null,
+      tolerance: snapshot.tolerance ?? null,
+      in_tolerance: snapshot.inTolerance ?? null,
+      metadata: snapshot.metadata ?? {},
+      username: snapshot.username ?? null,
+    })
+  );
+}
+
 // ─── Session ID helper (stored in sessionStorage) ───
 
 const SESSION_ID_KEY = 'pryzm_supabase_session_id';
