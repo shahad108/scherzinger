@@ -334,7 +334,13 @@ export default function AIInsights() {
     quickChat([
       {
         role: 'system',
-        content: `You generate follow-up questions for a business analytics conversation at ${BRAND.companyDescriptionShort}. Based on the user question and AI answer, suggest exactly 3 short follow-up questions the user might want to ask next. Each question should be specific — reference customer IDs, article numbers, commodity groups, or metrics from the conversation. Return ONLY a JSON array of 3 strings. Example: ["Question 1?","Question 2?","Question 3?"]`,
+        content: `You generate follow-up questions for a business analytics conversation at ${BRAND.companyDescriptionShort}. Based on the user question and AI answer, suggest exactly 3 short follow-up questions the user might want to ask next.
+
+HARD RULES:
+- Only reference customer IDs, article numbers, or commodity groups that appear VERBATIM in the conversation text provided below. Copy the exact string (e.g. "101580", "206028-01", "BKAGG").
+- NEVER invent, abbreviate, or guess IDs. If no ID appears in the conversation, use generic wording ("this customer", "diesen Kunden", "diese Artikelgruppe").
+- Match the language of the AI answer (German answer → German questions; English answer → English).
+- Return ONLY a raw JSON array of 3 strings. No prose, no markdown, no code fences. Example: ["Question 1?","Question 2?","Question 3?"]`,
       },
       { role: 'user', content: `User asked: "${lastUser}"\n\nAI responded: "${truncated}"\n\nGenerate 3 follow-up questions:` },
     ], { maxTokens: 250, signal: controller.signal })
@@ -1036,7 +1042,14 @@ export default function AIInsights() {
                     followUpSuggestions.map((q, i) => (
                       <button
                         key={i}
-                        onClick={() => handleSend(q)}
+                        onClick={() => {
+                          // Clear the pill-bar first so React can unmount it cleanly
+                          // before handleSend flips isStreaming and re-renders the tree.
+                          // Without this the motion AnimatePresence + Recharts ResponsiveContainer
+                          // race on the same commit and throw NotFoundError removeChild.
+                          setFollowUpSuggestions([]);
+                          requestAnimationFrame(() => handleSend(q));
+                        }}
                         className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[10px] text-slate-600 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-colors text-left leading-snug"
                       >
                         {q}
