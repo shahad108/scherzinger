@@ -66,7 +66,10 @@ function validateRankedList(b) {
     if (!it.primary || !isStr(it.primary.label) || !isStrOrNum(it.primary.value)) {
       return fail('ranked_list: item.primary needs label+value');
     }
-    if (it.badge && !BADGE_TONES.includes(it.badge.tone)) return fail('ranked_list: bad badge tone');
+    // Coerce unknown badge tones to 'neutral' instead of failing the whole block.
+    // LLMs often emit synonyms like 'amber' / 'danger' / 'high' — same meaning,
+    // different name. Renderer is tolerant, so validator should be too.
+    if (it.badge && !BADGE_TONES.includes(it.badge.tone)) it.badge.tone = 'neutral';
   }
   return pass();
 }
@@ -74,7 +77,7 @@ function validateFactorBreakdown(b) {
   if (!Array.isArray(b.factors) || b.factors.length === 0) return fail('factor_breakdown: factors required');
   for (const f of b.factors) {
     if (!isStr(f.label)) return fail('factor_breakdown: factor.label required');
-    if (!FACTOR_STATUSES.includes(f.status)) return fail('factor_breakdown: bad status');
+    if (!FACTOR_STATUSES.includes(f.status)) f.status = 'moderate';
   }
   return pass();
 }
@@ -84,7 +87,7 @@ function validateChart(b) {
   return pass();
 }
 function validateCallout(b) {
-  if (!CALLOUT_TONES.includes(b.tone)) return fail('callout: bad tone');
+  if (!CALLOUT_TONES.includes(b.tone)) b.tone = 'insight';
   if (!isStr(b.text)) return fail('callout: text required');
   return pass();
 }
@@ -92,7 +95,7 @@ function validateActionPlan(b) {
   if (!Array.isArray(b.actions) || b.actions.length === 0) return fail('action_plan: actions required');
   for (const a of b.actions) {
     if (!isStr(a.title)) return fail('action_plan: action.title required');
-    if (!PRIORITIES.includes(a.priority)) return fail('action_plan: bad priority');
+    if (!PRIORITIES.includes(a.priority)) a.priority = 'medium';
   }
   return pass();
 }

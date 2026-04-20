@@ -58,12 +58,14 @@ describe('validateBlock', () => {
     expect(validateBlock(spec).ok).toBe(true);
   });
 
-  it('rejects factor_breakdown with bad status', () => {
+  it('coerces factor_breakdown bad status to moderate', () => {
+    // LLMs emit synonyms ("high", "severe", "amber"); validator is tolerant.
     const spec = {
       type: 'factor_breakdown',
       factors: [{ label: 'Recency', status: 'broken' }],
     };
-    expect(validateBlock(spec).ok).toBe(false);
+    expect(validateBlock(spec).ok).toBe(true);
+    expect(spec.factors[0].status).toBe('moderate');
   });
 
   it('accepts a chart with variant+series', () => {
