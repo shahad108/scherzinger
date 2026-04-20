@@ -403,6 +403,7 @@ function PricingCommandCenter({ commodityFilter = 'All' }) {
    EXPANDED DETAIL PANEL — 4-Tab Overhaul
    ══════════════════════════════════════════════════════════════════════════ */
 function ExpandedDetailPanel({ item }) {
+  const { t } = useLanguage();
   const [detailTab, setDetailTab] = useState('summary');
 
   const costPerUnit = item.hkvoll_per_unit || 0;
@@ -426,10 +427,10 @@ function ExpandedDetailPanel({ item }) {
   const approvalColor = approvalLevel === 'VP' ? 'text-red-600' : approvalLevel === 'Director' ? 'text-orange-600' : 'text-green-600';
 
   const tabs = [
-    { key: 'summary', label: 'Summary' },
-    { key: 'cost', label: 'Cost Deep-Dive' },
-    { key: 'quotes', label: 'Quote & Competition' },
-    { key: 'customer', label: 'Customer Context' },
+    { key: 'summary', label: t('pricing.detail.tab.summary') },
+    { key: 'cost', label: t('pricing.detail.tab.cost') },
+    { key: 'quotes', label: t('pricing.detail.tab.quotes') },
+    { key: 'customer', label: t('pricing.detail.tab.customer') },
   ];
 
   return (
@@ -477,10 +478,10 @@ function ExpandedDetailPanel({ item }) {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-200">
-                      <th className="text-left py-2 px-3 font-semibold text-slate-600">Year</th>
-                      <th className="text-right py-2 px-3 font-semibold text-slate-600">Avg Price</th>
-                      <th className="text-right py-2 px-3 font-semibold text-slate-600">Avg Cost</th>
-                      <th className="text-right py-2 px-3 font-semibold text-slate-600">Margin</th>
+                      <th className="text-left py-2 px-3 font-semibold text-slate-600">{t('pricing.detail.col.year')}</th>
+                      <th className="text-right py-2 px-3 font-semibold text-slate-600">{t('pricing.detail.col.avgPrice')}</th>
+                      <th className="text-right py-2 px-3 font-semibold text-slate-600">{t('pricing.detail.col.avgCost')}</th>
+                      <th className="text-right py-2 px-3 font-semibold text-slate-600">{t('pricing.detail.col.margin')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -508,24 +509,28 @@ function ExpandedDetailPanel({ item }) {
 
               {item.costDeepDive.passThrough != null && (
                 <div className="bg-slate-50 rounded-lg p-3 text-[11px] text-slate-600">
-                  <span className="font-bold text-slate-800">Cost Pass-Through Rate: {(item.costDeepDive.passThrough * 100).toFixed(0)}%</span>
+                  <span className="font-bold text-slate-800">{t('pricing.detail.passThrough.label')}: {(item.costDeepDive.passThrough * 100).toFixed(0)}%</span>
                   {item.costDeepDive.leakagePerUnit != null && item.costDeepDive.leakagePerUnit > 0 && (
-                    <span> — {formatEUR(Math.abs(item.costDeepDive.leakagePerUnit))}/unit absorbed = {formatEUR(Math.abs(item.costDeepDive.totalLeakage))} total leakage across {item.costDeepDive.unitsLatest} units.</span>
+                    <span> — {t('pricing.detail.passThrough.leakage', {
+                      perUnit: formatEUR(Math.abs(item.costDeepDive.leakagePerUnit)),
+                      total: formatEUR(Math.abs(item.costDeepDive.totalLeakage)),
+                      units: item.costDeepDive.unitsLatest,
+                    })}</span>
                   )}
                   {item.costDeepDive.passThrough >= 1 && (
-                    <span> — Price increases exceeded cost increases. Margin recovery in progress.</span>
+                    <span> — {t('pricing.detail.passThrough.recovery')}</span>
                   )}
                 </div>
               )}
 
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                  Cost Breakdown {!item.costDeepDive.isFromArticle && <span className="normal-case font-normal">(commodity group avg)</span>}
+                  {t('pricing.detail.breakdown.title')} {!item.costDeepDive.isFromArticle && <span className="normal-case font-normal">({t('pricing.detail.breakdown.groupAvg')})</span>}
                 </p>
                 <div className="space-y-2">
                   {Object.entries(item.costDeepDive.breakdown).map(([key, val]) => (
                     <div key={key} className="flex items-center gap-3">
-                      <span className="text-[11px] w-24 text-slate-600 capitalize">{key}</span>
+                      <span className="text-[11px] w-24 text-slate-600">{t(`pricing.detail.breakdown.${key}`) || key}</span>
                       <div className="flex-1 h-4 bg-slate-100 rounded-full overflow-hidden">
                         <div className={`h-full rounded-full ${key === 'material' ? 'bg-amber-400' : key === 'labor' ? 'bg-blue-400' : key === 'outsourcing' ? 'bg-purple-400' : 'bg-slate-300'}`}
                           style={{ width: `${Math.min(val.pct * 100, 100)}%` }} />
@@ -541,15 +546,15 @@ function ExpandedDetailPanel({ item }) {
                 <div className="flex items-start gap-2 bg-amber-50 rounded-lg p-3 text-[11px] text-amber-800">
                   <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
                   <span>
-                    {item.costDeepDive.breakdown.material.pct > 0.30 && `Material costs are ${(item.costDeepDive.breakdown.material.pct * 100).toFixed(0)}% of cost. `}
-                    {item.costDeepDive.passThrough != null && item.costDeepDive.passThrough < 0.70 && `Only ${(item.costDeepDive.passThrough * 100).toFixed(0)}% of cost increases passed to price. `}
-                    {item.costDeepDive.breakdown.material.pct > 0.40 ? 'Renegotiate supplier or increase price.' : 'Monitor cost trajectory.'}
+                    {item.costDeepDive.breakdown.material.pct > 0.30 && `${t('pricing.detail.alert.materialPct', { pct: (item.costDeepDive.breakdown.material.pct * 100).toFixed(0) })} `}
+                    {item.costDeepDive.passThrough != null && item.costDeepDive.passThrough < 0.70 && `${t('pricing.detail.alert.passThroughLow', { pct: (item.costDeepDive.passThrough * 100).toFixed(0) })} `}
+                    {item.costDeepDive.breakdown.material.pct > 0.40 ? t('pricing.detail.alert.renegotiate') : t('pricing.detail.alert.monitor')}
                   </span>
                 </div>
               )}
             </>
           ) : (
-            <p className="text-[11px] text-slate-400 italic">No per-year cost data available for this article.</p>
+            <p className="text-[11px] text-slate-400 italic">{t('pricing.detail.noData')}</p>
           )}
         </div>
       )}
