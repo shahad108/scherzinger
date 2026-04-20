@@ -16,7 +16,14 @@ export function createMeasureRecord({
   author = 'system',
 }) {
   const now = new Date().toISOString();
-  const id = `m_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+  // Must be a valid UUID — Supabase measures.id is uuid.
+  const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      });
   return {
     id,
     title,

@@ -208,7 +208,16 @@ export async function listMeasuresRemote() {
   return { ok: true, missing: false, data: (r.data || []).map(fromRow) };
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function upsertMeasureRemote(measure) {
+  // Pre-UUID migration, measure ids were strings like "m_rcv3xa_ab12e".
+  // Postgres uuid column rejects those with 400 — skip them quietly so the
+  // dual-write stays non-fatal. They live on in localStorage until the user
+  // deletes or edits them, at which point a fresh UUID is minted.
+  if (!UUID_RE.test(measure?.id || '')) {
+    return { ok: false, missing: false, error: { message: 'non-uuid id skipped' } };
+  }
   return safeMeasuresCall(() =>
     supabase.from('measures').upsert(toRow(measure), { onConflict: 'id' }).select().single()
   );
