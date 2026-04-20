@@ -12,6 +12,10 @@ import DataTable from '../components/shared/DataTable';
 import StatusBadge from '../components/shared/StatusBadge';
 import ChartCard from '../components/shared/ChartCard';
 import PhaseNotice from '../components/shared/PhaseNotice';
+import LastUpdated from '../components/shared/LastUpdated';
+import MeasureList from '../components/measures/MeasureList';
+import MeasureCreateModal from '../components/measures/MeasureCreateModal';
+import { Info, Plus } from 'lucide-react';
 import customersData from '../data/customers_detail.json';
 import revenueMarginsDetail from '../data/revenue_margins_detail.json';
 import { formatEUR, formatPct } from '../utils/formatters';
@@ -180,6 +184,9 @@ export default function Customers() {
   const [churnFilter, setChurnFilter] = useState('All');
   const [customerSearch, setCustomerSearch] = useState('');
   const [tablePreset, setTablePreset] = useState('glance'); // 'glance' | 'risk' | 'competitiveness' | 'portfolio' | 'full'
+  const [selectedYear, setSelectedYear] = useState('All');  // 4.2: Year filter
+  const [showRiskInfo, setShowRiskInfo] = useState(false);  // 4.1: Risk explanation
+  const [showMeasureModal, setShowMeasureModal] = useState(false);  // 4.3: new-measure modal
 
   // Customer enrichment
   const enrichedCustomers = useMemo(() =>
@@ -226,8 +233,16 @@ export default function Customers() {
   const filteredCount = filteredCustomers.length;
   const filteredLtv = filteredCustomers.reduce((s, c) => s + c.ltv_estimated, 0);
   const highCriticalCount = filteredCustomers.filter((c) => HIGH_RISK_TIERS.includes(c.risk_tier)).length;
+  // 4.2: if a specific year is selected, pull margin_by_year[year]; else all-time avg_db2_margin
   const avgMargin = filteredCustomers.length
-    ? filteredCustomers.reduce((s, c) => s + c.avg_db2_margin, 0) / filteredCustomers.length
+    ? (selectedYear === 'All'
+        ? filteredCustomers.reduce((s, c) => s + c.avg_db2_margin, 0) / filteredCustomers.length
+        : (() => {
+            const vals = filteredCustomers
+              .map(c => c.margin_by_year?.[String(selectedYear)])
+              .filter(v => v != null);
+            return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
+          })())
     : 0;
 
   // YoY margin (avg of margin_by_year 2024 - 2025)
@@ -458,14 +473,33 @@ export default function Customers() {
               </button>
             ))}
           </div>
-          {(segmentFilter !== 'All' || churnFilter !== 'All' || customerSearch) && (
+          {(segmentFilter !== 'All' || churnFilter !== 'All' || customerSearch || selectedYear !== 'All') && (
             <button
-              onClick={() => { setSegmentFilter('All'); setChurnFilter('All'); setCustomerSearch(''); }}
+              onClick={() => { setSegmentFilter('All'); setChurnFilter('All'); setCustomerSearch(''); setSelectedYear('All'); }}
               className="text-xs text-[#0393da] font-medium hover:underline"
             >
               {t('customers.filter.clear')}
             </button>
           )}
+          {/* 4.2: Year pill group */}
+          <div className="flex gap-1 p-1 bg-slate-100 rounded-lg">
+            {['All', 2023, 2024, 2025].map((y) => (
+              <button
+                key={y}
+                onClick={() => setSelectedYear(y)}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                  selectedYear === y
+                    ? 'bg-white text-[#0393da] shadow-sm font-bold'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {y === 'All' ? t('customers.filter.allYears') : y}
+              </button>
+            ))}
+          </div>
+          <div className="ml-auto">
+            <LastUpdated dashboardKey="customers" />
+          </div>
         </div>
 
         {/* Row 0 — KPI Cards */}
@@ -501,21 +535,47 @@ export default function Customers() {
               bottomContent={<MiniProgress value={RETENTION_METRICS.retention_rate_pct} color="#e7a019" />}
             />
           </motion.div>
-          <motion.div
-            variants={cardVariants}
-            onClick={() => setChurnFilter(churnFilter === 'High' ? 'All' : 'High')}
-            className="cursor-pointer"
-          >
-            <KPICard
-              label={t('customers.kpi.highRisk')}
-              value={highCriticalCount}
-              change={churnFilter === 'High' ? t('customers.kpi.clickToClear') : t('customers.kpi.clickToFilter')}
-              changeType="negative"
-              tooltip={TOOLTIPS.churn_risk}
-              formulaId="risk_distribution"
-              confidence="derived"
-              bottomContent={<MiniProgress value={highCriticalCount} max={filteredCount || 1} color="#EF4444" />}
-            />
+          <motion.div variants={cardVariants} className="relative">
+            <div
+              onClick={() => setChurnFilter(churnFilter === 'High' ? 'All' : 'High')}
+              className="cursor-pointer"
+            >
+              <KPICard
+                label={t('customers.kpi.highRisk')}
+                value={highCriticalCount}
+                change={churnFilter === 'High' ? t('customers.kpi.clickToClear') : t('customers.kpi.clickToFilter')}
+                changeType="negative"
+                tooltip={TOOLTIPS.churn_risk}
+                formulaId="risk_distribution"
+                confidence="derived"
+                bottomContent={<MiniProgress value={highCriticalCount} max={filteredCount || 1} color="#EF4444" />}
+              />
+            </div>
+            {/* 4.1: Risk explanation popover */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowRiskInfo(v => !v); }}
+              className="absolute top-3 right-3 z-10 w-6 h-6 rounded-full flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-[#0393da] hover:border-[#0393da] transition-colors"
+              title={t('customers.risk.infoTitle')}
+            >
+              <Info size={12} />
+            </button>
+            {showRiskInfo ? (
+              <div className="absolute top-10 right-0 z-20 w-72 bg-white rounded-lg shadow-xl border border-slate-200 p-4 text-xs">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-bold text-slate-800">{t('customers.risk.infoTitle')}</h4>
+                  <button onClick={() => setShowRiskInfo(false)} className="text-slate-400 hover:text-slate-600">×</button>
+                </div>
+                <p className="text-slate-600 mb-2">{t('customers.risk.basis')}</p>
+                <p className="text-slate-500 mb-3"><span className="font-semibold">{t('customers.risk.accuracy')}:</span> 78%</p>
+                <div className="space-y-1.5 text-[11px]">
+                  <div className="font-semibold text-slate-700">{t('customers.risk.drivers')}:</div>
+                  <div className="flex justify-between"><span className="text-slate-500">{t('customers.risk.driver.slope')}</span><span className="font-mono">40%</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">{t('customers.risk.driver.lost')}</span><span className="font-mono">30%</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">{t('customers.risk.driver.tier')}</span><span className="font-mono">20%</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">{t('customers.risk.driver.inactivity')}</span><span className="font-mono">10%</span></div>
+                </div>
+              </div>
+            ) : null}
           </motion.div>
           <motion.div variants={cardVariants}>
             <KPICard
@@ -867,48 +927,37 @@ export default function Customers() {
           />
         </motion.div>
 
-        {/* Row 7 — Action List */}
+        {/* Row 7 — 4.3: Measures-linked actions (replaces generic rolling Action List) */}
         <div className="p-6 rounded-2xl shadow-sm" style={{ background: '#fff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}>
           <div className="flex justify-between items-start mb-4">
             <div>
               <h3 className="font-bold text-base" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>
-                {t('customers.action.title')}
+                {t('common.openMeasures')} — {t('customers.title')}
               </h3>
               <p className="text-xs mt-0.5" style={{ color: '#737373' }}>
-                {t('customers.action.subtitle')}
+                {t('customers.measures.subtitle')}
               </p>
             </div>
-            <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-[#0393da] text-white">{t('customers.action.monday')}</span>
+            <button
+              onClick={() => setShowMeasureModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-[#0393da] rounded-md hover:bg-[#0277b6]"
+            >
+              <Plus size={14} />
+              <span>{t('measures.new')}</span>
+            </button>
           </div>
-          <div className="space-y-2">
-            {actionList.map((a, i) => (
-              <div
-                key={a.customer_id}
-                className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-                onClick={() => { selectItem({ type: 'customer', id: a.customer_id, label: a.name, data: a }); openCustomerDetail(a.customer_id); }}
-              >
-                <span className="w-6 text-center text-sm font-bold text-slate-400">{i + 1}</span>
-                <div className="min-w-[120px]">
-                  <span className="font-mono font-bold text-[#0393da] text-sm">{a.customer_id}</span>
-                  <p className="text-[11px] text-slate-500 truncate max-w-[100px]">{a.segment}</p>
-                </div>
-                <div className="flex flex-wrap gap-1.5 flex-1">
-                  {a.reasons.length === 0 && <span className="text-[11px] italic text-slate-400">{t('customers.action.baseline')}</span>}
-                  {a.reasons.map((r, j) => (
-                    <span key={j} className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${r.color}`}>
-                      {r.icon} {r.label}
-                    </span>
-                  ))}
-                </div>
-                <span className="text-xs font-semibold text-slate-700">{a.action}</span>
-                <svg className="size-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              </div>
-            ))}
-          </div>
+          <MeasureList sourceDashboard="customers" />
         </div>
 
         <PhaseNotice type="mixed" />
       </div>
+
+      <MeasureCreateModal
+        open={showMeasureModal}
+        onClose={() => setShowMeasureModal(false)}
+        sourceDashboard="customers"
+        sourceElementId="customers-measures-hub"
+      />
     </>
   );
 }

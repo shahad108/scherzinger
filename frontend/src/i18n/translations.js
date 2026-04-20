@@ -1099,6 +1099,16 @@ export const translations = {
     'prompts.quick.pipeline': 'Compare customer 101690 vs 100883 margin trajectories',
 
     // ── Common (Phase 0) ──
+    'customers.filter.allYears': 'All years',
+    'customers.risk.infoTitle': 'How is Risk calculated?',
+    'customers.risk.basis': 'RFM (Recency, Frequency, Monetary) + margin trend + revenue concentration.',
+    'customers.risk.accuracy': 'Model accuracy',
+    'customers.risk.drivers': 'Weighted drivers',
+    'customers.risk.driver.slope': 'Margin slope (12-month trend)',
+    'customers.risk.driver.lost': 'Lost revenue vs. prior period',
+    'customers.risk.driver.tier': 'Risk tier persistence',
+    'customers.risk.driver.inactivity': 'Months since last order',
+    'customers.measures.subtitle': 'Actions tracked across the customer base. Create measures from any customer row.',
     'common.lastUpdated': 'Last updated',
     'common.modelAsOf': 'Model version',
     'common.dataAsOf': 'Data as of',
@@ -2248,6 +2258,16 @@ export const translations = {
     'prompts.quick.pipeline': 'Vergleiche Margenverläufe von Kunde 101690 vs. 100883',
 
     // ── Common (Phase 0) ──
+    'customers.filter.allYears': 'Alle Jahre',
+    'customers.risk.infoTitle': 'Wie wird das Risiko berechnet?',
+    'customers.risk.basis': 'RFM (Recency, Frequency, Monetary) + Margentrend + Umsatzkonzentration.',
+    'customers.risk.accuracy': 'Modellgenauigkeit',
+    'customers.risk.drivers': 'Gewichtete Treiber',
+    'customers.risk.driver.slope': 'Margentrend (12-Monats-Verlauf)',
+    'customers.risk.driver.lost': 'Umsatzverlust vs. Vorperiode',
+    'customers.risk.driver.tier': 'Persistenz des Risiko-Tiers',
+    'customers.risk.driver.inactivity': 'Monate seit letzter Bestellung',
+    'customers.measures.subtitle': 'Maßnahmen über den Kundenstamm hinweg. Neue Maßnahmen aus jeder Kundenzeile anlegen.',
     'common.lastUpdated': 'Zuletzt aktualisiert',
     'common.modelAsOf': 'Modell-Stand',
     'common.dataAsOf': 'Daten-Stand',
