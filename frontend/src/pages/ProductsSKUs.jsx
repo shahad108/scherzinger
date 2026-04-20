@@ -12,6 +12,8 @@ import { MiniBars, MiniWave } from '../components/shared/KPIVisuals';
 import ChartCard from '../components/shared/ChartCard';
 import DataTable from '../components/shared/DataTable';
 import LastUpdated from '../components/shared/LastUpdated';
+import { useAiContext } from '../hooks/useAiContext';
+import { Sparkles } from 'lucide-react';
 import productsData from '../data/products.json';
 import productsDetail from '../data/products_detail.json';
 import { formatEUR, formatPct } from '../utils/formatters';
@@ -25,16 +27,17 @@ import PhaseNotice from '../components/shared/PhaseNotice';
 const products = productsData.products;
 const { kpis: kpiData, product_type_performance, commodity_scorecard, declining_fast, article_enrichment } = productsDetail;
 
+// 3.2 fix: MBKUEHL was rendering close to BKAIZ purple. Colors now visually distinct.
 const COMMODITY_COLORS = {
-  BKAES: '#0393da',
-  BKAGG: '#10B981',
-  SOPU: '#F59E0B',
-  BKAIZ: '#8B5CF6',
-  SOPUZK: '#06B6D4',
-  OFRSCR: '#EC4899',
-  MBKUEHL: '#6366F1',
-  MBDIV: '#64748B',
-  OFRLMG: '#EAB308',
+  BKAES:   '#0393da',
+  BKAGG:   '#10B981',
+  SOPU:    '#F59E0B',
+  BKAIZ:   '#8B5CF6',
+  SOPUZK:  '#06B6D4',
+  OFRSCR:  '#EC4899',
+  MBKUEHL: '#0891B2', // teal — was #6366F1 (too close to BKAIZ's purple)
+  MBDIV:   '#64748B',
+  OFRLMG:  '#EAB308',
 };
 
 const commodities = ['All', ...new Set(products.map((p) => p.commodity_group))];
@@ -57,6 +60,7 @@ function productTypeColor(m) {
 export default function ProductsSKUs() {
   const { selectItem, selectedItem, openSKUDetail } = useUI();
   const { t } = useLanguage();
+  const { setFocus, focus } = useAiContext();
   const [selectedCommodity, setSelectedCommodity] = useState('All');
   const [selectedYear, setSelectedYear] = useState(2025);
   const [articleSearch, setArticleSearch] = useState('');
@@ -112,7 +116,7 @@ export default function ProductsSKUs() {
       if (!rev || !margin) return;
       const commodity = p.commodity_group || 'Other';
       if (!grouped[commodity]) grouped[commodity] = [];
-      grouped[commodity].push({ x: rev, y: margin, z: units || 1, name: p.description, article_id: p.article_id });
+      grouped[commodity].push({ x: rev, y: margin, z: units || 1, name: p.description, article_id: p.article_id, commodity_group: commodity });
     });
     return grouped;
   }, [selectedCommodity, selectedYear, revKey, marginKey, unitsKey, articleSearch, marginFilter]);
@@ -145,10 +149,22 @@ export default function ProductsSKUs() {
     return [...product_type_performance].sort((a, b) => b.revenue_eur - a.revenue_eur);
   }, []);
 
-  // ---------- Scorecard data (filter by commodity not needed — always shows all) ----------
-  const scorecardRows = useMemo(() =>
-    [...commodity_scorecard].sort((a, b) => b.revenue_eur - a.revenue_eur),
-    []);
+  // ---------- Scorecard data — 3.1: user-sortable columns ----------
+  const [scorecardSort, setScorecardSort] = useState({ key: 'revenue_eur', dir: 'desc' });
+  const toggleScorecardSort = (key) => setScorecardSort(s =>
+    s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'desc' }
+  );
+  const scorecardRows = useMemo(() => {
+    const { key, dir } = scorecardSort;
+    const mult = dir === 'asc' ? 1 : -1;
+    return [...commodity_scorecard].sort((a, b) => {
+      const av = a[key], bv = b[key];
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (typeof av === 'string') return av.localeCompare(bv) * mult;
+      return (av - bv) * mult;
+    });
+  }, [scorecardSort]);
 
   // ---------- Product table with enrichment + view presets ----------
   const filteredProducts = useMemo(() => {
@@ -447,17 +463,27 @@ export default function ProductsSKUs() {
               formulaId="top_products_revenue"
               confidence="verified"
               headerRight={
-                <div className="flex items-center gap-4 text-xs font-semibold flex-wrap">
-                  {Object.entries(COMMODITY_COLORS).slice(0, 4).map(([name, color]) => (
+                <div className="flex items-center gap-3 text-xs font-semibold flex-wrap">
+                  {/* 3.2 fix: legend reflects groups actually present in the scatter, not a hardcoded slice(0,4) */}
+                  {Object.keys(scatterData).sort().map((name) => (
                     <div key={name} className="flex items-center gap-1.5">
-                      <span className="size-2 rounded-full" style={{ backgroundColor: color }} />
+                      <span className="size-2 rounded-full" style={{ backgroundColor: COMMODITY_COLORS[name] || '#64748B' }} />
                       {name}
                     </div>
                   ))}
+                  <button
+                    onClick={() => setFocus('products-scatter-article-margin', { label: t('products.scatter.title'), dashboard: 'products' })}
+                    className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium bg-white border border-slate-200 text-slate-500 hover:text-[#0393da] hover:border-[#0393da] transition-colors"
+                    style={focus?.elementId === 'products-scatter-article-margin' ? { color: '#0393da', borderColor: '#0393da' } : undefined}
+                    title={t('aiContext.analyze')}
+                  >
+                    <Sparkles size={11} />
+                    {t('aiContext.analyze')}
+                  </button>
                 </div>
               }
             >
-              <div className="h-[440px] relative">
+              <div className="h-[440px] relative" data-element-id="products-scatter-article-margin">
                 <ResponsiveContainer width="100%" height="100%">
                   <ScatterChart margin={{ top: 16, right: 20, bottom: 20, left: 10 }}>
                     <CartesianGrid stroke="#f0f0f0" strokeDasharray="none" />
@@ -510,7 +536,13 @@ export default function ProductsSKUs() {
                         return (
                           <div className="border border-slate-100 rounded-xl p-3 shadow-xl text-xs backdrop-blur-sm" style={{ background: 'rgba(255,255,255,0.95)' }}>
                             <p className="font-bold text-slate-900 mb-1">{d.name}</p>
-                            <p className="font-mono text-[10px] text-slate-400 mb-2 pb-2 border-b border-slate-100">{d.article_id}</p>
+                            <p className="font-mono text-[10px] text-slate-400 mb-2 pb-2 border-b border-slate-100 flex items-center gap-1.5">
+                              <span>{d.article_id}</span>
+                              <span className="inline-flex items-center gap-1 ml-auto">
+                                <span className="size-2 rounded-full" style={{ backgroundColor: COMMODITY_COLORS[d.commodity_group] || '#64748B' }} />
+                                <span className="font-semibold text-slate-600">{d.commodity_group}</span>
+                              </span>
+                            </p>
                             <div className="space-y-1">
                               <div className="flex justify-between gap-4"><span className="text-slate-500">{t('products.scatter.tip.revenue')}</span><span className="font-bold">{formatEUR(d.x)}</span></div>
                               <div className="flex justify-between gap-4"><span className="text-slate-500">{t('products.scatter.tip.margin')}</span><span className={`font-bold ${d.y < FLOOR_MARGIN ? 'text-red-500' : d.y < TARGET_MARGIN ? 'text-amber-600' : 'text-green-600'}`}>{formatPct(d.y)}</span></div>
@@ -721,22 +753,49 @@ export default function ProductsSKUs() {
         {/* Row 3 — Commodity Group Scorecard */}
         <motion.div
           variants={cardVariants}
+          data-element-id="products-commodity-scorecard"
           className="overflow-hidden rounded-2xl shadow-sm"
           style={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(26,26,46,0.04)' }}
         >
-          <div className="p-6 pb-4">
-            <h3 className="font-bold text-base" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>{t('products.scorecard.title')}</h3>
-            <p className="text-xs mt-0.5" style={{ color: '#737373' }}>{t('products.scorecard.subtitle')}</p>
+          <div className="p-6 pb-4 flex items-start justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-base" style={{ fontFamily: "'Manrope', sans-serif", color: '#1a1a2e' }}>{t('products.scorecard.title')}</h3>
+              <p className="text-xs mt-0.5" style={{ color: '#737373' }}>{t('products.scorecard.subtitle')}</p>
+            </div>
+            <button
+              onClick={() => setFocus('products-commodity-scorecard', { label: t('products.scorecard.title'), dashboard: 'products' })}
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium bg-white border border-slate-200 text-slate-500 hover:text-[#0393da] hover:border-[#0393da] transition-colors"
+              style={focus?.elementId === 'products-commodity-scorecard' ? { color: '#0393da', borderColor: '#0393da' } : undefined}
+              title={t('aiContext.analyze')}
+            >
+              <Sparkles size={11} />
+              {t('aiContext.analyze')}
+            </button>
           </div>
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="text-[10px] font-bold uppercase tracking-widest" style={{ background: 'rgba(248,250,252,0.5)', color: '#737373' }}>
-                <th className="px-6 py-3">{t('products.scorecard.col.group')}</th>
-                <th className="px-6 py-3 text-right">{t('products.scorecard.col.revenue')}</th>
-                <th className="px-6 py-3 text-right">{t('products.scorecard.col.db2')}</th>
-                <th className="px-6 py-3 text-right">{t('products.scorecard.col.winRate')}</th>
-                <th className="px-6 py-3 text-right">{t('products.scorecard.col.skus')}</th>
-                <th className="px-6 py-3 text-right">{t('products.scorecard.col.orders')}</th>
+                {[
+                  { key: 'group',       label: t('products.scorecard.col.group'),   align: '' },
+                  { key: 'revenue_eur', label: t('products.scorecard.col.revenue'), align: 'text-right' },
+                  { key: 'db2_margin',  label: t('products.scorecard.col.db2'),     align: 'text-right' },
+                  { key: 'win_rate',    label: t('products.scorecard.col.winRate'), align: 'text-right' },
+                  { key: 'skus',        label: t('products.scorecard.col.skus'),    align: 'text-right' },
+                  { key: 'orders',      label: t('products.scorecard.col.orders'),  align: 'text-right' },
+                ].map((col) => {
+                  const active = scorecardSort.key === col.key;
+                  const arrow = active ? (scorecardSort.dir === 'asc' ? '↑' : '↓') : '';
+                  return (
+                    <th
+                      key={col.key}
+                      onClick={() => toggleScorecardSort(col.key)}
+                      className={`px-6 py-3 cursor-pointer select-none hover:text-[#0393da] ${col.align}`}
+                      title={`Sort by ${col.label}`}
+                    >
+                      {col.label} <span className="text-[#0393da]">{arrow}</span>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="text-sm">
