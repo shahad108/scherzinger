@@ -11,6 +11,7 @@ import KPICard from '../components/shared/KPICard';
 import { MiniBars, MiniWave } from '../components/shared/KPIVisuals';
 import ChartCard from '../components/shared/ChartCard';
 import DataTable from '../components/shared/DataTable';
+import LastUpdated from '../components/shared/LastUpdated';
 import productsData from '../data/products.json';
 import productsDetail from '../data/products_detail.json';
 import { formatEUR, formatPct } from '../utils/formatters';
@@ -272,38 +273,46 @@ export default function ProductsSKUs() {
     <>
       <Header title={t('products.title')} />
       <motion.div className="p-8 space-y-6 max-w-[1440px] mx-auto" variants={containerVariants} initial="hidden" animate="visible">
-        {/* Commodity Filters + Year Selector */}
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex flex-wrap gap-2">
-            {commodities.map((commodity) => (
-              <button
-                key={commodity}
-                onClick={() => setSelectedCommodity(commodity)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all active:scale-[0.97] ${
-                  selectedCommodity === commodity
-                    ? 'bg-[#0393da] text-white'
-                    : 'bg-white border border-slate-200 hover:border-[#0393da]'
-                }`}
-              >
-                {commodity === 'All' ? t('products.filter.allGroups') : commodity}
-              </button>
-            ))}
+        {/* Unified filter bar (2.2) — same pattern as Revenue & Margins */}
+        <div className="flex flex-wrap items-center gap-4 justify-between">
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Year pill group */}
+            <div className="flex gap-1 p-1 bg-slate-100 rounded-lg w-fit">
+              {[2023, 2024, 2025].map((y) => (
+                <button
+                  key={y}
+                  onClick={() => setSelectedYear(y)}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all active:scale-[0.97] ${
+                    selectedYear === y
+                      ? 'bg-white text-[#0393da] shadow-sm font-bold'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  {y}
+                </button>
+              ))}
+            </div>
+            {/* Commodity pill group */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{t('revenue.filter.commodity')}</span>
+              <div className="flex flex-wrap gap-1 p-1 bg-slate-100 rounded-lg w-fit">
+                {commodities.map((commodity) => (
+                  <button
+                    key={commodity}
+                    onClick={() => setSelectedCommodity(commodity)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all active:scale-[0.97] ${
+                      selectedCommodity === commodity
+                        ? 'bg-white text-[#0393da] shadow-sm font-bold'
+                        : 'text-slate-500 hover:text-slate-900'
+                    }`}
+                  >
+                    {commodity === 'All' ? t('products.filter.allGroups') : commodity}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="flex gap-1 p-1 bg-slate-100 rounded-lg ml-auto">
-            {[2023, 2024, 2025].map((y) => (
-              <button
-                key={y}
-                onClick={() => setSelectedYear(y)}
-                className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${
-                  selectedYear === y
-                    ? 'bg-white text-[#0393da] shadow-sm font-bold'
-                    : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                {y}
-              </button>
-            ))}
-          </div>
+          <LastUpdated dashboardKey="products" />
         </div>
 
         {/* Article Search + Margin Filter */}

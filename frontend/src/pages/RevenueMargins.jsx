@@ -12,6 +12,9 @@ import ChartCard from '../components/shared/ChartCard';
 import DataTable from '../components/shared/DataTable';
 import CustomTooltip from '../components/shared/CustomTooltip';
 import PhaseNotice from '../components/shared/PhaseNotice';
+import LastUpdated from '../components/shared/LastUpdated';
+import QuotedActualDecompositionPanel from '../components/v2/QuotedActualDecompositionPanel';
+import MeasuredChartContainer from '../components/MeasuredChartContainer';
 import { useUI } from '../context/UIContext';
 import { useLanguage } from '../context/LanguageContext';
 import { handleChartContainerClick } from '../utils/pageContextResolver';
@@ -27,7 +30,6 @@ const products = productsData.products;
 const quarterlyGap = revenueMarginsDetail.quarterly_quoted_vs_actual;
 const commodityMargins = revenueMarginsDetail.commodity_group_margins;
 const customerGaps = revenueMarginsDetail.customer_margin_gaps;
-const LAST_UPDATED = revenueMarginsDetail.last_updated;
 
 const years = [2022, 2023, 2024, 2025, 'All'];
 const commodityGroups = ['All', ...commodityMargins.map((c) => c.group)];
@@ -116,6 +118,22 @@ export default function RevenueMargins() {
   const [selectedYear, setSelectedYear] = useState(2025);
   const [selectedCommodity, setSelectedCommodity] = useState('All');
   const [histogramMode, setHistogramMode] = useState('count'); // 'count' | 'revenue'
+  const [showDecomp, setShowDecomp] = useState(false);
+  const [decompContext, setDecompContext] = useState({ gapPp: 0, label: '' });
+
+  // Commodity share + per-group margin lookups (for propagating Commodity filter
+  // to every numeric element that previously ignored it — Manuel's 2.1 feedback).
+  const commodityShare = useMemo(() => {
+    if (selectedCommodity === 'All') return 1;
+    const match = commodityMargins.find(c => c.group === selectedCommodity);
+    if (!match) return 1;
+    const total = commodityMargins.reduce((s, c) => s + (c.revenue_eur || 0), 0);
+    return total ? (match.revenue_eur || 0) / total : 1;
+  }, [selectedCommodity]);
+  const commoditySpec = useMemo(
+    () => (selectedCommodity === 'All' ? null : commodityMargins.find(c => c.group === selectedCommodity)),
+    [selectedCommodity]
+  );
 
   // Filter products by commodity for sections 3R, 4, 6 cascades
   const filteredProducts = useMemo(() => {
@@ -132,14 +150,22 @@ export default function RevenueMargins() {
       ? []
       : monthlyTotals.filter((m) => m.Year === selectedYear - 1);
 
-    const totalRev = yearMonths.reduce((s, m) => s + (m.revenue_eur || 0), 0);
-    const avgDb2 = yearMonths.reduce((s, m) => s + (m.db2_margin || 0), 0) / (yearMonths.length || 1);
-    const avgDb1 = yearMonths.reduce((s, m) => s + (m.db1_margin || 0), 0) / (yearMonths.length || 1);
-    const priorRev = priorMonths.reduce((s, m) => s + (m.revenue_eur || 0), 0);
-    const priorDb2 = priorMonths.length
+    const rawRev = yearMonths.reduce((s, m) => s + (m.revenue_eur || 0), 0);
+    const rawPriorRev = priorMonths.reduce((s, m) => s + (m.revenue_eur || 0), 0);
+    // 2.1: propagate commodity filter to Total Revenue by scaling on commodity share
+    const totalRev = rawRev * commodityShare;
+    const priorRev = rawPriorRev * commodityShare;
+    // 2.1: override DB2/DB1 with the commodity's own margin when a group is picked
+    const avgDb2 = commoditySpec
+      ? commoditySpec.db2_margin
+      : yearMonths.reduce((s, m) => s + (m.db2_margin || 0), 0) / (yearMonths.length || 1);
+    const avgDb1 = commoditySpec
+      ? commoditySpec.db1_margin
+      : yearMonths.reduce((s, m) => s + (m.db1_margin || 0), 0) / (yearMonths.length || 1);
+    const priorDb2 = priorMonths.length && !commoditySpec
       ? priorMonths.reduce((s, m) => s + (m.db2_margin || 0), 0) / priorMonths.length
       : null;
-    const priorDb1 = priorMonths.length
+    const priorDb1 = priorMonths.length && !commoditySpec
       ? priorMonths.reduce((s, m) => s + (m.db1_margin || 0), 0) / priorMonths.length
       : null;
     const yoyGrowth = priorRev > 0 ? (totalRev - priorRev) / priorRev : null;
@@ -169,20 +195,23 @@ export default function RevenueMargins() {
       avgGap, gapDeltaPp,
       fixedSpreadPp: (avgDb1 - avgDb2) * 100,
     };
-  }, [selectedYear, selectedCommodity]);
+  }, [selectedYear, selectedCommodity, commodityShare, commoditySpec]);
 
-  // Monthly chart data
+  // Monthly chart data — 2.1: scale revenue by commodity share; override margin for picked group
   const monthlyFiltered = useMemo(() => {
     const items = selectedYear === 'All'
       ? monthlyTotals
       : monthlyTotals.filter((d) => d.Year === selectedYear);
     return items.map((d) => ({
       ...d,
-      avg_margin_pct: d.db2_margin,
+      revenue_eur: (d.revenue_eur || 0) * commodityShare,
+      db2_margin: commoditySpec ? commoditySpec.db2_margin : d.db2_margin,
+      db1_margin: commoditySpec ? commoditySpec.db1_margin : d.db1_margin,
+      avg_margin_pct: commoditySpec ? commoditySpec.db2_margin : d.db2_margin,
       label: selectedYear === 'All' ? formatMonth(d.Month, d.Year) : formatMonth(d.Month),
       isDemandShock: DEMAND_SHOCK_MONTHS.some((s) => s.year === d.Year && s.month === d.Month),
     }));
-  }, [selectedYear]);
+  }, [selectedYear, commodityShare, commoditySpec]);
 
   // Row 2 hero chart: quarterly quoted vs actual for selected commodity, filtered by year
   const quarterlyChartData = useMemo(() => {
@@ -287,12 +316,6 @@ export default function RevenueMargins() {
     return binMarginsRich(filteredProducts, mKey, rKey);
   }, [selectedYear, filteredProducts]);
 
-  // Format last updated
-  const lastUpdatedStr = useMemo(() => {
-    const d = new Date(LAST_UPDATED);
-    return d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'short', day: 'numeric', year: 'numeric' });
-  }, [lang]);
-
   return (
     <>
       <Header title={t('revenue.title')} />
@@ -336,9 +359,7 @@ export default function RevenueMargins() {
               </div>
             </div>
           </div>
-          <div className="text-[10px] text-slate-500">
-            {t('revenue.lastUpdated')} <span className="font-semibold text-slate-700">{lastUpdatedStr}</span>
-          </div>
+          <LastUpdated dashboardKey="revenue" />
         </div>
 
         {/* Row 1 — KPI Cards */}
@@ -430,9 +451,26 @@ export default function RevenueMargins() {
             </div>
           }
         >
-          <div className="h-[380px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={quarterlyChartData} onClick={(s) => handleChartContainerClick('Quoted vs Actual Trend', selectItem, quarterlyChartData, s)}>
+          <MeasuredChartContainer
+            className="h-[380px] cursor-pointer"
+            elementId="revenue-quoted-vs-actual-quarterly"
+            aiLabel={t('revenue.tip.quoted')}
+            aiDashboard="revenue"
+          >
+          {({ width, height }) => (
+            <ResponsiveContainer width={width} height={height}>
+              <ComposedChart
+                data={quarterlyChartData}
+                onClick={(s) => {
+                  const point = s?.activePayload?.[0]?.payload;
+                  if (point) {
+                    setDecompContext({
+                      gapPp: Math.abs(point.gap_pp || 0),
+                      label: `${point.quarter} · ${selectedCommodity}`,
+                    });
+                    setShowDecomp(true);
+                  }
+                }}>
                 <defs>
                   <linearGradient id="gapBandGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#ef4444" stopOpacity={0.2} />
@@ -496,7 +534,8 @@ export default function RevenueMargins() {
                 />
               </ComposedChart>
             </ResponsiveContainer>
-          </div>
+          )}
+          </MeasuredChartContainer>
         </ChartCard>
 
         {/* Row 3 — Two side-by-side charts */}
@@ -813,6 +852,15 @@ export default function RevenueMargins() {
 
         <PhaseNotice type="derived" />
       </div>
+
+      <QuotedActualDecompositionPanel
+        open={showDecomp}
+        onClose={() => setShowDecomp(false)}
+        periodLabel={decompContext.label}
+        totalGapPp={decompContext.gapPp}
+        sourceDashboard="revenue"
+        sourceElementId="revenue-quoted-vs-actual-quarterly"
+      />
     </>
   );
 }
