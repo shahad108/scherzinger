@@ -18,6 +18,8 @@ import ChartCard from '../components/shared/ChartCard';
 import DataTable from '../components/shared/DataTable';
 import StatusBadge from '../components/shared/StatusBadge';
 import CustomTooltip from '../components/shared/CustomTooltip';
+import LastUpdated from '../components/shared/LastUpdated';
+import { Info } from 'lucide-react';
 import { formatEUR, formatPct } from '../utils/formatters';
 import { TOOLTIPS } from '../utils/tooltipContent';
 import { useUI } from '../context/UIContext';
@@ -164,6 +166,24 @@ export default function MLAnalytics() {
       <Header title={t('ml.title')} />
       <motion.div className="p-8 space-y-6 max-w-[1440px] mx-auto" variants={containerVariants} initial="hidden" animate="visible">
 
+        {/* ── 7.1: Page-level purpose statement ── */}
+        <div className="p-4 rounded-xl border border-[#0393da]/20" style={{ background: 'linear-gradient(135deg, rgba(3,147,218,0.04), rgba(3,147,218,0.01))' }}>
+          <div className="flex items-start gap-3">
+            <div className="size-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(3,147,218,0.12)' }}>
+              <Info size={16} style={{ color: '#0393da' }} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-slate-800">{t('ml.purpose.title')}</h3>
+              <p className="text-xs text-slate-600 leading-relaxed mt-1">{t('ml.purpose.body')}</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 text-[11px]">
+                <div><span className="block text-slate-400 uppercase tracking-wide text-[10px] font-semibold">{t('ml.purpose.for')}</span><span className="font-semibold text-slate-700">{t('ml.purpose.for.value')}</span></div>
+                <div><span className="block text-slate-400 uppercase tracking-wide text-[10px] font-semibold">{t('ml.purpose.audience')}</span><span className="font-semibold text-slate-700">{t('ml.purpose.audience.value')}</span></div>
+                <div><span className="block text-slate-400 uppercase tracking-wide text-[10px] font-semibold">{t('ml.purpose.when')}</span><span className="font-semibold text-slate-700">{t('ml.purpose.when.value')}</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* ── Global Header: Model Selector + Last Updated ── */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
@@ -181,9 +201,8 @@ export default function MLAnalytics() {
               </button>
             ))}
           </div>
-          <span className="text-xs font-medium" style={{ color: '#737373' }}>
-            {t('ml.lastUpdated')}
-          </span>
+          {/* 7.4: split Daten-Stand / Modell-Stand */}
+          <LastUpdated dashboardKey="ml" />
         </div>
 
         {/* ═══════════════════════════════════════════════════════════
@@ -338,7 +357,17 @@ export default function MLAnalytics() {
               <SectionCard>
                 <div className="p-6">
                   <h3 className="font-bold text-base mb-1" style={{ fontFamily: "'Manrope', sans-serif", color: colors.darkNavy }}>{t('ml.section.forecastPerf')}</h3>
-                  <p className="text-xs mb-4" style={{ color: '#737373' }}>{t('ml.section.forecastPerf.subtitle')}</p>
+                  <p className="text-xs mb-3" style={{ color: '#737373' }}>{t('ml.section.forecastPerf.subtitle')}</p>
+
+                  {/* 7.2: plain-language reading + banded classification */}
+                  <div className="mb-4 p-3 rounded-lg border border-slate-100 bg-slate-50 text-[11px] text-slate-600 space-y-1.5">
+                    <div><span className="font-semibold text-slate-700">{t('ml.perf.units')}:</span> {t('ml.perf.units.body')}</div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" />{t('ml.perf.band.good')}</span>
+                      <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" />{t('ml.perf.band.ok')}</span>
+                      <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500" />{t('ml.perf.band.bad')}</span>
+                    </div>
+                  </div>
 
                   <InlineTable
                     headers={[

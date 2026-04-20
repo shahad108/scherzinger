@@ -771,7 +771,7 @@ export default function PricingFX() {
   // 6.1: Win-rate propagation — use per-commodity value when filter is active
   const commodityWinRate = useMemo(() => {
     if (commodityFilter === 'All') return overallWinRate?.current ?? 0.371;
-    const match = (winRateByCommodity || []).find(d => d.commodity_group === commodityFilter);
+    const match = (winRateByCommodity || []).find(d => d.group === commodityFilter || d.commodity_group === commodityFilter);
     return match?.win_rate ?? overallWinRate?.current ?? 0.371;
   }, [commodityFilter]);
 
