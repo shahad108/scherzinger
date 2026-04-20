@@ -5,6 +5,7 @@ import { Sparkles, Send, Square, ChevronDown, ArrowUpRight, Loader, ThumbsUp, Th
 import { useChat } from '../context/ChatContext';
 import { useUI } from '../context/UIContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useAiContext } from '../hooks/useAiContext';
 import renderMarkdown from '../utils/markdownRenderer';
 import StructuredReplyRenderer from './chat/StructuredReplyRenderer';
 import { track, trackChatQuestion, trackChatRating } from '../utils/tracker';
@@ -18,6 +19,7 @@ export default function GlobalChatBar() {
     conversationHistory, loadConversation, deleteConversation,
   } = useChat();
   const { selectedItem, slideOver, openCustomerDetail, openSKUDetail } = useUI();
+  const { focus: aiFocus, clearFocus } = useAiContext();
 
   const handleEntityClick = useCallback(({ entityType, id }) => {
     if (entityType === 'customer') openCustomerDetail(id);
@@ -54,8 +56,11 @@ export default function GlobalChatBar() {
     setIsOpen(true);
     track.chatSend(text);
     trackChatQuestion({ pageContext: location.pathname, source: 'custom_typed', questionText: text });
-    sendMessage(text);
-  }, [input, isStreaming, setIsOpen, sendMessage, location.pathname]);
+    const grounded = aiFocus
+      ? `[Fokus: ${aiFocus.label} (${aiFocus.elementId})${aiFocus.dashboard ? ` · ${aiFocus.dashboard}` : ''}]\n\n${text}`
+      : text;
+    sendMessage(grounded);
+  }, [input, isStreaming, setIsOpen, sendMessage, location.pathname, aiFocus]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -360,7 +365,13 @@ export default function GlobalChatBar() {
         </AnimatePresence>
 
         {/* Context indicator */}
-        {(selectedItem || slideOver?.type) && (
+        {aiFocus ? (
+          <div className="flex items-center gap-1.5 px-3 py-1 text-[10px] text-[#0393da] truncate" style={{ borderTop: '1px solid rgba(0,0,0,0.04)', background: 'rgba(3,147,218,0.04)' }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0393da] flex-shrink-0" />
+            <span className="truncate flex-1">{t('aiContext.focused', { label: aiFocus.label })}</span>
+            <button onClick={clearFocus} className="text-slate-400 hover:text-slate-600" title={t('common.close')}>×</button>
+          </div>
+        ) : (selectedItem || slideOver?.type) ? (
           <div className="flex items-center gap-1.5 px-3 py-1 text-[10px] text-slate-400 truncate" style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
             <span className="truncate">
@@ -370,7 +381,11 @@ export default function GlobalChatBar() {
                selectedItem ? t('chat.selected', { label: selectedItem.label || selectedItem.id }) : ''}
             </span>
           </div>
-        )}
+        ) : isOpen ? (
+          <div className="px-3 py-1 text-[10px] text-slate-400 italic" style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
+            {t('aiContext.focusHint')}
+          </div>
+        ) : null}
 
         {/* Input area — always visible */}
         <div className={`flex items-end gap-2 px-3 py-2.5 ${isOpen ? 'border-t border-slate-100/80' : ''}`}>
