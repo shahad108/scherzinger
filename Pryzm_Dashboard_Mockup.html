@@ -1351,6 +1351,11 @@
 .seg-card .seg-stat b.neg{color:var(--red)}
 .seg-card .seg-spark{height:36px;margin:6px 0}
 .seg-card .seg-interp{font-size:12.5px;color:var(--ink-2);line-height:1.5;font-style:italic}
+body.vortrag #screen-md-beirat{font-size:140%}
+body.vortrag #screen-md-beirat .ed-edit, body.vortrag #screen-md-beirat .src-link{display:none !important}
+body.vortrag #screen-md-beirat tr[data-lens]{cursor:default;pointer-events:none}
+body.vortrag #screen-md-beirat .narrative{font-size:18px;line-height:1.7}
+body.vortrag #btnVortrag{background:var(--primary-deep);color:#fff;border-color:var(--primary-deep)}
 </style>
 </head>
 <body>
@@ -4064,6 +4069,25 @@
 
     </section>
 
+    <!-- ============== BEIRATSBERICHT (MD persona only) ============== -->
+    <section id="screen-md-beirat" class="screen hidden">
+      <div class="page-head">
+        <div>
+          <div class="crumbs">Strategic Cockpit · <b>Geschäftsführer</b> · Beiratsbericht</div>
+          <h1>Beiratsbericht <select class="btn" style="padding:4px 10px;font-family:'Manrope',sans-serif;font-size:18px;font-weight:700"><option>Q1/2026</option><option>Q4/2025</option><option>Q3/2025</option></select></h1>
+        </div>
+        <div class="row" style="gap:8px">
+          <button class="btn" onclick="toast('Zahlen eingefroren am 2026-04-28 (Mock)')">🔒 Zahlen einfrieren</button>
+          <button class="btn" id="btnVortrag" onclick="toggleVortrag()">🖥 Vortragsmodus</button>
+          <button class="btn" onclick="toast('PDF Beiratsbericht (3 Seiten + Anhang) exportiert (Mock)')">↓ PDF</button>
+        </div>
+      </div>
+      <p class="muted small" style="margin-top:-10px">Stand: 28. April 2026 · gesperrt · Quellen unten.</p>
+
+      <!-- Sections appended in subsequent tasks -->
+
+    </section>
+
   </main>
 </div>
 
@@ -5097,6 +5121,16 @@ function initMDMonthly(){
   }
 }
 function initMDBeirat(){ /* charts hydrated in Phase 4 */ }
+
+function toggleVortrag(){
+  document.body.classList.toggle('vortrag');
+  toast(document.body.classList.contains('vortrag') ? 'Vortragsmodus aktiv (ESC verlässt)' : 'Vortragsmodus aus');
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.body.classList.contains('vortrag')) {
+    document.body.classList.remove('vortrag');
+  }
+});
 
 document.addEventListener('keydown', e => { if (e.key==='Escape') closeLens(); });
 
