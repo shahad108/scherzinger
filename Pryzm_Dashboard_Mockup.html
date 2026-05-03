@@ -3957,6 +3957,31 @@
         <div style="height:240px;position:relative"><canvas id="mdMonthlyWF"></canvas></div>
       </div>
 
+      <div class="card card-pad mt-24">
+        <div class="between mb-16">
+          <div>
+            <div class="section-title">Kundenkonzentration</div>
+            <h2 class="h2">Top-10 nach ARR</h2>
+          </div>
+          <span class="muted small">Top-30 = 78% Umsatz · stabil ggü. Q-1 · <a onclick="toast('Mock: vollständige Top-30 inline')" style="color:var(--primary-deep);text-decoration:underline;cursor:pointer">vollständige Top-30 →</a></span>
+        </div>
+        <table>
+          <thead><tr><th style="width:40px">#</th><th>Kunde</th><th>ARR</th><th>Δ ARR vs Q-1</th><th>Marge-pp Δ vs Q-1</th><th></th></tr></thead>
+          <tbody id="mdMonthlyTopList">
+            <tr data-lens="customer" data-id="101580" style="cursor:pointer"><td>1</td><td><b>101580</b> · Continental AG</td><td class="num-cell">€487K</td><td class="num-cell neg">−€32K</td><td class="num-cell neg">−2,4pp</td><td><span class="pin r"></span></td></tr>
+            <tr data-lens="customer" data-id="101901" style="cursor:pointer"><td>2</td><td><b>101901</b> · Bosch Mobility</td><td class="num-cell">€312K</td><td class="num-cell pos">+€8K</td><td class="num-cell pos">+0,3pp</td><td></td></tr>
+            <tr data-lens="customer" data-id="103044" style="cursor:pointer"><td>3</td><td><b>103044</b> · Webasto</td><td class="num-cell">€264K</td><td class="num-cell neg">−€6K</td><td class="num-cell neg">−0,8pp</td><td><span class="pin a"></span></td></tr>
+            <tr data-lens="customer" data-id="102330" style="cursor:pointer"><td>4</td><td><b>102330</b> · BorgWarner</td><td class="num-cell">€241K</td><td class="num-cell neg">−€18K</td><td class="num-cell neg">−1,1pp</td><td><span class="pin a"></span></td></tr>
+            <tr data-lens="customer" data-id="102801" style="cursor:pointer"><td>5</td><td><b>102801</b> · Mahle</td><td class="num-cell">€198K</td><td class="num-cell pos">+€2K</td><td class="num-cell pos">+0,4pp</td><td></td></tr>
+            <tr data-lens="customer" data-id="104410" style="cursor:pointer"><td>6</td><td><b>104410</b> · ZF Friedrichshafen</td><td class="num-cell">€176K</td><td class="num-cell pos">+€11K</td><td class="num-cell pos">+0,9pp</td><td></td></tr>
+            <tr data-lens="customer" data-id="105220" style="cursor:pointer"><td>7</td><td><b>105220</b> · Festo</td><td class="num-cell">€158K</td><td class="num-cell pos">+€4K</td><td class="num-cell">±0pp</td><td></td></tr>
+            <tr data-lens="customer" data-id="106110" style="cursor:pointer"><td>8</td><td><b>106110</b> · Bürkert</td><td class="num-cell">€142K</td><td class="num-cell neg">−€3K</td><td class="num-cell neg">−0,2pp</td><td></td></tr>
+            <tr data-lens="customer" data-id="107010" style="cursor:pointer"><td>9</td><td><b>107010</b> · Schaeffler</td><td class="num-cell">€131K</td><td class="num-cell pos">+€6K</td><td class="num-cell pos">+0,5pp</td><td></td></tr>
+            <tr data-lens="customer" data-id="108220" style="cursor:pointer"><td>10</td><td><b>108220</b> · Knorr-Bremse</td><td class="num-cell">€118K</td><td class="num-cell pos">+€1K</td><td class="num-cell pos">+0,1pp</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+
       <!-- Sections appended in subsequent tasks -->
 
     </section>
