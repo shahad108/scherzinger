@@ -4111,6 +4111,19 @@ body.vortrag #btnVortrag{background:var(--primary-deep);color:#fff;border-color:
         <p>Quotes innerhalb Guardrail liegen im April bei 87% (Ziel 92%). Drei Artikel verursachen 62% aller Brüche, davon Artikel 200832-E mit 539 Brüchen in Q1. Pricing Manager hat 47 von 75 Empfehlungen akzeptiert; 28 sind akzeptiert, aber nicht umgesetzt (€187K). Implementierungsfriktion ist Thema im nächsten 1:1.</p>
       </div>
 
+      <div class="card card-pad mt-24" data-slide="4">
+        <div class="section-title">Panel A · Margenentwicklung</div>
+        <h2 class="h2 mb-16">6-Monats-Bridge + 2026-Forecast</h2>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:stretch">
+          <div style="height:240px;position:relative"><canvas id="mdBeiratWF"></canvas></div>
+          <div style="height:240px;position:relative;border-left:1px solid var(--border);padding-left:14px">
+            <div class="section-title" style="margin:0 0 4px 0">2026 Forecast P10/P50/P90</div>
+            <canvas id="mdBeiratForecast"></canvas>
+          </div>
+        </div>
+        <p class="muted small" style="margin-top:10px">Walk-forward-Fehler: 4,7% auf Q1-2025 Ist · Monte-Carlo n=10.000 · Modellversion v3.2 · letzter Re-Train 2026-04-15</p>
+      </div>
+
       <!-- Sections appended in subsequent tasks -->
 
     </section>
@@ -5147,7 +5160,43 @@ function initMDMonthly(){
     });
   }
 }
-function initMDBeirat(){ /* charts hydrated in Phase 4 */ }
+function initMDBeirat(){
+  // Panel A: waterfall + forecast fan
+  const wf = document.getElementById('mdBeiratWF');
+  if (wf){
+    if (window.charts['mdBeiratWF']){ window.charts['mdBeiratWF'].destroy(); delete window.charts['mdBeiratWF']; }
+    window.charts['mdBeiratWF'] = new Chart(wf, {
+      type:'bar',
+      data:{
+        labels:['Okt 25','Vol mix','Preis','Rohstoff','Lieferant','Garantie','Andere','Apr 26'],
+        datasets:[{
+          data:[[0,11.4],[11.4,11.6],[11.6,11.2],[11.2,10.7],[10.7,10.5],[10.5,10.6],[10.6,10.8],[0,10.8]],
+          backgroundColor:['#94a3b8','#16a34a','#ef4444','#ef4444','#ef4444','#16a34a','#16a34a','#94a3b8'],
+          borderRadius:4
+        }]
+      },
+      options:{plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}, ticks:{font:{size:10}}}, y:{min:9.5, max:12, ticks:{callback:v=>v+'pp', font:{size:10}}, grid:{color:'#f1f5f9'}}}, responsive:true, maintainAspectRatio:false}
+    });
+  }
+  const fc = document.getElementById('mdBeiratForecast');
+  if (fc){
+    if (window.charts['mdBeiratForecast']){ window.charts['mdBeiratForecast'].destroy(); delete window.charts['mdBeiratForecast']; }
+    const months = ['Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez','Jan','Feb','Mär'];
+    const p50 = [100,102,104,106,108,109,110,111,112,113,114,115];
+    const p10 = p50.map((v,i)=>v - (i+1)*0.6);
+    const p90 = p50.map((v,i)=>v + (i+1)*0.6);
+    window.charts['mdBeiratForecast'] = new Chart(fc, {
+      type:'line',
+      data:{labels:months, datasets:[
+        {label:'P90', data:p90, borderColor:'rgba(44,121,255,.3)', backgroundColor:'rgba(44,121,255,.08)', tension:.3, pointRadius:0, fill:'+1'},
+        {label:'P50', data:p50, borderColor:'#2c79ff', backgroundColor:'rgba(44,121,255,.18)', tension:.3, pointRadius:0, fill:'+1', borderWidth:2},
+        {label:'P10', data:p10, borderColor:'rgba(44,121,255,.3)', tension:.3, pointRadius:0, fill:false}
+      ]},
+      options:{plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}, ticks:{font:{size:10}}}, y:{display:false}}, responsive:true, maintainAspectRatio:false}
+    });
+  }
+  // Panels B + C charts hydrated in tasks 4.4 + 4.5
+}
 
 function toggleVortrag(){
   document.body.classList.toggle('vortrag');
