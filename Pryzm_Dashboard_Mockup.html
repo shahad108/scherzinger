@@ -4104,7 +4104,7 @@ function setScreen(s){
 
 function renderScreen(){
   const screens = ['action-pm','action-md','action-sr','forecast','studio','margin','quotes','ai','md-monthly','md-beirat'];
-  screens.forEach(s=>document.getElementById('screen-'+s).classList.add('hidden'));
+  screens.forEach(s=>{ const el=document.getElementById('screen-'+s); if(el) el.classList.add('hidden'); });
   if (state.screen==='action'){
     let id = 'screen-action-pm';
     if (state.persona==='md') id = 'screen-action-md';
