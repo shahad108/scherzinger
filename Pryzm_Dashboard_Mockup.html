@@ -5142,13 +5142,13 @@ function hydrateLensCharts(blocks){
   const mk = (id, points, color) => {
     const el = document.getElementById(id);
     if (!el) return;
-    if (window.charts && window.charts[id]){ window.charts[id].destroy(); delete window.charts[id]; }
+    if (charts && charts[id]){ charts[id].destroy(); delete charts[id]; }
     const inst = new Chart(el, {
       type:'line',
       data:{labels:points.map((_,i)=>i), datasets:[{data:points, borderColor:color, borderWidth:1.5, tension:.3, pointRadius:0, fill:false}]},
       options:{plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:false}}, responsive:true, maintainAspectRatio:false}
     });
-    if (window.charts) window.charts[id] = inst;
+    if (charts) charts[id] = inst;
   };
   blocks.forEach(b=>{
     if (b.kind!=='chart') return;
@@ -5169,8 +5169,8 @@ function closeLens(){
 function initMDMonthly(){
   const wf = document.getElementById('mdMonthlyWF');
   if (wf){
-    if (window.charts['mdMonthlyWF']){ window.charts['mdMonthlyWF'].destroy(); delete window.charts['mdMonthlyWF']; }
-    window.charts['mdMonthlyWF'] = new Chart(wf, {
+    if (charts['mdMonthlyWF']){ charts['mdMonthlyWF'].destroy(); delete charts['mdMonthlyWF']; }
+    charts['mdMonthlyWF'] = new Chart(wf, {
       type:'bar',
       data:{
         labels:['Okt 25','Volume mix','Preis-Drift','Rohstoff','Lieferanten','Garantie','Andere','Apr 26'],
@@ -5207,13 +5207,13 @@ function initMDMonthly(){
   segs.forEach(([id,color,points])=>{
     const el = document.getElementById(id);
     if (!el) return;
-    if (window.charts[id]){ window.charts[id].destroy(); delete window.charts[id]; }
-    window.charts[id] = new Chart(el, sparkOpts(color, points));
+    if (charts[id]){ charts[id].destroy(); delete charts[id]; }
+    charts[id] = new Chart(el, sparkOpts(color, points));
   });
   const dc = document.getElementById('mdMonthlyDisc');
   if (dc){
-    if (window.charts['mdMonthlyDisc']){ window.charts['mdMonthlyDisc'].destroy(); delete window.charts['mdMonthlyDisc']; }
-    window.charts['mdMonthlyDisc'] = new Chart(dc, {
+    if (charts['mdMonthlyDisc']){ charts['mdMonthlyDisc'].destroy(); delete charts['mdMonthlyDisc']; }
+    charts['mdMonthlyDisc'] = new Chart(dc, {
       type:'line',
       data:{
         labels:['Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez','Jan','Feb','Mär','Apr'],
@@ -5237,8 +5237,8 @@ function initMDBeirat(){
   // Panel A: waterfall + forecast fan
   const wf = document.getElementById('mdBeiratWF');
   if (wf){
-    if (window.charts['mdBeiratWF']){ window.charts['mdBeiratWF'].destroy(); delete window.charts['mdBeiratWF']; }
-    window.charts['mdBeiratWF'] = new Chart(wf, {
+    if (charts['mdBeiratWF']){ charts['mdBeiratWF'].destroy(); delete charts['mdBeiratWF']; }
+    charts['mdBeiratWF'] = new Chart(wf, {
       type:'bar',
       data:{
         labels:['Okt 25','Vol mix','Preis','Rohstoff','Lieferant','Garantie','Andere','Apr 26'],
@@ -5253,12 +5253,12 @@ function initMDBeirat(){
   }
   const fc = document.getElementById('mdBeiratForecast');
   if (fc){
-    if (window.charts['mdBeiratForecast']){ window.charts['mdBeiratForecast'].destroy(); delete window.charts['mdBeiratForecast']; }
+    if (charts['mdBeiratForecast']){ charts['mdBeiratForecast'].destroy(); delete charts['mdBeiratForecast']; }
     const months = ['Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez','Jan','Feb','Mär'];
     const p50 = [100,102,104,106,108,109,110,111,112,113,114,115];
     const p10 = p50.map((v,i)=>v - (i+1)*0.6);
     const p90 = p50.map((v,i)=>v + (i+1)*0.6);
-    window.charts['mdBeiratForecast'] = new Chart(fc, {
+    charts['mdBeiratForecast'] = new Chart(fc, {
       type:'line',
       data:{labels:months, datasets:[
         {label:'P90', data:p90, borderColor:'rgba(44,121,255,.3)', backgroundColor:'rgba(44,121,255,.08)', tension:.3, pointRadius:0, fill:'+1'},
@@ -5270,11 +5270,11 @@ function initMDBeirat(){
   }
   const par = document.getElementById('mdBeiratPareto');
   if (par){
-    if (window.charts['mdBeiratPareto']){ window.charts['mdBeiratPareto'].destroy(); delete window.charts['mdBeiratPareto']; }
+    if (charts['mdBeiratPareto']){ charts['mdBeiratPareto'].destroy(); delete charts['mdBeiratPareto']; }
     const cum = [];
     let v = 0;
     for (let i=1;i<=30;i++){ v += (78/30) * (1.65 - i*0.04); cum.push(Math.min(v,78)); }
-    window.charts['mdBeiratPareto'] = new Chart(par, {
+    charts['mdBeiratPareto'] = new Chart(par, {
       type:'bar',
       data:{labels:cum.map((_,i)=>i+1), datasets:[{type:'line', data:cum, borderColor:'#2c79ff', borderWidth:2, pointRadius:0, tension:.3, fill:true, backgroundColor:'rgba(44,121,255,.12)'}]},
       options:{plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{min:0, max:100, ticks:{callback:v=>v+'%', font:{size:10}}, grid:{color:'#f1f5f9'}}}, responsive:true, maintainAspectRatio:false}
@@ -5282,8 +5282,8 @@ function initMDBeirat(){
   }
   const bd = document.getElementById('mdBeiratDisc');
   if (bd){
-    if (window.charts['mdBeiratDisc']){ window.charts['mdBeiratDisc'].destroy(); delete window.charts['mdBeiratDisc']; }
-    window.charts['mdBeiratDisc'] = new Chart(bd, {
+    if (charts['mdBeiratDisc']){ charts['mdBeiratDisc'].destroy(); delete charts['mdBeiratDisc']; }
+    charts['mdBeiratDisc'] = new Chart(bd, {
       type:'line',
       data:{labels:['Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez','Jan','Feb','Mär','Apr'], datasets:[
         {label:'% innerhalb Guardrail', data:[91,92,90,91,89,90,91,89,88,89,88,87], borderColor:'#2c79ff', backgroundColor:'rgba(44,121,255,.1)', tension:.3, fill:true, pointRadius:3, borderWidth:2},
