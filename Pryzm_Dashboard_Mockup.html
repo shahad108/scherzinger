@@ -4041,7 +4041,26 @@
         </div>
       </div>
 
-      <!-- Sections appended in subsequent tasks -->
+      <div class="card card-pad mt-24">
+        <div class="between mb-16">
+          <div>
+            <div class="section-title">Preisdisziplin</div>
+            <h2 class="h2">Quotes innerhalb Guardrail · 12 Monate</h2>
+          </div>
+          <a class="muted small" onclick="toast('Methodik: % der Quotes mit realisierter Marge ≥ Guardrail-Untergrenze. Quelle: Pryzm-Quote-Engine. Vergleich: 12-Monats-Rolling.')" style="cursor:pointer;text-decoration:underline">Wie wird Disziplin gemessen? →</a>
+        </div>
+        <div style="height:200px;position:relative"><canvas id="mdMonthlyDisc"></canvas></div>
+
+        <div class="section-title" style="margin-top:18px">Top-3 SKUs nach Brüchen</div>
+        <table style="margin-top:6px">
+          <thead><tr><th style="width:40px">#</th><th>Artikel</th><th>Brüche (90T)</th><th>€ Impact (annualisiert)</th></tr></thead>
+          <tbody>
+            <tr data-lens="sku" data-id="200832-E" style="cursor:pointer"><td>1</td><td><b>200832-E</b> · Zahnradpumpe</td><td class="num-cell">539</td><td class="num-cell neg">−€18,6K</td></tr>
+            <tr data-lens="sku" data-id="211094-C" style="cursor:pointer"><td>2</td><td><b>211094-C</b> · Mikropumpe Hastelloy</td><td class="num-cell">214</td><td class="num-cell neg">−€8,1K</td></tr>
+            <tr data-lens="sku" data-id="218750-D" style="cursor:pointer"><td>3</td><td><b>218750-D</b> · Dosierpumpe</td><td class="num-cell">158</td><td class="num-cell neg">−€5,4K</td></tr>
+          </tbody>
+        </table>
+      </div>
 
     </section>
 
@@ -5054,6 +5073,28 @@ function initMDMonthly(){
     if (window.charts[id]){ window.charts[id].destroy(); delete window.charts[id]; }
     window.charts[id] = new Chart(el, sparkOpts(color, points));
   });
+  const dc = document.getElementById('mdMonthlyDisc');
+  if (dc){
+    if (window.charts['mdMonthlyDisc']){ window.charts['mdMonthlyDisc'].destroy(); delete window.charts['mdMonthlyDisc']; }
+    window.charts['mdMonthlyDisc'] = new Chart(dc, {
+      type:'line',
+      data:{
+        labels:['Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez','Jan','Feb','Mär','Apr'],
+        datasets:[
+          {label:'% innerhalb Guardrail', data:[91,92,90,91,89,90,91,89,88,89,88,87], borderColor:'#2c79ff', backgroundColor:'rgba(44,121,255,.1)', tension:.3, fill:true, pointRadius:3, borderWidth:2},
+          {label:'Ziel (92%)', data:Array(12).fill(92), borderColor:'#94a3b8', borderDash:[5,5], borderWidth:1.5, pointRadius:0, fill:false}
+        ]
+      },
+      options:{
+        plugins:{legend:{display:true, position:'bottom', labels:{boxWidth:12, font:{size:11}}}},
+        scales:{
+          x:{grid:{display:false}, ticks:{font:{size:11}}},
+          y:{min:80, max:100, ticks:{callback:v=>v+'%', font:{size:11}}, grid:{color:'#f1f5f9'}}
+        },
+        responsive:true, maintainAspectRatio:false
+      }
+    });
+  }
 }
 function initMDBeirat(){ /* charts hydrated in Phase 4 */ }
 
