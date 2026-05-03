@@ -4671,5 +4671,13 @@ document.body.dataset.persona = state.persona;
 renderActions();
 renderScreen();
 </script>
+<!-- Lens drawer: content populated by openLens() -->
+<div id="lens-backdrop" class="lens-backdrop" onclick="closeLens()"></div>
+<aside id="lens" class="lens" role="dialog" aria-modal="true" aria-hidden="true">
+  <button class="lens-close" onclick="closeLens()" aria-label="Schließen">✕</button>
+  <div class="lens-head" id="lens-head"></div>
+  <div class="lens-body" id="lens-body"></div>
+  <div class="lens-foot" id="lens-foot"></div>
+</aside>
 </body>
 </html>
