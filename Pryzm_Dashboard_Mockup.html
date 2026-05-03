@@ -1588,7 +1588,7 @@
         </div>
       </div>
 
-      <h2 class="h2 mt-24" style="margin-bottom:10px">Red-flag alerts requiring attention</h2>
+      <h2 class="h2 mt-24" style="margin-bottom:10px">Rote Flaggen, die du sehen solltest</h2>
       <div class="alert r">
         <div class="icon">🔴</div>
         <div class="body">
@@ -1626,23 +1626,23 @@
       <div class="card card-pad mt-24">
         <div class="between mb-16">
           <div>
-            <div class="section-title">12-month forecast</div>
-            <h2 class="h2">Revenue band — Apr 2026 → Mar 2027</h2>
+            <div class="section-title">12-Monats-Forecast</div>
+            <h2 class="h2">Umsatzband · Apr 2026 → Mar 2027</h2>
           </div>
-          <span class="muted small">&lt;5% error on Q1 2025 actuals · Walk-forward retraining · Monte Carlo bands</span>
+          <span class="muted small">&lt;5% Fehler auf Q1-2025-Ist · Walk-forward · Monte-Carlo</span>
         </div>
         <div style="height:260px;position:relative"><canvas id="mdForecast"></canvas></div>
       </div>
 
       <div class="card card-pad mt-24">
-        <div class="section-title">Team performance</div>
-        <h2 class="h2 mb-16">Last 90 days — by manager</h2>
+        <div class="section-title">Team-Leistung</div>
+        <h2 class="h2 mb-16">Letzte 90 Tage — pro Manager <a href="#" onclick="event.preventDefault();toast('Methodik: Recs erteilt = Pryzm-Output; Akzeptiert = bestätigt im Studio; Implementiert = Preis im SAP geändert; €Captured = realisierte Marge-Differenz vs. Vorpreis.')" class="muted small" style="font-weight:500;text-decoration:underline">Wie wird das berechnet? →</a></h2>
         <table>
-          <thead><tr><th>Manager</th><th>Recs issued</th><th>Accepted</th><th>Implemented</th><th>€ Captured</th><th>€ Missed</th></tr></thead>
+          <thead><tr><th>Manager</th><th>Recs erteilt</th><th>Akzeptiert</th><th>Implementiert</th><th>€ Captured</th><th>€ Verfehlt</th></tr></thead>
           <tbody>
-            <tr><td><b>M. Weber</b> · Pricing</td><td class="num-cell">75</td><td class="num-cell">47</td><td class="num-cell">38</td><td class="num-cell pos">€421,000</td><td class="num-cell neg">€187,000</td></tr>
-            <tr><td><b>T. Hoffmann</b> · Sales</td><td class="num-cell">42</td><td class="num-cell">31</td><td class="num-cell">22</td><td class="num-cell pos">€184,000</td><td class="num-cell neg">€76,000</td></tr>
-            <tr><td><b>M. Becker</b> · Controller</td><td class="num-cell">25</td><td class="num-cell">18</td><td class="num-cell">16</td><td class="num-cell pos">€92,000</td><td class="num-cell neg">€18,000</td></tr>
+            <tr data-lens="manager" data-id="weber" style="cursor:pointer"><td><b>M. Weber</b> · Pricing</td><td class="num-cell">75</td><td class="num-cell">47</td><td class="num-cell">38</td><td class="num-cell pos">€421.000</td><td class="num-cell neg">€187.000</td></tr>
+            <tr data-lens="manager" data-id="hoffmann" style="cursor:pointer"><td><b>T. Hoffmann</b> · Sales</td><td class="num-cell">42</td><td class="num-cell">31</td><td class="num-cell">22</td><td class="num-cell pos">€184.000</td><td class="num-cell neg">€76.000</td></tr>
+            <tr data-lens="manager" data-id="becker" style="cursor:pointer"><td><b>M. Becker</b> · Controller</td><td class="num-cell">25</td><td class="num-cell">18</td><td class="num-cell">16</td><td class="num-cell pos">€92.000</td><td class="num-cell neg">€18.000</td></tr>
           </tbody>
         </table>
       </div>
