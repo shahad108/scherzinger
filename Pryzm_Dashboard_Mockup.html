@@ -5273,7 +5273,7 @@ function initMDBeirat(){
     if (window.charts['mdBeiratPareto']){ window.charts['mdBeiratPareto'].destroy(); delete window.charts['mdBeiratPareto']; }
     const cum = [];
     let v = 0;
-    for (let i=1;i<=30;i++){ v += (78/30) * (1.6 - i*0.04); cum.push(Math.min(v,78)); }
+    for (let i=1;i<=30;i++){ v += (78/30) * (1.65 - i*0.04); cum.push(Math.min(v,78)); }
     window.charts['mdBeiratPareto'] = new Chart(par, {
       type:'bar',
       data:{labels:cum.map((_,i)=>i+1), datasets:[{type:'line', data:cum, borderColor:'#2c79ff', borderWidth:2, pointRadius:0, tension:.3, fill:true, backgroundColor:'rgba(44,121,255,.12)'}]},
