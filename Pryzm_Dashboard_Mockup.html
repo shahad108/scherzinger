@@ -1356,6 +1356,12 @@ body.vortrag #screen-md-beirat .ed-edit, body.vortrag #screen-md-beirat .src-lin
 body.vortrag #screen-md-beirat tr[data-lens]{cursor:default;pointer-events:none}
 body.vortrag #screen-md-beirat .narrative{font-size:18px;line-height:1.7}
 body.vortrag #btnVortrag{background:var(--primary-deep);color:#fff;border-color:var(--primary-deep)}
+.narrative{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-top:16px;position:relative}
+.narrative h3{font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;color:var(--primary-deep);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.narrative p{font-size:14.5px;line-height:1.65;color:var(--ink);margin:0}
+.narrative .ed-edit{position:absolute;top:14px;right:48px;background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11.5px;color:var(--muted);cursor:pointer}
+.narrative .src-link{position:absolute;top:14px;right:14px;background:transparent;border:0;font-size:14px;color:var(--muted);cursor:pointer;padding:4px 6px}
+.narrative .ed-edit:hover, .narrative .src-link:hover{color:var(--ink);background:var(--grey-bg)}
 </style>
 </head>
 <body>
@@ -4083,6 +4089,27 @@ body.vortrag #btnVortrag{background:var(--primary-deep);color:#fff;border-color:
         </div>
       </div>
       <p class="muted small" style="margin-top:-10px">Stand: 28. April 2026 · gesperrt · Quellen unten.</p>
+
+      <div class="narrative" data-slide="1">
+        <button class="src-link" onclick="toast('Quellen für §1: WaWi-Buchungen Q1 2026 · Pryzm-Quote-Realisierung Q1 2026 · SAP-Modul FI-CO · Forecast-Modell v3.2 (Re-Train 2026-04-15)')">🔗</button>
+        <button class="ed-edit" onclick="toast('Mock: Markdown-Editor für §1 mit Versionshistorie')">✏ Bearbeiten</button>
+        <h3>§1 · Margenentwicklung (Controlling-Sicht)</h3>
+        <p>Die EBITDA-Marge hat sich über die letzten sechs Monate von 11,4% auf 10,8% reduziert. Der größte Treiber ist Rohstoff-Drift (Stahl +5,8% YTD, Pass-through 3pp im Verzug). Pryzm-Empfehlungen haben €421K YTD gehalten (+11% vs. Plan). Die Forecast-Bandbreite für 2026 liegt bei €1,15M – €1,25M (Walk-forward-Fehler &lt;5% auf Q1-2025-Ist).</p>
+      </div>
+
+      <div class="narrative" data-slide="2">
+        <button class="src-link" onclick="toast('Quellen für §2: SAP-Kundenstamm · Pryzm-ARR-Aggregator Q1 2026 · Churn-Signal-Modell v2.1 · Retention-Offer-Tracking')">🔗</button>
+        <button class="ed-edit" onclick="toast('Mock: Markdown-Editor für §2 mit Versionshistorie')">✏ Bearbeiten</button>
+        <h3>§2 · Kundenkonzentration (Risiko-Sicht)</h3>
+        <p>Top-1-Konzentration ist auf 14% gestiegen (+1,2pp ggü. Q-1). Kunde 101580 (Tier-1 Automotive, €487K ARR) zeigt seit 12 Tagen ein Churn-Signal; ein Retentionsangebot über €48K liegt vor. Top-30 = 78% Umsatz, stabil ggü. Q-1.</p>
+      </div>
+
+      <div class="narrative" data-slide="3">
+        <button class="src-link" onclick="toast('Quellen für §3: Pryzm-Quote-Engine · Guardrail-Konfiguration Q1 · Empfehlungs-Output 90T · Implementierungs-Tracking SAP')">🔗</button>
+        <button class="ed-edit" onclick="toast('Mock: Markdown-Editor für §3 mit Versionshistorie')">✏ Bearbeiten</button>
+        <h3>§3 · Preisdisziplin (Governance-Sicht)</h3>
+        <p>Quotes innerhalb Guardrail liegen im April bei 87% (Ziel 92%). Drei Artikel verursachen 62% aller Brüche, davon Artikel 200832-E mit 539 Brüchen in Q1. Pricing Manager hat 47 von 75 Empfehlungen akzeptiert; 28 sind akzeptiert, aber nicht umgesetzt (€187K). Implementierungsfriktion ist Thema im nächsten 1:1.</p>
+      </div>
 
       <!-- Sections appended in subsequent tasks -->
 
