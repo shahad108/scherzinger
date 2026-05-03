@@ -4165,7 +4165,39 @@ body.vortrag #btnVortrag{background:var(--primary-deep);color:#fff;border-color:
         </table>
       </div>
 
-      <!-- Sections appended in subsequent tasks -->
+      <div class="card card-pad mt-24" data-slide="7">
+        <div class="section-title">Anhang · Methodik</div>
+        <h2 class="h2 mb-16">Glossar, Quellen, Modellkarte, Änderungsprotokoll</h2>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+          <div>
+            <div class="section-title" style="margin-bottom:8px">Glossar</div>
+            <p class="muted small" style="line-height:1.7"><b>Deckungsbeitrag:</b> Umsatz minus variable Kosten.<br><b>Marge-Realisierung:</b> realisierter Preis ÷ Listenpreis.<br><b>Walk-forward-Fehler:</b> Forecast-Fehler auf zurückgehaltenem Quartal.<br><b>Guardrail:</b> Untergrenze für Quote-Preise.<br><b>Pareto:</b> kumulierte Anteilskurve.<br><b>Monte-Carlo:</b> n=10.000 Simulationen mit Input-Verteilung.</p>
+          </div>
+          <div>
+            <div class="section-title" style="margin-bottom:8px">Datenquellen</div>
+            <p class="muted small" style="line-height:1.7">SAP-Modul FI-CO (Buchungen)<br>SAP-Modul SD (Quotes &amp; Orders)<br>Pryzm-Quote-Engine (Realisierung &amp; Guardrail)<br>Pryzm-Forecast-Modell v3.2<br>Snapshot-Datum: 2026-04-28 09:00</p>
+          </div>
+        </div>
+
+        <div style="margin-top:18px">
+          <div class="section-title" style="margin-bottom:8px">Modellkarte</div>
+          <table>
+            <thead><tr><th>Quartal</th><th>Modellversion</th><th>Re-Train</th><th>Walk-forward-Fehler</th></tr></thead>
+            <tbody>
+              <tr><td>Q1 2026</td><td>v3.2</td><td>2026-04-15</td><td class="num-cell">4,7%</td></tr>
+              <tr><td>Q4 2025</td><td>v3.1</td><td>2026-01-12</td><td class="num-cell">5,1%</td></tr>
+              <tr><td>Q3 2025</td><td>v3.0</td><td>2025-10-08</td><td class="num-cell">5,8%</td></tr>
+              <tr><td>Q2 2025</td><td>v2.9</td><td>2025-07-04</td><td class="num-cell">6,4%</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:18px">
+          <div class="section-title" style="margin-bottom:8px">Änderungsprotokoll seit Q4-2025-Bericht</div>
+          <p class="muted small" style="line-height:1.7">• Forecast-Modell auf v3.2 aktualisiert (Re-Train mit Q1-Daten)<br>• Top-1-Konzentrations-Schwelle in Risiko-Sicht hinzugefügt<br>• Implementierungs-Lücke in Governance-Sicht explizit ausgewiesen<br>• Pareto-Kurve in Panel B ergänzt</p>
+        </div>
+      </div>
 
     </section>
 
