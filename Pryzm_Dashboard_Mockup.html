@@ -5312,6 +5312,19 @@ document.addEventListener('click', e => {
   e.preventDefault();
   openLens(t.dataset.lens, t.dataset.id);
 });
+
+let _vortragSlide = 1;
+document.addEventListener('keydown', e => {
+  if (!document.body.classList.contains('vortrag')) return;
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  e.preventDefault();
+  const slides = document.querySelectorAll('#screen-md-beirat [data-slide]');
+  if (!slides.length) return;
+  if (e.key === 'ArrowRight') _vortragSlide = Math.min(_vortragSlide + 1, slides.length);
+  if (e.key === 'ArrowLeft')  _vortragSlide = Math.max(_vortragSlide - 1, 1);
+  const target = document.querySelector('#screen-md-beirat [data-slide="'+_vortragSlide+'"]');
+  if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
+});
 </script>
 <!-- Lens drawer: content populated by openLens() -->
 <div id="lens-backdrop" class="lens-backdrop" onclick="closeLens()"></div>
