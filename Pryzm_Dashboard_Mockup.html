@@ -3946,6 +3946,17 @@
         <div class="q-foot">Pryzm wählt 2 Fragen aus 7 Kandidaten. <a onclick="toast('Mock: 7 Kandidaten-Fragen anzeigen')">Alle 7 sehen →</a></div>
       </div>
 
+      <div class="card card-pad mt-24">
+        <div class="between mb-16">
+          <div>
+            <div class="section-title">Marge-Trajektorie</div>
+            <h2 class="h2">Wo die Marge seit Oktober steht</h2>
+          </div>
+          <span class="muted small">Quellen: WaWi-Buchungen + Pryzm-Quote-Realisierung · 6-Monats-Rolling</span>
+        </div>
+        <div style="height:240px;position:relative"><canvas id="mdMonthlyWF"></canvas></div>
+      </div>
+
       <!-- Sections appended in subsequent tasks -->
 
     </section>
@@ -4915,7 +4926,34 @@ function closeLens(){
   document.getElementById('lens-backdrop').classList.remove('open');
 }
 
-function initMDMonthly(){ /* charts hydrated in tasks 3.3, 3.5, 3.6 */ }
+function initMDMonthly(){
+  const wf = document.getElementById('mdMonthlyWF');
+  if (wf){
+    if (window.charts['mdMonthlyWF']){ window.charts['mdMonthlyWF'].destroy(); delete window.charts['mdMonthlyWF']; }
+    window.charts['mdMonthlyWF'] = new Chart(wf, {
+      type:'bar',
+      data:{
+        labels:['Okt 25','Volume mix','Preis-Drift','Rohstoff','Lieferanten','Garantie','Andere','Apr 26'],
+        datasets:[{
+          data:[[0,11.4],[11.4,11.6],[11.6,11.2],[11.2,10.7],[10.7,10.5],[10.5,10.6],[10.6,10.8],[0,10.8]],
+          backgroundColor:['#94a3b8','#16a34a','#ef4444','#ef4444','#ef4444','#16a34a','#16a34a','#94a3b8'],
+          borderRadius:4
+        }]
+      },
+      options:{
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:c=>{const v=c.raw;return v[1].toFixed(1)+'pp ('+(v[1]-v[0]>=0?'+':'')+(v[1]-v[0]).toFixed(1)+'pp)'}}}
+        },
+        scales:{
+          x:{grid:{display:false}, ticks:{font:{size:11}}},
+          y:{min:9.5, max:12, ticks:{callback:v=>v+'pp', font:{size:11}}, grid:{color:'#f1f5f9'}}
+        },
+        responsive:true, maintainAspectRatio:false
+      }
+    });
+  }
+}
 function initMDBeirat(){ /* charts hydrated in Phase 4 */ }
 
 document.addEventListener('keydown', e => { if (e.key==='Escape') closeLens(); });
