@@ -3903,6 +3903,24 @@
       </div>
     </section>
 
+    <!-- ============== MONATSABSCHLUSS (MD persona only) ============== -->
+    <section id="screen-md-monthly" class="screen hidden">
+      <div class="page-head">
+        <div>
+          <div class="crumbs">Strategic Cockpit · <b>Geschäftsführer</b> · Monatsabschluss</div>
+          <h1>Monatsabschluss April 2026</h1>
+        </div>
+        <div class="row" style="gap:8px">
+          <select class="btn" style="padding:6px 10px"><option>Apr 2026</option><option>Mär 2026</option><option>Feb 2026</option></select>
+          <button class="btn" onclick="toast('PDF für GL-Sitzung exportiert (Mock)')">↓ PDF für GL-Sitzung</button>
+        </div>
+      </div>
+      <p class="muted small" style="margin-top:-10px">Letzter Freitag im Monat. 20 Minuten. Zwei Fragen für Dienstag.</p>
+
+      <!-- Sections appended in subsequent tasks -->
+
+    </section>
+
   </main>
 </div>
 
@@ -3942,7 +3960,7 @@ function setScreen(s){
 }
 
 function renderScreen(){
-  const screens = ['action-pm','action-md','action-sr','forecast','studio','margin','quotes','ai'];
+  const screens = ['action-pm','action-md','action-sr','forecast','studio','margin','quotes','ai','md-monthly','md-beirat'];
   screens.forEach(s=>document.getElementById('screen-'+s).classList.add('hidden'));
   if (state.screen==='action'){
     let id = 'screen-action-pm';
@@ -3957,6 +3975,8 @@ function renderScreen(){
   else if (state.screen==='margin') { document.getElementById('screen-margin').classList.remove('hidden'); initWaterfall(); initCostPriceGap(); initRecoveryChart(); }
   else if (state.screen==='quotes') { document.getElementById('screen-quotes').classList.remove('hidden'); }
   else if (state.screen==='ai') { document.getElementById('screen-ai').classList.remove('hidden'); }
+  else if (state.screen==='md-monthly'){ const el=document.getElementById('screen-md-monthly'); if(el){ el.classList.remove('hidden'); initMDMonthly(); } }
+  else if (state.screen==='md-beirat'){ const el=document.getElementById('screen-md-beirat'); if(el){ el.classList.remove('hidden'); initMDBeirat(); } }
 }
 
 /* ----------------- actions render ----------------- */
@@ -4865,6 +4885,9 @@ function closeLens(){
   document.getElementById('lens').setAttribute('aria-hidden','true');
   document.getElementById('lens-backdrop').classList.remove('open');
 }
+
+function initMDMonthly(){ /* charts hydrated in tasks 3.3, 3.5, 3.6 */ }
+function initMDBeirat(){ /* charts hydrated in Phase 4 */ }
 
 document.addEventListener('keydown', e => { if (e.key==='Escape') closeLens(); });
 
