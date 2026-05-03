@@ -4124,6 +4124,32 @@ body.vortrag #btnVortrag{background:var(--primary-deep);color:#fff;border-color:
         <p class="muted small" style="margin-top:10px">Walk-forward-Fehler: 4,7% auf Q1-2025 Ist · Monte-Carlo n=10.000 · Modellversion v3.2 · letzter Re-Train 2026-04-15</p>
       </div>
 
+      <div class="card card-pad mt-24" data-slide="5">
+        <div class="section-title">Panel B · Kundenkonzentration</div>
+        <h2 class="h2 mb-16">Top-10 ARR + Pareto</h2>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
+          <table>
+            <thead><tr><th style="width:40px">#</th><th>Kunde</th><th>ARR</th><th>Δ vs Q-1</th><th>Marge-pp</th><th>Risiko</th></tr></thead>
+            <tbody>
+              <tr data-lens="customer" data-id="101580" style="cursor:pointer"><td>1</td><td><b>101580</b> · Continental AG</td><td class="num-cell">€487K</td><td class="num-cell neg">−€32K</td><td class="num-cell neg">9,1pp · −2,4pp</td><td><span class="pin r"></span> hoch</td></tr>
+              <tr data-lens="customer" data-id="101901" style="cursor:pointer"><td>2</td><td><b>101901</b> · Bosch Mobility</td><td class="num-cell">€312K</td><td class="num-cell pos">+€8K</td><td class="num-cell pos">12,1pp · +0,3pp</td><td>—</td></tr>
+              <tr data-lens="customer" data-id="103044" style="cursor:pointer"><td>3</td><td><b>103044</b> · Webasto</td><td class="num-cell">€264K</td><td class="num-cell neg">−€6K</td><td class="num-cell neg">10,4pp · −0,8pp</td><td><span class="pin a"></span> mittel</td></tr>
+              <tr data-lens="customer" data-id="102330" style="cursor:pointer"><td>4</td><td><b>102330</b> · BorgWarner</td><td class="num-cell">€241K</td><td class="num-cell neg">−€18K</td><td class="num-cell neg">9,8pp · −1,1pp</td><td><span class="pin a"></span> mittel</td></tr>
+              <tr data-lens="customer" data-id="102801" style="cursor:pointer"><td>5</td><td><b>102801</b> · Mahle</td><td class="num-cell">€198K</td><td class="num-cell pos">+€2K</td><td class="num-cell pos">11,9pp · +0,4pp</td><td>—</td></tr>
+              <tr data-lens="customer" data-id="104410" style="cursor:pointer"><td>6</td><td><b>104410</b> · ZF Friedrichshafen</td><td class="num-cell">€176K</td><td class="num-cell pos">+€11K</td><td class="num-cell pos">12,4pp · +0,9pp</td><td>—</td></tr>
+              <tr data-lens="customer" data-id="105220" style="cursor:pointer"><td>7</td><td><b>105220</b> · Festo</td><td class="num-cell">€158K</td><td class="num-cell pos">+€4K</td><td class="num-cell">11,5pp · ±0pp</td><td>—</td></tr>
+              <tr data-lens="customer" data-id="106110" style="cursor:pointer"><td>8</td><td><b>106110</b> · Bürkert</td><td class="num-cell">€142K</td><td class="num-cell neg">−€3K</td><td class="num-cell neg">11,2pp · −0,2pp</td><td>—</td></tr>
+              <tr data-lens="customer" data-id="107010" style="cursor:pointer"><td>9</td><td><b>107010</b> · Schaeffler</td><td class="num-cell">€131K</td><td class="num-cell pos">+€6K</td><td class="num-cell pos">12,0pp · +0,5pp</td><td>—</td></tr>
+              <tr data-lens="customer" data-id="108220" style="cursor:pointer"><td>10</td><td><b>108220</b> · Knorr-Bremse</td><td class="num-cell">€118K</td><td class="num-cell pos">+€1K</td><td class="num-cell pos">11,6pp · +0,1pp</td><td>—</td></tr>
+            </tbody>
+          </table>
+          <div style="height:240px;position:relative">
+            <div class="section-title" style="margin:0 0 4px 0">Pareto · Top-30 = 78% Umsatz</div>
+            <canvas id="mdBeiratPareto"></canvas>
+          </div>
+        </div>
+      </div>
+
       <!-- Sections appended in subsequent tasks -->
 
     </section>
@@ -5195,7 +5221,19 @@ function initMDBeirat(){
       options:{plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}, ticks:{font:{size:10}}}, y:{display:false}}, responsive:true, maintainAspectRatio:false}
     });
   }
-  // Panels B + C charts hydrated in tasks 4.4 + 4.5
+  const par = document.getElementById('mdBeiratPareto');
+  if (par){
+    if (window.charts['mdBeiratPareto']){ window.charts['mdBeiratPareto'].destroy(); delete window.charts['mdBeiratPareto']; }
+    const cum = [];
+    let v = 0;
+    for (let i=1;i<=30;i++){ v += (78/30) * (1.6 - i*0.04); cum.push(Math.min(v,78)); }
+    window.charts['mdBeiratPareto'] = new Chart(par, {
+      type:'bar',
+      data:{labels:cum.map((_,i)=>i+1), datasets:[{type:'line', data:cum, borderColor:'#2c79ff', borderWidth:2, pointRadius:0, tension:.3, fill:true, backgroundColor:'rgba(44,121,255,.12)'}]},
+      options:{plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{min:0, max:100, ticks:{callback:v=>v+'%', font:{size:10}}, grid:{color:'#f1f5f9'}}}, responsive:true, maintainAspectRatio:false}
+    });
+  }
+  // Panel C chart hydrated in task 4.5
 }
 
 function toggleVortrag(){
