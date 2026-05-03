@@ -1339,6 +1339,18 @@
 .q-card .q-link{font-size:12px;color:#7dd3fc;text-decoration:underline;cursor:pointer;display:inline-block;margin-top:6px}
 .q-foot{font-size:12px;color:#94a3b8;margin-top:6px}
 .q-foot a{color:#7dd3fc;text-decoration:underline;cursor:pointer}
+
+.seg-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.seg-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.seg-card .seg-name{font-family:'Manrope',sans-serif;font-size:14px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.seg-card .seg-share{font-size:11.5px;color:var(--muted);margin-bottom:10px}
+.seg-card .seg-stats{display:flex;gap:14px;margin-bottom:8px}
+.seg-card .seg-stat{font-size:12px;color:var(--ink-2)}
+.seg-card .seg-stat b{display:block;font-family:'Manrope',sans-serif;font-size:18px;font-weight:700;color:var(--ink);line-height:1}
+.seg-card .seg-stat b.pos{color:var(--green)}
+.seg-card .seg-stat b.neg{color:var(--red)}
+.seg-card .seg-spark{height:36px;margin:6px 0}
+.seg-card .seg-interp{font-size:12.5px;color:var(--ink-2);line-height:1.5;font-style:italic}
 </style>
 </head>
 <body>
@@ -3982,6 +3994,53 @@
         </table>
       </div>
 
+      <div class="card card-pad mt-24">
+        <div class="section-title">Segment-Verschiebungen</div>
+        <h2 class="h2 mb-16">Vier Segmente · Apr 2026 vs. Apr 2025</h2>
+        <div class="seg-grid">
+          <div class="seg-card">
+            <div class="seg-name">Automotive</div>
+            <div class="seg-share">42% des Umsatzes</div>
+            <div class="seg-stats">
+              <div class="seg-stat"><b class="neg">−3%</b> Umsatz Δ vs LY</div>
+              <div class="seg-stat"><b class="neg">−1,2pp</b> Marge vs Plan</div>
+            </div>
+            <div class="seg-spark"><canvas id="segAuto"></canvas></div>
+            <div class="seg-interp">Tier-1-Drift hält an. Continental, BorgWarner und Webasto schwächen das Segment.</div>
+          </div>
+          <div class="seg-card">
+            <div class="seg-name">Chemie / Process</div>
+            <div class="seg-share">28% des Umsatzes</div>
+            <div class="seg-stats">
+              <div class="seg-stat"><b class="pos">+4%</b> Umsatz Δ vs LY</div>
+              <div class="seg-stat"><b class="pos">+0,3pp</b> Marge vs Plan</div>
+            </div>
+            <div class="seg-spark"><canvas id="segChem"></canvas></div>
+            <div class="seg-interp">Stabil. Spezial-Pumpen mit Hastelloy/Titanium tragen die Marge.</div>
+          </div>
+          <div class="seg-card">
+            <div class="seg-name">Maschinenbau</div>
+            <div class="seg-share">18% des Umsatzes</div>
+            <div class="seg-stats">
+              <div class="seg-stat"><b class="pos">+1%</b> Umsatz Δ vs LY</div>
+              <div class="seg-stat"><b>±0pp</b> Marge vs Plan</div>
+            </div>
+            <div class="seg-spark"><canvas id="segMech"></canvas></div>
+            <div class="seg-interp">Lateral. Volumen leicht hoch, Marge auf Plan — keine Aktion nötig.</div>
+          </div>
+          <div class="seg-card">
+            <div class="seg-name">Energie</div>
+            <div class="seg-share">12% des Umsatzes</div>
+            <div class="seg-stats">
+              <div class="seg-stat"><b class="pos">+8%</b> Umsatz Δ vs LY</div>
+              <div class="seg-stat"><b class="pos">+1,1pp</b> Marge vs Plan</div>
+            </div>
+            <div class="seg-spark"><canvas id="segEng"></canvas></div>
+            <div class="seg-interp">Wachstum durch Power-Plant-Aufträge. Marge expandiert.</div>
+          </div>
+        </div>
+      </div>
+
       <!-- Sections appended in subsequent tasks -->
 
     </section>
@@ -4978,6 +5037,23 @@ function initMDMonthly(){
       }
     });
   }
+  const sparkOpts = (color, points) => ({
+    type:'line',
+    data:{labels:points.map((_,i)=>i), datasets:[{data:points, borderColor:color, borderWidth:1.5, tension:.3, pointRadius:0, fill:false}]},
+    options:{plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:false}}, responsive:true, maintainAspectRatio:false}
+  });
+  const segs = [
+    ['segAuto','#ef4444',[100,99,98,98,97,96,96,95,94,93,93,97]],
+    ['segChem','#16a34a',[100,101,101,102,102,103,103,104,104,103,104,104]],
+    ['segMech','#94a3b8',[100,100,101,101,100,101,102,101,101,101,101,101]],
+    ['segEng','#2c79ff',[100,101,102,103,104,105,106,107,107,108,108,108]]
+  ];
+  segs.forEach(([id,color,points])=>{
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (window.charts[id]){ window.charts[id].destroy(); delete window.charts[id]; }
+    window.charts[id] = new Chart(el, sparkOpts(color, points));
+  });
 }
 function initMDBeirat(){ /* charts hydrated in Phase 4 */ }
 
