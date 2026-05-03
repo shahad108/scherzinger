@@ -103,6 +103,8 @@
 
   /* counters */
   .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+  @media (max-width:1280px){.grid-5{grid-template-columns:repeat(3,1fr)}}
   .counter{padding:18px 20px;display:flex;flex-direction:column;gap:6px;position:relative}
   .counter .label{color:var(--muted);font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px}
   .counter .value{font-family:'Manrope',sans-serif;font-size:28px;font-weight:800;letter-spacing:-.01em}
@@ -1558,10 +1560,32 @@
         <p>Pricing Manager (M. Weber) hat 47 von 75 Empfehlungen akzeptiert. 28 akzeptiert, aber nicht umgesetzt (€187K). Implementierungsfriktion in nächstem 1:1 prüfen.</p>
       </div>
 
-      <div class="grid-3 mt-24">
-        <div class="card counter green"><div class="label"><span class="pin"></span>YTD Captured</div><div class="value">€421,000</div><div class="cap">vs €380K plan · +11%</div></div>
-        <div class="card counter amber"><div class="label"><span class="pin"></span>At Risk</div><div class="value">€68,000</div><div class="cap">this quarter</div></div>
-        <div class="card counter blue"><div class="label"><span class="pin"></span>2026 Forecast</div><div class="value">€1.2M</div><div class="cap">primary band · &lt;5% error</div></div>
+      <div class="grid-5 mt-24">
+        <div class="card counter green">
+          <div class="label"><span class="pin"></span>Marge YTD</div>
+          <div class="value">€421.000</div>
+          <div class="cap">vs €380K Plan · +11%</div>
+        </div>
+        <div class="card counter amber">
+          <div class="label"><span class="pin"></span>Marge gefährdet (Q)</div>
+          <div class="value">€68.000</div>
+          <div class="cap">3 rote Flaggen</div>
+        </div>
+        <div class="card counter blue">
+          <div class="label"><span class="pin"></span>Forecast 2026</div>
+          <div class="value">€1,2M ±€60K</div>
+          <div class="cap">&lt;5% Walk-forward Fehler</div>
+        </div>
+        <div class="card counter">
+          <div class="label"><span class="pin"></span>Kundenkonzentration</div>
+          <div class="value">14% / 78%</div>
+          <div class="cap">Top-1 / Top-30 · +1,2pp vs Q-1</div>
+        </div>
+        <div class="card counter">
+          <div class="label"><span class="pin"></span>Preisdisziplin (90T)</div>
+          <div class="value">87%</div>
+          <div class="cap">Ziel 92% · −5pp</div>
+        </div>
       </div>
 
       <h2 class="h2 mt-24" style="margin-bottom:10px">Red-flag alerts requiring attention</h2>
