@@ -1328,6 +1328,17 @@
 .lens-foot .btn{font-size:12.5px}
 
 .lens canvas{max-height:80px}
+
+.q-hero{background:linear-gradient(180deg,#0f172a 0%,#1e293b 100%);color:#e2e8f0;border-radius:14px;padding:22px 24px;margin-top:18px}
+.q-hero .qh-eyebrow{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#7dd3fc;font-weight:700;margin-bottom:10px}
+.q-hero .qh-title{font-family:'Manrope',sans-serif;font-size:18px;font-weight:600;color:#fff;margin-bottom:18px;line-height:1.4}
+.q-card{background:rgba(255,255,255,.05);border:1px solid rgba(125,211,252,.18);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.q-card .q-to{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#7dd3fc;font-weight:700;margin-bottom:6px}
+.q-card .q-text{font-size:14px;line-height:1.55;color:#f1f5f9;margin-bottom:8px}
+.q-card .q-evid{font-size:12px;color:#94a3b8;line-height:1.55}
+.q-card .q-link{font-size:12px;color:#7dd3fc;text-decoration:underline;cursor:pointer;display:inline-block;margin-top:6px}
+.q-foot{font-size:12px;color:#94a3b8;margin-top:6px}
+.q-foot a{color:#7dd3fc;text-decoration:underline;cursor:pointer}
 </style>
 </head>
 <body>
@@ -3916,6 +3927,24 @@
         </div>
       </div>
       <p class="muted small" style="margin-top:-10px">Letzter Freitag im Monat. 20 Minuten. Zwei Fragen für Dienstag.</p>
+
+      <div class="q-hero">
+        <div class="qh-eyebrow">Zwei Fragen für Dienstag</div>
+        <div class="qh-title">Pryzm hat 2 Fragen aus 7 Kandidaten ausgewählt — basierend auf Marge-Trajektorie, Konzentrations-Risiko und Preisdisziplin im April.</div>
+        <div class="q-card">
+          <div class="q-to">Frage 1 — an Markus &amp; Tobias</div>
+          <div class="q-text">"Warum ist die Preisdisziplin auf Artikel 200832-E im April auf 71% gefallen, obwohl wir im Februar eine Guardrail-Anpassung gemacht haben?"</div>
+          <div class="q-evid">Belegt durch: 539 Brüche Q1 → 187 Brüche allein April · −€18,6K/Jahr Trend</div>
+          <a class="q-link" onclick="toast('Reason chain: Quote-Realisierung sinkt seit März; Datenbasis: SAP-Buchungen + Pryzm-Quote-Output; Vergleichsfenster: Q4-2025 vs. April 2026; Konfidenz: hoch (n=187 Brüche).')">Warum diese Frage? →</a>
+        </div>
+        <div class="q-card">
+          <div class="q-to">Frage 2 — an Tobias</div>
+          <div class="q-text">"Sind die −2,1pp Margenverlust in der Region BKAGG strukturell oder ein Effekt von Kunde 101580?"</div>
+          <div class="q-evid">Belegt durch: BKAGG −3,9pp gesamt · Kunde 101580 = 41% des regionalen Umsatzes</div>
+          <a class="q-link" onclick="toast('Reason chain: BKAGG margin gap −3,9pp; Kunde 101580 ARR-Anteil 41%; Sensitivitätsanalyse zeigt Strukturanteil ~1,8pp; Datenbasis: 6-Monats-Rolling.')">Warum diese Frage? →</a>
+        </div>
+        <div class="q-foot">Pryzm wählt 2 Fragen aus 7 Kandidaten. <a onclick="toast('Mock: 7 Kandidaten-Fragen anzeigen')">Alle 7 sehen →</a></div>
+      </div>
 
       <!-- Sections appended in subsequent tasks -->
 
