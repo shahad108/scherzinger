@@ -281,9 +281,25 @@
   .btn.r-btn:hover{background:var(--red-bg)}
   .visibility-note{margin-left:auto;font-size:11.5px;color:var(--muted);font-style:italic}
 
-  /* hide irrelevant nav items for Sales Rep */
+  /* Sales Rep: only Action Center */
   body[data-persona="sr"] .nav-item[data-screen="forecast"],
-  body[data-persona="sr"] .nav-item[data-screen="margin"]{display:none}
+  body[data-persona="sr"] .nav-item[data-screen="margin"],
+  body[data-persona="sr"] .nav-item[data-screen="studio"],
+  body[data-persona="sr"] .nav-item[data-screen="quotes"],
+  body[data-persona="sr"] .nav-item[data-screen="ai"],
+  body[data-persona="sr"] .nav-item[data-screen="md-monthly"],
+  body[data-persona="sr"] .nav-item[data-screen="md-beirat"]{display:none}
+
+  /* MD / Geschäftsführer: Strategic Dashboard + Monatsabschluss + Beiratsbericht only */
+  body[data-persona="md"] .nav-item[data-screen="forecast"],
+  body[data-persona="md"] .nav-item[data-screen="studio"],
+  body[data-persona="md"] .nav-item[data-screen="margin"],
+  body[data-persona="md"] .nav-item[data-screen="quotes"],
+  body[data-persona="md"] .nav-item[data-screen="ai"]{display:none}
+
+  /* PM / Pricing Manager: hide MD-only nav */
+  body[data-persona="pm"] .nav-item[data-screen="md-monthly"],
+  body[data-persona="pm"] .nav-item[data-screen="md-beirat"]{display:none}
 
   /* self-correction banner (Section 8) */
   .self-correct{
