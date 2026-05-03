@@ -4670,6 +4670,208 @@ function toast(msg){
 document.body.dataset.persona = state.persona;
 renderActions();
 renderScreen();
+
+/* ===== Lens system ===== */
+const LENS_DATA = {
+  customer: {
+    "101580": {
+      title: "Kunde 101580 · Continental AG (Tier-1 Automotive)",
+      meta: "Region: BKAGG · Account: T. Hoffmann · seit 2011",
+      source: "Quelle: SAP+Pryzm · Stand: 2026-04-28 09:00",
+      blocks: [
+        {kind:"chart", title:"ARR-Trend (24 Monate)", chartId:"lensARR", line:"<b>€487K ARR</b> · −€32K vs. Q-1 · −6,2%"},
+        {kind:"chart", title:"Marge-Trend (24 Monate)", chartId:"lensMarge", line:"<b>9,1pp</b> · −2,4pp vs. 24M-Schnitt"},
+        {kind:"signals", title:"Drei Risiko-Signale", signals:[
+          {dot:"🔴", state:"Churn-Signal aktiv", text:"Bestellfrequenz seit 2026-Q1 −38%"},
+          {dot:"🟡", state:"Konzentrations-Risiko", text:"14% Top-1-Anteil · +1,2pp vs. Q-1"},
+          {dot:"🟢", state:"Zahlungs-Signal stabil", text:"DSO 41T, im Korridor"}
+        ]},
+        {kind:"line", title:"Quote-Aktivität (90 Tage) — nur Aggregate", line:"5 Quotes <b>gewonnen</b> · 2 verloren · 1 offen · Win-Rate <b>71%</b> · Marge-Realisierung <b>84%</b>"},
+        {kind:"line", title:"Empfehlungs-Verlauf (90 Tage)", line:"4 erteilt → 3 akzeptiert → 2 implementiert · <b>€18K gehalten</b> · €7K verpasst"}
+      ],
+      ctas: [
+        {label:"✉ Markus fragen", action:"toast('Mock email: Markus zu Kunde 101580 angeschrieben')"},
+        {label:"✉ Hoffmann fragen", action:"toast('Mock email: Hoffmann zu Kunde 101580 angeschrieben')"},
+        {label:"✓ Als besprochen markieren", action:"toast('Markiert als besprochen')"}
+      ]
+    }
+  },
+  sku: {
+    "200832-E": {
+      title: "Artikel 200832-E · Zahnradpumpe (Precision shaft)",
+      meta: "Familie: Automotive · Stückzahl 24M: 8.430 · Status: aktiv",
+      source: "Quelle: SAP+Pryzm · Stand: 2026-04-28 09:00",
+      blocks: [
+        {kind:"chart", title:"Inputkosten vs. Realisiertem Preis (24 Monate)", chartId:"lensCostPrice", line:"Pass-through-Lücke: <b>3,2pp</b> · Stahl +5,8% YTD · Preis +2,6%"},
+        {kind:"line", title:"Kunden-Footprint — nur Aggregate", line:"verkauft an <b>47 Kunden</b> · Top-3: 41% des Volumens · Top-10: 78%", chips:[{label:"Continental →", lens:"customer", id:"101580"},{label:"Bosch Mobility →", lens:"customer", id:"101901"},{label:"Webasto →", lens:"customer", id:"103044"}]},
+        {kind:"chart", title:"Governance — Guardrail-Brüche (12 Monate)", chartId:"lensViolations", line:"<b>539 Brüche</b> in Q1 · 187 allein April · −€18,6K/Jahr Trend"},
+        {kind:"line", title:"Empfehlungs-Verlauf (90 Tage)", line:"12 erteilt → 9 akzeptiert → 5 implementiert · <b>€4K gehalten</b>"},
+        {kind:"line", title:"Letzte Preisanpassung", line:"2025-11-14 · +€1,80/Stk · von Markus · Genehmigt durch Klaus"}
+      ],
+      ctas: [
+        {label:"✉ Markus fragen", action:"toast('Mock email: Markus zu Artikel 200832-E angeschrieben')"},
+        {label:"✓ Als besprochen markieren", action:"toast('Markiert als besprochen')"}
+      ]
+    }
+  },
+  manager: {
+    "weber": {
+      title: "M. Weber · Pricing Manager · Span: 47 Kunden, 312 SKUs",
+      meta: "Im Unternehmen seit 2018 · letzter 1:1: 2026-04-09",
+      source: "Quelle: Pryzm · Stand: 2026-04-28 09:00",
+      blocks: [
+        {kind:"funnel", title:"Empfehlungs-Funnel (90 Tage)", steps:[{v:"75",l:"erteilt"},{v:"47",l:"akzeptiert (63%)"},{v:"38",l:"implementiert (51%)"}], line:"<b>Implementierungs-Lücke:</b> 9 Empfehlungen akzeptiert, aber nicht umgesetzt — €187K offen"},
+        {kind:"chart", title:"€ Captured · Wochen-Trend (90 Tage)", chartId:"lensCaptured", line:"<b>€421K gesamt</b> · €38K letzte Woche · vs €32K Schnitt"},
+        {kind:"line", title:"€ Verfehlt — Top-3 Gründe (nur Aggregate)", line:"1. Zeitlich verzögert · 28 Fälle · €112K<br>2. Guardrail überschritten · 12 Fälle · €48K<br>3. Markt-Ablehnung · 7 Fälle · €27K"},
+        {kind:"rows", title:"Top-3 Kunden im Span — mit Marge-Δ", rows:[
+          {label:"Continental AG", right:"−2,4pp 🔴", lens:"customer", id:"101580"},
+          {label:"Bosch Mobility", right:"+0,3pp 🟢", lens:"customer", id:"101901"},
+          {label:"Webasto", right:"−0,8pp 🟡", lens:"customer", id:"103044"}
+        ]},
+        {kind:"line", title:"Quartals-Ziele", line:"Marge-Capture <b>€450K</b> · Status: bei €421K · 94% nach 17 Wochen · <b>on-track</b>"}
+      ],
+      ctas: [
+        {label:"📅 1:1 ansetzen", action:"toast('Mock: 1:1 mit Markus angesetzt')"},
+        {label:"✉ Markus anschreiben", action:"toast('Mock email an Markus')"},
+        {label:"✓ Als besprochen markieren", action:"toast('Markiert als besprochen')"}
+      ]
+    },
+    "hoffmann": {
+      title: "T. Hoffmann · Sales Manager · Span: BKAGG-Region (28 Kunden)",
+      meta: "Im Unternehmen seit 2014 · letzter 1:1: 2026-04-02",
+      source: "Quelle: Pryzm · Stand: 2026-04-28 09:00",
+      blocks: [
+        {kind:"funnel", title:"Empfehlungs-Funnel (90 Tage)", steps:[{v:"42",l:"erteilt"},{v:"31",l:"akzeptiert (74%)"},{v:"22",l:"implementiert (52%)"}], line:"<b>Implementierungs-Lücke:</b> 9 Empfehlungen akzeptiert, aber nicht umgesetzt — €76K offen"},
+        {kind:"chart", title:"€ Captured · Wochen-Trend (90 Tage)", chartId:"lensCaptured", line:"<b>€184K gesamt</b> · €14K letzte Woche · vs €15K Schnitt"},
+        {kind:"line", title:"€ Verfehlt — Top-3 Gründe", line:"1. Markt-Ablehnung · 14 Fälle · €38K<br>2. Guardrail überschritten · 9 Fälle · €24K<br>3. Zeitlich verzögert · 5 Fälle · €14K"},
+        {kind:"rows", title:"Top-3 Kunden in BKAGG", rows:[
+          {label:"Kunde 101580", right:"−2,4pp 🔴", lens:"customer", id:"101580"},
+          {label:"Kunde 102330", right:"−1,1pp 🟡", lens:"customer", id:"102330"},
+          {label:"Kunde 102801", right:"+0,4pp 🟢", lens:"customer", id:"102801"}
+        ]},
+        {kind:"line", title:"Quartals-Ziele", line:"Marge-Capture <b>€220K</b> · Status: bei €184K · 84% nach 17 Wochen · <b>at-risk</b>"}
+      ],
+      ctas: [
+        {label:"📅 1:1 ansetzen", action:"toast('Mock: 1:1 mit Hoffmann angesetzt')"},
+        {label:"✉ Hoffmann anschreiben", action:"toast('Mock email an Hoffmann')"},
+        {label:"✓ Als besprochen markieren", action:"toast('Markiert als besprochen')"}
+      ]
+    },
+    "becker": {
+      title: "M. Becker · Controller · Span: Kostenseite & Reporting",
+      meta: "Im Unternehmen seit 2009 · letzter 1:1: 2026-03-21",
+      source: "Quelle: Pryzm · Stand: 2026-04-28 09:00",
+      blocks: [
+        {kind:"funnel", title:"Empfehlungs-Funnel (90 Tage)", steps:[{v:"25",l:"erteilt"},{v:"18",l:"akzeptiert (72%)"},{v:"16",l:"implementiert (64%)"}], line:"<b>Implementierungs-Lücke:</b> 2 akzeptiert, aber nicht umgesetzt — €18K offen"},
+        {kind:"chart", title:"€ Captured · Wochen-Trend (90 Tage)", chartId:"lensCaptured", line:"<b>€92K gesamt</b> · €7K letzte Woche · vs €8K Schnitt"},
+        {kind:"line", title:"€ Verfehlt — Top-3 Gründe", line:"1. Zeitlich verzögert · 1 Fall · €10K<br>2. Markt-Ablehnung · 1 Fall · €5K<br>3. Guardrail überschritten · 1 Fall · €3K"},
+        {kind:"rows", title:"Top-3 Themen (Kosten)", rows:[
+          {label:"Stahl-Pass-through-Lücke", right:"3,2pp"},
+          {label:"Lieferanten-Drift Q1", right:"+1,1pp"},
+          {label:"Garantierückstellungen", right:"−0,4pp"}
+        ]},
+        {kind:"line", title:"Quartals-Ziele", line:"Marge-Capture <b>€110K</b> · Status: bei €92K · 84% nach 17 Wochen · <b>on-track</b>"}
+      ],
+      ctas: [
+        {label:"📅 1:1 ansetzen", action:"toast('Mock: 1:1 mit Becker angesetzt')"},
+        {label:"✉ Becker anschreiben", action:"toast('Mock email an Becker')"},
+        {label:"✓ Als besprochen markieren", action:"toast('Markiert als besprochen')"}
+      ]
+    }
+  }
+};
+
+function openLens(kind, id){
+  const data = (LENS_DATA[kind] && LENS_DATA[kind][id]) || {
+    title: kind+" · "+id,
+    meta: "Daten in Vorbereitung",
+    source: "Quelle: Pryzm · Mock",
+    blocks: [{kind:"line", title:"Hinweis", line:"Profil ist im Mockup nicht hinterlegt. Verfügbare Profile: 101580 (Kunde), 200832-E (SKU), Weber/Hoffmann/Becker (Manager)."}],
+    ctas: [{label:"✓ Schließen", action:"closeLens()"}]
+  };
+  document.getElementById('lens-head').innerHTML =
+    '<div class="lens-eyebrow">'+(kind==='customer'?'Kunden-Ansicht':kind==='sku'?'SKU-Ansicht':'Manager-Ansicht')+'</div>' +
+    '<h3>'+data.title+'</h3>' +
+    '<div class="lens-meta">'+data.meta+'</div>' +
+    '<div class="lens-source">'+data.source+'</div>';
+  document.getElementById('lens-body').innerHTML = data.blocks.map(renderLensBlock).join('');
+  document.getElementById('lens-foot').innerHTML = data.ctas.map(c =>
+    '<button class="btn" onclick="'+c.action+'">'+c.label+'</button>'
+  ).join('');
+  document.getElementById('lens').classList.add('open');
+  document.getElementById('lens').setAttribute('aria-hidden','false');
+  document.getElementById('lens-backdrop').classList.add('open');
+  requestAnimationFrame(()=>hydrateLensCharts(data.blocks));
+}
+
+function renderLensBlock(b){
+  if (b.kind === 'chart'){
+    return '<div class="lens-block"><div class="lens-block-title">'+b.title+'</div>' +
+      '<div style="height:80px;position:relative"><canvas id="'+b.chartId+'"></canvas></div>' +
+      '<div class="lens-block-line">'+b.line+'</div></div>';
+  }
+  if (b.kind === 'signals'){
+    return '<div class="lens-block"><div class="lens-block-title">'+b.title+'</div>' +
+      '<div class="lens-signals">' +
+      b.signals.map(s=>'<div class="lens-signal"><div class="sig-state">'+s.dot+' '+s.state+'</div>'+s.text+'</div>').join('') +
+      '</div></div>';
+  }
+  if (b.kind === 'funnel'){
+    const steps = b.steps.map(s=>'<div class="lens-funnel-step"><div class="v">'+s.v+'</div><div class="l">'+s.l+'</div></div>').join('<div class="lens-funnel-arrow">→</div>');
+    return '<div class="lens-block"><div class="lens-block-title">'+b.title+'</div>' +
+      '<div class="lens-funnel">'+steps+'</div>' +
+      '<div class="lens-block-line">'+b.line+'</div></div>';
+  }
+  if (b.kind === 'rows'){
+    return '<div class="lens-block"><div class="lens-block-title">'+b.title+'</div>' +
+      b.rows.map(r=>{
+        const click = r.lens ? ' class="lens-row click" data-lens="'+r.lens+'" data-id="'+r.id+'"' : ' class="lens-row"';
+        return '<div'+click+'><span>'+r.label+'</span><b>'+r.right+'</b></div>';
+      }).join('') +
+      '</div>';
+  }
+  let chips = '';
+  if (b.chips) chips = '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">' +
+    b.chips.map(c=>'<button class="btn" style="font-size:11.5px;padding:4px 8px" data-lens="'+c.lens+'" data-id="'+c.id+'">'+c.label+'</button>').join('') +
+    '</div>';
+  return '<div class="lens-block"><div class="lens-block-title">'+b.title+'</div>' +
+    '<div class="lens-block-line">'+b.line+'</div>'+chips+'</div>';
+}
+
+function hydrateLensCharts(blocks){
+  const mk = (id, points, color) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    new Chart(el, {
+      type:'line',
+      data:{labels:points.map((_,i)=>i), datasets:[{data:points, borderColor:color, borderWidth:1.5, tension:.3, pointRadius:0, fill:false}]},
+      options:{plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:false}}, responsive:true, maintainAspectRatio:false}
+    });
+  };
+  blocks.forEach(b=>{
+    if (b.kind!=='chart') return;
+    if (b.chartId==='lensARR') mk('lensARR',[520,515,512,508,505,502,498,495,492,490,488,487,485,482,480,478,475,490,495,500,495,490,488,487],'#2c79ff');
+    if (b.chartId==='lensMarge') mk('lensMarge',[11.5,11.4,11.4,11.3,11.2,11.0,10.9,10.8,10.7,10.6,10.5,10.4,10.2,10.0,9.9,9.8,9.7,9.6,9.5,9.4,9.3,9.2,9.1,9.1],'#16a34a');
+    if (b.chartId==='lensCostPrice') mk('lensCostPrice',[100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123],'#f59e0b');
+    if (b.chartId==='lensViolations') mk('lensViolations',[42,38,55,61,72,80,95,110,135,160,180,187],'#ef4444');
+    if (b.chartId==='lensCaptured') mk('lensCaptured',[28,32,30,35,38,34,36,40,38,42,38,38],'#16a34a');
+  });
+}
+
+function closeLens(){
+  document.getElementById('lens').classList.remove('open');
+  document.getElementById('lens').setAttribute('aria-hidden','true');
+  document.getElementById('lens-backdrop').classList.remove('open');
+}
+
+document.addEventListener('keydown', e => { if (e.key==='Escape') closeLens(); });
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-lens][data-id]');
+  if (!t) return;
+  e.preventDefault();
+  openLens(t.dataset.lens, t.dataset.id);
+});
 </script>
 <!-- Lens drawer: content populated by openLens() -->
 <div id="lens-backdrop" class="lens-backdrop" onclick="closeLens()"></div>
