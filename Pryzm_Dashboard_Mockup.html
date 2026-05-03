@@ -4842,11 +4842,13 @@ function hydrateLensCharts(blocks){
   const mk = (id, points, color) => {
     const el = document.getElementById(id);
     if (!el) return;
-    new Chart(el, {
+    if (window.charts && window.charts[id]){ window.charts[id].destroy(); delete window.charts[id]; }
+    const inst = new Chart(el, {
       type:'line',
       data:{labels:points.map((_,i)=>i), datasets:[{data:points, borderColor:color, borderWidth:1.5, tension:.3, pointRadius:0, fill:false}]},
       options:{plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:false}}, responsive:true, maintainAspectRatio:false}
     });
+    if (window.charts) window.charts[id] = inst;
   };
   blocks.forEach(b=>{
     if (b.kind!=='chart') return;
