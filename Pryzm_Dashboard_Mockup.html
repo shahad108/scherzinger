@@ -292,7 +292,7 @@
   body[data-persona="sr"] .nav-item[data-screen="md-monthly"],
   body[data-persona="sr"] .nav-item[data-screen="md-beirat"]{display:none}
 
-  /* MD / Geschäftsführer: Strategic Dashboard + Monatsabschluss + Beiratsbericht only */
+  /* MD / Geschäftsführer: Strategic Dashboard + Monthly Review + Board Report only */
   body[data-persona="md"] .nav-item[data-screen="forecast"],
   body[data-persona="md"] .nav-item[data-screen="studio"],
   body[data-persona="md"] .nav-item[data-screen="margin"],
@@ -3941,41 +3941,41 @@ body.vortrag #btnVortrag{background:var(--primary-deep);color:#fff;border-color:
     <section id="screen-md-monthly" class="screen hidden">
       <div class="page-head">
         <div>
-          <div class="crumbs">Strategic Cockpit · <b>Geschäftsführer</b> · Monatsabschluss</div>
-          <h1>Monatsabschluss April 2026</h1>
+          <div class="crumbs">Strategic Cockpit · <b>Geschäftsführer</b> · Monthly Review</div>
+          <h1>Monthly Review · April 2026</h1>
         </div>
         <div class="row" style="gap:8px">
           <select class="btn" style="padding:6px 10px"><option>Apr 2026</option><option>Mär 2026</option><option>Feb 2026</option></select>
-          <button class="btn" onclick="toast('PDF für GL-Sitzung exportiert (Mock)')">↓ PDF für GL-Sitzung</button>
+          <button class="btn" onclick="toast('PDF for MGT meeting exported (mock)')">↓ PDF for MGT meeting</button>
         </div>
       </div>
-      <p class="muted small" style="margin-top:-10px">Letzter Freitag im Monat. 20 Minuten. Zwei Fragen für Dienstag.</p>
+      <p class="muted small" style="margin-top:-10px">Last Friday of the month. 20 minutes. Two questions for Tuesday.</p>
 
       <div class="q-hero">
-        <div class="qh-eyebrow">Zwei Fragen für Dienstag</div>
-        <div class="qh-title">Pryzm hat 2 Fragen aus 7 Kandidaten ausgewählt — basierend auf Marge-Trajektorie, Konzentrations-Risiko und Preisdisziplin im April.</div>
+        <div class="qh-eyebrow">Two questions for Tuesday</div>
+        <div class="qh-title">Pryzm has selected 2 questions from 7 candidates — based on margin trajectory, concentration risk and price discipline in April.</div>
         <div class="q-card">
-          <div class="q-to">Frage 1 — an Markus &amp; Tobias</div>
-          <div class="q-text">"Warum ist die Preisdisziplin auf Artikel 200832-E im April auf 71% gefallen, obwohl wir im Februar eine Guardrail-Anpassung gemacht haben?"</div>
-          <div class="q-evid">Belegt durch: 539 Brüche Q1 → 187 Brüche allein April · −€18,6K/Jahr Trend</div>
-          <a class="q-link" onclick="toast('Reason chain: Quote-Realisierung sinkt seit März; Datenbasis: SAP-Buchungen + Pryzm-Quote-Output; Vergleichsfenster: Q4-2025 vs. April 2026; Konfidenz: hoch (n=187 Brüche).')">Warum diese Frage? →</a>
+          <div class="q-to">Question 1 — to Markus &amp; Tobias</div>
+          <div class="q-text">"Why did price discipline on article 200832-E fall to 71% in April, even though we adjusted the guardrail in February?"</div>
+          <div class="q-evid">Evidence: 539 breaches Q1 → 187 breaches in April alone · −€18,6K/yr trend</div>
+          <a class="q-link" onclick="toast('Reason chain: quote realization declining since March; data: SAP postings + Pryzm quote output; comparison window: Q4-2025 vs. April 2026; confidence: high (n=187 breaches).')">Why this question? →</a>
         </div>
         <div class="q-card">
-          <div class="q-to">Frage 2 — an Tobias</div>
-          <div class="q-text">"Sind die −2,1pp Margenverlust in der Region BKAGG strukturell oder ein Effekt von Kunde 101580?"</div>
-          <div class="q-evid">Belegt durch: BKAGG −3,9pp gesamt · Kunde 101580 = 41% des regionalen Umsatzes</div>
-          <a class="q-link" onclick="toast('Reason chain: BKAGG margin gap −3,9pp; Kunde 101580 ARR-Anteil 41%; Sensitivitätsanalyse zeigt Strukturanteil ~1,8pp; Datenbasis: 6-Monats-Rolling.')">Warum diese Frage? →</a>
+          <div class="q-to">Question 2 — to Tobias</div>
+          <div class="q-text">"Is the −2,1pp margin loss in the BKAGG region structural or a Customer 101580 effect?"</div>
+          <div class="q-evid">Evidence: BKAGG −3,9pp total · Customer 101580 = 41% of regional revenue</div>
+          <a class="q-link" onclick="toast('Reason chain: BKAGG margin gap −3,9pp; Customer 101580 ARR share 41%; sensitivity analysis shows structural share ~1,8pp; data: 6-month rolling.')">Why this question? →</a>
         </div>
-        <div class="q-foot">Pryzm wählt 2 Fragen aus 7 Kandidaten. <a onclick="toast('Mock: 7 Kandidaten-Fragen anzeigen')">Alle 7 sehen →</a></div>
+        <div class="q-foot">Pryzm picks 2 questions from 7 candidates. <a onclick="toast('Mock: show 7 candidate questions')">View all 7 →</a></div>
       </div>
 
       <div class="card card-pad mt-24">
         <div class="between mb-16">
           <div>
-            <div class="section-title">Marge-Trajektorie</div>
-            <h2 class="h2">Wo die Marge seit Oktober steht</h2>
+            <div class="section-title">Margin trajectory</div>
+            <h2 class="h2">Where margin stands since October</h2>
           </div>
-          <span class="muted small">Quellen: WaWi-Buchungen + Pryzm-Quote-Realisierung · 6-Monats-Rolling</span>
+          <span class="muted small">Sources: ERP postings + Pryzm quote realization · 6-month rolling</span>
         </div>
         <div style="height:240px;position:relative"><canvas id="mdMonthlyWF"></canvas></div>
       </div>
@@ -3983,13 +3983,13 @@ body.vortrag #btnVortrag{background:var(--primary-deep);color:#fff;border-color:
       <div class="card card-pad mt-24">
         <div class="between mb-16">
           <div>
-            <div class="section-title">Kundenkonzentration</div>
-            <h2 class="h2">Top-10 nach ARR</h2>
+            <div class="section-title">Customer concentration</div>
+            <h2 class="h2">Top 10 by ARR</h2>
           </div>
-          <span class="muted small">Top-30 = 78% Umsatz · stabil ggü. Q-1 · <a onclick="toast('Mock: vollständige Top-30 inline')" style="color:var(--primary-deep);text-decoration:underline;cursor:pointer">vollständige Top-30 →</a></span>
+          <span class="muted small">Top-30 = 78% revenue · stable vs Q-1 · <a onclick="toast('Mock: full top-30 inline')" style="color:var(--primary-deep);text-decoration:underline;cursor:pointer">view full Top-30 →</a></span>
         </div>
         <table>
-          <thead><tr><th style="width:40px">#</th><th>Kunde</th><th>ARR</th><th>Δ ARR vs Q-1</th><th>Marge-pp Δ vs Q-1</th><th></th></tr></thead>
+          <thead><tr><th style="width:40px">#</th><th>Customer</th><th>ARR</th><th>Δ ARR vs Q-1</th><th>Margin-pp Δ vs Q-1</th><th></th></tr></thead>
           <tbody id="mdMonthlyTopList">
             <tr data-lens="customer" data-id="101580" style="cursor:pointer"><td>1</td><td><b>101580</b> · Continental AG</td><td class="num-cell">€487K</td><td class="num-cell neg">−€32K</td><td class="num-cell neg">−2,4pp</td><td><span class="pin r"></span></td></tr>
             <tr data-lens="customer" data-id="101901" style="cursor:pointer"><td>2</td><td><b>101901</b> · Bosch Mobility</td><td class="num-cell">€312K</td><td class="num-cell pos">+€8K</td><td class="num-cell pos">+0,3pp</td><td></td></tr>
@@ -4006,48 +4006,48 @@ body.vortrag #btnVortrag{background:var(--primary-deep);color:#fff;border-color:
       </div>
 
       <div class="card card-pad mt-24">
-        <div class="section-title">Segment-Verschiebungen</div>
-        <h2 class="h2 mb-16">Vier Segmente · Apr 2026 vs. Apr 2025</h2>
+        <div class="section-title">Segment shifts</div>
+        <h2 class="h2 mb-16">Four segments · Apr 2026 vs. Apr 2025</h2>
         <div class="seg-grid">
           <div class="seg-card">
             <div class="seg-name">Automotive</div>
-            <div class="seg-share">42% des Umsatzes</div>
+            <div class="seg-share">42% of revenue</div>
             <div class="seg-stats">
-              <div class="seg-stat"><b class="neg">−3%</b> Umsatz Δ vs LY</div>
-              <div class="seg-stat"><b class="neg">−1,2pp</b> Marge vs Plan</div>
+              <div class="seg-stat"><b class="neg">−3%</b> Revenue Δ vs LY</div>
+              <div class="seg-stat"><b class="neg">−1,2pp</b> Margin vs plan</div>
             </div>
             <div class="seg-spark"><canvas id="segAuto"></canvas></div>
-            <div class="seg-interp">Tier-1-Drift hält an. Continental, BorgWarner und Webasto schwächen das Segment.</div>
+            <div class="seg-interp">Tier-1 drift continuing. Continental, BorgWarner and Webasto are weakening the segment.</div>
           </div>
           <div class="seg-card">
-            <div class="seg-name">Chemie / Process</div>
-            <div class="seg-share">28% des Umsatzes</div>
+            <div class="seg-name">Chemicals / Process</div>
+            <div class="seg-share">28% of revenue</div>
             <div class="seg-stats">
-              <div class="seg-stat"><b class="pos">+4%</b> Umsatz Δ vs LY</div>
-              <div class="seg-stat"><b class="pos">+0,3pp</b> Marge vs Plan</div>
+              <div class="seg-stat"><b class="pos">+4%</b> Revenue Δ vs LY</div>
+              <div class="seg-stat"><b class="pos">+0,3pp</b> Margin vs plan</div>
             </div>
             <div class="seg-spark"><canvas id="segChem"></canvas></div>
-            <div class="seg-interp">Stabil. Spezial-Pumpen mit Hastelloy/Titanium tragen die Marge.</div>
+            <div class="seg-interp">Stable. Specialty pumps with Hastelloy/Titanium are carrying the margin.</div>
           </div>
           <div class="seg-card">
-            <div class="seg-name">Maschinenbau</div>
-            <div class="seg-share">18% des Umsatzes</div>
+            <div class="seg-name">Mechanical engineering</div>
+            <div class="seg-share">18% of revenue</div>
             <div class="seg-stats">
-              <div class="seg-stat"><b class="pos">+1%</b> Umsatz Δ vs LY</div>
-              <div class="seg-stat"><b>±0pp</b> Marge vs Plan</div>
+              <div class="seg-stat"><b class="pos">+1%</b> Revenue Δ vs LY</div>
+              <div class="seg-stat"><b>±0pp</b> Margin vs plan</div>
             </div>
             <div class="seg-spark"><canvas id="segMech"></canvas></div>
-            <div class="seg-interp">Lateral. Volumen leicht hoch, Marge auf Plan — keine Aktion nötig.</div>
+            <div class="seg-interp">Lateral. Volume slightly up, margin on plan — no action needed.</div>
           </div>
           <div class="seg-card">
-            <div class="seg-name">Energie</div>
-            <div class="seg-share">12% des Umsatzes</div>
+            <div class="seg-name">Energy</div>
+            <div class="seg-share">12% of revenue</div>
             <div class="seg-stats">
-              <div class="seg-stat"><b class="pos">+8%</b> Umsatz Δ vs LY</div>
-              <div class="seg-stat"><b class="pos">+1,1pp</b> Marge vs Plan</div>
+              <div class="seg-stat"><b class="pos">+8%</b> Revenue Δ vs LY</div>
+              <div class="seg-stat"><b class="pos">+1,1pp</b> Margin vs plan</div>
             </div>
             <div class="seg-spark"><canvas id="segEng"></canvas></div>
-            <div class="seg-interp">Wachstum durch Power-Plant-Aufträge. Marge expandiert.</div>
+            <div class="seg-interp">Growth from power-plant orders. Margin expanding.</div>
           </div>
         </div>
       </div>
@@ -4055,19 +4055,19 @@ body.vortrag #btnVortrag{background:var(--primary-deep);color:#fff;border-color:
       <div class="card card-pad mt-24">
         <div class="between mb-16">
           <div>
-            <div class="section-title">Preisdisziplin</div>
-            <h2 class="h2">Quotes innerhalb Guardrail · 12 Monate</h2>
+            <div class="section-title">Price discipline</div>
+            <h2 class="h2">Quotes within guardrail · 12 months</h2>
           </div>
-          <a class="muted small" onclick="toast('Methodik: % der Quotes mit realisierter Marge ≥ Guardrail-Untergrenze. Quelle: Pryzm-Quote-Engine. Vergleich: 12-Monats-Rolling.')" style="cursor:pointer;text-decoration:underline">Wie wird Disziplin gemessen? →</a>
+          <a class="muted small" onclick="toast('Methodology: % of quotes with realized margin ≥ guardrail floor. Source: Pryzm quote engine. Comparison: 12-month rolling.')" style="cursor:pointer;text-decoration:underline">How is discipline measured? →</a>
         </div>
         <div style="height:200px;position:relative"><canvas id="mdMonthlyDisc"></canvas></div>
 
-        <div class="section-title" style="margin-top:18px">Top-3 SKUs nach Brüchen</div>
+        <div class="section-title" style="margin-top:18px">Top 3 SKUs by breaches</div>
         <table style="margin-top:6px">
-          <thead><tr><th style="width:40px">#</th><th>Artikel</th><th>Brüche (90T)</th><th>€ Impact (annualisiert)</th></tr></thead>
+          <thead><tr><th style="width:40px">#</th><th>Article</th><th>Breaches (90d)</th><th>€ impact (annualized)</th></tr></thead>
           <tbody>
             <tr data-lens="sku" data-id="200832-E" style="cursor:pointer"><td>1</td><td><b>200832-E</b> · Zahnradpumpe</td><td class="num-cell">539</td><td class="num-cell neg">−€18,6K</td></tr>
-            <tr data-lens="sku" data-id="211094-C" style="cursor:pointer"><td>2</td><td><b>211094-C</b> · Mikropumpe Hastelloy</td><td class="num-cell">214</td><td class="num-cell neg">−€8,1K</td></tr>
+            <tr data-lens="sku" data-id="211094-C" style="cursor:pointer"><td>2</td><td><b>211094-C</b> · Hastelloy micropump</td><td class="num-cell">214</td><td class="num-cell neg">−€8,1K</td></tr>
             <tr data-lens="sku" data-id="218750-D" style="cursor:pointer"><td>3</td><td><b>218750-D</b> · Dosierpumpe</td><td class="num-cell">158</td><td class="num-cell neg">−€5,4K</td></tr>
           </tbody>
         </table>
@@ -4079,41 +4079,41 @@ body.vortrag #btnVortrag{background:var(--primary-deep);color:#fff;border-color:
     <section id="screen-md-beirat" class="screen hidden">
       <div class="page-head">
         <div>
-          <div class="crumbs">Strategic Cockpit · <b>Geschäftsführer</b> · Beiratsbericht</div>
-          <h1>Beiratsbericht <select class="btn" style="padding:4px 10px;font-family:'Manrope',sans-serif;font-size:18px;font-weight:700"><option>Q1/2026</option><option>Q4/2025</option><option>Q3/2025</option></select></h1>
+          <div class="crumbs">Strategic Cockpit · <b>Geschäftsführer</b> · Board Report</div>
+          <h1>Board Report <select class="btn" style="padding:4px 10px;font-family:'Manrope',sans-serif;font-size:18px;font-weight:700"><option>Q1/2026</option><option>Q4/2025</option><option>Q3/2025</option></select></h1>
         </div>
         <div class="row" style="gap:8px">
-          <button class="btn" onclick="toast('Zahlen eingefroren am 2026-04-28 (Mock)')">🔒 Zahlen einfrieren</button>
-          <button class="btn" id="btnVortrag" onclick="toggleVortrag()">🖥 Vortragsmodus</button>
-          <button class="btn" onclick="toast('PDF Beiratsbericht (3 Seiten + Anhang) exportiert (Mock)')">↓ PDF</button>
+          <button class="btn" onclick="toast('Data locked at 2026-04-28 (mock)')">🔒 Lock data</button>
+          <button class="btn" id="btnVortrag" onclick="toggleVortrag()">🖥 Presentation mode</button>
+          <button class="btn" onclick="toast('PDF board report (3 pages + appendix) exported (mock)')">↓ PDF</button>
         </div>
       </div>
-      <p class="muted small" style="margin-top:-10px">Stand: 28. April 2026 · gesperrt · Quellen unten.</p>
+      <p class="muted small" style="margin-top:-10px">As of: 28 April 2026 · locked · sources below.</p>
 
       <div class="narrative" data-slide="1">
-        <button class="src-link" onclick="toast('Quellen für §1: WaWi-Buchungen Q1 2026 · Pryzm-Quote-Realisierung Q1 2026 · SAP-Modul FI-CO · Forecast-Modell v3.2 (Re-Train 2026-04-15)')">🔗</button>
-        <button class="ed-edit" onclick="toast('Mock: Markdown-Editor für §1 mit Versionshistorie')">✏ Bearbeiten</button>
-        <h3>§1 · Margenentwicklung (Controlling-Sicht)</h3>
-        <p>Die EBITDA-Marge hat sich über die letzten sechs Monate von 11,4% auf 10,8% reduziert. Der größte Treiber ist Rohstoff-Drift (Stahl +5,8% YTD, Pass-through 3pp im Verzug). Pryzm-Empfehlungen haben €421K YTD gehalten (+11% vs. Plan). Die Forecast-Bandbreite für 2026 liegt bei €1,15M – €1,25M (Walk-forward-Fehler &lt;5% auf Q1-2025-Ist).</p>
+        <button class="src-link" onclick="toast('Sources for §1: ERP postings Q1 2026 · Pryzm quote realization Q1 2026 · SAP FI-CO module · forecast model v3.2 (re-train 2026-04-15)')">🔗</button>
+        <button class="ed-edit" onclick="toast('Mock: markdown editor for §1 with version history')">✏ Edit</button>
+        <h3>§1 · Margin development (controlling view)</h3>
+        <p>EBITDA margin has compressed from 11,4% to 10,8% over the last six months. The largest driver is raw-material drift (steel +5,8% YTD, pass-through 3pp behind). Pryzm recommendations have captured €421K YTD (+11% vs plan). The 2026 forecast band is €1,15M – €1,25M (walk-forward error &lt;5% on Q1-2025 actuals).</p>
       </div>
 
       <div class="narrative" data-slide="2">
-        <button class="src-link" onclick="toast('Quellen für §2: SAP-Kundenstamm · Pryzm-ARR-Aggregator Q1 2026 · Churn-Signal-Modell v2.1 · Retention-Offer-Tracking')">🔗</button>
-        <button class="ed-edit" onclick="toast('Mock: Markdown-Editor für §2 mit Versionshistorie')">✏ Bearbeiten</button>
-        <h3>§2 · Kundenkonzentration (Risiko-Sicht)</h3>
-        <p>Top-1-Konzentration ist auf 14% gestiegen (+1,2pp ggü. Q-1). Kunde 101580 (Tier-1 Automotive, €487K ARR) zeigt seit 12 Tagen ein Churn-Signal; ein Retentionsangebot über €48K liegt vor. Top-30 = 78% Umsatz, stabil ggü. Q-1.</p>
+        <button class="src-link" onclick="toast('Sources for §2: SAP customer master · Pryzm ARR aggregator Q1 2026 · churn-signal model v2.1 · retention-offer tracking')">🔗</button>
+        <button class="ed-edit" onclick="toast('Mock: markdown editor for §2 with version history')">✏ Edit</button>
+        <h3>§2 · Customer concentration (risk view)</h3>
+        <p>Top-1 concentration has risen to 14% (+1,2pp vs Q-1). Customer 101580 (Tier-1 automotive, €487K ARR) has shown a churn signal for 12 days; a €48K retention offer is pending. Top-30 = 78% revenue, stable vs Q-1.</p>
       </div>
 
       <div class="narrative" data-slide="3">
-        <button class="src-link" onclick="toast('Quellen für §3: Pryzm-Quote-Engine · Guardrail-Konfiguration Q1 · Empfehlungs-Output 90T · Implementierungs-Tracking SAP')">🔗</button>
-        <button class="ed-edit" onclick="toast('Mock: Markdown-Editor für §3 mit Versionshistorie')">✏ Bearbeiten</button>
-        <h3>§3 · Preisdisziplin (Governance-Sicht)</h3>
-        <p>Quotes innerhalb Guardrail liegen im April bei 87% (Ziel 92%). Drei Artikel verursachen 62% aller Brüche, davon Artikel 200832-E mit 539 Brüchen in Q1. Pricing Manager hat 47 von 75 Empfehlungen akzeptiert; 28 sind akzeptiert, aber nicht umgesetzt (€187K). Implementierungsfriktion ist Thema im nächsten 1:1.</p>
+        <button class="src-link" onclick="toast('Sources for §3: Pryzm quote engine · guardrail configuration Q1 · recommendation output 90d · implementation tracking SAP')">🔗</button>
+        <button class="ed-edit" onclick="toast('Mock: markdown editor for §3 with version history')">✏ Edit</button>
+        <h3>§3 · Price discipline (governance view)</h3>
+        <p>Quotes within guardrail stand at 87% in April (target 92%). Three articles cause 62% of all breaches, with article 200832-E driving 539 breaches in Q1. Pricing Manager has accepted 47 of 75 recommendations; 28 are accepted but not implemented (€187K). Implementation friction is on the next 1:1 agenda.</p>
       </div>
 
       <div class="card card-pad mt-24" data-slide="4">
-        <div class="section-title">Panel A · Margenentwicklung</div>
-        <h2 class="h2 mb-16">6-Monats-Bridge + 2026-Forecast</h2>
+        <div class="section-title">Panel A · Margin development</div>
+        <h2 class="h2 mb-16">6-month bridge + 2026 forecast</h2>
         <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:stretch">
           <div style="height:240px;position:relative"><canvas id="mdBeiratWF"></canvas></div>
           <div style="height:240px;position:relative;border-left:1px solid var(--border);padding-left:14px">
@@ -4121,20 +4121,20 @@ body.vortrag #btnVortrag{background:var(--primary-deep);color:#fff;border-color:
             <canvas id="mdBeiratForecast"></canvas>
           </div>
         </div>
-        <p class="muted small" style="margin-top:10px">Walk-forward-Fehler: 4,7% auf Q1-2025 Ist · Monte-Carlo n=10.000 · Modellversion v3.2 · letzter Re-Train 2026-04-15</p>
+        <p class="muted small" style="margin-top:10px">Walk-forward error: 4,7% on Q1-2025 actuals · Monte-Carlo n=10.000 · model version v3.2 · last re-train 2026-04-15</p>
       </div>
 
       <div class="card card-pad mt-24" data-slide="5">
-        <div class="section-title">Panel B · Kundenkonzentration</div>
+        <div class="section-title">Panel B · Customer concentration</div>
         <h2 class="h2 mb-16">Top-10 ARR + Pareto</h2>
         <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
           <table>
-            <thead><tr><th style="width:40px">#</th><th>Kunde</th><th>ARR</th><th>Δ vs Q-1</th><th>Marge-pp</th><th>Risiko</th></tr></thead>
+            <thead><tr><th style="width:40px">#</th><th>Customer</th><th>ARR</th><th>Δ vs Q-1</th><th>Margin-pp</th><th>Risk</th></tr></thead>
             <tbody>
-              <tr data-lens="customer" data-id="101580" style="cursor:pointer"><td>1</td><td><b>101580</b> · Continental AG</td><td class="num-cell">€487K</td><td class="num-cell neg">−€32K</td><td class="num-cell neg">9,1pp · −2,4pp</td><td><span class="pin r"></span> hoch</td></tr>
+              <tr data-lens="customer" data-id="101580" style="cursor:pointer"><td>1</td><td><b>101580</b> · Continental AG</td><td class="num-cell">€487K</td><td class="num-cell neg">−€32K</td><td class="num-cell neg">9,1pp · −2,4pp</td><td><span class="pin r"></span> high</td></tr>
               <tr data-lens="customer" data-id="101901" style="cursor:pointer"><td>2</td><td><b>101901</b> · Bosch Mobility</td><td class="num-cell">€312K</td><td class="num-cell pos">+€8K</td><td class="num-cell pos">12,1pp · +0,3pp</td><td>—</td></tr>
-              <tr data-lens="customer" data-id="103044" style="cursor:pointer"><td>3</td><td><b>103044</b> · Webasto</td><td class="num-cell">€264K</td><td class="num-cell neg">−€6K</td><td class="num-cell neg">10,4pp · −0,8pp</td><td><span class="pin a"></span> mittel</td></tr>
-              <tr data-lens="customer" data-id="102330" style="cursor:pointer"><td>4</td><td><b>102330</b> · BorgWarner</td><td class="num-cell">€241K</td><td class="num-cell neg">−€18K</td><td class="num-cell neg">9,8pp · −1,1pp</td><td><span class="pin a"></span> mittel</td></tr>
+              <tr data-lens="customer" data-id="103044" style="cursor:pointer"><td>3</td><td><b>103044</b> · Webasto</td><td class="num-cell">€264K</td><td class="num-cell neg">−€6K</td><td class="num-cell neg">10,4pp · −0,8pp</td><td><span class="pin a"></span> medium</td></tr>
+              <tr data-lens="customer" data-id="102330" style="cursor:pointer"><td>4</td><td><b>102330</b> · BorgWarner</td><td class="num-cell">€241K</td><td class="num-cell neg">−€18K</td><td class="num-cell neg">9,8pp · −1,1pp</td><td><span class="pin a"></span> medium</td></tr>
               <tr data-lens="customer" data-id="102801" style="cursor:pointer"><td>5</td><td><b>102801</b> · Mahle</td><td class="num-cell">€198K</td><td class="num-cell pos">+€2K</td><td class="num-cell pos">11,9pp · +0,4pp</td><td>—</td></tr>
               <tr data-lens="customer" data-id="104410" style="cursor:pointer"><td>6</td><td><b>104410</b> · ZF Friedrichshafen</td><td class="num-cell">€176K</td><td class="num-cell pos">+€11K</td><td class="num-cell pos">12,4pp · +0,9pp</td><td>—</td></tr>
               <tr data-lens="customer" data-id="105220" style="cursor:pointer"><td>7</td><td><b>105220</b> · Festo</td><td class="num-cell">€158K</td><td class="num-cell pos">+€4K</td><td class="num-cell">11,5pp · ±0pp</td><td>—</td></tr>
@@ -4144,46 +4144,46 @@ body.vortrag #btnVortrag{background:var(--primary-deep);color:#fff;border-color:
             </tbody>
           </table>
           <div style="height:240px;position:relative">
-            <div class="section-title" style="margin:0 0 4px 0">Pareto · Top-30 = 78% Umsatz</div>
+            <div class="section-title" style="margin:0 0 4px 0">Pareto · Top-30 = 78% revenue</div>
             <canvas id="mdBeiratPareto"></canvas>
           </div>
         </div>
       </div>
 
       <div class="card card-pad mt-24" data-slide="6">
-        <div class="section-title">Panel C · Preisdisziplin</div>
-        <h2 class="h2 mb-16">12-Monats-Trend + Top-3 SKUs</h2>
+        <div class="section-title">Panel C · Price discipline</div>
+        <h2 class="h2 mb-16">12-month trend + top 3 SKUs</h2>
         <div style="height:200px;position:relative"><canvas id="mdBeiratDisc"></canvas></div>
-        <div class="section-title" style="margin-top:18px">Top-3 SKUs nach Brüchen</div>
+        <div class="section-title" style="margin-top:18px">Top 3 SKUs by breaches</div>
         <table style="margin-top:6px">
-          <thead><tr><th style="width:40px">#</th><th>Artikel</th><th>Brüche (Q1)</th><th>€ Impact (annualisiert)</th></tr></thead>
+          <thead><tr><th style="width:40px">#</th><th>Article</th><th>Breaches (Q1)</th><th>€ impact (annualized)</th></tr></thead>
           <tbody>
             <tr data-lens="sku" data-id="200832-E" style="cursor:pointer"><td>1</td><td><b>200832-E</b> · Zahnradpumpe</td><td class="num-cell">539</td><td class="num-cell neg">−€18,6K</td></tr>
-            <tr data-lens="sku" data-id="211094-C" style="cursor:pointer"><td>2</td><td><b>211094-C</b> · Mikropumpe Hastelloy</td><td class="num-cell">214</td><td class="num-cell neg">−€8,1K</td></tr>
+            <tr data-lens="sku" data-id="211094-C" style="cursor:pointer"><td>2</td><td><b>211094-C</b> · Hastelloy micropump</td><td class="num-cell">214</td><td class="num-cell neg">−€8,1K</td></tr>
             <tr data-lens="sku" data-id="218750-D" style="cursor:pointer"><td>3</td><td><b>218750-D</b> · Dosierpumpe</td><td class="num-cell">158</td><td class="num-cell neg">−€5,4K</td></tr>
           </tbody>
         </table>
       </div>
 
       <div class="card card-pad mt-24" data-slide="7">
-        <div class="section-title">Anhang · Methodik</div>
-        <h2 class="h2 mb-16">Glossar, Quellen, Modellkarte, Änderungsprotokoll</h2>
+        <div class="section-title">Appendix · Methodology</div>
+        <h2 class="h2 mb-16">Glossary, sources, model card, change log</h2>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
           <div>
-            <div class="section-title" style="margin-bottom:8px">Glossar</div>
-            <p class="muted small" style="line-height:1.7"><b>Deckungsbeitrag:</b> Umsatz minus variable Kosten.<br><b>Marge-Realisierung:</b> realisierter Preis ÷ Listenpreis.<br><b>Walk-forward-Fehler:</b> Forecast-Fehler auf zurückgehaltenem Quartal.<br><b>Guardrail:</b> Untergrenze für Quote-Preise.<br><b>Pareto:</b> kumulierte Anteilskurve.<br><b>Monte-Carlo:</b> n=10.000 Simulationen mit Input-Verteilung.</p>
+            <div class="section-title" style="margin-bottom:8px">Glossary</div>
+            <p class="muted small" style="line-height:1.7"><b>Contribution margin:</b> revenue minus variable costs.<br><b>Margin realization:</b> realized price ÷ list price.<br><b>Walk-forward error:</b> forecast error on a held-out quarter.<br><b>Guardrail:</b> floor for quote prices.<br><b>Pareto:</b> cumulative-share curve.<br><b>Monte-Carlo:</b> n=10.000 simulations from input distribution.</p>
           </div>
           <div>
-            <div class="section-title" style="margin-bottom:8px">Datenquellen</div>
-            <p class="muted small" style="line-height:1.7">SAP-Modul FI-CO (Buchungen)<br>SAP-Modul SD (Quotes &amp; Orders)<br>Pryzm-Quote-Engine (Realisierung &amp; Guardrail)<br>Pryzm-Forecast-Modell v3.2<br>Snapshot-Datum: 2026-04-28 09:00</p>
+            <div class="section-title" style="margin-bottom:8px">Data sources</div>
+            <p class="muted small" style="line-height:1.7">SAP FI-CO module (postings)<br>SAP SD module (quotes &amp; orders)<br>Pryzm quote engine (realization &amp; guardrail)<br>Pryzm forecast model v3.2<br>Snapshot date: 2026-04-28 09:00</p>
           </div>
         </div>
 
         <div style="margin-top:18px">
-          <div class="section-title" style="margin-bottom:8px">Modellkarte</div>
+          <div class="section-title" style="margin-bottom:8px">Model card</div>
           <table>
-            <thead><tr><th>Quartal</th><th>Modellversion</th><th>Re-Train</th><th>Walk-forward-Fehler</th></tr></thead>
+            <thead><tr><th>Quarter</th><th>Model version</th><th>Re-train</th><th>Walk-forward error</th></tr></thead>
             <tbody>
               <tr><td>Q1 2026</td><td>v3.2</td><td>2026-04-15</td><td class="num-cell">4,7%</td></tr>
               <tr><td>Q4 2025</td><td>v3.1</td><td>2026-01-12</td><td class="num-cell">5,1%</td></tr>
@@ -4194,8 +4194,8 @@ body.vortrag #btnVortrag{background:var(--primary-deep);color:#fff;border-color:
         </div>
 
         <div style="margin-top:18px">
-          <div class="section-title" style="margin-bottom:8px">Änderungsprotokoll seit Q4-2025-Bericht</div>
-          <p class="muted small" style="line-height:1.7">• Forecast-Modell auf v3.2 aktualisiert (Re-Train mit Q1-Daten)<br>• Top-1-Konzentrations-Schwelle in Risiko-Sicht hinzugefügt<br>• Implementierungs-Lücke in Governance-Sicht explizit ausgewiesen<br>• Pareto-Kurve in Panel B ergänzt</p>
+          <div class="section-title" style="margin-bottom:8px">Change log since Q4-2025 report</div>
+          <p class="muted small" style="line-height:1.7">• Forecast model upgraded to v3.2 (re-trained with Q1 data)<br>• Top-1 concentration threshold added to risk view<br>• Implementation gap made explicit in governance view<br>• Pareto curve added to Panel B</p>
         </div>
       </div>
 
@@ -4975,107 +4975,107 @@ renderScreen();
 const LENS_DATA = {
   customer: {
     "101580": {
-      title: "Kunde 101580 · Continental AG (Tier-1 Automotive)",
-      meta: "Region: BKAGG · Account: T. Hoffmann · seit 2011",
-      source: "Quelle: SAP+Pryzm · Stand: 2026-04-28 09:00",
+      title: "Customer 101580 · Continental AG (Tier-1 Automotive)",
+      meta: "Region: BKAGG · Account: T. Hoffmann · since 2011",
+      source: "Source: SAP+Pryzm · as of: 2026-04-28 09:00",
       blocks: [
-        {kind:"chart", title:"ARR-Trend (24 Monate)", chartId:"lensARR", line:"<b>€487K ARR</b> · −€32K vs. Q-1 · −6,2%"},
-        {kind:"chart", title:"Marge-Trend (24 Monate)", chartId:"lensMarge", line:"<b>9,1pp</b> · −2,4pp vs. 24M-Schnitt"},
-        {kind:"signals", title:"Drei Risiko-Signale", signals:[
-          {dot:"🔴", state:"Churn-Signal aktiv", text:"Bestellfrequenz seit 2026-Q1 −38%"},
-          {dot:"🟡", state:"Konzentrations-Risiko", text:"14% Top-1-Anteil · +1,2pp vs. Q-1"},
-          {dot:"🟢", state:"Zahlungs-Signal stabil", text:"DSO 41T, im Korridor"}
+        {kind:"chart", title:"ARR trend (24 months)", chartId:"lensARR", line:"<b>€487K ARR</b> · −€32K vs Q-1 · −6,2%"},
+        {kind:"chart", title:"Margin trend (24 months)", chartId:"lensMarge", line:"<b>9,1pp</b> · −2,4pp vs 24-mo average"},
+        {kind:"signals", title:"Three risk signals", signals:[
+          {dot:"🔴", state:"Churn signal active", text:"Order frequency down 38% since 2026-Q1"},
+          {dot:"🟡", state:"Concentration risk", text:"14% top-1 share · +1,2pp vs Q-1"},
+          {dot:"🟢", state:"Payment signal stable", text:"DSO 41d, in range"}
         ]},
-        {kind:"line", title:"Quote-Aktivität (90 Tage) — nur Aggregate", line:"5 Quotes <b>gewonnen</b> · 2 verloren · 1 offen · Win-Rate <b>71%</b> · Marge-Realisierung <b>84%</b>"},
-        {kind:"line", title:"Empfehlungs-Verlauf (90 Tage)", line:"4 erteilt → 3 akzeptiert → 2 implementiert · <b>€18K gehalten</b> · €7K verpasst"}
+        {kind:"line", title:"Quote activity (90 days) — aggregates only", line:"5 quotes <b>won</b> · 2 lost · 1 open · win rate <b>71%</b> · margin realization <b>84%</b>"},
+        {kind:"line", title:"Recommendation outcomes (90 days)", line:"4 issued → 3 accepted → 2 implemented · <b>€18K captured</b> · €7K missed"}
       ],
       ctas: [
-        {label:"✉ Markus fragen", action:"toast('Mock email: Markus zu Kunde 101580 angeschrieben')"},
-        {label:"✉ Hoffmann fragen", action:"toast('Mock email: Hoffmann zu Kunde 101580 angeschrieben')"},
-        {label:"✓ Als besprochen markieren", action:"toast('Markiert als besprochen')"}
+        {label:"✉ Ask Markus", action:"toast('Mock email: messaged Markus about customer 101580')"},
+        {label:"✉ Ask Hoffmann", action:"toast('Mock email: messaged Hoffmann about customer 101580')"},
+        {label:"✓ Mark as discussed", action:"toast('Marked as discussed')"}
       ]
     }
   },
   sku: {
     "200832-E": {
-      title: "Artikel 200832-E · Zahnradpumpe (Precision shaft)",
-      meta: "Familie: Automotive · Stückzahl 24M: 8.430 · Status: aktiv",
-      source: "Quelle: SAP+Pryzm · Stand: 2026-04-28 09:00",
+      title: "Article 200832-E · Gear pump (precision shaft)",
+      meta: "Family: Automotive · units 24M: 8.430 · status: active",
+      source: "Source: SAP+Pryzm · as of: 2026-04-28 09:00",
       blocks: [
-        {kind:"chart", title:"Inputkosten vs. Realisiertem Preis (24 Monate)", chartId:"lensCostPrice", line:"Pass-through-Lücke: <b>3,2pp</b> · Stahl +5,8% YTD · Preis +2,6%"},
-        {kind:"line", title:"Kunden-Footprint — nur Aggregate", line:"verkauft an <b>47 Kunden</b> · Top-3: 41% des Volumens · Top-10: 78%", chips:[{label:"Continental →", lens:"customer", id:"101580"},{label:"Bosch Mobility →", lens:"customer", id:"101901"},{label:"Webasto →", lens:"customer", id:"103044"}]},
-        {kind:"chart", title:"Governance — Guardrail-Brüche (12 Monate)", chartId:"lensViolations", line:"<b>539 Brüche</b> in Q1 · 187 allein April · −€18,6K/Jahr Trend"},
-        {kind:"line", title:"Empfehlungs-Verlauf (90 Tage)", line:"12 erteilt → 9 akzeptiert → 5 implementiert · <b>€4K gehalten</b>"},
-        {kind:"line", title:"Letzte Preisanpassung", line:"2025-11-14 · +€1,80/Stk · von Markus · Genehmigt durch Klaus"}
+        {kind:"chart", title:"Input cost vs realized price (24 months)", chartId:"lensCostPrice", line:"Pass-through gap: <b>3,2pp</b> · steel +5,8% YTD · price +2,6%"},
+        {kind:"line", title:"Customer footprint — aggregates only", line:"sold to <b>47 customers</b> · top-3: 41% of volume · top-10: 78%", chips:[{label:"Continental →", lens:"customer", id:"101580"},{label:"Bosch Mobility →", lens:"customer", id:"101901"},{label:"Webasto →", lens:"customer", id:"103044"}]},
+        {kind:"chart", title:"Governance — guardrail breaches (12 months)", chartId:"lensViolations", line:"<b>539 breaches</b> in Q1 · 187 in April alone · −€18,6K/yr trend"},
+        {kind:"line", title:"Recommendation outcomes (90 days)", line:"12 issued → 9 accepted → 5 implemented · <b>€4K captured</b>"},
+        {kind:"line", title:"Last price change", line:"2025-11-14 · +€1,80/unit · by Markus · approved by Klaus"}
       ],
       ctas: [
-        {label:"✉ Markus fragen", action:"toast('Mock email: Markus zu Artikel 200832-E angeschrieben')"},
-        {label:"✓ Als besprochen markieren", action:"toast('Markiert als besprochen')"}
+        {label:"✉ Ask Markus", action:"toast('Mock email: messaged Markus about article 200832-E')"},
+        {label:"✓ Mark as discussed", action:"toast('Marked as discussed')"}
       ]
     }
   },
   manager: {
     "weber": {
-      title: "M. Weber · Pricing Manager · Span: 47 Kunden, 312 SKUs",
-      meta: "Im Unternehmen seit 2018 · letzter 1:1: 2026-04-09",
-      source: "Quelle: Pryzm · Stand: 2026-04-28 09:00",
+      title: "M. Weber · Pricing Manager · span: 47 customers, 312 SKUs",
+      meta: "With company since 2018 · last 1:1: 2026-04-09",
+      source: "Source: Pryzm · as of: 2026-04-28 09:00",
       blocks: [
-        {kind:"funnel", title:"Empfehlungs-Funnel (90 Tage)", steps:[{v:"75",l:"erteilt"},{v:"47",l:"akzeptiert (63%)"},{v:"38",l:"implementiert (51%)"}], line:"<b>Implementierungs-Lücke:</b> 9 Empfehlungen akzeptiert, aber nicht umgesetzt — €187K offen"},
-        {kind:"chart", title:"€ Captured · Wochen-Trend (90 Tage)", chartId:"lensCaptured", line:"<b>€421K gesamt</b> · €38K letzte Woche · vs €32K Schnitt"},
-        {kind:"line", title:"€ Verfehlt — Top-3 Gründe (nur Aggregate)", line:"1. Zeitlich verzögert · 28 Fälle · €112K<br>2. Guardrail überschritten · 12 Fälle · €48K<br>3. Markt-Ablehnung · 7 Fälle · €27K"},
-        {kind:"rows", title:"Top-3 Kunden im Span — mit Marge-Δ", rows:[
+        {kind:"funnel", title:"Recommendation funnel (90 days)", steps:[{v:"75",l:"issued"},{v:"47",l:"accepted (63%)"},{v:"38",l:"implemented (51%)"}], line:"<b>Implementation gap:</b> 9 recommendations accepted but not implemented — €187K open"},
+        {kind:"chart", title:"€ captured · weekly trend (90 days)", chartId:"lensCaptured", line:"<b>€421K total</b> · €38K last week · vs €32K average"},
+        {kind:"line", title:"€ missed — top 3 reasons (aggregates only)", line:"1. Time-delayed · 28 cases · €112K<br>2. Guardrail exceeded · 12 cases · €48K<br>3. Market rejection · 7 cases · €27K"},
+        {kind:"rows", title:"Top 3 customers in span — with margin Δ", rows:[
           {label:"Continental AG", right:"−2,4pp 🔴", lens:"customer", id:"101580"},
           {label:"Bosch Mobility", right:"+0,3pp 🟢", lens:"customer", id:"101901"},
           {label:"Webasto", right:"−0,8pp 🟡", lens:"customer", id:"103044"}
         ]},
-        {kind:"line", title:"Quartals-Ziele", line:"Marge-Capture <b>€450K</b> · Status: bei €421K · 94% nach 17 Wochen · <b>on-track</b>"}
+        {kind:"line", title:"Quarterly goals", line:"Margin capture <b>€450K</b> · status: at €421K · 94% after 17 weeks · <b>on-track</b>"}
       ],
       ctas: [
-        {label:"📅 1:1 ansetzen", action:"toast('Mock: 1:1 mit Markus angesetzt')"},
-        {label:"✉ Markus anschreiben", action:"toast('Mock email an Markus')"},
-        {label:"✓ Als besprochen markieren", action:"toast('Markiert als besprochen')"}
+        {label:"📅 Schedule 1:1", action:"toast('Mock: 1:1 scheduled with Markus')"},
+        {label:"✉ Message Markus", action:"toast('Mock email to Markus')"},
+        {label:"✓ Mark as discussed", action:"toast('Marked as discussed')"}
       ]
     },
     "hoffmann": {
-      title: "T. Hoffmann · Sales Manager · Span: BKAGG-Region (28 Kunden)",
-      meta: "Im Unternehmen seit 2014 · letzter 1:1: 2026-04-02",
-      source: "Quelle: Pryzm · Stand: 2026-04-28 09:00",
+      title: "T. Hoffmann · Sales Manager · span: BKAGG region (28 customers)",
+      meta: "With company since 2014 · last 1:1: 2026-04-02",
+      source: "Source: Pryzm · as of: 2026-04-28 09:00",
       blocks: [
-        {kind:"funnel", title:"Empfehlungs-Funnel (90 Tage)", steps:[{v:"42",l:"erteilt"},{v:"31",l:"akzeptiert (74%)"},{v:"22",l:"implementiert (52%)"}], line:"<b>Implementierungs-Lücke:</b> 9 Empfehlungen akzeptiert, aber nicht umgesetzt — €76K offen"},
-        {kind:"chart", title:"€ Captured · Wochen-Trend (90 Tage)", chartId:"lensCaptured", line:"<b>€184K gesamt</b> · €14K letzte Woche · vs €15K Schnitt"},
-        {kind:"line", title:"€ Verfehlt — Top-3 Gründe", line:"1. Markt-Ablehnung · 14 Fälle · €38K<br>2. Guardrail überschritten · 9 Fälle · €24K<br>3. Zeitlich verzögert · 5 Fälle · €14K"},
-        {kind:"rows", title:"Top-3 Kunden in BKAGG", rows:[
-          {label:"Kunde 101580", right:"−2,4pp 🔴", lens:"customer", id:"101580"},
-          {label:"Kunde 102330", right:"−1,1pp 🟡", lens:"customer", id:"102330"},
-          {label:"Kunde 102801", right:"+0,4pp 🟢", lens:"customer", id:"102801"}
+        {kind:"funnel", title:"Recommendation funnel (90 days)", steps:[{v:"42",l:"issued"},{v:"31",l:"accepted (74%)"},{v:"22",l:"implemented (52%)"}], line:"<b>Implementation gap:</b> 9 recommendations accepted but not implemented — €76K open"},
+        {kind:"chart", title:"€ captured · weekly trend (90 days)", chartId:"lensCaptured", line:"<b>€184K total</b> · €14K last week · vs €15K average"},
+        {kind:"line", title:"€ missed — top 3 reasons", line:"1. Market rejection · 14 cases · €38K<br>2. Guardrail exceeded · 9 cases · €24K<br>3. Time-delayed · 5 cases · €14K"},
+        {kind:"rows", title:"Top 3 customers in BKAGG", rows:[
+          {label:"Customer 101580", right:"−2,4pp 🔴", lens:"customer", id:"101580"},
+          {label:"Customer 102330", right:"−1,1pp 🟡", lens:"customer", id:"102330"},
+          {label:"Customer 102801", right:"+0,4pp 🟢", lens:"customer", id:"102801"}
         ]},
-        {kind:"line", title:"Quartals-Ziele", line:"Marge-Capture <b>€220K</b> · Status: bei €184K · 84% nach 17 Wochen · <b>at-risk</b>"}
+        {kind:"line", title:"Quarterly goals", line:"Margin capture <b>€220K</b> · status: at €184K · 84% after 17 weeks · <b>at-risk</b>"}
       ],
       ctas: [
-        {label:"📅 1:1 ansetzen", action:"toast('Mock: 1:1 mit Hoffmann angesetzt')"},
-        {label:"✉ Hoffmann anschreiben", action:"toast('Mock email an Hoffmann')"},
-        {label:"✓ Als besprochen markieren", action:"toast('Markiert als besprochen')"}
+        {label:"📅 Schedule 1:1", action:"toast('Mock: 1:1 scheduled with Hoffmann')"},
+        {label:"✉ Message Hoffmann", action:"toast('Mock email to Hoffmann')"},
+        {label:"✓ Mark as discussed", action:"toast('Marked as discussed')"}
       ]
     },
     "becker": {
       title: "M. Becker · Controller · Span: Kostenseite & Reporting",
-      meta: "Im Unternehmen seit 2009 · letzter 1:1: 2026-03-21",
-      source: "Quelle: Pryzm · Stand: 2026-04-28 09:00",
+      meta: "With company since 2009 · last 1:1: 2026-03-21",
+      source: "Source: Pryzm · as of: 2026-04-28 09:00",
       blocks: [
-        {kind:"funnel", title:"Empfehlungs-Funnel (90 Tage)", steps:[{v:"25",l:"erteilt"},{v:"18",l:"akzeptiert (72%)"},{v:"16",l:"implementiert (64%)"}], line:"<b>Implementierungs-Lücke:</b> 2 akzeptiert, aber nicht umgesetzt — €18K offen"},
-        {kind:"chart", title:"€ Captured · Wochen-Trend (90 Tage)", chartId:"lensCaptured", line:"<b>€92K gesamt</b> · €7K letzte Woche · vs €8K Schnitt"},
-        {kind:"line", title:"€ Verfehlt — Top-3 Gründe", line:"1. Zeitlich verzögert · 1 Fall · €10K<br>2. Markt-Ablehnung · 1 Fall · €5K<br>3. Guardrail überschritten · 1 Fall · €3K"},
-        {kind:"rows", title:"Top-3 Themen (Kosten)", rows:[
-          {label:"Stahl-Pass-through-Lücke", right:"3,2pp"},
-          {label:"Lieferanten-Drift Q1", right:"+1,1pp"},
-          {label:"Garantierückstellungen", right:"−0,4pp"}
+        {kind:"funnel", title:"Recommendation funnel (90 days)", steps:[{v:"25",l:"issued"},{v:"18",l:"accepted (72%)"},{v:"16",l:"implemented (64%)"}], line:"<b>Implementation gap:</b> 2 accepted but not implemented — €18K open"},
+        {kind:"chart", title:"€ captured · weekly trend (90 days)", chartId:"lensCaptured", line:"<b>€92K total</b> · €7K last week · vs €8K average"},
+        {kind:"line", title:"€ missed — top 3 reasons", line:"1. Time-delayed · 1 case · €10K<br>2. Market rejection · 1 case · €5K<br>3. Guardrail exceeded · 1 case · €3K"},
+        {kind:"rows", title:"Top 3 themes (cost)", rows:[
+          {label:"Steel pass-through gap", right:"3,2pp"},
+          {label:"Supplier drift Q1", right:"+1,1pp"},
+          {label:"Warranty provisions", right:"−0,4pp"}
         ]},
-        {kind:"line", title:"Quartals-Ziele", line:"Marge-Capture <b>€110K</b> · Status: bei €92K · 84% nach 17 Wochen · <b>on-track</b>"}
+        {kind:"line", title:"Quarterly goals", line:"Margin capture <b>€110K</b> · status: at €92K · 84% after 17 weeks · <b>on-track</b>"}
       ],
       ctas: [
-        {label:"📅 1:1 ansetzen", action:"toast('Mock: 1:1 mit Becker angesetzt')"},
-        {label:"✉ Becker anschreiben", action:"toast('Mock email an Becker')"},
-        {label:"✓ Als besprochen markieren", action:"toast('Markiert als besprochen')"}
+        {label:"📅 Schedule 1:1", action:"toast('Mock: 1:1 scheduled with Becker')"},
+        {label:"✉ Message Becker", action:"toast('Mock email to Becker')"},
+        {label:"✓ Mark as discussed", action:"toast('Marked as discussed')"}
       ]
     }
   }
@@ -5084,13 +5084,13 @@ const LENS_DATA = {
 function openLens(kind, id){
   const data = (LENS_DATA[kind] && LENS_DATA[kind][id]) || {
     title: kind+" · "+id,
-    meta: "Daten in Vorbereitung",
-    source: "Quelle: Pryzm · Mock",
-    blocks: [{kind:"line", title:"Hinweis", line:"Profil ist im Mockup nicht hinterlegt. Verfügbare Profile: 101580 (Kunde), 200832-E (SKU), Weber/Hoffmann/Becker (Manager)."}],
-    ctas: [{label:"✓ Schließen", action:"closeLens()"}]
+    meta: "Profile not loaded",
+    source: "Source: Pryzm · mock",
+    blocks: [{kind:"line", title:"Note", line:"Profile is not stored in this mockup. Available profiles: 101580 (Customer), 200832-E (SKU), Weber / Hoffmann / Becker (Manager)."}],
+    ctas: [{label:"✓ Close", action:"closeLens()"}]
   };
   document.getElementById('lens-head').innerHTML =
-    '<div class="lens-eyebrow">'+(kind==='customer'?'Kunden-Ansicht':kind==='sku'?'SKU-Ansicht':'Manager-Ansicht')+'</div>' +
+    '<div class="lens-eyebrow">'+(kind==='customer'?'Customer view':kind==='sku'?'SKU view':'Manager view')+'</div>' +
     '<h3>'+data.title+'</h3>' +
     '<div class="lens-meta">'+data.meta+'</div>' +
     '<div class="lens-source">'+data.source+'</div>';
@@ -5173,7 +5173,7 @@ function initMDMonthly(){
     charts['mdMonthlyWF'] = new Chart(wf, {
       type:'bar',
       data:{
-        labels:['Okt 25','Volume mix','Preis-Drift','Rohstoff','Lieferanten','Garantie','Andere','Apr 26'],
+        labels:['Oct 25','Volume mix','Price drift','Raw material','Suppliers','Warranty','Other','Apr 26'],
         datasets:[{
           data:[[0,11.4],[11.4,11.6],[11.6,11.2],[11.2,10.7],[10.7,10.5],[10.5,10.6],[10.6,10.8],[0,10.8]],
           backgroundColor:['#94a3b8','#16a34a','#ef4444','#ef4444','#ef4444','#16a34a','#16a34a','#94a3b8'],
@@ -5216,10 +5216,10 @@ function initMDMonthly(){
     charts['mdMonthlyDisc'] = new Chart(dc, {
       type:'line',
       data:{
-        labels:['Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez','Jan','Feb','Mär','Apr'],
+        labels:['May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr'],
         datasets:[
-          {label:'% innerhalb Guardrail', data:[91,92,90,91,89,90,91,89,88,89,88,87], borderColor:'#2c79ff', backgroundColor:'rgba(44,121,255,.1)', tension:.3, fill:true, pointRadius:3, borderWidth:2},
-          {label:'Ziel (92%)', data:Array(12).fill(92), borderColor:'#94a3b8', borderDash:[5,5], borderWidth:1.5, pointRadius:0, fill:false}
+          {label:'% within guardrail', data:[91,92,90,91,89,90,91,89,88,89,88,87], borderColor:'#2c79ff', backgroundColor:'rgba(44,121,255,.1)', tension:.3, fill:true, pointRadius:3, borderWidth:2},
+          {label:'Target (92%)', data:Array(12).fill(92), borderColor:'#94a3b8', borderDash:[5,5], borderWidth:1.5, pointRadius:0, fill:false}
         ]
       },
       options:{
@@ -5241,7 +5241,7 @@ function initMDBeirat(){
     charts['mdBeiratWF'] = new Chart(wf, {
       type:'bar',
       data:{
-        labels:['Okt 25','Vol mix','Preis','Rohstoff','Lieferant','Garantie','Andere','Apr 26'],
+        labels:['Oct 25','Vol mix','Price','Raw','Supplier','Warranty','Other','Apr 26'],
         datasets:[{
           data:[[0,11.4],[11.4,11.6],[11.6,11.2],[11.2,10.7],[10.7,10.5],[10.5,10.6],[10.6,10.8],[0,10.8]],
           backgroundColor:['#94a3b8','#16a34a','#ef4444','#ef4444','#ef4444','#16a34a','#16a34a','#94a3b8'],
@@ -5285,9 +5285,9 @@ function initMDBeirat(){
     if (charts['mdBeiratDisc']){ charts['mdBeiratDisc'].destroy(); delete charts['mdBeiratDisc']; }
     charts['mdBeiratDisc'] = new Chart(bd, {
       type:'line',
-      data:{labels:['Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez','Jan','Feb','Mär','Apr'], datasets:[
-        {label:'% innerhalb Guardrail', data:[91,92,90,91,89,90,91,89,88,89,88,87], borderColor:'#2c79ff', backgroundColor:'rgba(44,121,255,.1)', tension:.3, fill:true, pointRadius:3, borderWidth:2},
-        {label:'Ziel (92%)', data:Array(12).fill(92), borderColor:'#94a3b8', borderDash:[5,5], borderWidth:1.5, pointRadius:0, fill:false}
+      data:{labels:['May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr'], datasets:[
+        {label:'% within guardrail', data:[91,92,90,91,89,90,91,89,88,89,88,87], borderColor:'#2c79ff', backgroundColor:'rgba(44,121,255,.1)', tension:.3, fill:true, pointRadius:3, borderWidth:2},
+        {label:'Target (92%)', data:Array(12).fill(92), borderColor:'#94a3b8', borderDash:[5,5], borderWidth:1.5, pointRadius:0, fill:false}
       ]},
       options:{plugins:{legend:{display:true, position:'bottom', labels:{boxWidth:12, font:{size:11}}}}, scales:{x:{grid:{display:false}, ticks:{font:{size:11}}}, y:{min:80, max:100, ticks:{callback:v=>v+'%', font:{size:11}}, grid:{color:'#f1f5f9'}}}, responsive:true, maintainAspectRatio:false}
     });
@@ -5296,7 +5296,7 @@ function initMDBeirat(){
 
 function toggleVortrag(){
   document.body.classList.toggle('vortrag');
-  toast(document.body.classList.contains('vortrag') ? 'Vortragsmodus aktiv (ESC verlässt)' : 'Vortragsmodus aus');
+  toast(document.body.classList.contains('vortrag') ? 'Presentation mode active (ESC to exit)' : 'Presentation mode off');
 }
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && document.body.classList.contains('vortrag')) {
@@ -5329,7 +5329,7 @@ document.addEventListener('keydown', e => {
 <!-- Lens drawer: content populated by openLens() -->
 <div id="lens-backdrop" class="lens-backdrop" onclick="closeLens()"></div>
 <aside id="lens" class="lens" role="dialog" aria-modal="true" aria-hidden="true">
-  <button class="lens-close" onclick="closeLens()" aria-label="Schließen">✕</button>
+  <button class="lens-close" onclick="closeLens()" aria-label="Close">✕</button>
   <div class="lens-head" id="lens-head"></div>
   <div class="lens-body" id="lens-body"></div>
   <div class="lens-foot" id="lens-foot"></div>
