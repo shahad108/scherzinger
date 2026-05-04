@@ -5254,7 +5254,7 @@ function initMDBeirat(){
   const fc = document.getElementById('mdBeiratForecast');
   if (fc){
     if (charts['mdBeiratForecast']){ charts['mdBeiratForecast'].destroy(); delete charts['mdBeiratForecast']; }
-    const months = ['Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez','Jan','Feb','Mär'];
+    const months = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
     const p50 = [100,102,104,106,108,109,110,111,112,113,114,115];
     const p10 = p50.map((v,i)=>v - (i+1)*0.6);
     const p90 = p50.map((v,i)=>v + (i+1)*0.6);
