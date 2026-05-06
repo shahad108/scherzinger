@@ -3530,6 +3530,87 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-val{
 }
 body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--ink-3); line-height:1.4; }
 
+/* Q3 - active quotes table + analysis tabs + cross-links */
+body.pryzm-2026 #screen-quotes .qg-rag-filters{
+  display:inline-flex; background:var(--surface-sunken); border-radius:9px; padding:3px; gap:2px;
+}
+body.pryzm-2026 #screen-quotes .qg-rag-filters button{
+  background:none; border:none;
+  padding:6px 11px; border-radius:7px; font-size:12px; color:var(--ink-3); font-weight:500;
+  cursor:pointer; display:inline-flex; align-items:center; gap:5px;
+}
+body.pryzm-2026 #screen-quotes .qg-rag-filters button.active{
+  background:var(--surface); color:var(--ink); box-shadow:var(--shadow-card); font-weight:600;
+}
+body.pryzm-2026 #screen-quotes .qg-rag-filters .dot{
+  width:7px; height:7px; border-radius:50%; display:inline-block;
+}
+body.pryzm-2026 #screen-quotes .qg-rag-filters .dot.r{ background:var(--red); }
+body.pryzm-2026 #screen-quotes .qg-rag-filters .dot.a{ background:var(--amber); }
+body.pryzm-2026 #screen-quotes .qg-rag-filters .dot.g{ background:var(--green); }
+
+body.pryzm-2026 #screen-quotes .frank-table{
+  width:100%; border-collapse:collapse; font-size:12px; color:var(--ink-2);
+}
+body.pryzm-2026 #screen-quotes .frank-table th{
+  text-align:left; padding:10px 12px; font-size:10.5px;
+  color:var(--muted); font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  border-bottom:1px solid var(--border);
+}
+body.pryzm-2026 #screen-quotes .frank-table td{
+  padding:10px 12px; border-bottom:1px solid var(--hairline);
+  vertical-align:middle;
+}
+body.pryzm-2026 #screen-quotes .frank-table tbody tr:hover{ background:var(--surface-soft); }
+body.pryzm-2026 #screen-quotes .frank-table .num-cell{ text-align:right; font-variant-numeric:tabular-nums; }
+body.pryzm-2026 #screen-quotes .frank-table .num-cell.pos{ color:var(--green); font-weight:600; }
+body.pryzm-2026 #screen-quotes .frank-table .num-cell.neg{ color:var(--red); font-weight:600; }
+body.pryzm-2026 #screen-quotes .quote-rag{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 9px; border-radius:6px; font-size:11px; font-weight:700;
+}
+body.pryzm-2026 #screen-quotes .quote-rag.r{ background:var(--red-bg); color:var(--red); }
+body.pryzm-2026 #screen-quotes .quote-rag.a{ background:var(--amber-bg); color:var(--amber); }
+body.pryzm-2026 #screen-quotes .quote-rag.g{ background:var(--green-bg); color:var(--green); }
+body.pryzm-2026 #screen-quotes .quote-rag .dot{ width:6px; height:6px; border-radius:50%; background:currentColor; }
+
+body.pryzm-2026 #screen-quotes .qa-fc-tabs{
+  display:inline-flex; background:var(--surface-sunken); border-radius:10px; padding:3px; gap:2px;
+  margin-bottom:14px;
+}
+body.pryzm-2026 #screen-quotes .qa-fc-tabs .tab{
+  padding:7px 12px; border-radius:8px; font-size:12.5px; color:var(--ink-3); font-weight:500;
+  cursor:pointer; user-select:none;
+}
+body.pryzm-2026 #screen-quotes .qa-fc-tabs .tab.active{
+  background:var(--surface); color:var(--ink); box-shadow:var(--shadow-card); font-weight:600;
+}
+body.pryzm-2026 #screen-quotes .qa-pane{ display:block; }
+body.pryzm-2026 #screen-quotes .qa-pane.hidden{ display:none; }
+
+body.pryzm-2026 #screen-quotes .quotes-xlinks{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:14px 18px; margin-top:14px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+}
+body.pryzm-2026 #screen-quotes .quotes-xlinks .ftxt{ font-size:12px; color:var(--muted); font-weight:600; }
+body.pryzm-2026 #screen-quotes .quotes-xlinks .links{ display:flex; gap:6px; flex-wrap:wrap; }
+
+body.pryzm-2026 #screen-quotes .row-action{
+  background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:6px 10px; font-size:11.5px; color:var(--ink-2); font-weight:500; cursor:pointer;
+}
+body.pryzm-2026 #screen-quotes .row-action:hover{ background:#fafaf7; border-color:var(--border-strong); }
+body.pryzm-2026 #screen-quotes .row-action.primary{ background:var(--ink); color:#fff; border-color:var(--ink); }
+
+body.pryzm-2026 #screen-quotes .cluster-chip{
+  display:inline-flex; align-items:center; padding:2px 7px; border-radius:5px;
+  font-size:10.5px; font-weight:700; color:var(--ink-2); background:var(--surface-sunken);
+}
+body.pryzm-2026 #screen-quotes .cluster-chip.green{ background:var(--green-bg); color:var(--green); }
+body.pryzm-2026 #screen-quotes .cluster-chip.amber{ background:var(--amber-bg); color:var(--amber); }
+body.pryzm-2026 #screen-quotes .cluster-chip.red{ background:var(--rose-bg); color:var(--rose-deep); }
+
 </style>
 </head>
 <body class="pryzm-2026">
@@ -6182,17 +6263,17 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
       </div>
 
       <!-- E. Active quotes table — evolved -->
-      <div class="card card-pad mt-24" id="activeQuotesBlock">
-        <div class="between mb-16">
-          <h2 class="h2">All 47 active quotes</h2>
-          <div class="row" style="gap:6px;align-items:center;flex-wrap:wrap">
-            <div class="rag-filters" id="ragFilters">
-              <button class="active" data-rag="all">All <b>47</b></button>
-              <button data-rag="r"><span class="dot r"></span>Red <b>5</b></button>
-              <button data-rag="a"><span class="dot a"></span>Amber <b>9</b></button>
-              <button data-rag="g"><span class="dot g"></span>Green <b>33</b></button>
-            </div>
-            <span class="status-chip live">2 min refresh</span>
+      <div class="qg-section" id="activeQuotesBlock">
+        <div class="qg-section-head">
+          <div>
+            <h2>All 47 active quotes</h2>
+            <div class="qg-sub">RAG status drives Red/Amber/Green badge. Click any row to drill into full quote detail.</div>
+          </div>
+          <div class="qg-rag-filters" id="ragFilters">
+            <button class="active" data-rag="all">All <b>47</b></button>
+            <button data-rag="r"><span class="dot r"></span>Red <b>5</b></button>
+            <button data-rag="a"><span class="dot a"></span>Amber <b>9</b></button>
+            <button data-rag="g"><span class="dot g"></span>Green <b>33</b></button>
           </div>
         </div>
         <div class="bulk-actions">
@@ -6200,7 +6281,8 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
           <button class="btn" onclick="toast('33 green quotes auto-approved · sent to sales for delivery')">Approve all green (33)</button>
           <button class="btn" onclick="toast('Amber justification batch opened')">Review amber (9)</button>
         </div>
-        <table>
+        <div class="sku-card"><div class="table-wrap">
+        <table class="frank-table">
           <thead>
             <tr>
               <th>Quote #</th><th>Customer</th><th>Article</th>
@@ -6218,7 +6300,7 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
               <td class="num-cell neg">8%</td>
               <td><span class="floor-ref below">↓ floor €5.10 (−€0.90)</span></td>
               <td><span class="quote-age stale">5d</span></td>
-              <td><span class="pill r"><span class="rag r"></span>Below</span></td>
+              <td><span class="quote-rag r"><span class="dot"></span>Below</span></td>
               <td><div class="row-actions"><button class="row-action primary" onclick="document.querySelectorAll('.esc-card')[0].scrollIntoView({behavior:'smooth',block:'center'})">Escalation →</button><button class="row-action" onclick="toast('Opening 200832-E in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Studio</button></div></td>
             </tr>
             <tr class="aq-detail-row">
@@ -6248,7 +6330,7 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
               <td class="num-cell neg">14%</td>
               <td><span class="floor-ref below">↓ floor €14.40 (−€0.60)</span></td>
               <td><span class="quote-age warm">3d</span></td>
-              <td><span class="pill r"><span class="rag r"></span>Below</span></td>
+              <td><span class="quote-rag r"><span class="dot"></span>Below</span></td>
               <td><div class="row-actions"><button class="row-action primary" onclick="document.querySelectorAll('.esc-card')[1].scrollIntoView({behavior:'smooth',block:'center'})">Escalation →</button><button class="row-action" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Studio</button></div></td>
             </tr>
             <tr class="aq-detail-row">
@@ -6276,7 +6358,7 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
               <td class="num-cell">19%</td>
               <td><span class="floor-ref">→ floor €14.40</span></td>
               <td><span class="quote-age fresh">1d</span></td>
-              <td><span class="pill a"><span class="rag a"></span>Marginal</span></td>
+              <td><span class="quote-rag a"><span class="dot"></span>Marginal</span></td>
               <td><button class="row-action" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
             </tr>
             <tr class="aq-detail-row">
@@ -6305,7 +6387,7 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
               <td class="num-cell pos">34%</td>
               <td><span class="floor-ref">→ floor €16.20 (+€2.20)</span></td>
               <td><span class="quote-age fresh">2d</span></td>
-              <td><span class="pill g"><span class="rag g"></span>Above</span></td>
+              <td><span class="quote-rag g"><span class="dot"></span>Above</span></td>
               <td><button class="row-action" onclick="toast('Opening 201104-G in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
             </tr>
             <tr class="aq-detail-row">
@@ -6333,7 +6415,7 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
               <td class="num-cell pos">28%</td>
               <td><span class="floor-ref">→ floor €4.40 (+€0.70)</span></td>
               <td><span class="quote-age fresh">2d</span></td>
-              <td><span class="pill g"><span class="rag g"></span>Above</span></td>
+              <td><span class="quote-rag g"><span class="dot"></span>Above</span></td>
               <td><button class="row-action" onclick="toast('Opening 205415-B in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
             </tr>
             <tr class="aq-detail-row">
@@ -6361,7 +6443,7 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
               <td class="num-cell">21%</td>
               <td><span class="floor-ref">→ floor €2.45 (+€0.15)</span></td>
               <td><span class="quote-age fresh">1d</span></td>
-              <td><span class="pill a"><span class="rag a"></span>Marginal</span></td>
+              <td><span class="quote-rag a"><span class="dot"></span>Marginal</span></td>
               <td><button class="row-action" onclick="toast('Opening 218750-D in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
             </tr>
             <tr class="aq-detail-row">
@@ -6383,27 +6465,31 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
             </tr>
           </tbody>
         </table>
+        </div></div>
         <p class="footer-note">6 of 47 · <a href="#">show all 47</a> · floors pulled live from <a href="#" data-jump="forecast">Forecast</a></p>
       </div>
 
       <!-- F. Quote analysis — Sales Rep / SKU / Customer drill-downs -->
-      <div class="card card-pad mt-24" id="qaTabsBlock">
-        <div class="between mb-16">
-          <h2 class="h2">Where discounting concentrates <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('qaInfoPanel').classList.toggle('show')">i</button></h2>
+      <div class="qg-section" id="qaTabsBlock">
+        <div class="qg-section-head">
+          <div>
+            <h2>Where discounting concentrates <button class="info-tip" onclick="this.closest('.qg-section').querySelector('.info-panel').classList.toggle('show')">i</button></h2>
+            <div class="qg-sub">Slice across reps, SKUs, and customers to find the concentration. Top 3 reps = 78% of breach leakage.</div>
+          </div>
           <span class="status-chip">Last 90d · €117K leakage</span>
         </div>
         <div class="info-panel" id="qaInfoPanel">
           <p>Three lenses on the same data: by sales rep (coaching layer), by SKU (pricing-strategy layer), by customer (relationship layer). Each surfaces a different intervention.</p>
         </div>
 
-        <div class="tabs" id="qaTabs">
-          <div class="tab active" data-qatab="rep"><span class="tab-label">By Sales Rep</span></div>
+        <div class="qa-fc-tabs" id="qaTabs">
+          <div class="tab active" data-qatab="rep"><span class="tab-label">By sales rep</span></div>
           <div class="tab" data-qatab="sku"><span class="tab-label">By SKU</span></div>
-          <div class="tab" data-qatab="cust"><span class="tab-label">By Customer</span></div>
+          <div class="tab" data-qatab="cust"><span class="tab-label">By customer</span></div>
         </div>
 
         <!-- By rep -->
-        <div class="tab-pane" data-qapane="rep">
+        <div class="qa-pane" data-qapane="rep">
           <div class="row mb-16" style="gap:8px;align-items:center">
             <span class="muted small">Repeat offender = 3+ breaches in 30d AND breach rate &gt; portfolio avg.</span>
             <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('repInfoPanel').classList.toggle('show')">i</button>
@@ -6411,7 +6497,8 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
           <div class="info-panel" id="repInfoPanel">
             <p>Coaching flag = 1–2 breaches with willingness to revise. On-policy = consistently within guardrail. Click <b>Coaching review</b> on any row to open a 1:1 prep memo with rep-specific stats and recommended talking points.</p>
           </div>
-          <table>
+          <div class="sku-card"><div class="table-wrap">
+          <table class="frank-table">
             <thead><tr><th>Sales rep</th><th>Quotes (LTM)</th><th>Breaches</th><th>Breach rate</th><th>€ Leakage</th><th>Trend</th><th>Status</th><th>Action</th></tr></thead>
             <tbody>
               <tr>
@@ -6476,6 +6563,7 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
               </tr>
             </tbody>
           </table>
+          </div></div>
           <div class="tab-footer">
             <span class="tf-icon">⚡</span>
             <span class="tf-text"><b>N. Bauer = 41% of total leakage</b> · pattern worsening · coaching action triggered</span>
@@ -6484,7 +6572,7 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
         </div>
 
         <!-- By SKU -->
-        <div class="tab-pane hidden" data-qapane="sku">
+        <div class="qa-pane hidden" data-qapane="sku">
           <div class="row mb-16" style="gap:8px;align-items:center">
             <span class="muted small">Where does discount pressure concentrate? Win-rate at-guardrail vs below tells you what to tighten.</span>
             <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('skuInfoPanel').classList.toggle('show')">i</button>
@@ -6492,7 +6580,8 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
           <div class="info-panel" id="skuInfoPanel">
             <p>Where can we tighten or loosen the guardrail without losing deals? When win-rate below guardrail ≈ win-rate at guardrail, discounting isn't actually winning — tighten. When the gap is large, the floor may need a strategic review.</p>
           </div>
-          <table>
+          <div class="sku-card"><div class="table-wrap">
+          <table class="frank-table">
             <thead>
               <tr>
                 <th>Article</th><th>Family</th>
@@ -6571,6 +6660,7 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
               </tr>
             </tbody>
           </table>
+          </div></div>
           <div class="tab-footer">
             <span class="tf-icon">⚡</span>
             <span class="tf-text"><b>3 guardrail adjustments suggested</b> · 200832-E needs strategic review</span>
@@ -6579,7 +6669,7 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
         </div>
 
         <!-- By customer -->
-        <div class="tab-pane hidden" data-qapane="cust">
+        <div class="qa-pane hidden" data-qapane="cust">
           <div class="row mb-16" style="gap:8px;align-items:center">
             <span class="muted small">Which customers pressure on price the most?</span>
             <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('custQaInfoPanel').classList.toggle('show')">i</button>
@@ -6587,7 +6677,8 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
           <div class="info-panel" id="custQaInfoPanel">
             <p>High discount-asked + high tier = strategic exception (negotiate hard but retain). High discount-asked + low tier = walk away. Low discount-asked + healthy win rate = candidate for list-price increase on next renewal.</p>
           </div>
-          <table>
+          <div class="sku-card"><div class="table-wrap">
+          <table class="frank-table">
             <thead>
               <tr>
                 <th>Customer</th><th>Quotes (LTM)</th>
@@ -6646,11 +6737,22 @@ body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--in
               </tr>
             </tbody>
           </table>
+          </div></div>
           <div class="tab-footer">
             <span class="tf-icon">⚡</span>
             <span class="tf-text"><b>101900</b> asking 14% discount + 22% volume drop · reprice · <b>103044</b> 0% asks · raise candidate</span>
             <a href="#" class="tf-link" data-jump="margin">Margin Intelligence →</a>
           </div>
+        </div>
+      </div>
+
+      <div class="quotes-xlinks">
+        <span class="ftxt">Cross-links →</span>
+        <div class="links">
+          <button class="head-pill" onclick="setScreen('action')">Action queue · Action Center</button>
+          <button class="head-pill" onclick="setScreen('forecast')">Forecast · Cluster cost</button>
+          <button class="head-pill" onclick="setScreen('studio')">SKU drill · Pricing Studio</button>
+          <button class="head-pill" onclick="setScreen('margin')">Margin trajectory · Margin Intelligence</button>
         </div>
       </div>
     </section>
@@ -7765,7 +7867,7 @@ document.querySelectorAll('#forecastTabs .tab').forEach(t=>{
 /* Quotes & Guardrails — Quote Analysis sub-tabs (Rep / SKU / Customer) */
 document.querySelectorAll('#qaTabs .tab').forEach(t=>{
   t.addEventListener('click',()=>{
-    const root = t.closest('.card');
+    const root = t.closest('.qg-section') || t.closest('.card');
     root.querySelectorAll('#qaTabs .tab').forEach(x=>x.classList.remove('active'));
     t.classList.add('active');
     const tab = t.dataset.qatab;
