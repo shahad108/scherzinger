@@ -2544,6 +2544,120 @@ body.pryzm-2026 #screen-studio .ws-locked{
   background:var(--ink); color:#fff; margin-left:4px;
 }
 
+/* PS2: workbench hero + price options */
+body.pryzm-2026 #screen-studio .ws-bench{
+  display:flex; flex-direction:column; gap:14px; min-width:0;
+}
+body.pryzm-2026 #screen-studio .ws-hero{
+  background:var(--ink); color:#fff; border-radius:var(--r-md);
+  padding:24px 28px; box-shadow:var(--shadow-card);
+  display:grid; grid-template-columns:1fr auto; gap:24px; align-items:start;
+}
+body.pryzm-2026 #screen-studio .ws-hero-eyebrow{
+  font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+  color:rgba(255,255,255,.55); font-weight:600; margin-bottom:8px;
+}
+body.pryzm-2026 #screen-studio .ws-hero h3{
+  font-family:'Manrope',sans-serif; font-size:22px; font-weight:700;
+  letter-spacing:-0.018em; color:#fff; line-height:1.2; margin:0;
+}
+body.pryzm-2026 #screen-studio .ws-hero-sub{
+  font-size:13px; color:rgba(255,255,255,.78); line-height:1.6; margin-top:8px;
+}
+body.pryzm-2026 #screen-studio .ws-hero-sub b{ color:#fff; font-weight:600; }
+body.pryzm-2026 #screen-studio .ws-hero-chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+body.pryzm-2026 #screen-studio .ws-hero-chips > span{
+  padding:3px 10px; border-radius:999px; font-size:11px; font-weight:600;
+  background:rgba(255,255,255,.12); color:#fff;
+}
+body.pryzm-2026 #screen-studio .ws-hero-meta{
+  font-size:11.5px; color:rgba(255,255,255,.6); margin-top:10px; line-height:1.5;
+}
+body.pryzm-2026 #screen-studio .ws-hero-meta b{ color:rgba(255,255,255,.9); }
+body.pryzm-2026 #screen-studio .ws-hero-num{
+  display:flex; flex-direction:column; align-items:flex-end; gap:6px; min-width:140px;
+}
+body.pryzm-2026 #screen-studio .ws-cur{
+  font-family:'Manrope',sans-serif; font-size:44px; font-weight:700;
+  letter-spacing:-0.025em; color:#fff; line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+body.pryzm-2026 #screen-studio .ws-marg-now{
+  display:inline-flex; align-items:center;
+  padding:5px 10px; border-radius:7px;
+  font-size:12px; font-weight:700; letter-spacing:-0.005em;
+}
+body.pryzm-2026 #screen-studio .ws-marg-now.bad{ background:var(--red-bg); color:var(--red); }
+body.pryzm-2026 #screen-studio .ws-marg-now.good{ background:var(--green-bg); color:var(--green); }
+body.pryzm-2026 #screen-studio .ws-target{
+  font-size:11px; color:rgba(255,255,255,.6); font-weight:500;
+}
+
+body.pryzm-2026 #screen-studio .ws-options-head{
+  display:flex; align-items:flex-end; justify-content:space-between; gap:14px;
+  padding:0 2px;
+}
+body.pryzm-2026 #screen-studio .ws-options-head h4{
+  font-family:'Manrope',sans-serif; font-size:16px; font-weight:700;
+  letter-spacing:-0.012em; color:var(--ink); margin:0;
+}
+body.pryzm-2026 #screen-studio .ws-opts-sub{
+  font-size:11.5px; color:var(--muted); line-height:1.5; max-width:60ch;
+}
+body.pryzm-2026 #screen-studio .link-btn{
+  background:none; border:none; color:var(--rose-deep); font-weight:700;
+  cursor:pointer; font-size:11.5px; padding:0; text-decoration:underline;
+}
+body.pryzm-2026 #screen-studio .link-btn:hover{ color:var(--rose); }
+
+body.pryzm-2026 #screen-studio .ws-options{
+  display:grid; grid-template-columns:repeat(5, 1fr); gap:10px;
+}
+body.pryzm-2026 #screen-studio .ws-opt{
+  background:var(--surface); border:1.5px solid var(--border); border-radius:11px;
+  padding:14px 14px; display:flex; flex-direction:column; gap:6px;
+  text-align:left; cursor:pointer; min-width:0;
+  transition:border-color .15s, box-shadow .15s, transform .12s;
+}
+body.pryzm-2026 #screen-studio .ws-opt:hover{ border-color:var(--border-strong); box-shadow:var(--shadow-pop); transform:translateY(-1px); }
+body.pryzm-2026 #screen-studio .ws-opt.active{
+  border-color:var(--ink); background:var(--rose-bg); box-shadow:var(--shadow-pop);
+}
+body.pryzm-2026 #screen-studio .ws-opt.hold{ background:var(--surface-soft); }
+body.pryzm-2026 #screen-studio .ws-opt.custom{ border-style:dashed; }
+body.pryzm-2026 #screen-studio .ws-opt.abtest{ background:var(--violet-bg); border-color:var(--violet-bg); }
+body.pryzm-2026 #screen-studio .ws-opt.abtest .ws-opt-lab{ color:var(--violet); }
+body.pryzm-2026 #screen-studio .ws-opt-lab{
+  font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted); font-weight:700;
+}
+body.pryzm-2026 #screen-studio .ws-opt-price{
+  font-family:'Manrope',sans-serif; font-size:22px; font-weight:700;
+  letter-spacing:-0.02em; color:var(--ink); line-height:1.1;
+  font-variant-numeric:tabular-nums;
+}
+body.pryzm-2026 #screen-studio .ws-opt-delta{
+  font-size:11.5px; color:var(--ink-3); font-weight:500;
+}
+body.pryzm-2026 #screen-studio .ws-opt-impact{
+  font-size:12px; color:var(--green); font-weight:700;
+}
+body.pryzm-2026 #screen-studio .ws-opt-impact.neg{ color:var(--red); }
+body.pryzm-2026 #screen-studio .ws-opt-risk{
+  font-size:10.5px; color:var(--muted); line-height:1.4; margin-top:2px;
+}
+body.pryzm-2026 #screen-studio .ws-opt-risk i{ color:var(--ink-3); font-style:normal; font-weight:600; }
+body.pryzm-2026 #screen-studio .ws-custom-input{
+  display:inline-flex; align-items:center; gap:4px;
+  background:var(--surface); border:1px solid var(--border); border-radius:7px;
+  padding:6px 8px;
+  font-family:'Manrope',sans-serif; font-size:18px; font-weight:700; color:var(--ink);
+}
+body.pryzm-2026 #screen-studio .ws-custom-input input{
+  border:none; background:none; font:inherit; color:var(--ink); width:80px; padding:0; outline:none;
+  font-variant-numeric:tabular-nums;
+}
+
 </style>
 </head>
 <body class="pryzm-2026">
@@ -4061,14 +4175,14 @@ body.pryzm-2026 #screen-studio .ws-locked{
             <div>
               <div class="ws-hero-eyebrow">Selected SKU · workbench</div>
               <h3 id="wbTitle">Article 200832-E · Zahnradpumpe (Precision shaft)</h3>
-              <div class="ws-hero-sub" id="wbSub">Group <b style="color:#fff">BKAGG</b> · 9 customers · 4,200 units/yr · €18.6K annual revenue</div>
-              <div class="ws-hero-chips" id="wbHeroChips" style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-                <span style="background:rgba(255,255,255,.18);color:#fff;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600">Cluster: BKAGG · confidence 74%</span>
-                <span style="background:#fbbf24;color:#78350f;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700">Movable</span>
-                <span style="background:rgba(255,255,255,.12);color:#fff;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;border:1px dashed rgba(255,255,255,.4)">A/B status: not yet tested</span>
-                <span style="background:rgba(255,255,255,.12);color:#fff;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600">Approval: Frank → Till (board)</span>
+              <div class="ws-hero-sub" id="wbSub">Group <b>BKAGG</b> · 9 customers · 4,200 units/yr · €18.6K annual revenue</div>
+              <div class="ws-hero-chips" id="wbHeroChips">
+                <span>Cluster: BKAGG · confidence 74%</span>
+                <span style="background:var(--amber-bg);color:var(--amber)">Movable</span>
+                <span style="background:rgba(255,255,255,.08);border:1px dashed rgba(255,255,255,.35)">A/B status: not yet tested</span>
+                <span>Approval: Frank → Till (board)</span>
               </div>
-              <div class="ws-hero-meta" id="wbMeta" style="margin-top:8px">Last repriced 2024-Q1 (€3.80→€4.20) by <b style="color:#fff">Frank</b> · 23 months ago · floor breached since steel +5.8% in 2025</div>
+              <div class="ws-hero-meta" id="wbMeta">Last repriced 2024-Q1 (€3.80→€4.20) by <b>Frank</b> · 23 months ago · floor breached since steel +5.8% in 2025</div>
             </div>
             <div class="ws-hero-num">
               <div class="ws-cur" id="wbCur">€4.20</div>
@@ -4080,7 +4194,7 @@ body.pryzm-2026 #screen-studio .ws-locked{
           <!-- PRICE OPTIONS -->
           <div class="ws-options-head">
             <h4>Pick a target price</h4>
-            <span class="ws-opts-sub">Each option pre-modelled · €recovery, churn risk, and win-rate band shown with cluster-confidence (BKAGG 74%, n=247) · <button class="link-btn" type="button" onclick="openExplainDrawer('floor')" style="background:none;border:none;color:#1e3a8a;font-weight:700;cursor:pointer;font-size:12px">🔍 Why this price?</button></span>
+            <span class="ws-opts-sub">Each option pre-modelled · €recovery, churn risk, win-rate band shown with cluster-confidence (BKAGG 74%, n=247) · <button class="link-btn" type="button" onclick="openExplainDrawer('floor')">🔍 Why this price?</button></span>
           </div>
           <div class="ws-options" id="wbOptions">
             <button class="ws-opt hold" data-opt="hold">
@@ -4108,14 +4222,14 @@ body.pryzm-2026 #screen-studio .ws-locked{
               <span class="ws-opt-lab">Custom</span>
               <div class="ws-custom-input"><span>€</span><input type="number" id="wbCustomInput" step="0.01" placeholder="4.65" /></div>
               <span class="ws-opt-delta" id="wbCustomDelta">type a value</span>
-              <span class="ws-opt-impact" id="wbCustomImpact">€recovery · — </span>
+              <span class="ws-opt-impact" id="wbCustomImpact">€recovery · —</span>
               <span class="ws-opt-risk" id="wbCustomRisk">churn risk · —</span>
             </button>
             <button class="ws-opt abtest" data-opt="abtest" type="button">
               <span class="ws-opt-lab">🧪 Slice as A/B</span>
               <span class="ws-opt-price" style="font-size:18px">12% slice</span>
               <span class="ws-opt-delta">21-day test · €5.10 vs hold</span>
-              <span class="ws-opt-impact" style="color:#6d28d9">Confirm lift before broad rollout</span>
+              <span class="ws-opt-impact" style="color:var(--violet)">Confirm lift before broad rollout</span>
               <span class="ws-opt-risk">Success criterion: margin pre→post, p&lt;0.05 · matches Action Center A/B tracker</span>
             </button>
           </div>
