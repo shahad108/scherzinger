@@ -2455,6 +2455,7 @@ body.pryzm-2026 #screen-forecast .row-action.queue:hover{ background:var(--rose-
 body.pryzm-2026 #screen-forecast .footer-note{ font-size:11.5px; color:var(--muted); margin-top:10px; }
 body.pryzm-2026 #screen-forecast .footer-note a{ color:var(--rose-deep); font-weight:600; text-decoration:none; }
 body.pryzm-2026 #screen-forecast .footer-note a:hover{ text-decoration:underline; }
+body.pryzm-2026 #screen-forecast .frank-table tr.hl td{ background:var(--rose-bg); }
 
 </style>
 </head>
@@ -3669,21 +3670,20 @@ body.pryzm-2026 #screen-forecast .footer-note a:hover{ text-decoration:underline
       </div>
 
       <!-- PM lens: Price floor by customer × SKU (Section 12 — forecast-informed price floor) -->
-      <div class="card card-pad mt-24">
-        <div class="between mb-16">
-          <h2 class="h2">Price floor · per customer × SKU <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('floorInfoPanel').classList.toggle('show')">i</button></h2>
-          <div class="row" style="gap:8px">
-            <button class="filter-chip">Top 10 ▾</button>
-            <button class="filter-chip">All customers ▾</button>
-            <button class="btn">⬇ Export</button>
-          </div>
+      <div class="section-row" id="sec-fc-floor">
+        <div>
+          <h2>Price floor · per customer × SKU</h2>
+          <div class="sub">Forecast-informed minimums for negotiation prep. Below-floor quotes auto-flag in Quotes &amp; Guardrails.</div>
         </div>
-        <div class="info-panel" id="floorInfoPanel">
-          <p>Floor = primary forecast band × cost trajectory × volume tier. Walk-forward retrained monthly. Below-floor quotes auto-flag in <a href="#" data-jump="quotes">Quotes &amp; Guardrails</a>.</p>
-          <p>Use this table for negotiation prep: it answers <b>"what's the minimum price I should hold?"</b> for every customer × SKU pair.</p>
+        <div style="display:flex;gap:6px">
+          <button class="head-pill">Top 10 ▾</button>
+          <button class="head-pill">All customers ▾</button>
+          <button class="head-pill">Export</button>
         </div>
-        <p class="muted small" style="margin:6px 0 10px"><b>Cluster confidence and movable share now disclosed per SKU</b> — locked SKUs (multi-year contracts) absorb cost shock without margin response.</p>
-        <table>
+      </div>
+      <div class="sku-card">
+        <div class="table-wrap">
+        <table class="frank-table">
           <thead>
             <tr>
               <th>Customer</th><th>Article</th><th>Current price</th>
@@ -3766,47 +3766,76 @@ body.pryzm-2026 #screen-forecast .footer-note a:hover{ text-decoration:underline
             </tr>
           </tbody>
         </table>
-        <p class="footer-note"><b style="color:var(--red)">2 quotes below floor this week</b> · €1.50/unit at risk on 1,680 units.</p>
+        </div>
       </div>
+      <p class="footer-note" style="font-size:11.5px;color:var(--muted);margin-top:10px"><b style="color:var(--red)">2 quotes below floor this week</b> · €1.50/unit at risk on 1,680 units.</p>
 
       <!-- New product forecast · cluster-derived bands for SKUs with no historical baseline -->
-      <div class="card card-pad mt-24">
-        <div class="between mb-16">
-          <h2 class="h2">New product forecast · comparable cluster</h2>
-          <span class="status-chip">Predictive Portfolio Pricing</span>
+      <div class="section-row" id="sec-fc-newproduct">
+        <div>
+          <h2>New product forecast · comparable cluster</h2>
+          <div class="sub">Frank's job: price new products without a historical baseline. Model assigns each new SKU to its closest cluster.</div>
         </div>
-        <div class="muted small" style="margin-top:-6px">Frank's job: price new products without a historical baseline. Model assigns each new SKU to the closest cluster and forecasts band from cluster average.</div>
-        <div class="npf-stats">
-          <span><b>203</b> new SKUs in last 12mo</span>
-          <span><b>€1.5M</b> revenue</span>
-          <span><b>8.3%</b> of total</span>
+        <span class="tag-chip">Predictive Portfolio Pricing</span>
+      </div>
+      <div class="lq-card">
+        <div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:12px">
+          <div class="lq-stat"><div class="num">203</div><div class="lab">new SKUs (last 12mo)</div></div>
+          <div class="lq-stat"><div class="num">€1.5M</div><div class="lab">revenue</div></div>
+          <div class="lq-stat"><div class="num">8.3%</div><div class="lab">of total</div></div>
         </div>
-        <div style="height:160px;margin-top:12px;position:relative"><canvas id="newProductTrendChart"></canvas></div>
-        <div class="npf-list">
-          <div class="npf-row">
-            <span class="npf-sku">218812-K</span>
-            <span class="npf-meta">Sleeve variant · cluster <b>BKAES</b> (n=627) · <span class="muted">forecast €42K ± 18% · confidence 76% (cluster-derived)</span> <span class="cluster-chip" data-conf="green" style="margin-left:4px">BKAES 76%</span></span>
-            <span class="npf-fc">€42K</span>
-            <button class="row-action primary" onclick="toast('Assigning 218812-K to comparable cluster BKAES — band copied from cluster average')">Assign to cluster →</button>
+        <div style="height:160px;position:relative"><canvas id="newProductTrendChart"></canvas></div>
+      </div>
+      <div class="actions-list" style="margin-top:14px">
+        <div class="action-card">
+          <div class="ac-section">
+            <div class="ac-head">
+              <div class="ac-rank">1</div>
+              <div class="ac-title"><div class="h">218812-K · Sleeve variant</div><div class="t">cluster <b>BKAES</b> (n=627) · forecast €42K ± 18%</div></div>
+              <div class="ac-tools"><span class="tag-chip status">BKAES 76%</span></div>
+            </div>
+            <div class="ac-cta-row" style="margin-top:14px">
+              <button class="btn-secondary">View cluster average</button>
+              <button class="btn-primary-rose" onclick="toast('Assigning 218812-K to comparable cluster BKAES — band copied from cluster average')">Assign to cluster →</button>
+            </div>
           </div>
-          <div class="npf-row">
-            <span class="npf-sku">220114-A</span>
-            <span class="npf-meta">Bearing housing variant · cluster <b>BKAGG</b> (n=370) · <span class="muted">forecast €28K ± 24% · confidence 68%</span> <span class="cluster-chip" data-conf="amber" style="margin-left:4px">BKAGG 68%</span></span>
-            <span class="npf-fc">€28K</span>
-            <button class="row-action primary" onclick="toast('Assigning 220114-A to comparable cluster BKAGG — band copied from cluster average')">Assign to cluster →</button>
+        </div>
+        <div class="action-card">
+          <div class="ac-section">
+            <div class="ac-head">
+              <div class="ac-rank">2</div>
+              <div class="ac-title"><div class="h">220114-A · Bearing housing variant</div><div class="t">cluster <b>BKAGG</b> (n=370) · forecast €28K ± 24%</div></div>
+              <div class="ac-tools"><span class="tag-chip status amber">BKAGG 68%</span></div>
+            </div>
+            <div class="ac-cta-row" style="margin-top:14px">
+              <button class="btn-secondary">View cluster average</button>
+              <button class="btn-primary-rose" onclick="toast('Assigning 220114-A to comparable cluster BKAGG — band copied from cluster average')">Assign to cluster →</button>
+            </div>
           </div>
-          <div class="npf-row lown">
-            <span class="npf-sku">221305</span>
-            <span class="npf-meta">Custom pump · cluster <b>SOPU</b> (n=6) · <span class="muted">forecast €11K ± 38%</span> · <b style="color:var(--red)">⚠️ low-n cluster, manual review recommended</b> <span class="cluster-chip lown" data-conf="red" style="margin-left:4px">SOPU 38%</span></span>
-            <span class="npf-fc">€11K</span>
-            <button class="row-action" onclick="toast('221305 routed to manual review — SOPU cluster has only 6 SKUs, do not auto-act')">Manual review →</button>
+        </div>
+        <div class="action-card">
+          <div class="ac-section">
+            <div class="ac-head">
+              <div class="ac-rank">3</div>
+              <div class="ac-title"><div class="h">221305 · Custom pump</div><div class="t">cluster <b>SOPU</b> (n=6) · forecast €11K ± 38% · <span style="color:var(--red)">⚠ low-n cluster, manual review</span></div></div>
+              <div class="ac-tools"><span class="tag-chip status red">SOPU 38%</span></div>
+            </div>
+            <div class="ac-cta-row" style="margin-top:14px">
+              <button class="btn-secondary">View cluster sample</button>
+              <button class="btn-secondary" onclick="toast('221305 routed to manual review — SOPU cluster has only 6 SKUs')">Manual review →</button>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Cross-link strip · where to act on this -->
-      <div class="frank-xlink">
-        <a onclick="setScreen('action')">Action queue → Action Center</a>  ·  <a onclick="setScreen('action')">Annual list-price negotiation cockpit → Action Center</a>  ·  <a onclick="setScreen('studio')">SKU drill → Pricing Studio</a>
+      <div class="lq-card" style="margin-top:14px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div class="ftxt" style="font-size:12px;color:var(--muted)">Where to act on this:</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="head-pill" onclick="setScreen('action')">Action queue → Action Center</button>
+          <button class="head-pill" onclick="setScreen('action')">Negotiation cockpit → Action Center</button>
+          <button class="head-pill" onclick="setScreen('studio')">SKU drill → Pricing Studio</button>
+        </div>
       </div>
     </section>
 
@@ -6386,14 +6415,14 @@ function initNewProductTrendChart(){
   charts.newProductTrend = new Chart(c,{
     type:'line',
     data:{labels,datasets:[
-      {label:'New-product revenue (€K)', data:npf.monthlyTrend.map(v=>v/1000), borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.14)', borderWidth:2.5, tension:.35, fill:true, pointRadius:3, pointBackgroundColor:'#16a34a'}
+      {label:'New-product revenue (€K)', data:npf.monthlyTrend.map(v=>v/1000), borderColor:'#a35a5a', backgroundColor:'rgba(163,90,90,0.10)', borderWidth:2.5, tension:.35, fill:true, pointRadius:3, pointBackgroundColor:'#a35a5a'}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},
         tooltip:{callbacks:{label:ctx=>`€${ctx.parsed.y.toFixed(0)}K`}}},
       scales:{
-        y:{ticks:{callback:v=>'€'+v+'K',font:{size:10},color:'#737373'},grid:{color:'#f0f0f0'},beginAtZero:true},
-        x:{ticks:{font:{size:10},color:'#737373'},grid:{display:false}}
+        y:{ticks:{callback:v=>'€'+v+'K',font:{size:10,family:'Inter'},color:'#56544f'},grid:{color:'rgba(0,0,0,0.05)'},beginAtZero:true},
+        x:{ticks:{font:{size:10,family:'Inter'},color:'#56544f'},grid:{display:false}}
       }}
   });
 }
