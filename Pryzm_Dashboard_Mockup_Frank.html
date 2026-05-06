@@ -2658,6 +2658,136 @@ body.pryzm-2026 #screen-studio .ws-custom-input input{
   font-variant-numeric:tabular-nums;
 }
 
+/* ===== PS3: ws-body 2-pane + comparable + drawer ===== */
+body.pryzm-2026 #screen-studio .ws-body{
+  display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start;
+}
+@media (max-width:1280px){
+  body.pryzm-2026 #screen-studio .ws-body{ grid-template-columns:1fr; }
+}
+body.pryzm-2026 #screen-studio .ws-pane{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:18px 20px;
+  display:flex; flex-direction:column; gap:10px;
+}
+body.pryzm-2026 #screen-studio .ws-pane h4{
+  font-family:'Manrope',sans-serif; font-size:14.5px; font-weight:700;
+  color:var(--ink); letter-spacing:-0.012em; margin:0;
+  display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;
+}
+body.pryzm-2026 #screen-studio .ws-pane h4.row2{ margin-top:14px; padding-top:14px; border-top:1px solid var(--hairline); }
+body.pryzm-2026 #screen-studio .ws-pane-sub{
+  font-size:11.5px; color:var(--muted); font-weight:500;
+}
+body.pryzm-2026 #screen-studio .ws-pane-sub b{ color:var(--ink-2); font-weight:600; }
+
+body.pryzm-2026 #screen-studio .ws-pane > p{
+  font-size:11.5px; color:var(--ink-3); margin:0;
+  padding:8px 12px; background:var(--surface-soft); border-left:3px solid var(--green);
+  border-radius:7px; line-height:1.5;
+}
+
+body.pryzm-2026 #screen-studio .ws-fanout{ display:flex; flex-direction:column; gap:6px; }
+body.pryzm-2026 #screen-studio .ws-fan-row{
+  display:grid; grid-template-columns:24px 1fr 100px 80px 1fr; gap:10px;
+  align-items:center;
+  padding:10px 12px; border-radius:8px;
+  background:var(--surface-soft); font-size:12px;
+  border:1px solid transparent;
+}
+body.pryzm-2026 #screen-studio .ws-fan-row.alert{ background:var(--rose-bg); border-color:var(--rose-tint); }
+body.pryzm-2026 #screen-studio .ws-fan-row.warn{ background:var(--amber-bg); border-color:rgba(165,112,31,.18); }
+body.pryzm-2026 #screen-studio .ws-fan-cust{ font-weight:700; color:var(--ink); display:flex; flex-direction:column; }
+body.pryzm-2026 #screen-studio .ws-fan-sub{ font-size:10.5px; color:var(--muted); font-weight:500; margin-top:2px; }
+body.pryzm-2026 #screen-studio .ws-fan-num{ font-family:'Manrope',sans-serif; font-size:14px; font-weight:700; color:var(--ink); display:flex; flex-direction:column; font-variant-numeric:tabular-nums; }
+body.pryzm-2026 #screen-studio .ws-fan-churn{ display:flex; flex-direction:column; align-items:center; gap:1px; }
+body.pryzm-2026 #screen-studio .ws-fan-churn .n{ font-family:'Manrope',sans-serif; font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; }
+body.pryzm-2026 #screen-studio .ws-fan-churn .n.r{ color:var(--red); }
+body.pryzm-2026 #screen-studio .ws-fan-churn .n.g{ color:var(--green); }
+body.pryzm-2026 #screen-studio .ws-fan-churn .l{ font-size:10px; color:var(--muted); }
+body.pryzm-2026 #screen-studio .ws-fan-rec{ font-size:11.5px; color:var(--rose-deep); font-weight:600; }
+body.pryzm-2026 #screen-studio .ws-fan-note{ font-size:11.5px; color:var(--muted); margin:6px 2px 0; }
+body.pryzm-2026 #screen-studio .ws-fan-note a{ color:var(--rose-deep); font-weight:600; text-decoration:underline; }
+
+body.pryzm-2026 #screen-studio .tier-chip{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:18px; height:18px; border-radius:5px; font-size:10px; font-weight:700; color:#fff;
+}
+body.pryzm-2026 #screen-studio .tier-chip.A{ background:var(--rose); }
+body.pryzm-2026 #screen-studio .tier-chip.B{ background:var(--ink-3); }
+body.pryzm-2026 #screen-studio .tier-chip.C{ background:var(--amber); }
+body.pryzm-2026 #screen-studio .tier-chip.D{ background:var(--red); }
+
+body.pryzm-2026 #screen-studio .ws-cost{ display:flex; flex-direction:column; gap:6px; margin-top:4px; }
+body.pryzm-2026 #screen-studio .ws-cost-row{
+  display:grid; grid-template-columns:90px 1fr 40px; gap:10px; align-items:center;
+}
+body.pryzm-2026 #screen-studio .ws-cost-name{ font-size:12px; color:var(--ink-2); font-weight:500; }
+body.pryzm-2026 #screen-studio .ws-cost-bar{ height:8px; background:var(--surface-sunken); border-radius:4px; overflow:hidden; }
+body.pryzm-2026 #screen-studio .ws-cost-fill{ display:block; height:100%; border-radius:4px; }
+body.pryzm-2026 #screen-studio .ws-cost-fill.material{ background:var(--rose); }
+body.pryzm-2026 #screen-studio .ws-cost-fill.labor{ background:var(--ink-3); }
+body.pryzm-2026 #screen-studio .ws-cost-fill.outsourcing{ background:var(--amber); }
+body.pryzm-2026 #screen-studio .ws-cost-fill.overhead{ background:var(--muted-2); }
+body.pryzm-2026 #screen-studio .ws-cost-pct{ font-size:11.5px; color:var(--ink); font-weight:700; text-align:right; font-variant-numeric:tabular-nums; }
+body.pryzm-2026 #screen-studio .ws-cost-foot{ font-size:11.5px; color:var(--muted); margin:6px 0 0; line-height:1.5; }
+body.pryzm-2026 #screen-studio .ws-cost-foot a{ color:var(--rose-deep); font-weight:600; }
+
+body.pryzm-2026 #screen-studio .ws-history{ display:flex; flex-direction:column; gap:0; margin-top:4px; }
+body.pryzm-2026 #screen-studio .ws-hist-row{
+  display:grid; grid-template-columns:90px 1fr 90px 1fr; gap:10px; align-items:baseline;
+  padding:8px 0; border-top:1px solid var(--hairline); font-size:12px; color:var(--ink-3);
+}
+body.pryzm-2026 #screen-studio .ws-hist-row:first-child{ border-top:none; }
+body.pryzm-2026 #screen-studio .ws-hist-date{ font-family:'Manrope',sans-serif; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; }
+body.pryzm-2026 #screen-studio .ws-hist-move{ color:var(--ink); font-weight:600; }
+body.pryzm-2026 #screen-studio .ws-hist-vol.up{ color:var(--green); font-weight:700; }
+body.pryzm-2026 #screen-studio .ws-hist-vol.down{ color:var(--red); font-weight:700; }
+body.pryzm-2026 #screen-studio .ws-hist-vol.flat{ color:var(--ink-3); font-weight:600; }
+body.pryzm-2026 #screen-studio .ws-hist-by{ font-size:11.5px; color:var(--muted); }
+
+body.pryzm-2026 #screen-studio #wsComparablePanel{
+  background:var(--surface) !important; border:1px solid var(--border) !important;
+  border-radius:var(--r-md) !important; padding:18px 20px !important;
+  margin-top:14px !important; box-shadow:var(--shadow-card) !important;
+}
+body.pryzm-2026 #screen-studio .wsc-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+body.pryzm-2026 #screen-studio .wsc-tile{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:14px 16px; box-shadow:var(--shadow-card);
+  display:flex; flex-direction:column; gap:6px; min-width:0;
+}
+body.pryzm-2026 #screen-studio .wsc-tile.bench{ background:var(--surface-soft); }
+body.pryzm-2026 #screen-studio .wsc-tile.suggest{ background:var(--green-bg); border-color:var(--green-bg); }
+body.pryzm-2026 #screen-studio .wsc-tile .lab{ font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; font-weight:700; }
+body.pryzm-2026 #screen-studio .wsc-tile.bench .lab{ color:var(--ink-3); }
+body.pryzm-2026 #screen-studio .wsc-tile.suggest .lab{ color:var(--green); }
+body.pryzm-2026 #screen-studio .wsc-tile .big{ font-family:'Manrope',sans-serif; font-size:18px; font-weight:700; color:var(--ink); margin:4px 0; letter-spacing:-0.018em; }
+body.pryzm-2026 #screen-studio .wsc-tile.suggest .big{ color:var(--green); }
+body.pryzm-2026 #screen-studio .wsc-tile .cap{ font-size:11.5px; color:var(--ink-3); line-height:1.5; }
+body.pryzm-2026 #screen-studio .wsc-tile .cap b{ color:var(--ink); }
+body.pryzm-2026 #screen-studio .wsc-tile .conf{ font-size:10.5px; color:var(--green); font-weight:700; margin-top:6px; }
+
+body.pryzm-2026 #screen-studio #explainDrawer{
+  background:var(--surface) !important; border-left:1px solid var(--border) !important;
+  box-shadow:var(--shadow-pop) !important;
+}
+body.pryzm-2026 #screen-studio #explainDrawer.show{ right:0 !important; visibility:visible !important; }
+body.pryzm-2026 #screen-studio #explainDrawer > div:first-child{
+  background:var(--rose) !important; color:#fff !important;
+  border-bottom:1px solid var(--rose-deep) !important;
+}
+body.pryzm-2026 #screen-studio #explainDrawer .explain-eyebrow{ color:var(--rose-deep) !important; }
+body.pryzm-2026 #screen-studio #explainDrawer .explain-lead{
+  background:var(--surface-soft) !important; color:var(--ink-3) !important;
+  border-left:3px solid var(--rose) !important;
+}
+body.pryzm-2026 #screen-studio #explainDrawer .explain-fi-bar{ background:var(--surface-sunken) !important; }
+body.pryzm-2026 #screen-studio #explainDrawer .explain-fi-fill{ background:var(--rose) !important; }
+body.pryzm-2026 #screen-studio #explainDrawer .explain-fi-name{ color:var(--ink) !important; }
+body.pryzm-2026 #screen-studio #explainDrawer .explain-fi-pct{ color:var(--ink-3) !important; }
+body.pryzm-2026 #screen-studio #explainDrawer .explain-foot{ color:var(--muted) !important; }
+
 </style>
 </head>
 <body class="pryzm-2026">
@@ -4240,9 +4370,7 @@ body.pryzm-2026 #screen-studio .ws-custom-input input{
             <!-- LEFT pane: per-customer fan-out -->
             <div class="ws-pane">
               <h4>Customer fan-out · this SKU only <span class="ws-pane-sub">if priced at <b id="wbFanPrice">€5.10</b> (cost-floor)</span></h4>
-              <p style="font-size:11.5px;color:#475569;margin:0 0 8px;padding:6px 10px;background:#f1f5f9;border-radius:6px;border-left:3px solid #059669">
-                Cluster <b>BKAGG</b>, n=247 historical repricings, confidence <b>74%</b> — fan-out predictions reliable. (For SOPU SKUs, fan-out flagged low-n.)
-              </p>
+              <p>Cluster <b>BKAGG</b>, n=247 historical repricings, confidence <b>74%</b> — fan-out predictions reliable. (For SOPU SKUs, fan-out flagged low-n.)</p>
               <div class="ws-fanout">
                 <div class="ws-fan-row alert">
                   <span class="tier-chip A">A</span>
@@ -4274,7 +4402,7 @@ body.pryzm-2026 #screen-studio .ws-custom-input input{
                 </div>
                 <div class="ws-fan-row alert">
                   <span class="tier-chip D">D</span>
-                  <span class="ws-fan-cust">101900<span class="ws-fan-sub">7% · €164K ARR · problematic · <i style="color:#1e3a8a">→ surfaced in Heiko's Deal Empowerment</i></span></span>
+                  <span class="ws-fan-cust">101900<span class="ws-fan-sub">7% · €164K ARR · problematic · <i style="color:var(--rose-deep)">→ surfaced in Heiko's Deal Empowerment</i></span></span>
                   <span class="ws-fan-num">+€264<span class="ws-fan-sub">on 294 units</span></span>
                   <span class="ws-fan-churn"><span class="n r">71%</span><span class="l">churn risk</span></span>
                   <span class="ws-fan-rec">Attrition acceptable · Heiko can flag</span>
@@ -4316,18 +4444,18 @@ body.pryzm-2026 #screen-studio .ws-custom-input input{
                 </div>
               </div>
               <p class="ws-cost-foot"><span id="wbCostNote">Material 52% (above 40% threshold) → supplier-sensitive. Steel-dominant precision shaft.</span> For full cost-vs-price 24-mo trajectory see <a href="#" data-jump="margin">Margin Intelligence</a>.</p>
-              <div style="margin-top:10px;padding:10px 12px;background:#fafafa;border:1px solid #e2e8f0;border-radius:6px">
-                <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:#475569;font-weight:600;margin-bottom:4px">
+              <div style="margin-top:10px;padding:10px 12px;background:var(--surface-soft);border:1px solid var(--hairline);border-radius:7px">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:4px">
                   <span>4-yr cluster cost trajectory · BKAGG</span>
-                  <span style="color:#dc2626">Material +18.4% '22→'25</span>
+                  <span style="color:var(--red)">Material +18.4% '22→'25</span>
                 </div>
                 <svg viewBox="0 0 240 38" width="100%" height="38" preserveAspectRatio="none" style="display:block">
-                  <polyline fill="none" stroke="#dc2626" stroke-width="2" points="4,30 84,24 164,16 236,8" />
-                  <polyline fill="none" stroke="#1e3a8a" stroke-width="2" stroke-dasharray="3 3" points="4,28 84,25 164,18 236,12" />
-                  <text x="4" y="36" font-size="8" fill="#475569">2022</text>
-                  <text x="220" y="36" font-size="8" fill="#475569">2025</text>
+                  <polyline fill="none" stroke="#a35a5a" stroke-width="2" points="4,30 84,24 164,16 236,8" />
+                  <polyline fill="none" stroke="#15140f" stroke-width="2" stroke-dasharray="3 3" points="4,28 84,25 164,18 236,12" />
+                  <text x="4" y="36" font-size="8" fill="#56544f">2022</text>
+                  <text x="220" y="36" font-size="8" fill="#56544f">2025</text>
                 </svg>
-                <div style="font-size:10.5px;color:#64748b;margin-top:2px"><span style="color:#dc2626">— Material cost</span> · <span style="color:#1e3a8a">— Quoted price</span> · gap = pass-through deficit (4.6pp on this SKU)</div>
+                <div style="font-size:10.5px;color:var(--muted);margin-top:2px"><span style="color:var(--rose);font-weight:600">— Material cost</span> · <span style="color:var(--ink);font-weight:600">— Quoted price</span> · gap = pass-through deficit (4.6pp on this SKU)</div>
               </div>
 
               <h4 class="row2">Repricing history <span class="ws-pane-sub">this SKU only · audit-hash signed</span></h4>
@@ -4336,62 +4464,62 @@ body.pryzm-2026 #screen-studio .ws-custom-input input{
                   <span class="ws-hist-date">2024-Q1</span>
                   <span class="ws-hist-move">€3.80 → €4.20 (+10.5%)</span>
                   <span class="ws-hist-vol down">vol −3%</span>
-                  <span class="ws-hist-by">Frank · <code style="font-size:9.5px;color:#64748b">a3f9c1</code></span>
+                  <span class="ws-hist-by">Frank · <code style="font-size:9.5px;color:var(--muted)">a3f9c1</code></span>
                 </div>
                 <div class="ws-hist-row">
                   <span class="ws-hist-date">2022-Q3</span>
                   <span class="ws-hist-move">€3.60 → €3.80 (+5.6%)</span>
                   <span class="ws-hist-vol up">vol +1%</span>
-                  <span class="ws-hist-by">Frank · <code style="font-size:9.5px;color:#64748b">7e21bd</code></span>
+                  <span class="ws-hist-by">Frank · <code style="font-size:9.5px;color:var(--muted)">7e21bd</code></span>
                 </div>
                 <div class="ws-hist-row">
                   <span class="ws-hist-date">2020-Q4</span>
                   <span class="ws-hist-move">€3.40 → €3.60 (+5.9%)</span>
                   <span class="ws-hist-vol up">vol +4%</span>
-                  <span class="ws-hist-by">F. Bauer · <code style="font-size:9.5px;color:#64748b">19f4a8</code></span>
+                  <span class="ws-hist-by">F. Bauer · <code style="font-size:9.5px;color:var(--muted)">19f4a8</code></span>
                 </div>
                 <div class="ws-hist-row">
                   <span class="ws-hist-date">2019-Q1</span>
                   <span class="ws-hist-move">€3.20 → €3.40 (+6.3%)</span>
                   <span class="ws-hist-vol flat">vol flat</span>
-                  <span class="ws-hist-by">F. Bauer · <code style="font-size:9.5px;color:#64748b">c882e0</code></span>
+                  <span class="ws-hist-by">F. Bauer · <code style="font-size:9.5px;color:var(--muted)">c882e0</code></span>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- COMPARABLE-CLUSTER PANEL · for new SKUs without history -->
-          <div id="wsComparablePanel" style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:18px 20px;margin-top:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06)">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
-              <h4 style="margin:0;font-family:'Manrope',sans-serif;font-size:14.5px;font-weight:700;color:#1e293b">Comparable-cluster pricing · for SKUs without history</h4>
-              <span style="font-size:11px;color:#64748b">When a SKU has no history, we price by its cluster's behavior — not by averages of unrelated SKUs.</span>
+          <div id="wsComparablePanel" style="display:none">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px">
+              <h4 style="margin:0;font-family:'Manrope',sans-serif;font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-0.012em">Comparable-cluster pricing · for SKUs without history</h4>
+              <span style="font-size:11.5px;color:var(--muted)">When a SKU has no history, we price by its cluster's behavior — not by averages of unrelated SKUs.</span>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-              <div style="border:1px solid #e2e8f0;border-radius:8px;padding:14px">
-                <div style="font-size:10.5px;color:#6d28d9;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Target SKU</div>
-                <div style="font-family:'Manrope',sans-serif;font-size:18px;font-weight:700;color:#1e293b;margin:4px 0">218812-K</div>
-                <div style="font-size:11.5px;color:#475569">Sleeve variant · cluster <b>BKAES</b></div>
-                <div style="font-size:10.5px;color:#64748b;margin-top:6px">No price history · 0 prior repricings</div>
+            <div class="wsc-grid">
+              <div class="wsc-tile">
+                <div class="lab">Target SKU</div>
+                <div class="big">218812-K</div>
+                <div class="cap">Sleeve variant · cluster <b>BKAES</b></div>
+                <div class="cap" style="color:var(--muted);margin-top:4px">No price history · 0 prior repricings</div>
               </div>
-              <div style="border:1px solid #e2e8f0;border-radius:8px;padding:14px;background:#f8fafc">
-                <div style="font-size:10.5px;color:#1e3a8a;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Cluster benchmark</div>
-                <div style="font-family:'Manrope',sans-serif;font-size:18px;font-weight:700;color:#1e293b;margin:4px 0">BKAES · n=627</div>
-                <div style="font-size:11.5px;color:#475569">Mean margin <b>68.0%</b> · Win-rate <b>52.7%</b></div>
-                <div style="font-size:10.5px;color:#059669;margin-top:6px;font-weight:600">Confidence 76% · MAPE 4.7%</div>
+              <div class="wsc-tile bench">
+                <div class="lab">Cluster benchmark</div>
+                <div class="big">BKAES · n=627</div>
+                <div class="cap">Mean margin <b>68.0%</b> · Win-rate <b>52.7%</b></div>
+                <div class="conf">Confidence 76% · MAPE 4.7%</div>
               </div>
-              <div style="border:1px solid #ecfdf5;border-radius:8px;padding:14px;background:#ecfdf5">
-                <div style="font-size:10.5px;color:#047857;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Suggested price band</div>
-                <div style="font-family:'Manrope',sans-serif;font-size:18px;font-weight:700;color:#065f46;margin:4px 0">€42 – €58</div>
-                <div style="font-size:11.5px;color:#047857">Centered on €49 (cluster median margin × cost)</div>
-                <div style="font-size:10.5px;color:#059669;margin-top:6px;font-weight:600">Recommend A/B at €49 before broad launch</div>
+              <div class="wsc-tile suggest">
+                <div class="lab">Suggested price band</div>
+                <div class="big">€42 – €58</div>
+                <div class="cap" style="color:var(--green)">Centered on €49 (cluster median margin × cost)</div>
+                <div class="conf">Recommend A/B at €49 before broad launch</div>
               </div>
             </div>
-            <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-              <span style="font-size:11px;color:#475569;font-weight:600">Other new SKUs:</span>
-              <span style="font-size:11px;background:#eff6ff;color:#1e3a8a;padding:2px 8px;border-radius:999px">220114-A · BKAGG · band €18–€26</span>
-              <span style="font-size:11px;background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:999px">221305 · SOPU n=6 ⚠ low-n · manual review required</span>
+            <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <span style="font-size:11.5px;color:var(--ink-3);font-weight:600">Other new SKUs:</span>
+              <span class="tag-chip">220114-A · BKAGG · band €18–€26</span>
+              <span class="tag-chip status amber">221305 · SOPU n=6 ⚠ low-n · manual review required</span>
             </div>
-            <p style="font-size:11px;color:#64748b;margin:10px 0 0">Source · <code>products_detail.commodity_scorecard</code> + <code>forecasting.json</code> · cross-link to <a href="#" data-jump="forecast">Forecast → New product card</a>.</p>
+            <p style="font-size:11px;color:var(--muted);margin:10px 0 0">Source · <code>products_detail.commodity_scorecard</code> + <code>forecasting.json</code> · cross-link to <a href="#" data-jump="forecast" style="color:var(--rose-deep);font-weight:600">Forecast → New product card</a>.</p>
           </div>
 
           <!-- EXPLAINABILITY DRAWER -->
