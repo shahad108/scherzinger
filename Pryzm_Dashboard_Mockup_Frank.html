@@ -2136,6 +2136,46 @@ body.pryzm-2026 .action-card .fbtn.par.selected{background:var(--green)}
 body.pryzm-2026 .action-card .fbtn.rej.selected{background:var(--red)}
 body.pryzm-2026 .action-card .fbtn.ab.selected{background:var(--violet)}
 
+/* split button + fb-pop dropdown */
+body.pryzm-2026 .action-card .fbtn.split-main{border-top-right-radius:0;border-bottom-right-radius:0;padding-right:10px}
+body.pryzm-2026 .action-card .fbtn.split-arr{border-top-left-radius:0;border-bottom-left-radius:0;border-left:none;padding:8px 9px}
+body.pryzm-2026 .action-card .fbtn.split-arr svg{width:11px;height:11px;color:var(--muted)}
+body.pryzm-2026 .action-card .fbtn.acc-main{background:var(--green);color:#fff;border-color:transparent;font-weight:600}
+body.pryzm-2026 .action-card .fbtn.acc-main .ic{color:#fff}
+body.pryzm-2026 .action-card .fbtn.acc-main:hover{background:var(--green);filter:brightness(.96)}
+body.pryzm-2026 .action-card .fb-pop{
+  position:absolute;left:0;top:calc(100% + 6px);z-index:5;
+  background:#fff;border:1px solid var(--border);border-radius:11px;
+  box-shadow:var(--shadow-pop);padding:6px;min-width:260px;
+  display:none;flex-direction:column;gap:2px;
+}
+body.pryzm-2026 .action-card .fb-group.open .fb-pop{display:flex}
+body.pryzm-2026 .action-card .fb-pop .pop-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 11px;border-radius:8px;font-size:12.5px;color:var(--ink-2);
+  cursor:pointer;text-align:left;width:100%;border:none;background:none;
+  transition:background .12s;
+}
+body.pryzm-2026 .action-card .fb-pop .pop-item:hover{background:var(--surface-soft)}
+body.pryzm-2026 .action-card .fb-pop .pop-item .swatch{width:8px;height:8px;border-radius:50%;background:var(--green);flex:none}
+body.pryzm-2026 .action-card .fb-pop .pop-item.par .swatch{background:var(--amber)}
+body.pryzm-2026 .action-card .fb-pop .pop-item.nim .swatch{background:var(--muted)}
+body.pryzm-2026 .action-card .fb-pop .pop-item .pi-meta{flex:1;min-width:0}
+body.pryzm-2026 .action-card .fb-pop .pop-item .pi-t{font-weight:600;color:var(--ink);font-size:12.5px;line-height:1.25;display:block}
+body.pryzm-2026 .action-card .fb-pop .pop-item .pi-s{font-size:11px;color:var(--muted);margin-top:1px;line-height:1.3;display:block}
+
+/* trend-pane mini chart */
+body.pryzm-2026 .action-card .trend-pane .mini-chart{position:relative;width:100%;height:42px;overflow:hidden}
+body.pryzm-2026 .action-card .trend-pane .mini-chart svg{display:block;width:100%;height:100%;overflow:visible}
+
+/* input-pill unit chip */
+body.pryzm-2026 .action-card .input-pill .unit{
+  font-size:10.5px;color:var(--muted);background:var(--surface-sunken);
+  padding:3px 7px;border-radius:5px;font-weight:500;
+}
+body.pryzm-2026 .action-card .select-pill{cursor:pointer}
+body.pryzm-2026 .action-card .select-pill .arr{font-size:9px;color:var(--muted)}
+
 body.pryzm-2026 .action-card .extra label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px}
 
 body.pryzm-2026 .ac-cta-row{display:flex;gap:10px;margin-top:14px}
@@ -7427,19 +7467,25 @@ const ACTIONS = [
     rationale:'Same article sold to Customer 101580 at €4.10 vs Customer 102330 at €6.80, same Tier 2 volume.',
     impact:'€18,600 / yr', conf:'High', cust:'multi', custTier:'', sku:'200832-E', daysOpen:1,
     authority:'you', authorityLabel:'Your authority',
-    cluster:{label:'BKAES', confidence:82, n:627}, contract:'movable'},
+    cluster:{label:'BKAES', confidence:82, n:627}, contract:'movable',
+    marginFrom:'30.6%', marginTo:'6.4%', marginDelta:'↓ 24.2pp',
+    cmPair:'€4.10 vs €6.80', cmDetail:'Cust. 101580 vs 102330 · same Tier-2 volume'},
   { id:2, tag:'Cluster Leak', tagClass:'amber',
     headline:'Article 204604 (Zahnradpumpe, BKAGG) · margin 32.7% → 11.8%',
     rationale:'BKAGG cluster shows margin erosion across 31 SKUs below critical threshold; this is the highest-revenue example.',
     impact:'€12,400 / quarter', conf:'High', cust:'multi', custTier:'', sku:'204604', daysOpen:2,
     authority:'you', authorityLabel:'Your authority',
-    cluster:{label:'BKAGG', confidence:74, n:370}, contract:'movable'},
+    cluster:{label:'BKAGG', confidence:74, n:370}, contract:'movable',
+    marginFrom:'32.7%', marginTo:'11.8%', marginDelta:'↓ 20.9pp',
+    cmPair:'€5.20 vs €7.10', cmDetail:'31 SKUs in BKAGG cluster below threshold'},
   { id:3, tag:'Renewal Watch', tagClass:'amber',
     headline:'Article 205169 (Zahnradpumpe, BKAGG) · margin 70.1% → 44.2%',
     rationale:'Recommend: queue for August renewal review, do not act now.',
     impact:'€7,200 (deferred to renewal)', conf:'Medium', cust:'multi', custTier:'', sku:'205169', daysOpen:3,
     authority:'md', authorityLabel:'Locked until Q3 2026',
-    cluster:{label:'BKAGG', confidence:74, n:370}, contract:'locked'},
+    cluster:{label:'BKAGG', confidence:74, n:370}, contract:'locked',
+    marginFrom:'70.1%', marginTo:'44.2%', marginDelta:'↓ 25.9pp',
+    cmPair:'€8.40 vs €11.20', cmDetail:'Locked until Q3 — queue for renewal'},
 ];
 
 function ageClass(d){ return d<=2 ? 'fresh' : d<=5 ? 'warm' : 'stale'; }
@@ -7455,6 +7501,12 @@ function renderActions(){
       ? `<span class="tag-chip status amber">Locked</span>`
       : a.contract==='movable'
       ? `<span class="tag-chip status">Movable</span>` : '';
+    const marginFrom = a.marginFrom || '30.6%';
+    const marginTo = a.marginTo || '6.4%';
+    const marginDelta = a.marginDelta || '↓ 24.2pp';
+    const cmPair = a.cmPair || '€4.10 vs €6.80';
+    const cmDetail = a.cmDetail || 'Cust. 101580 vs 102330 · same Tier-2 volume';
+    const clusterLabel = a.cluster ? a.cluster.label : '—';
     return `
     <div class="action-card" data-aid="${a.id}">
       <div class="ac-section">
@@ -7477,29 +7529,88 @@ function renderActions(){
       </div>
       <div class="ac-section">
         <div class="ac-meta-grid">
-          <div class="meta-block"><div class="lab">Expected impact</div><div class="val green">${a.impact}</div></div>
-          <div class="meta-block"><div class="lab">Confidence</div><div class="val">${a.conf}</div></div>
-          <div class="meta-block"><div class="lab">Customer</div><div class="val">${a.cust}</div></div>
-          <div class="meta-block"><div class="lab">Article / SKU</div><div class="val">${a.sku}</div></div>
+          <div class="meta-block">
+            <div class="lab">Recommendation</div>
+            <button class="select-pill" type="button" onclick="event.preventDefault();typeof toast==='function'&&toast('Routes to: Open in Pricing Studio')">
+              <span>Open in Pricing Studio</span><span class="arr">▾</span>
+            </button>
+          </div>
+          <div class="meta-block">
+            <div class="lab">Cluster</div>
+            <button class="select-pill" type="button" onclick="event.preventDefault()">
+              <span>${clusterLabel}</span><span class="arr">▾</span>
+            </button>
+          </div>
+          <div class="meta-block">
+            <div class="lab">Time</div>
+            <div class="input-pill"><span>10</span><span class="unit">min</span></div>
+          </div>
+          <div class="meta-block">
+            <div class="lab">Confidence</div>
+            <button class="select-pill" type="button" onclick="event.preventDefault()">
+              <span>${a.conf}</span><span class="arr">▾</span>
+            </button>
+          </div>
         </div>
         <div class="signal-with-trend">
           <div class="signal-pane">
-            <div class="ttl">Why this surfaced <span class="ttl-sub">— rationale</span></div>
-            <ul style="margin:0;padding:0;list-style:none;color:var(--ink-3);font-size:12.5px;line-height:1.7"><li>${a.rationale}</li></ul>
+            <div class="ttl"><b>Why now</b> <span class="ttl-sub">— top signals driving this recommendation</span></div>
+            <div class="fact-list">
+              <div class="fact-row">
+                <div class="fact-l">Margin drift</div>
+                <div class="fact-mid">
+                  <div class="fact-v red">${marginFrom} → ${marginTo}</div>
+                  <div class="fact-s">over 2 years</div>
+                </div>
+              </div>
+              <div class="fact-row">
+                <div class="fact-l">Customer mismatch</div>
+                <div class="fact-mid">
+                  <div class="fact-v">${cmPair}</div>
+                  <div class="fact-s">${cmDetail}</div>
+                </div>
+              </div>
+              <div class="fact-row">
+                <div class="fact-l">Expected impact</div>
+                <div class="fact-mid">
+                  <div class="fact-v green">${a.impact}</div>
+                  <div class="fact-s">${a.conf} confidence</div>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="trend-pane">
-            <div class="lab">Margin trend</div>
-            <div class="v">${a.impact}</div>
+            <div class="lab">Margin · 2yr</div>
+            <div class="v">${marginTo}<span class="down">${marginDelta}</span></div>
+            <div class="mini-chart">
+              <svg viewBox="0 0 100 42" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="mc${a.id}" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="rgba(163,90,90,0.18)" />
+                    <stop offset="100%" stop-color="rgba(163,90,90,0)" />
+                  </linearGradient>
+                </defs>
+                <path d="M0,8 L20,12 L40,18 L60,24 L80,30 L100,36 L100,42 L0,42 Z" fill="url(#mc${a.id})"/>
+                <path d="M0,8 L20,12 L40,18 L60,24 L80,30 L100,36" fill="none" stroke="#a35a5a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="100" cy="36" r="2.2" fill="#a35a5a"/>
+              </svg>
+            </div>
           </div>
         </div>
       </div>
       <div class="ac-section">
         <div class="ac-feedback" data-fb="${a.id}">
-          <button class="fbtn acc" data-act="acc"><span class="ic">✓</span>Accept &amp; Implement</button>
-          <button class="fbtn nim" data-act="nim"><span class="ic">◐</span>Accept, Not Implemented</button>
-          <button class="fbtn par" data-act="par"><span class="ic">◑</span>Accept, Partial</button>
+          <div class="fb-group" data-fbgroup="${a.id}">
+            <button class="fbtn acc-main split-main" data-act="acc"><span class="ic">✓</span>Accept &amp; implement</button>
+            <button class="fbtn split-arr" type="button" onclick="event.stopPropagation();this.parentElement.classList.toggle('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+            <div class="fb-pop">
+              <button class="pop-item" data-pop="acc"><span class="swatch"></span><span class="pi-meta"><span class="pi-t">Accept &amp; implement</span><span class="pi-s">Apply now to live pricing</span></span></button>
+              <button class="pop-item nim" data-pop="nim"><span class="swatch"></span><span class="pi-meta"><span class="pi-t">Accept, not yet implemented</span><span class="pi-s">Queue for later cycle</span></span></button>
+              <button class="pop-item par" data-pop="par"><span class="swatch"></span><span class="pi-meta"><span class="pi-t">Accept, partial</span><span class="pi-s">Apply with custom amount</span></span></button>
+            </div>
+          </div>
           <button class="fbtn rej" data-act="rej"><span class="ic">✗</span>Reject</button>
-          <button class="fbtn ab" data-act="ab"><span class="ic">🧪</span>Slice as A/B test</button>
+          <button class="fbtn ab" data-act="ab"><span class="ic">🧪</span>Slice as A/B</button>
         </div>
         <div class="extra" data-extra="par-${a.id}" style="display:none;margin-top:10px">
           <label class="muted small">Actual value implemented (€)</label>
@@ -7517,7 +7628,7 @@ function renderActions(){
           </select>
         </div>
         <div class="ac-cta-row">
-          <button class="btn-secondary">Route to Heiko (Sales)</button>
+          <button class="btn-secondary">Insert From Library</button>
           <button class="btn-primary-rose">Open in Studio →</button>
         </div>
       </div>
@@ -7525,19 +7636,52 @@ function renderActions(){
   }).join('');
 
   // hooks (preserve existing behavior)
+  const labels = {acc:'Accepted & implemented',nim:'Accepted, not implemented',par:'Partially implemented',rej:'Rejected',ab:'Sliced as A/B test'};
+  function applyAct(fb, act){
+    const card = fb.closest('.action-card');
+    card.querySelectorAll('.extra').forEach(e=>{ e.style.display='none'; });
+    if (act==='par'){ const ex = card.querySelector(`[data-extra="par-${fb.dataset.fb}"]`); if(ex) ex.style.display='block'; }
+    if (act==='rej'){ const ex = card.querySelector(`[data-extra="rej-${fb.dataset.fb}"]`); if(ex) ex.style.display='block'; }
+    if (typeof toast==='function') toast(`Action #${fb.dataset.fb}: ${labels[act]} — feedback saved`);
+  }
   list.querySelectorAll('.ac-feedback').forEach(fb=>{
-    fb.querySelectorAll('.fbtn').forEach(btn=>{
-      btn.addEventListener('click',()=>{
+    // top-level fbtn buttons (not inside fb-pop): Reject, A/B, and split-main itself
+    fb.querySelectorAll(':scope > .fbtn, :scope > .fb-group > .fbtn.split-main').forEach(btn=>{
+      btn.addEventListener('click',(e)=>{
+        if (btn.classList.contains('split-arr')) return;
         fb.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('selected'));
         btn.classList.add('selected');
-        const card = fb.closest('.action-card');
-        card.querySelectorAll('.extra').forEach(e=>{ e.style.display='none'; });
-        const act = btn.dataset.act;
-        if (act==='par'){ const ex = card.querySelector(`[data-extra="par-${fb.dataset.fb}"]`); if(ex) ex.style.display='block'; }
-        if (act==='rej'){ const ex = card.querySelector(`[data-extra="rej-${fb.dataset.fb}"]`); if(ex) ex.style.display='block'; }
-        const labels = {acc:'Accepted & implemented',nim:'Accepted, not implemented',par:'Partially implemented',rej:'Rejected',ab:'Sliced as A/B test'};
-        if (typeof toast==='function') toast(`Action #${fb.dataset.fb}: ${labels[act]} — feedback saved`);
+        applyAct(fb, btn.dataset.act);
       });
+    });
+    // fb-pop items
+    fb.querySelectorAll('.pop-item').forEach(pi=>{
+      pi.addEventListener('click',(e)=>{
+        e.stopPropagation();
+        const act = pi.dataset.pop;
+        const group = pi.closest('.fb-group');
+        if (group) group.classList.remove('open');
+        const main = fb.querySelector('.fbtn.split-main');
+        fb.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('selected'));
+        if (main){
+          main.classList.add('selected');
+          // update label text inside the main button
+          const newText = pi.querySelector('.pi-t')?.textContent || 'Accept';
+          main.innerHTML = `<span class="ic">✓</span>${newText}`;
+          main.dataset.act = act;
+        }
+        applyAct(fb, act);
+      });
+    });
+  });
+}
+
+// global click closes any open fb-group dropdown when clicking outside
+if (!window.__fbPopCloserInstalled){
+  window.__fbPopCloserInstalled = true;
+  document.addEventListener('click', (e) => {
+    document.querySelectorAll('.fb-group.open').forEach(g => {
+      if (!g.contains(e.target)) g.classList.remove('open');
     });
   });
 }
