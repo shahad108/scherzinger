@@ -2457,6 +2457,93 @@ body.pryzm-2026 #screen-forecast .footer-note a{ color:var(--rose-deep); font-we
 body.pryzm-2026 #screen-forecast .footer-note a:hover{ text-decoration:underline; }
 body.pryzm-2026 #screen-forecast .frank-table tr.hl td{ background:var(--rose-bg); }
 
+/* ============================================================
+   PS1 — Pricing Studio: page head + ws-grid + left SKU rail
+   ============================================================ */
+body.pryzm-2026 #screen-studio .ws-grid{
+  display:grid; grid-template-columns:320px 1fr; gap:14px; align-items:start;
+}
+body.pryzm-2026 #screen-studio .ws-picker{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:14px; display:flex; flex-direction:column; gap:10px;
+  position:sticky; top:14px; max-height:calc(100vh - 60px); overflow:hidden;
+}
+body.pryzm-2026 #screen-studio .ws-picker-head{
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:12.5px; color:var(--ink); font-weight:700; letter-spacing:-0.005em;
+  padding:0 4px;
+}
+body.pryzm-2026 #screen-studio .ws-count{
+  background:var(--surface-sunken); color:var(--ink-2); border-radius:6px;
+  padding:2px 7px; font-size:11px; font-weight:700; font-variant-numeric:tabular-nums;
+}
+body.pryzm-2026 #screen-studio .ws-filters{
+  display:flex; flex-wrap:wrap; gap:5px;
+}
+body.pryzm-2026 #screen-studio .ws-filter{
+  background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:5px 10px; font-size:11.5px; color:var(--ink-3); font-weight:500; cursor:pointer;
+  transition:background .15s, border-color .15s, color .15s;
+}
+body.pryzm-2026 #screen-studio .ws-filter:hover{ background:#fafaf7; border-color:var(--border-strong); color:var(--ink-2); }
+body.pryzm-2026 #screen-studio .ws-filter.active{
+  background:var(--rose); color:#fff; border-color:var(--rose); font-weight:600;
+}
+body.pryzm-2026 #screen-studio .ws-filter.toggle{ background:var(--surface-soft); border-color:var(--hairline); }
+body.pryzm-2026 #screen-studio .ws-filter.toggle.active{ background:var(--ink); color:#fff; border-color:var(--ink); }
+body.pryzm-2026 #screen-studio .ws-list{
+  display:flex; flex-direction:column; gap:4px;
+  overflow-y:auto; padding-right:2px;
+  scrollbar-width:thin;
+}
+body.pryzm-2026 #screen-studio .ws-list::-webkit-scrollbar{ width:6px; }
+body.pryzm-2026 #screen-studio .ws-list::-webkit-scrollbar-thumb{ background:rgba(0,0,0,.1); border-radius:3px; }
+body.pryzm-2026 #screen-studio .ws-row{
+  display:grid; grid-template-columns:auto auto 1fr auto; gap:8px; align-items:center;
+  padding:9px 10px; border-radius:9px; cursor:pointer;
+  background:var(--surface); border:1px solid transparent;
+  transition:background .12s, border-color .12s;
+  font-size:12px;
+}
+body.pryzm-2026 #screen-studio .ws-row:hover{ background:var(--surface-soft); }
+body.pryzm-2026 #screen-studio .ws-row.active{
+  background:var(--rose-bg); border-color:var(--rose-tint);
+}
+body.pryzm-2026 #screen-studio .ws-aid{
+  font-family:'Manrope',sans-serif; font-weight:700; color:var(--ink);
+  font-size:12.5px; font-variant-numeric:tabular-nums;
+}
+body.pryzm-2026 #screen-studio .ws-marg{
+  font-size:11.5px; font-weight:700; padding:2px 6px; border-radius:5px;
+  font-variant-numeric:tabular-nums;
+}
+body.pryzm-2026 #screen-studio .ws-marg.lo{ background:var(--red-bg); color:var(--red); }
+body.pryzm-2026 #screen-studio .ws-marg.mid{ background:var(--amber-bg); color:var(--amber); }
+body.pryzm-2026 #screen-studio .ws-marg.hi{ background:var(--green-bg); color:var(--green); }
+body.pryzm-2026 #screen-studio .ws-desc{
+  grid-column:1 / -1; font-size:11px; color:var(--muted); line-height:1.4;
+  margin-top:2px;
+}
+body.pryzm-2026 #screen-studio .ws-clu{
+  display:inline-block; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:600;
+  margin-left:4px;
+}
+body.pryzm-2026 #screen-studio .ws-clu.hi{ background:var(--green-bg); color:var(--green); }
+body.pryzm-2026 #screen-studio .ws-clu.mid{ background:var(--amber-bg); color:var(--amber); }
+body.pryzm-2026 #screen-studio .ws-clu.lo{ background:var(--rose-bg); color:var(--rose-deep); }
+body.pryzm-2026 #screen-studio .ws-tag{
+  font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px;
+  text-transform:uppercase; letter-spacing:.04em;
+}
+body.pryzm-2026 #screen-studio .ws-tag.floor{ background:var(--red-bg); color:var(--red); }
+body.pryzm-2026 #screen-studio .ws-tag.stale{ background:var(--amber-bg); color:var(--amber); }
+body.pryzm-2026 #screen-studio .ws-tag.cost{ background:var(--amber-bg); color:var(--amber); }
+body.pryzm-2026 #screen-studio .ws-tag.frame{ background:var(--violet-bg); color:var(--violet); }
+body.pryzm-2026 #screen-studio .ws-locked{
+  display:inline-block; padding:1px 5px; border-radius:4px; font-size:9.5px; font-weight:700;
+  background:var(--ink); color:#fff; margin-left:4px;
+}
+
 </style>
 </head>
 <body class="pryzm-2026">
@@ -3847,14 +3934,27 @@ body.pryzm-2026 #screen-forecast .frank-table tr.hl td{ background:var(--rose-bg
       Here Markus picks a SKU, picks a target price, and produces a defensible memo.
     -->
     <section id="screen-studio" class="screen hidden">
+      <div class="crumbs">
+        <span>Cockpit</span>
+        <span class="sep">/</span>
+        <span>Pricing Analyst · Frank</span>
+        <span class="sep">/</span>
+        <b>Pricing Studio</b>
+      </div>
       <div class="page-head">
         <div>
-          <div class="crumbs">Pricing Studio · <b>SKU pricing workbench</b> · Predictive Portfolio Pricing</div>
           <h1>Pricing Studio</h1>
-          <p class="muted small" style="margin-top:6px;max-width:780px">
-            Pick a SKU, model the cluster-confidence-aware target, and generate the audit-ready memo. A/B-test before broad rollout — never ship a price change blind.
-            <span class="muted">Action queue → <a href="#" data-jump="action">Action Center</a> · Cluster forecast → <a href="#" data-jump="forecast">Forecast</a> · Approvals → <a href="#" data-jump="quotes">Quotes &amp; Guardrails</a></span>
-          </p>
+          <div class="page-sub">
+            <span class="sub-pill">SKU pricing workbench</span>
+            <span class="sub-pill">Predictive Portfolio Pricing</span>
+            <span class="sub-stat"><b>10</b> SKUs flagged</span>
+            <span class="sub-stat"><b>BKAES</b> leads</span>
+          </div>
+        </div>
+        <div class="head-actions">
+          <button class="head-pill" onclick="setScreen('action')">Action queue →</button>
+          <button class="head-pill" onclick="setScreen('forecast')">Cluster forecast →</button>
+          <button class="head-pill" onclick="setScreen('quotes')">Approvals →</button>
         </div>
       </div>
 
