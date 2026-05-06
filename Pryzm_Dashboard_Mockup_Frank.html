@@ -2374,6 +2374,88 @@ body.pryzm-2026 #screen-forecast .fc-changed-row{
 }
 body.pryzm-2026 #screen-forecast .fc-changed-row:first-child{ border-top:none; }
 
+/* F3 — Pareto layer · tabs + tables */
+body.pryzm-2026 #screen-forecast .fc-tabs{
+  display:inline-flex; background:var(--surface-sunken); border-radius:10px; padding:3px; gap:2px;
+  margin-bottom:14px;
+}
+body.pryzm-2026 #screen-forecast .fc-tabs .tab{
+  padding:7px 14px; border-radius:8px; font-size:12.5px; color:var(--ink-3); font-weight:500;
+  cursor:pointer; user-select:none; transition:background .15s, color .15s;
+}
+body.pryzm-2026 #screen-forecast .fc-tabs .tab:hover{ color:var(--ink-2); }
+body.pryzm-2026 #screen-forecast .fc-tabs .tab.active{
+  background:var(--surface); color:var(--ink); box-shadow:var(--shadow-card); font-weight:600;
+}
+body.pryzm-2026 #screen-forecast .drill-detail-inner{
+  background:var(--surface-soft); border:1px solid var(--hairline); border-radius:11px;
+  padding:14px 16px; margin:8px 0;
+}
+body.pryzm-2026 #screen-forecast .drill-detail-inner h6{
+  font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--muted); font-weight:700; margin:0 0 10px;
+}
+body.pryzm-2026 #screen-forecast .sku-mix-row{
+  display:grid; grid-template-columns:90px 1fr 80px 80px 110px; gap:12px; align-items:center;
+  padding:8px 0; border-top:1px solid var(--hairline); font-size:12.5px; color:var(--ink-2);
+  background:transparent; border-radius:0; border-left:none; border-right:none; border-bottom:none;
+}
+body.pryzm-2026 #screen-forecast .sku-mix-row:first-of-type{ border-top:none; }
+body.pryzm-2026 #screen-forecast .sm-aid{ font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; font-family:'Manrope',sans-serif; }
+body.pryzm-2026 #screen-forecast .sm-action{ color:var(--rose-deep); font-weight:600; cursor:pointer; text-align:right; font-size:11.5px; }
+body.pryzm-2026 #screen-forecast .sm-action:hover{ text-decoration:underline; }
+body.pryzm-2026 #screen-forecast .tier-chip{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:18px; height:18px; border-radius:5px; font-size:10px; font-weight:700; color:#fff; margin-right:6px;
+  font-family:'Manrope',sans-serif;
+}
+body.pryzm-2026 #screen-forecast .tier-chip.A{ background:var(--rose); }
+body.pryzm-2026 #screen-forecast .tier-chip.B{ background:var(--ink-3); }
+body.pryzm-2026 #screen-forecast .tier-chip.C{ background:var(--amber); }
+body.pryzm-2026 #screen-forecast .tier-chip.D{ background:var(--red); }
+body.pryzm-2026 #screen-forecast .conf-chip{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600;
+  background:var(--surface-sunken); color:var(--ink-2);
+}
+body.pryzm-2026 #screen-forecast .conf-chip .ck{ width:6px; height:6px; border-radius:50%; background:var(--green); }
+body.pryzm-2026 #screen-forecast .conf-chip.h{ background:var(--green-bg); color:var(--green); }
+body.pryzm-2026 #screen-forecast .conf-chip.h .ck{ background:var(--green); }
+body.pryzm-2026 #screen-forecast .conf-chip.m{ background:var(--amber-bg); color:var(--amber); }
+body.pryzm-2026 #screen-forecast .conf-chip.m .ck{ background:var(--amber); }
+body.pryzm-2026 #screen-forecast .conf-chip.t{ background:var(--rose-bg); color:var(--rose-deep); }
+body.pryzm-2026 #screen-forecast .conf-chip.t .ck{ background:var(--red); }
+body.pryzm-2026 #screen-forecast .booked-bar{ display:flex; align-items:center; gap:8px; margin-top:4px; }
+body.pryzm-2026 #screen-forecast .booked-track{ flex:1; height:4px; background:var(--surface-sunken); border-radius:2px; overflow:hidden; max-width:80px; }
+body.pryzm-2026 #screen-forecast .booked-fill{ height:100%; background:var(--rose); border-radius:2px; }
+body.pryzm-2026 #screen-forecast .booked-text{ font-size:10.5px; color:var(--muted); white-space:nowrap; }
+body.pryzm-2026 #screen-forecast .trend-arrow{ font-size:12px; font-weight:600; }
+body.pryzm-2026 #screen-forecast .trend-arrow.up{ color:var(--green); }
+body.pryzm-2026 #screen-forecast .trend-arrow.down{ color:var(--red); }
+body.pryzm-2026 #screen-forecast .trend-arrow.flat{ color:var(--ink-3); }
+body.pryzm-2026 #screen-forecast .vp-split{ display:block; font-size:10.5px; color:var(--muted); margin-top:2px; }
+body.pryzm-2026 #screen-forecast .cluster-chip{
+  display:inline-flex; align-items:center; padding:2px 7px; border-radius:5px;
+  font-size:10.5px; font-weight:600; color:var(--ink-2); background:var(--surface-sunken); margin-left:6px;
+}
+body.pryzm-2026 #screen-forecast .cluster-chip[data-conf="green"]{ background:var(--green-bg); color:var(--green); }
+body.pryzm-2026 #screen-forecast .cluster-chip[data-conf="amber"]{ background:var(--amber-bg); color:var(--amber); }
+body.pryzm-2026 #screen-forecast .cluster-chip[data-conf="red"],
+body.pryzm-2026 #screen-forecast .cluster-chip.lown{ background:var(--rose-bg); color:var(--rose-deep); }
+body.pryzm-2026 #screen-forecast .row-action{
+  background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:6px 10px; font-size:11.5px; color:var(--ink-2); font-weight:500; cursor:pointer;
+  font-family:inherit;
+}
+body.pryzm-2026 #screen-forecast .row-action:hover{ background:#fafaf7; border-color:var(--border-strong); }
+body.pryzm-2026 #screen-forecast .row-action.primary{ background:var(--ink); color:#fff; border-color:var(--ink); }
+body.pryzm-2026 #screen-forecast .row-action.primary:hover{ background:var(--ink-2); border-color:var(--ink-2); }
+body.pryzm-2026 #screen-forecast .row-action.queue{ background:var(--rose-bg); color:var(--rose-deep); border-color:var(--rose-tint); }
+body.pryzm-2026 #screen-forecast .row-action.queue:hover{ background:var(--rose-tint); }
+body.pryzm-2026 #screen-forecast .footer-note{ font-size:11.5px; color:var(--muted); margin-top:10px; }
+body.pryzm-2026 #screen-forecast .footer-note a{ color:var(--rose-deep); font-weight:600; text-decoration:none; }
+body.pryzm-2026 #screen-forecast .footer-note a:hover{ text-decoration:underline; }
+
 </style>
 </head>
 <body class="pryzm-2026">
@@ -3374,30 +3456,29 @@ body.pryzm-2026 #screen-forecast .fc-changed-row:first-child{ border-top:none; }
       </div>
 
       <!-- PM drill-down: forecast by Customer / by SKU with confidence + assumptions -->
-      <div class="card card-pad mt-24">
-        <div class="between mb-16">
-          <h2 class="h2">Pareto layer · top 10 customers + SKUs <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('drillInfoPanel').classList.toggle('show')">i</button></h2>
-          <span class="status-chip">80% of revenue</span>
+      <div class="section-row" id="sec-fc-pareto">
+        <div>
+          <h2>Pareto layer · top 10 customers + SKUs</h2>
+          <div class="sub">The aggregate forecast above rolls up from these. Each row carries its own band, confidence, and assumption. Walk-forward retrained Apr 28 · 06:14 CET.</div>
         </div>
-        <div class="info-panel" id="drillInfoPanel">
-          <p>The aggregate forecast above is the rollup. This is where it comes from: top 10 customers (~80% of revenue) and top 10 SKUs.</p>
-          <p>Each row carries its own forecast band, confidence rating from the model-routing agent, and a one-line assumption (hover the customer cell). Walk-forward retrained Apr 28 · 06:14 CET.</p>
-        </div>
-
-        <div class="tabs" id="forecastTabs">
+        <span class="tag-chip">80% of revenue</span>
+      </div>
+      <div class="lq-card">
+        <div class="fc-tabs" id="forecastTabs">
           <div class="tab active" data-fctab="cust"><span class="tab-label">By customer · top 10</span></div>
           <div class="tab" data-fctab="sku"><span class="tab-label">By SKU · top 10</span></div>
         </div>
 
         <!-- Customer drill-down -->
         <div class="tab-pane fc-cust-pane" data-fcpane="cust">
-          <div class="tier-legend mb-16">
-            <span class="lg tip" data-tip="Strategic · hold price · top-revenue accounts where retention beats margin"><span class="tier-chip A">A</span>Strategic</span>
-            <span class="lg tip" data-tip="Standard · normal margin · stable repeat accounts at list pricing"><span class="tier-chip B">B</span>Standard</span>
-            <span class="lg tip" data-tip="Volume · capacity-fill · low-margin accounts kept for utilization"><span class="tier-chip C">C</span>Volume</span>
-            <span class="lg tip" data-tip="Problematic · raise price or accept attrition. Pricing-set tier."><span class="tier-chip D">D</span>Problematic</span>
+          <div class="tier-legend mb-16" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+            <span class="tag-chip tip" data-tip="Strategic · hold price · top-revenue accounts where retention beats margin"><span class="tier-chip A">A</span>Strategic</span>
+            <span class="tag-chip tip" data-tip="Standard · normal margin · stable repeat accounts at list pricing"><span class="tier-chip B">B</span>Standard</span>
+            <span class="tag-chip tip" data-tip="Volume · capacity-fill · low-margin accounts kept for utilization"><span class="tier-chip C">C</span>Volume</span>
+            <span class="tag-chip tip" data-tip="Problematic · raise price or accept attrition. Pricing-set tier."><span class="tier-chip D">D</span>Problematic</span>
           </div>
-          <table>
+          <div class="sku-card"><div class="table-wrap">
+          <table class="frank-table">
             <thead>
               <tr>
                 <th>Customer</th>
@@ -3503,12 +3584,14 @@ body.pryzm-2026 #screen-forecast .fc-changed-row:first-child{ border-top:none; }
               </tr>
             </tbody>
           </table>
+          </div></div>
           <p class="footer-note">Top 7 of 10 · <a href="#">show all 10</a> · 80.4% of revenue (Pareto)</p>
         </div>
 
         <!-- SKU drill-down -->
         <div class="tab-pane fc-sku-pane hidden" data-fcpane="sku">
-          <table>
+          <div class="sku-card"><div class="table-wrap">
+          <table class="frank-table">
             <thead>
               <tr>
                 <th>Article</th><th>Description</th><th>LTM volume</th>
@@ -3556,7 +3639,7 @@ body.pryzm-2026 #screen-forecast .fc-changed-row:first-child{ border-top:none; }
                 <td class="num-cell">24%</td>
                 <td><span class="conf-chip t"><span class="ck"></span>Thin data</span></td>
                 <td>103044 + 101900</td>
-                <td><button class="row-action" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
+                <td style="white-space:nowrap"><button class="row-action primary" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button> <button class="row-action queue" onclick="toast('211094-C added to action queue')">+ Queue</button></td>
               </tr>
               <tr class="drill-row">
                 <td class="sku-cell tip" data-tip="Recently raised +6% on 101582 (last week). Forecast assumes price holds; volume expected stable."><b>205418-A</b><span class="cluster-chip" data-conf="green">BKAES 82%</span><span class="ab-chip" onclick="event.stopPropagation();toast('A/B test 205418-A · day 9 of 21 · see Action Center');setTimeout(()=>setScreen('action'),350)">🧪 A/B running</span></td>
@@ -3580,6 +3663,7 @@ body.pryzm-2026 #screen-forecast .fc-changed-row:first-child{ border-top:none; }
               </tr>
             </tbody>
           </table>
+          </div></div>
           <p class="footer-note">Top 6 of 10 · <a href="#">show all 10</a></p>
         </div>
       </div>
@@ -6537,7 +6621,7 @@ document.querySelectorAll('#marginTabs .tab').forEach(t=>{
 /* Forecast page tabs (Customer / SKU drill-down) */
 document.querySelectorAll('#forecastTabs .tab').forEach(t=>{
   t.addEventListener('click',()=>{
-    const root = t.closest('.card');
+    const root = t.closest('.lq-card, .card');
     root.querySelectorAll('#forecastTabs .tab').forEach(x=>x.classList.remove('active'));
     t.classList.add('active');
     const tab = t.dataset.fctab;
