@@ -1760,6 +1760,238 @@ body.pryzm-2026 .frank-drawer h3{ font-family:'Manrope','Inter',sans-serif; colo
 body.pryzm-2026 .frank-drawer .fd-close{ color:var(--muted); }
 body.pryzm-2026 .frank-drawer .fd-close:hover{ color:var(--ink); }
 body.pryzm-2026 .frank-drawer .fd-foot{ background:var(--surface-soft); border-top:1px solid var(--border); }
+
+/* ===== T2: page-head + hero + round cards ===== */
+body.pryzm-2026 .crumbs{
+  display:flex;align-items:center;gap:8px;
+  color:var(--muted);font-size:12.5px;margin-bottom:14px;
+}
+body.pryzm-2026 .crumbs b{color:var(--ink);font-weight:600}
+body.pryzm-2026 .crumbs .sep{color:var(--muted-2);font-weight:400}
+
+body.pryzm-2026 .page-head{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:24px;margin-bottom:22px;
+}
+body.pryzm-2026 .page-head h1{font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-0.028em}
+body.pryzm-2026 .page-sub{
+  margin-top:10px;color:var(--muted);font-size:12px;
+  display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+}
+body.pryzm-2026 .page-sub b{color:var(--ink-2);font-weight:600}
+body.pryzm-2026 .page-sub .sub-pill{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:7px;padding:5px 10px;font-size:11.5px;
+  letter-spacing:.01em;
+}
+body.pryzm-2026 .page-sub .sub-stat{
+  font-size:11.5px;padding:5px 10px;
+  background:var(--surface-soft);border-radius:7px;
+}
+body.pryzm-2026 .page-sub .sub-stat b{font-weight:700}
+body.pryzm-2026 .sub-dot{display:inline-block;width:3px;height:3px;background:var(--muted-2);border-radius:50%;margin:0 9px;vertical-align:middle}
+
+body.pryzm-2026 .head-actions{display:flex;gap:8px;align-items:center;flex:none}
+body.pryzm-2026 .head-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  height:36px;padding:0 14px;border-radius:11px;
+  background:var(--surface);border:1px solid var(--border);
+  font-size:12.5px;font-weight:500;color:var(--ink-2);
+  transition:background .15s, border-color .15s;
+  cursor:pointer;
+}
+body.pryzm-2026 .head-pill svg{width:13px;height:13px;color:var(--ink-3)}
+body.pryzm-2026 .head-pill:hover{background:#fafaf7;border-color:var(--border-strong)}
+
+/* Hero card */
+body.pryzm-2026 .hero-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:24px 28px 22px;
+  box-shadow:var(--shadow-card);
+  position:relative;
+}
+body.pryzm-2026 .hero-card .eyebrow{
+  display:flex;align-items:center;gap:8px;
+  font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  font-weight:600;margin-bottom:14px;line-height:1;
+}
+body.pryzm-2026 .hero-card .eyebrow .info{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:14px;height:14px;border-radius:50%;border:1px solid var(--border-strong);
+  color:var(--muted);font-size:9px;font-weight:700;cursor:help;
+  font-family:ui-serif, Georgia, serif;letter-spacing:0;
+}
+body.pryzm-2026 .hero-card .eyebrow .info:hover{color:var(--ink-2);border-color:var(--ink-3)}
+
+body.pryzm-2026 .hero-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:32px;align-items:stretch}
+
+body.pryzm-2026 .hero-headline{
+  display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+  margin-bottom:6px;
+}
+body.pryzm-2026 .hero-headline .num{
+  font-size:56px;line-height:1;font-weight:700;
+  letter-spacing:-0.035em;color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+body.pryzm-2026 .hero-headline .delta{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:13px;font-weight:600;color:var(--green);
+  background:var(--green-bg);padding:5px 10px;border-radius:7px;
+  letter-spacing:-0.005em;
+}
+body.pryzm-2026 .hero-headline .delta svg{width:11px;height:11px}
+
+body.pryzm-2026 .hero-sub{
+  font-size:14px;color:var(--ink-3);line-height:1.5;
+  margin:0 0 22px;
+}
+body.pryzm-2026 .hero-sub b{color:var(--ink-2);font-weight:600}
+
+body.pryzm-2026 .hero-split{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;
+  margin-top:4px;border-top:1px solid var(--border);
+  padding-top:16px;
+}
+body.pryzm-2026 .hero-split .split-stat{position:relative;padding:0 18px;min-width:0}
+body.pryzm-2026 .hero-split .split-stat:first-child{padding-left:0}
+body.pryzm-2026 .hero-split .split-stat:last-child{padding-right:0}
+body.pryzm-2026 .hero-split .split-stat + .split-stat{border-left:1px solid var(--border)}
+body.pryzm-2026 .hero-split .split-label{
+  font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);font-weight:600;display:flex;align-items:center;gap:6px;
+  margin-bottom:6px;
+}
+body.pryzm-2026 .hero-split .split-label .swatch{
+  width:8px;height:8px;border-radius:2px;background:var(--rose);
+}
+body.pryzm-2026 .hero-split .split-stat.locked .split-label .swatch{background:var(--ink-3);opacity:.45}
+body.pryzm-2026 .hero-split .split-value{
+  font-size:20px;font-weight:700;letter-spacing:-0.02em;
+  color:var(--ink);font-variant-numeric:tabular-nums;
+}
+body.pryzm-2026 .hero-split .split-value .pct{
+  font-size:13px;font-weight:500;color:var(--ink-3);margin-left:6px;
+  letter-spacing:0;
+}
+body.pryzm-2026 .hero-split .split-stat.locked .split-value{color:var(--ink-2)}
+
+body.pryzm-2026 .hero-bar{
+  display:flex;height:6px;border-radius:4px;overflow:hidden;
+  margin-top:14px;background:var(--surface-soft);
+}
+body.pryzm-2026 .hero-bar .seg-mov{background:var(--rose);flex:0 0 62%}
+body.pryzm-2026 .hero-bar .seg-lock{background:var(--ink-3);opacity:.35;flex:1}
+
+body.pryzm-2026 .hero-cta-row{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:18px;padding-top:16px;border-top:1px solid var(--border);
+}
+body.pryzm-2026 .hero-cta-row .footnote{
+  font-size:11.5px;color:var(--muted);
+}
+body.pryzm-2026 .btn-primary{
+  background:var(--ink);color:#fff;border:none;border-radius:8px;
+  padding:9px 14px;font-size:12.5px;font-weight:600;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;
+  transition:background .15s, transform .1s;
+}
+body.pryzm-2026 .btn-primary:hover{ background:#000; }
+body.pryzm-2026 .btn-primary:active{transform:translateY(1px)}
+body.pryzm-2026 .btn-primary svg{ width:11px; height:11px; }
+
+body.pryzm-2026 .hero-spark-wrap{
+  position:relative;
+  display:flex;flex-direction:column;
+  padding:4px 4px 4px 8px;
+  height:100%;min-height:0;
+}
+body.pryzm-2026 .hero-spark-meta{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  font-weight:600;margin-bottom:8px;line-height:1;
+}
+body.pryzm-2026 .hero-spark-meta .scale{font-variant-numeric:tabular-nums}
+body.pryzm-2026 .hero-chart-box{position:relative;flex:1;min-height:200px;width:100%}
+body.pryzm-2026 .hero-spark{position:absolute;inset:0;display:block}
+body.pryzm-2026 .hero-spark-axis{
+  display:flex;justify-content:space-between;
+  font-size:10.5px;color:var(--muted);font-weight:500;
+  margin-top:6px;letter-spacing:0;text-transform:none;
+}
+@media (max-width:760px){
+  body.pryzm-2026 .hero-grid{grid-template-columns:1fr;gap:24px}
+  body.pryzm-2026 .hero-headline .num{font-size:44px}
+}
+
+/* Round cards */
+body.pryzm-2026 .round-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+body.pryzm-2026 .round-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:18px 20px 16px;box-shadow:var(--shadow-card);
+  display:flex;flex-direction:column;gap:12px;
+  transition:box-shadow .2s ease, transform .2s ease;
+}
+body.pryzm-2026 .round-card .rc-title{min-width:0}
+body.pryzm-2026 .round-card .round-foot{margin-top:auto}
+body.pryzm-2026 .round-card:hover{box-shadow:var(--shadow-pop);transform:translateY(-1px)}
+body.pryzm-2026 .round-tags{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+body.pryzm-2026 .tag-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--surface-sunken);
+  border-radius:7px;padding:5px 9px;font-size:11.5px;color:var(--ink-2);font-weight:500;
+  white-space:nowrap;
+}
+body.pryzm-2026 .tag-chip.icon svg{width:11px;height:11px;color:var(--ink-3)}
+body.pryzm-2026 .tag-chip.status{padding-left:10px}
+body.pryzm-2026 .tag-chip.status::before{
+  content:"";width:6px;height:6px;border-radius:50%;background:var(--green);
+}
+body.pryzm-2026 .tag-chip.status.amber::before{background:var(--amber)}
+body.pryzm-2026 .tag-chip.status.red::before{background:var(--red)}
+body.pryzm-2026 .tag-chip.dark{background:#15140f;color:#fff}
+body.pryzm-2026 .tag-chip.rose{background:var(--rose-bg);color:var(--rose-deep)}
+
+body.pryzm-2026 .round-card h3{font-size:19px;font-weight:700;letter-spacing:-0.014em;line-height:1.2}
+body.pryzm-2026 .round-card .sub{color:var(--muted);font-size:12.5px;margin-top:5px}
+
+body.pryzm-2026 .round-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto}
+body.pryzm-2026 .avatars{display:flex;align-items:center}
+body.pryzm-2026 .avatars .a{
+  width:30px;height:30px;border-radius:50%;
+  border:2.5px solid #fff;font-size:11px;font-weight:600;color:var(--ink-2);
+  display:grid;place-items:center;margin-right:-9px;
+  box-shadow:0 1px 0 rgba(0,0,0,.04);
+  background:var(--surface-sunken);
+}
+body.pryzm-2026 .avatars .a.r{background:var(--rose);color:#fff;font-size:11px;font-weight:700;border-color:#fff;z-index:2}
+
+body.pryzm-2026 .btn-act{
+  display:inline-flex;align-items:center;gap:12px;
+  height:36px;padding:0 16px;border-radius:11px;
+  background:#15140f;color:#fff;font-size:12.5px;font-weight:500;
+  transition:background .15s, transform .12s;
+  box-shadow:0 1px 0 rgba(0,0,0,.06);
+  border:none;cursor:pointer;
+}
+body.pryzm-2026 .btn-act:hover{background:#2a2723}
+body.pryzm-2026 .btn-act:active{transform:translateY(1px)}
+body.pryzm-2026 .btn-act .arr{opacity:.92}
+
+body.pryzm-2026 .section-row{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  gap:16px;margin:28px 0 14px;
+}
+body.pryzm-2026 .section-row h2{font-size:20px;font-weight:700;letter-spacing:-0.018em;line-height:1.2}
+body.pryzm-2026 .section-row .sub{color:var(--muted);font-size:12.5px;margin-top:4px;max-width:70ch}
+body.pryzm-2026 .section-row .section-tools{display:flex;gap:6px;flex:none}
+body.pryzm-2026 .icon-btn-sq{
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface);color:var(--ink-3);display:grid;place-items:center;
+  cursor:pointer;transition:background .15s,border-color .15s;
+}
+body.pryzm-2026 .icon-btn-sq svg{width:14px;height:14px}
+body.pryzm-2026 .icon-btn-sq:hover{background:#fafaf7;border-color:var(--border-strong);color:var(--ink-2)}
 </style>
 </head>
 <body class="pryzm-2026">
@@ -1870,14 +2102,28 @@ body.pryzm-2026 .frank-drawer .fd-foot{ background:var(--surface-soft); border-t
     <!-- ============== ACTION CENTER : PRICING MANAGER ============== -->
     <section id="screen-action-pm" class="screen">
       <!-- 1. Page head -->
+      <div class="crumbs">
+        <span>Cockpit</span>
+        <span class="sep">/</span>
+        <span>Pricing Analyst · Frank</span>
+        <span class="sep">/</span>
+        <b>Action Center</b>
+      </div>
+
       <div class="page-head">
         <div>
-          <div class="crumbs">Analyst Cockpit · <b>Pricing Analyst / Head of Controlling</b></div>
           <h1>Good morning, Frank.</h1>
-          <div class="page-sub">Week 18 · Apr 27 – May 3, 2026<span class="sub-dot"></span><b>1,313</b> quote-invoice linked records<span class="sub-dot"></span><b>1,015</b> active SKUs<span class="sub-dot"></span><b>4</b> commodity groups</div>
+          <div class="page-sub">
+            <span class="sub-pill"><b>Week 18</b> · Apr 27 – May 3, 2026</span>
+            <span class="sub-stat"><b>1,313</b> records</span>
+            <span class="sub-stat"><b>1,015</b> SKUs</span>
+            <span class="sub-stat"><b>4</b> commodity groups</span>
+          </div>
         </div>
-        <div class="row" style="gap:8px">
-          <button class="btn">📅 Week 18 · Apr 27 – May 3, 2026</button>
+        <div class="head-actions">
+          <button class="head-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg> All Departments</button>
+          <button class="head-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Export</button>
+          <button class="head-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9v7l4 2v-9z"/></svg> Filter</button>
         </div>
       </div>
 
@@ -1901,13 +2147,90 @@ body.pryzm-2026 .frank-drawer .fd-foot{ background:var(--surface-soft); border-t
       </div>
 
       <!-- 2. Movable-revenue hero -->
-      <div class="hero" style="margin-top:18px">
-        <div>
-          <div class="eyebrow">Movable revenue · pilot estimate <span class="frank-caveat">Estimate — refined per cluster</span></div>
-          <h2>Of €6.25M revenue, ~62% is movable. €3.88M open to repricing.</h2>
-          <p style="margin-top:10px">Locked under multi-year contracts: <b>€2.37M (38%, est.)</b>. Movable share refined per cluster — see Heterogeneous Portfolio below.</p>
+      <div class="hero-card" id="sec-movable">
+        <div class="hero-grid">
+          <div>
+            <div class="eyebrow">
+              <span class="lbl">Movable revenue</span>
+              <span class="info" title="Pilot estimate · refined weekly per cluster">i</span>
+            </div>
+            <div class="hero-headline">
+              <span class="num">€3.88M</span>
+              <span class="delta">
+                <svg viewBox="0 0 12 12" fill="none"><path d="M6 10V2M6 2L2.5 5.5M6 2L9.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                +9.2% vs Wk 17
+              </span>
+            </div>
+            <p class="hero-sub">of <b>€6.25M</b> total revenue this week — <b>62% open to repricing</b>.</p>
+            <div class="hero-split">
+              <div class="split-stat">
+                <div class="split-label"><span class="swatch"></span>Movable share</div>
+                <div class="split-value">62%<span class="pct">of revenue</span></div>
+              </div>
+              <div class="split-stat">
+                <div class="split-label">SKUs in scope</div>
+                <div class="split-value">628<span class="pct">of 1,015</span></div>
+              </div>
+              <div class="split-stat locked">
+                <div class="split-label"><span class="swatch"></span>Locked</div>
+                <div class="split-value">€2.37M<span class="pct">38%</span></div>
+              </div>
+            </div>
+            <div class="hero-bar"><div class="seg-mov"></div><div class="seg-lock"></div></div>
+            <div class="hero-cta-row">
+              <span class="footnote">Movable share refined per cluster — see Heterogeneous Portfolio.</span>
+              <button class="btn-primary" onclick="toast && toast('Opening repricing queue')">
+                Open repricing queue
+                <svg viewBox="0 0 12 12" fill="none"><path d="M2.5 6h7M6 2.5L9.5 6 6 9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="hero-spark-wrap">
+            <div class="hero-spark-meta"><span>Movable revenue trend</span><span class="scale">€M</span></div>
+            <div class="hero-chart-box"><canvas id="heroSpark" class="hero-spark"></canvas></div>
+            <div class="hero-spark-axis"><span>Wk 6</span><span>Wk 12</span><span style="color:var(--rose);font-weight:600">Wk 18 · €3.88M</span></div>
+          </div>
         </div>
-        <div><canvas id="heroSpark" class="spark"></canvas></div>
+      </div>
+
+      <div class="round-grid">
+        <div class="round-card">
+          <div class="rc-title">
+            <h3>Movable bucket</h3>
+            <div class="sub">808 SKUs · 4 commodity groups · BKAES leads</div>
+          </div>
+          <div class="round-tags">
+            <span class="tag-chip">€3.88M open</span>
+            <span class="tag-chip status">Movable</span>
+          </div>
+          <div class="round-foot">
+            <div class="avatars">
+              <div class="a" style="background:#dcd1c4">FK</div>
+              <div class="a" style="background:#cdb6f0">HM</div>
+              <div class="a" style="background:#f4cdb1">TH</div>
+              <div class="a r">+5</div>
+            </div>
+            <button class="btn-act" onclick="toast && toast('Open SKU list')">View SKUs <span class="arr">→</span></button>
+          </div>
+        </div>
+        <div class="round-card">
+          <div class="rc-title">
+            <h3>Locked bucket</h3>
+            <div class="sub">207 SKUs · 18 contracts · earliest renew Q3 '26</div>
+          </div>
+          <div class="round-tags">
+            <span class="tag-chip">€2.37M locked</span>
+            <span class="tag-chip status amber">In renewal queue</span>
+          </div>
+          <div class="round-foot">
+            <div class="avatars">
+              <div class="a" style="background:#cdc6b4">MD</div>
+              <div class="a" style="background:#d8b4b4">TI</div>
+              <div class="a r">+3</div>
+            </div>
+            <button class="btn-act" onclick="toast && toast('Open renewal queue')">View renewals <span class="arr">→</span></button>
+          </div>
+        </div>
       </div>
 
       <!-- 3. Model Trust Strip -->
@@ -5268,18 +5591,20 @@ function initSpark(){
   // Frank: 4-year quoted-margin trendline (price_history_with_margin)
   const margins = FRANK_DATA.priceHistory.map(p=>p.margin*100);
   const labels  = FRANK_DATA.priceHistory.map(p=>String(p.year));
-  const grad = c.getContext('2d').createLinearGradient(0,0,0,80);
-  grad.addColorStop(0,'rgba(34,197,94,.35)');
-  grad.addColorStop(1,'rgba(34,197,94,0)');
   charts.spark = new Chart(c,{
     type:'line',
     data:{labels,datasets:[{
-      data:margins, borderColor:'#16a34a', borderWidth:2, fill:true, backgroundColor:grad,
-      tension:.35, pointRadius:3, pointBackgroundColor:'#16a34a'
+      data:margins,
+      borderColor:'#a35a5a',
+      backgroundColor:'rgba(163,90,90,0.10)',
+      borderWidth:2,
+      fill:true,
+      tension:0.35,
+      pointRadius:0
     }]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Quoted margin: ${ctx.parsed.y.toFixed(1)}%`}}},
-      scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{display:false,suggestedMin:68,suggestedMax:72}}}
+      scales:{x:{display:false,grid:{display:false}},y:{display:false,suggestedMin:68,suggestedMax:72}}}
   });
 }
 
