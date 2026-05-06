@@ -2149,6 +2149,208 @@ body.pryzm-2026 .btn-primary-rose{
 body.pryzm-2026 .btn-primary-rose:hover{background:var(--rose-deep);box-shadow:0 6px 16px -8px rgba(163,90,90,.55)}
 body.pryzm-2026 .btn-primary-rose:active{transform:translateY(1px)}
 
+/* === T6: Trust strip + Lost-quote + SKU table === */
+body.pryzm-2026 .trust-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+body.pryzm-2026 .trust-tile{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:16px 18px 14px;cursor:pointer;
+  transition:border-color .2s, box-shadow .2s, transform .2s;
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;gap:6px;min-width:0;
+}
+body.pryzm-2026 .trust-tile:hover{border-color:var(--border-strong);box-shadow:var(--shadow-pop);transform:translateY(-1px)}
+body.pryzm-2026 .trust-tile .lab{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+body.pryzm-2026 .trust-tile .big{font-family:'Manrope',sans-serif;font-size:28px;font-weight:700;margin:6px 0 4px;letter-spacing:-0.025em;line-height:1;color:var(--ink)}
+body.pryzm-2026 .trust-tile .cap{font-size:11.5px;color:var(--muted);line-height:1.45}
+body.pryzm-2026 .trust-spark-wrap{margin-top:10px;width:100%;height:30px;pointer-events:none;overflow:hidden}
+body.pryzm-2026 .trust-spark-wrap svg{display:block;width:100%;height:100%;overflow:visible}
+
+body.pryzm-2026 .lq-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:22px 24px;margin-top:14px;box-shadow:var(--shadow-card);
+}
+body.pryzm-2026 .lq-grid{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
+body.pryzm-2026 .lq-card h3{font-size:18px;font-weight:700;letter-spacing:-0.018em}
+body.pryzm-2026 .lq-stats{display:flex;gap:30px;margin:0 0 14px;flex-wrap:wrap;align-items:flex-end}
+body.pryzm-2026 .lq-foot{
+  display:flex;justify-content:space-between;align-items:center;gap:14px;
+  margin-top:18px;padding-top:14px;border-top:1px solid var(--hairline);
+}
+body.pryzm-2026 .lq-foot .ftxt{font-size:11.5px;color:var(--muted)}
+body.pryzm-2026 .lq-foot .ftxt b{color:var(--ink-2);font-weight:600}
+body.pryzm-2026 .lq-foot .lq-cta{flex:none}
+body.pryzm-2026 .lq-foot .btn-primary-rose{padding:10px 18px;flex:none}
+body.pryzm-2026 .lq-stat{display:flex;flex-direction:column;gap:4px}
+body.pryzm-2026 .lq-stat .num{font-family:'Manrope',sans-serif;font-size:26px;font-weight:700;letter-spacing:-0.022em;line-height:1;color:var(--ink)}
+body.pryzm-2026 .lq-stat.diff .num{color:var(--red)}
+body.pryzm-2026 .lq-stat .lab{font-size:11.5px;color:var(--muted);font-weight:500}
+body.pryzm-2026 .sig-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--green-bg);color:var(--green);border-radius:999px;
+  padding:6px 12px;font-size:11px;font-weight:600;
+  align-self:center;
+}
+body.pryzm-2026 .sig-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(47,125,91,.16)}
+body.pryzm-2026 .lq-bar-wrap{display:flex;flex-direction:column;gap:10px;margin-top:14px;max-width:520px}
+body.pryzm-2026 .lq-bar{
+  display:grid;grid-template-columns:80px 1fr 60px;gap:12px;align-items:center;
+  font-size:12px;
+}
+body.pryzm-2026 .lq-bar .l{color:var(--ink-2);font-weight:500}
+body.pryzm-2026 .lq-bar .v{font-weight:700;color:var(--ink);text-align:right;font-variant-numeric:tabular-nums;font-family:'Manrope',sans-serif}
+body.pryzm-2026 .lq-bar .t{height:8px;background:var(--surface-sunken);border-radius:4px;overflow:hidden}
+body.pryzm-2026 .lq-bar .t .f{height:100%;border-radius:4px;background:var(--green);transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+body.pryzm-2026 .lq-bar.lost .t .f{background:var(--red)}
+
+body.pryzm-2026 .sku-card{margin-top:14px}
+body.pryzm-2026 .sku-card .table-wrap{
+  overflow-x:auto;overflow-y:visible;
+  border-radius:var(--r-md);border:1px solid var(--border);background:var(--surface);
+  box-shadow:var(--shadow-card);
+  scrollbar-width:thin;
+}
+body.pryzm-2026 .sku-card .table-wrap::-webkit-scrollbar{height:8px}
+body.pryzm-2026 .sku-card .table-wrap::-webkit-scrollbar-thumb{background:rgba(0,0,0,.12);border-radius:4px}
+body.pryzm-2026 table.frank-table{width:100%;border-collapse:collapse;font-size:13px}
+body.pryzm-2026 table.frank-table th{
+  text-align:left;font-weight:600;color:var(--muted);
+  padding:11px 12px;background:var(--surface-soft);
+  border-bottom:1px solid var(--border);
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;
+  white-space:nowrap;
+}
+body.pryzm-2026 table.frank-table td{
+  padding:12px 12px;border-bottom:1px solid var(--hairline);
+  color:var(--ink-2);vertical-align:middle;
+}
+body.pryzm-2026 table.frank-table tbody tr{transition:background .15s;cursor:pointer}
+body.pryzm-2026 table.frank-table tbody tr:hover{background:var(--surface-soft)}
+body.pryzm-2026 table.frank-table tr:last-child td{border-bottom:none}
+body.pryzm-2026 table.frank-table td b{color:var(--ink);font-weight:700;font-family:'Manrope',sans-serif;letter-spacing:-0.005em}
+
+body.pryzm-2026 .cluster-conf{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--surface-sunken);border-radius:7px;
+  padding:4px 9px;font-size:11.5px;color:var(--ink-2);font-weight:500;
+}
+body.pryzm-2026 .cc-dot{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block}
+body.pryzm-2026 .cluster-conf.mid .cc-dot{background:var(--amber)}
+body.pryzm-2026 .cluster-conf.low .cc-dot{background:var(--red)}
+
+body.pryzm-2026 .contract-chip{
+  display:inline-block;padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;
+  background:var(--surface-sunken);color:var(--ink-2);
+  position:relative;
+}
+body.pryzm-2026 .contract-chip.movable{
+  background:var(--surface-sunken);color:var(--ink-2);
+  padding-left:18px;
+}
+body.pryzm-2026 .contract-chip.movable::before{
+  content:"";position:absolute;left:8px;top:50%;transform:translateY(-50%);
+  width:6px;height:6px;border-radius:50%;background:var(--green);
+}
+body.pryzm-2026 .contract-chip.locked{background:var(--amber-bg);color:var(--amber)}
+body.pryzm-2026 .contract-chip.abtest{background:var(--violet-bg);color:var(--violet)}
+
+body.pryzm-2026 .row-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:7px 12px;font-size:12px;color:var(--ink-2);font-weight:500;cursor:pointer;
+  transition:background .15s, border-color .15s;
+}
+body.pryzm-2026 .row-btn:hover{background:#fafaf7;border-color:var(--border-strong)}
+body.pryzm-2026 .row-btn.primary{background:var(--rose);color:#fff;border-color:var(--rose)}
+body.pryzm-2026 .row-btn.primary:hover{background:var(--rose-deep)}
+
+/* === T7: Right rail === */
+body.pryzm-2026 .rail-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+  box-shadow:var(--shadow-card);
+}
+body.pryzm-2026 .rail-card.pad{padding:18px 18px 16px}
+body.pryzm-2026 .notif-card{padding:6px}
+body.pryzm-2026 .notif{
+  display:flex;align-items:center;gap:12px;padding:12px 12px;
+  border-radius:11px;
+  transition:background .15s;cursor:pointer;
+}
+body.pryzm-2026 .notif:hover{background:var(--surface-soft)}
+body.pryzm-2026 .notif + .notif{border-top:1px solid var(--hairline)}
+body.pryzm-2026 .notif-ic{
+  width:36px;height:36px;border-radius:11px;flex:none;
+  background:var(--surface-sunken);
+  display:grid;place-items:center;color:var(--ink-2);
+}
+body.pryzm-2026 .notif-ic.ok{background:var(--green-bg);color:var(--green)}
+body.pryzm-2026 .notif-ic.info{background:var(--violet-bg);color:var(--violet)}
+body.pryzm-2026 .notif-ic.warn{background:var(--amber-bg);color:var(--amber)}
+body.pryzm-2026 .notif.unread{position:relative}
+body.pryzm-2026 .notif.unread::after{
+  content:"";position:absolute;top:14px;right:42px;
+  width:6px;height:6px;border-radius:50%;background:var(--rose);
+}
+body.pryzm-2026 .notif-ic svg{width:16px;height:16px}
+body.pryzm-2026 .notif-body{flex:1;min-width:0}
+body.pryzm-2026 .notif-title{font-size:13px;font-weight:600;color:var(--ink);line-height:1.3}
+body.pryzm-2026 .notif-sub{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.3;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+body.pryzm-2026 .notif-arr{
+  width:24px;height:24px;border-radius:7px;
+  display:grid;place-items:center;color:var(--muted-2);font-size:11px;
+  transition:background .15s, color .15s;
+}
+body.pryzm-2026 .notif:hover .notif-arr{background:var(--surface-sunken);color:var(--ink-2)}
+body.pryzm-2026 .notif-foot{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 8px 6px;
+}
+body.pryzm-2026 .notif-foot .see{
+  display:inline-flex;align-items:center;gap:8px;
+  background:#15140f;color:#fff;border:none;border-radius:11px;
+  padding:9px 14px;font-size:12px;font-weight:500;cursor:pointer;
+  transition:background .15s;
+}
+body.pryzm-2026 .notif-foot .see:hover{background:#2a2723}
+body.pryzm-2026 .notif-foot .notes{
+  display:inline-flex;align-items:center;gap:6px;
+  color:var(--muted);font-size:12px;font-weight:500;padding:0 8px;
+}
+body.pryzm-2026 .notif-foot .notes svg{width:13px;height:13px}
+
+body.pryzm-2026 .rail-h{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px}
+body.pryzm-2026 .rail-h h3{font-size:15.5px;font-weight:700;letter-spacing:-0.012em;line-height:1.2}
+body.pryzm-2026 .rail-h .sub{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+body.pryzm-2026 .rail-h .arrow-btn{
+  width:26px;height:26px;border-radius:8px;color:var(--ink-2);
+  display:grid;place-items:center;flex:none;border:none;background:transparent;cursor:pointer;
+  transition:background .15s;
+}
+body.pryzm-2026 .rail-h .arrow-btn:hover{background:var(--surface-sunken)}
+body.pryzm-2026 .rail-h .arrow-btn svg{width:13px;height:13px}
+
+body.pryzm-2026 .add-section{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--surface-sunken);
+  border-radius:8px;padding:6px 10px;font-size:11.5px;color:var(--ink-2);font-weight:500;
+  transition:background .15s;flex:none;cursor:pointer;
+}
+body.pryzm-2026 .add-section:hover{background:#dedcd6}
+
+body.pryzm-2026 .sec-list{display:flex;flex-direction:column;gap:8px}
+body.pryzm-2026 .sec-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface-soft);border-radius:11px;
+  padding:11px 12px;cursor:pointer;text-decoration:none;
+  transition:background .15s;
+}
+body.pryzm-2026 .sec-row:hover{background:#e8e6e0}
+body.pryzm-2026 .sec-row .meta{flex:1;min-width:0}
+body.pryzm-2026 .sec-row .meta .t{font-size:13px;font-weight:600;color:var(--ink);line-height:1.25}
+body.pryzm-2026 .sec-row .meta .s{font-size:11.5px;color:var(--muted);margin-top:2px}
+body.pryzm-2026 .sec-row .sec-arr{font-size:13px;color:var(--muted-2);transition:transform .15s, color .15s}
+body.pryzm-2026 .sec-row:hover .sec-arr{transform:translateX(2px);color:var(--ink-2)}
+
 </style>
 </head>
 <body class="pryzm-2026">
@@ -2390,55 +2592,7 @@ body.pryzm-2026 .btn-primary-rose:active{transform:translateY(1px)}
         </div>
       </div>
 
-      <!-- 3. Model Trust Strip -->
-      <div class="between" style="margin-top:24px">
-        <h2 class="h2">Model trust · transparency strip</h2>
-        <span class="muted small">Click any tile for feature importance &amp; training history</span>
-      </div>
-      <div class="grid-4 mt-16">
-        <div class="card card-pad trust-tile" data-trust="churn">
-          <div class="lab">Churn model F1</div>
-          <div class="big">0.76</div>
-          <div class="cap">precision 0.72 · recall 0.81 · n=827 customers</div>
-        </div>
-        <div class="card card-pad trust-tile" data-trust="forecast">
-          <div class="lab">Forecast error</div>
-          <div class="big">&lt;5%</div>
-          <div class="cap">Q1 2025 actuals · walk-forward retraining · Monte Carlo bands</div>
-        </div>
-        <div class="card card-pad trust-tile" data-trust="anomaly">
-          <div class="lab">Anomalies caught (Q1)</div>
-          <div class="big">33</div>
-          <div class="cap">15 negative-margin · 18 missing-data · €342K revenue exposure</div>
-        </div>
-        <div class="card card-pad trust-tile" data-trust="coverage">
-          <div class="lab">Data coverage</div>
-          <div class="big">99.2%</div>
-          <div class="cap">Invoices 99.2% · Margin history 89.4% · Quote data 73.1% (gap)</div>
-        </div>
-      </div>
-
-      <!-- 4. Lost-Quote Differential -->
-      <div class="card card-pad lost-quote-card mt-24">
-        <div class="between" style="align-items:flex-start">
-          <div style="flex:1">
-            <h3 style="margin:0 0 10px;font-size:18px">Lost-quote margin differential</h3>
-            <div class="lost-quote-stats">
-              <div class="lq-stat"><span class="lq-num">70.6%</span><span class="lq-lab">Won deals avg margin</span></div>
-              <div class="lq-stat"><span class="lq-num">72.4%</span><span class="lq-lab">Lost deals avg margin</span></div>
-              <div class="lq-stat lq-diff"><span class="lq-num">+1.8pp</span><span class="lq-lab">Differential (LOST higher!)</span></div>
-              <span class="sig-pill">● p = 0.006 · statistically significant</span>
-            </div>
-            <p style="margin:0;color:#334155;line-height:1.55">Sales is systematically losing the highest-margin deals. The +1.8pp differential is small in absolute terms but statistically significant across 1,313 linked records — meaning customers walk away from premium-margin quotes. <b>Implication:</b> pricing logic on premium tier is leaving deals on the table.</p>
-          </div>
-          <div style="text-align:right;min-width:200px">
-            <div class="muted small" style="margin-bottom:6px">Shared with Heiko (Sales) · Till (MD)</div>
-            <button class="btn primary" onclick="setScreen('margin')">Open lost-quote analysis →</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 5. Today's analyst decisions -->
+      <!-- 3. Today's analyst decisions -->
       <div class="section-row" id="sec-decisions">
         <div>
           <h2>Today's analyst decisions</h2>
@@ -2451,34 +2605,94 @@ body.pryzm-2026 .btn-primary-rose:active{transform:translateY(1px)}
       </div>
       <div class="actions-list" id="actions-list"></div>
 
-      <!-- 6. SKU Pricing Engine table -->
-      <div class="card card-pad mt-24">
-        <div class="between" style="margin-bottom:14px">
-          <div>
-            <div class="section-title">SKU Pricing Engine</div>
-            <h2 class="h2">Item-level view</h2>
-            <div class="muted small" style="margin-top:4px">SKU-granular recommendations across the full portfolio. Cluster confidence and contract status disclosed per row.</div>
-          </div>
-          <label class="row" style="gap:8px;font-size:12.5px;color:var(--muted);cursor:pointer">
-            <input type="checkbox" id="frankHideLocked" />
-            <span>Hide contract-locked items</span>
-          </label>
+      <!-- 4. Model Trust Strip -->
+      <div class="section-row" id="sec-trust">
+        <div>
+          <h2>Model trust · transparency strip</h2>
+          <div class="sub">Click any tile for feature importance &amp; training history.</div>
         </div>
-        <table class="frank-table">
-          <thead>
-            <tr>
-              <th>Article</th><th>Description</th><th>Commodity</th><th>Cluster confidence</th><th>Catalog → Quoted margin</th><th>Status</th><th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr data-status="movable"><td><b>200832-E</b></td><td>Elektro-Zahnradpumpe</td><td>BKAES</td><td><span class="cluster-conf high"><span class="cc-dot"></span>82%</span></td><td>30.6% → <b style="color:var(--red)">6.4%</b></td><td><span class="contract-chip movable">Movable</span></td><td><button class="btn" onclick="setScreen('studio')">Open in Studio</button></td></tr>
-            <tr data-status="movable"><td><b>204604</b></td><td>Zahnradpumpe</td><td>BKAGG</td><td><span class="cluster-conf mid"><span class="cc-dot"></span>74%</span></td><td>32.7% → <b style="color:var(--red)">11.8%</b></td><td><span class="contract-chip movable">Movable</span></td><td><button class="btn" onclick="setScreen('studio')">Open in Studio</button></td></tr>
-            <tr data-status="locked"><td><b>205169</b></td><td>Zahnradpumpe</td><td>BKAGG</td><td><span class="cluster-conf mid"><span class="cc-dot"></span>74%</span></td><td>70.1% → <b style="color:var(--amber)">44.2%</b></td><td><span class="contract-chip locked">Locked (Q3 ’26)</span></td><td><button class="btn" onclick="toast('Queued for Aug renewal review')">Queue for renewal</button></td></tr>
-            <tr data-status="movable"><td><b>200834-B</b></td><td>Elektro-Zahnradpumpe</td><td>BKAES</td><td><span class="cluster-conf high"><span class="cc-dot"></span>82%</span></td><td>55.8% → <b>36.8%</b></td><td><span class="contract-chip movable">Movable</span></td><td><button class="btn" onclick="setScreen('studio')">Open in Studio</button></td></tr>
-            <tr data-status="locked"><td><b>201773</b></td><td>Zahnradpumpe</td><td>BKAGG</td><td><span class="cluster-conf mid"><span class="cc-dot"></span>74%</span></td><td>62.5% → <b style="color:var(--amber)">23.1%</b></td><td><span class="contract-chip locked">Locked (Q1 ’27)</span></td><td><button class="btn" onclick="toast('Queued for Q1 ’27 renewal review')">Queue for renewal</button></td></tr>
-            <tr data-status="abtest"><td><b>205418-A</b></td><td>Coupling B</td><td>BKAES</td><td><span class="cluster-conf high"><span class="cc-dot"></span>82%</span></td><td>—</td><td><span class="contract-chip abtest">A/B running</span></td><td><button class="btn" onclick="toast('Opening A/B test detail')">View test</button></td></tr>
-          </tbody>
-        </table>
+      </div>
+      <div class="trust-grid">
+        <div class="trust-tile" data-trust="churn">
+          <div class="lab">Churn model F1</div>
+          <div class="big">0.76</div>
+          <div class="cap">precision 0.72 · recall 0.81 · n=827 customers</div>
+        </div>
+        <div class="trust-tile" data-trust="forecast">
+          <div class="lab">Forecast error</div>
+          <div class="big">&lt;5%</div>
+          <div class="cap">Q1 2025 actuals · walk-forward retraining · MC bands</div>
+        </div>
+        <div class="trust-tile" data-trust="anomaly">
+          <div class="lab">Anomalies caught</div>
+          <div class="big">33</div>
+          <div class="cap">15 negative-margin · 18 missing-data · €342K exposure</div>
+        </div>
+        <div class="trust-tile" data-trust="coverage">
+          <div class="lab">Data coverage</div>
+          <div class="big">99.2%</div>
+          <div class="cap">Invoices 99.2% · Margin 89.4% · Quote 73.1% (gap)</div>
+        </div>
+      </div>
+
+      <!-- 5. Lost-Quote Differential -->
+      <div class="section-row" id="sec-lost">
+        <div>
+          <h2>Lost-quote margin differential</h2>
+          <div class="sub">Sales is systematically losing the highest-margin deals. Statistically significant across 1,313 linked records.</div>
+        </div>
+      </div>
+      <div class="lq-card">
+        <div class="lq-grid">
+          <div>
+            <div class="lq-stats">
+              <div class="lq-stat"><div class="num">70.6%</div><div class="lab">Won deals avg margin</div></div>
+              <div class="lq-stat"><div class="num">72.4%</div><div class="lab">Lost deals avg margin</div></div>
+              <div class="lq-stat diff"><div class="num">+1.8pp</div><div class="lab">Differential (LOST higher!)</div></div>
+              <span class="sig-pill">p = 0.006 · significant</span>
+            </div>
+            <div class="lq-bar-wrap">
+              <div class="lq-bar"><span class="l">Won</span><span class="t"><span class="f" style="width:70.6%"></span></span><span class="v">70.6%</span></div>
+              <div class="lq-bar lost"><span class="l">Lost</span><span class="t"><span class="f" style="width:72.4%"></span></span><span class="v">72.4%</span></div>
+            </div>
+            <p style="margin:14px 0 0;color:var(--ink-3);font-size:12.5px;line-height:1.6;max-width:60ch">
+              Customers walk away from premium-margin quotes. <b style="color:var(--ink)">Implication:</b> pricing logic on premium tier is leaving deals on the table.
+            </p>
+          </div>
+        </div>
+        <div class="lq-foot">
+          <div class="ftxt">Shared with <b>Heiko</b> · <b>Till</b> · last refresh 8:00</div>
+          <button class="btn-primary-rose lq-cta" onclick="setScreen && setScreen('margin')">Open lost-quote analysis →</button>
+        </div>
+      </div>
+
+      <!-- 6. SKU Pricing Engine table -->
+      <div class="section-row" id="sec-sku">
+        <div>
+          <h2>SKU pricing engine</h2>
+          <div class="sub">Item-level view — cluster confidence and contract status disclosed per row.</div>
+        </div>
+        <label class="row gap-8" style="font-size:12.5px;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:8px">
+          <input type="checkbox" id="frankHideLocked" />
+          <span>Hide contract-locked items</span>
+        </label>
+      </div>
+      <div class="sku-card">
+        <div class="table-wrap">
+          <table class="frank-table">
+            <thead>
+              <tr><th>Article</th><th>Description</th><th>Commodity</th><th>Cluster conf.</th><th>Margin Δ</th><th>Status</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr data-status="movable"><td><b>200832-E</b></td><td>Elektro-Zahnradpumpe</td><td>BKAES</td><td><span class="cluster-conf high"><span class="cc-dot"></span>82%</span></td><td>30.6% → <b style="color:var(--red)">6.4%</b></td><td><span class="contract-chip movable">Movable</span></td><td><button class="row-btn" onclick="setScreen && setScreen('studio')">Open in Studio</button></td></tr>
+              <tr data-status="movable"><td><b>204604</b></td><td>Zahnradpumpe</td><td>BKAGG</td><td><span class="cluster-conf mid"><span class="cc-dot"></span>74%</span></td><td>32.7% → <b style="color:var(--red)">11.8%</b></td><td><span class="contract-chip movable">Movable</span></td><td><button class="row-btn" onclick="setScreen && setScreen('studio')">Open in Studio</button></td></tr>
+              <tr data-status="locked"><td><b>205169</b></td><td>Zahnradpumpe</td><td>BKAGG</td><td><span class="cluster-conf mid"><span class="cc-dot"></span>74%</span></td><td>70.1% → <b style="color:var(--amber)">44.2%</b></td><td><span class="contract-chip locked">Locked Q3</span></td><td><button class="row-btn" onclick="toast && toast('Queue renewal')">Queue renewal</button></td></tr>
+              <tr data-status="movable"><td><b>200834-B</b></td><td>Elektro-Zahnradpumpe</td><td>BKAES</td><td><span class="cluster-conf high"><span class="cc-dot"></span>82%</span></td><td>55.8% → <b>36.8%</b></td><td><span class="contract-chip movable">Movable</span></td><td><button class="row-btn" onclick="setScreen && setScreen('studio')">Open in Studio</button></td></tr>
+              <tr data-status="locked"><td><b>201773</b></td><td>Zahnradpumpe</td><td>BKAGG</td><td><span class="cluster-conf mid"><span class="cc-dot"></span>74%</span></td><td>62.5% → <b style="color:var(--amber)">23.1%</b></td><td><span class="contract-chip locked">Locked Q1</span></td><td><button class="row-btn" onclick="toast && toast('Queue renewal')">Queue renewal</button></td></tr>
+              <tr data-status="abtest"><td><b>205418-A</b></td><td>Coupling B</td><td>BKAES</td><td><span class="cluster-conf high"><span class="cc-dot"></span>82%</span></td><td>—</td><td><span class="contract-chip abtest">A/B</span></td><td><button class="row-btn primary" onclick="toast && toast('A/B test detail')">View test →</button></td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- 7. Heterogeneous Portfolio Diagnostics -->
