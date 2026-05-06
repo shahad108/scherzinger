@@ -3126,6 +3126,130 @@ body.pryzm-2026 #screen-margin .info-tip{ background:none; border:1px solid var(
 body.pryzm-2026 #screen-margin .info-tip:hover{ color:var(--ink); border-color:var(--ink-3); }
 body.pryzm-2026 #screen-margin .status-chip{ display:inline-flex; align-items:center; padding:3px 9px; border-radius:7px; font-size:11px; font-weight:600; background:var(--surface-sunken); color:var(--ink-2); }
 
+/* ===== M3: Margin tabs block ===== */
+body.pryzm-2026 #screen-margin .mar-tabs-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:18px 20px; margin-top:14px;
+}
+body.pryzm-2026 #screen-margin .fc-tabs{
+  display:inline-flex; background:var(--surface-sunken); border-radius:10px; padding:3px; gap:2px;
+  margin-bottom:14px; flex-wrap:wrap;
+}
+body.pryzm-2026 #screen-margin .fc-tabs .tab{
+  padding:7px 12px; border-radius:8px; font-size:12.5px; color:var(--ink-3); font-weight:500;
+  cursor:pointer; user-select:none;
+  display:inline-flex; align-items:center; gap:6px;
+}
+body.pryzm-2026 #screen-margin .fc-tabs .tab.active{
+  background:var(--surface); color:var(--ink); box-shadow:var(--shadow-card); font-weight:600;
+}
+body.pryzm-2026 #screen-margin .fc-tabs .tab .prop-badge{
+  background:var(--violet-bg); color:var(--violet);
+  border-radius:5px; padding:1px 6px; font-size:10px; font-weight:700;
+}
+body.pryzm-2026 #screen-margin .tab-pane{ display:block; }
+body.pryzm-2026 #screen-margin .tab-pane.hidden{ display:none; }
+body.pryzm-2026 #screen-margin .seg-tabs{
+  display:inline-flex; background:var(--surface-sunken); border-radius:9px; padding:3px; gap:2px;
+  margin-bottom:12px;
+}
+body.pryzm-2026 #screen-margin .seg-tab{
+  background:none; border:none;
+  padding:6px 11px; border-radius:7px; font-size:12px; color:var(--ink-3); font-weight:500;
+  cursor:pointer;
+}
+body.pryzm-2026 #screen-margin .seg-tab.active{
+  background:var(--surface); color:var(--ink); box-shadow:var(--shadow-card); font-weight:600;
+}
+body.pryzm-2026 #screen-margin .seg-pane{ display:block; }
+body.pryzm-2026 #screen-margin .seg-pane.hidden{ display:none; }
+
+body.pryzm-2026 #screen-margin .tab-footer{
+  display:flex; align-items:center; gap:10px;
+  margin-top:12px; padding:10px 14px;
+  background:var(--surface-soft); border:1px solid var(--hairline); border-radius:8px;
+  font-size:12px; color:var(--ink-3);
+}
+body.pryzm-2026 #screen-margin .tab-footer .tf-icon{ font-size:14px; }
+body.pryzm-2026 #screen-margin .tab-footer .tf-text{ flex:1; }
+body.pryzm-2026 #screen-margin .tab-footer .tf-text b{ color:var(--ink); font-weight:600; }
+body.pryzm-2026 #screen-margin .tab-footer .tf-link{ color:var(--rose-deep); font-weight:600; text-decoration:underline; font-size:11.5px; }
+
+body.pryzm-2026 #screen-margin .footer-note{ font-size:11.5px; color:var(--muted); margin:8px 0 0; line-height:1.5; }
+body.pryzm-2026 #screen-margin .footer-note b{ color:var(--ink-2); }
+
+body.pryzm-2026 #screen-margin .age-bar{
+  display:inline-block; width:60px; height:4px; background:var(--surface-sunken); border-radius:2px; overflow:hidden;
+  vertical-align:middle; margin-right:6px;
+}
+body.pryzm-2026 #screen-margin .age-bar-fill{ display:block; height:100%; background:var(--amber); border-radius:2px; }
+body.pryzm-2026 #screen-margin .age-bar-fill.r{ background:var(--red); }
+body.pryzm-2026 #screen-margin .age-bar-fill.g{ background:var(--green); }
+
+body.pryzm-2026 #screen-margin .pill{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 9px; border-radius:6px; font-size:11px; font-weight:600;
+  background:var(--surface-sunken); color:var(--ink-2);
+}
+body.pryzm-2026 #screen-margin .pill .rag{ width:6px; height:6px; border-radius:50%; }
+body.pryzm-2026 #screen-margin .pill.r{ background:var(--red-bg); color:var(--red); }
+body.pryzm-2026 #screen-margin .pill.r .rag{ background:var(--red); }
+body.pryzm-2026 #screen-margin .pill.a{ background:var(--amber-bg); color:var(--amber); }
+body.pryzm-2026 #screen-margin .pill.a .rag{ background:var(--amber); }
+body.pryzm-2026 #screen-margin .pill.g{ background:var(--green-bg); color:var(--green); }
+body.pryzm-2026 #screen-margin .pill.g .rag{ background:var(--green); }
+
+body.pryzm-2026 #screen-margin .tier-chip{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:18px; height:18px; border-radius:5px; font-size:10px; font-weight:700; color:#fff; margin-right:6px;
+}
+body.pryzm-2026 #screen-margin .tier-chip.A{ background:var(--rose); }
+body.pryzm-2026 #screen-margin .tier-chip.B{ background:var(--ink-3); }
+body.pryzm-2026 #screen-margin .tier-chip.C{ background:var(--amber); }
+body.pryzm-2026 #screen-margin .tier-chip.D{ background:var(--red); }
+
+body.pryzm-2026 #screen-margin .row-action{
+  background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:6px 10px; font-size:11.5px; color:var(--ink-2); font-weight:500; cursor:pointer;
+}
+body.pryzm-2026 #screen-margin .row-action:hover{ background:#fafaf7; border-color:var(--border-strong); }
+body.pryzm-2026 #screen-margin .row-action.primary{ background:var(--ink); color:#fff; border-color:var(--ink); }
+body.pryzm-2026 #screen-margin .row-actions{ display:flex; gap:6px; flex-wrap:wrap; }
+
+body.pryzm-2026 #screen-margin .frank-table{
+  width:100%; border-collapse:collapse; font-size:12px; color:var(--ink-2);
+}
+body.pryzm-2026 #screen-margin .frank-table th{
+  text-align:left; padding:10px 12px; font-size:10.5px;
+  color:var(--muted); font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  border-bottom:1px solid var(--border);
+}
+body.pryzm-2026 #screen-margin .frank-table td{
+  padding:10px 12px; border-bottom:1px solid var(--hairline);
+  vertical-align:middle;
+}
+body.pryzm-2026 #screen-margin .frank-table tbody tr:hover{ background:var(--surface-soft); }
+body.pryzm-2026 #screen-margin .frank-table .num-cell{ text-align:right; font-variant-numeric:tabular-nums; }
+body.pryzm-2026 #screen-margin .frank-table .num-cell.pos{ color:var(--green); font-weight:600; }
+body.pryzm-2026 #screen-margin .frank-table .num-cell.neg{ color:var(--red); font-weight:600; }
+body.pryzm-2026 #screen-margin .frank-table .muted{ color:var(--muted); }
+
+body.pryzm-2026 #screen-margin .cluster-chip{
+  display:inline-flex; align-items:center; padding:2px 7px; border-radius:5px;
+  font-size:10.5px; font-weight:700; color:var(--ink-2); background:var(--surface-sunken);
+}
+body.pryzm-2026 #screen-margin .cluster-chip.green{ background:var(--green-bg); color:var(--green); }
+body.pryzm-2026 #screen-margin .cluster-chip.amber{ background:var(--amber-bg); color:var(--amber); }
+body.pryzm-2026 #screen-margin .cluster-chip.red{ background:var(--rose-bg); color:var(--rose-deep); }
+
+body.pryzm-2026 #screen-margin .margin-xlinks{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:14px 18px; margin-top:14px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+}
+body.pryzm-2026 #screen-margin .margin-xlinks .ftxt{ font-size:12px; color:var(--muted); font-weight:600; }
+body.pryzm-2026 #screen-margin .margin-xlinks .links{ display:flex; gap:6px; flex-wrap:wrap; }
+
 </style>
 </head>
 <body class="pryzm-2026">
@@ -5219,8 +5343,8 @@ body.pryzm-2026 #screen-margin .status-chip{ display:inline-flex; align-items:ce
         </div>
       </div>
 
-      <div class="card card-pad mt-24" id="marginTabsBlock">
-        <div class="tabs" id="marginTabs">
+      <div class="mar-tabs-card" id="marginTabsBlock">
+        <div class="fc-tabs" id="marginTabs">
           <div class="tab active" data-tab="cross"><span class="tab-label">Cross-Customer Discrepancy</span><span class="prop-badge">★ Proprietary</span></div>
           <div class="tab" data-tab="leak"><span class="tab-label">SKU Margin Leakage</span></div>
           <div class="tab" data-tab="seg"><span class="tab-label">Segment pivot</span></div>
@@ -5236,15 +5360,15 @@ body.pryzm-2026 #screen-margin .status-chip{ display:inline-flex; align-items:ce
           <div class="info-panel" id="crossInfoPanel">
             <p>This is the data layer no Excel can build. Cross-checks <b>5,565 invoices</b> against <b>4,605 quotes</b>, normalizes for tier and quarter, flags pairs where the spread can't be justified by volume or contract terms.</p>
           </div>
-          <table>
+          <div class="sku-card"><div class="table-wrap"><table class="frank-table">
             <thead><tr><th>Article</th><th>Cluster · conf</th><th>Customer A</th><th>Price A</th><th>Customer B</th><th>Price B</th><th>Volume tier</th><th>Spread %</th><th>Action</th></tr></thead>
             <tbody>
-              <tr id="crossHL"><td><b>200832-E</b></td><td><span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAGG 74%</span></td><td>101580</td><td class="num-cell">€4.10</td><td>102330</td><td class="num-cell">€6.80</td><td>Tier 2</td><td class="num-cell neg">66%</td><td><button class="row-action primary" onclick="toast('Opening 200832-E in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
-              <tr><td><b>205415-B</b></td><td><span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAGG 74%</span></td><td>101582</td><td class="num-cell">€4.10</td><td>102801</td><td class="num-cell">€5.50</td><td>Tier 1</td><td class="num-cell neg">34%</td><td><button class="row-action" onclick="toast('Opening 205415-B in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
-              <tr><td><b>211094-C</b></td><td><span style="background:#ecfdf5;color:#047857;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAES 82%</span></td><td>103044</td><td class="num-cell">€12.20</td><td>101900</td><td class="num-cell">€15.40</td><td>Tier 3</td><td class="num-cell neg">26%</td><td><button class="row-action" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr id="crossHL" style="background:var(--rose-bg)"><td><b>200832-E</b></td><td><span class="cluster-chip amber">BKAGG 74%</span></td><td>101580</td><td class="num-cell">€4.10</td><td>102330</td><td class="num-cell">€6.80</td><td>Tier 2</td><td class="num-cell neg">66%</td><td><button class="row-action primary" onclick="toast('Opening 200832-E in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr><td><b>205415-B</b></td><td><span class="cluster-chip amber">BKAGG 74%</span></td><td>101582</td><td class="num-cell">€4.10</td><td>102801</td><td class="num-cell">€5.50</td><td>Tier 1</td><td class="num-cell neg">34%</td><td><button class="row-action" onclick="toast('Opening 205415-B in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr><td><b>211094-C</b></td><td><span class="cluster-chip green">BKAES 82%</span></td><td>103044</td><td class="num-cell">€12.20</td><td>101900</td><td class="num-cell">€15.40</td><td>Tier 3</td><td class="num-cell neg">26%</td><td><button class="row-action" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
             </tbody>
-          </table>
-          <p class="footer-note" style="font-size:11.5px;color:#475569;margin-top:6px"><b>Cluster note:</b> Spreads in low-n clusters (SOPU n=6, conf 38%) are flagged ⚠ — review manually before raising in Studio. None in this view.</p>
+          </table></div></div>
+          <p class="footer-note"><b>Cluster note:</b> Spreads in low-n clusters (SOPU n=6, conf 38%) are flagged ⚠ — review manually before raising in Studio. None in this view.</p>
           <div class="tab-footer">
             <span class="tf-icon">⚡</span>
             <span class="tf-text">3 actions / 90d · 1 implemented (A/B-confirmed) · <b>€8,400 captured</b></span>
@@ -5260,16 +5384,16 @@ body.pryzm-2026 #screen-margin .status-chip{ display:inline-flex; align-items:ce
           <div class="info-panel" id="leakInfoPanel">
             <p>Feeds the <b>Discounting bucket</b> in the waterfall above (€117K of €417K total leakage). The gap between quoted margin and actual margin = price erosion at invoice time.</p>
           </div>
-          <table>
+          <div class="sku-card"><div class="table-wrap"><table class="frank-table">
             <thead><tr><th>Article</th><th>Description</th><th>Volume (units)</th><th>Quoted margin</th><th>Actual margin</th><th>Gap (pp)</th><th>Opportunity (€)</th><th>A/B status</th><th>Audit hash</th><th>Action</th></tr></thead>
             <tbody>
-              <tr><td><b>200832-E</b></td><td>Precision shaft</td><td class="num-cell">4,200</td><td class="num-cell">25%</td><td class="num-cell">8%</td><td class="num-cell neg">−17pp</td><td class="num-cell pos">€18,600</td><td style="font-size:11px;color:#64748b">—</td><td style="font-size:10.5px;color:#64748b"><code>a3f9c1</code></td><td><button class="row-action primary" onclick="toast('Opening 200832-E in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
-              <tr><td><b>205415-B</b></td><td>Coupling A</td><td class="num-cell">1,840</td><td class="num-cell">32%</td><td class="num-cell">24%</td><td class="num-cell neg">−8pp</td><td class="num-cell pos">€12,400</td><td style="font-size:11px;color:#64748b">—</td><td style="font-size:10.5px;color:#64748b">—</td><td><button class="row-action" onclick="toast('Opening 205415-B in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
-              <tr><td><b>211094-C</b></td><td>Bearing housing</td><td class="num-cell">980</td><td class="num-cell">28%</td><td class="num-cell">22%</td><td class="num-cell neg">−6pp</td><td class="num-cell pos">€7,200</td><td style="font-size:11px;color:#6d28d9;font-weight:600">🧪 running 3/14</td><td style="font-size:10.5px;color:#64748b">—</td><td><button class="row-action" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
-              <tr><td><b>218750-D</b></td><td>Sleeve</td><td class="num-cell">6,400</td><td class="num-cell">30%</td><td class="num-cell">26%</td><td class="num-cell neg">−4pp</td><td class="num-cell pos">€4,800</td><td style="font-size:11px;color:#64748b">—</td><td style="font-size:10.5px;color:#64748b">—</td><td><button class="row-action" onclick="toast('Opening 218750-D in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
-              <tr><td><b>205418-A</b></td><td>Coupling B</td><td class="num-cell">2,100</td><td class="num-cell">31%</td><td class="num-cell">29%</td><td class="num-cell neg">−2pp</td><td class="num-cell pos">€1,400</td><td style="font-size:11px;color:#6d28d9;font-weight:600">🧪 running 9/21</td><td style="font-size:10.5px;color:#64748b"><code>7e21bd</code></td><td><button class="row-action" onclick="toast('Opening 205418-A in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr><td><b>200832-E</b></td><td>Precision shaft</td><td class="num-cell">4,200</td><td class="num-cell">25%</td><td class="num-cell">8%</td><td class="num-cell neg">−17pp</td><td class="num-cell pos">€18,600</td><td class="muted" style="font-size:11px">—</td><td class="muted" style="font-size:10.5px"><code>a3f9c1</code></td><td><button class="row-action primary" onclick="toast('Opening 200832-E in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr><td><b>205415-B</b></td><td>Coupling A</td><td class="num-cell">1,840</td><td class="num-cell">32%</td><td class="num-cell">24%</td><td class="num-cell neg">−8pp</td><td class="num-cell pos">€12,400</td><td class="muted" style="font-size:11px">—</td><td class="muted" style="font-size:10.5px">—</td><td><button class="row-action" onclick="toast('Opening 205415-B in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr><td><b>211094-C</b></td><td>Bearing housing</td><td class="num-cell">980</td><td class="num-cell">28%</td><td class="num-cell">22%</td><td class="num-cell neg">−6pp</td><td class="num-cell pos">€7,200</td><td style="font-size:11px;color:var(--violet);font-weight:600">🧪 running 3/14</td><td class="muted" style="font-size:10.5px">—</td><td><button class="row-action" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr><td><b>218750-D</b></td><td>Sleeve</td><td class="num-cell">6,400</td><td class="num-cell">30%</td><td class="num-cell">26%</td><td class="num-cell neg">−4pp</td><td class="num-cell pos">€4,800</td><td class="muted" style="font-size:11px">—</td><td class="muted" style="font-size:10.5px">—</td><td><button class="row-action" onclick="toast('Opening 218750-D in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr><td><b>205418-A</b></td><td>Coupling B</td><td class="num-cell">2,100</td><td class="num-cell">31%</td><td class="num-cell">29%</td><td class="num-cell neg">−2pp</td><td class="num-cell pos">€1,400</td><td style="font-size:11px;color:var(--violet);font-weight:600">🧪 running 9/21</td><td class="muted" style="font-size:10.5px"><code>7e21bd</code></td><td><button class="row-action" onclick="toast('Opening 205418-A in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
             </tbody>
-          </table>
+          </table></div></div>
           <div class="tab-footer">
             <span class="tf-icon">⚡</span>
             <span class="tf-text">11 actions / 90d · 6 implemented (all hash-signed) · 4 went through A/B before broad rollout · <b>€44,200 captured YTD</b></span>
@@ -5295,7 +5419,7 @@ body.pryzm-2026 #screen-margin .status-chip{ display:inline-flex; align-items:ce
           </div>
 
           <div class="seg-pane" data-segpane="family">
-            <table>
+            <div class="sku-card"><div class="table-wrap"><table class="frank-table">
               <thead><tr><th>Product family</th><th>Revenue (LTM)</th><th>Target margin</th><th>Actual margin</th><th>Gap (pp)</th><th>€ Impact</th><th>Trend</th></tr></thead>
               <tbody>
                 <tr><td><b>Precision shafts</b></td><td class="num-cell">€3,420,000</td><td class="num-cell">28%</td><td class="num-cell">19%</td><td class="num-cell neg">−9pp</td><td class="num-cell neg">−€308K</td><td class="num-cell neg">↓ widening</td></tr>
@@ -5303,12 +5427,12 @@ body.pryzm-2026 #screen-margin .status-chip{ display:inline-flex; align-items:ce
                 <tr><td><b>Bearing housings</b></td><td class="num-cell">€2,140,000</td><td class="num-cell">26%</td><td class="num-cell">23%</td><td class="num-cell neg">−3pp</td><td class="num-cell neg">−€64K</td><td class="num-cell neg">↓ widening</td></tr>
                 <tr><td><b>Sleeves</b></td><td class="num-cell">€2,250,000</td><td class="num-cell">28%</td><td class="num-cell">28%</td><td class="num-cell pos">0pp</td><td class="num-cell">€0</td><td class="num-cell pos">↑ improving</td></tr>
               </tbody>
-            </table>
+            </table></div></div>
             <p class="footer-note"><b>Story:</b> Precision shafts (Article 200832-E family) are the biggest single drag — 74% of total margin gap concentrated here. Sleeves are healthy.</p>
           </div>
 
           <div class="seg-pane hidden" data-segpane="tier">
-            <table>
+            <div class="sku-card"><div class="table-wrap"><table class="frank-table">
               <thead><tr><th>Customer tier</th><th>Revenue (LTM)</th><th>Target margin</th><th>Actual margin</th><th>Gap (pp)</th><th># Customers</th><th>Notes</th></tr></thead>
               <tbody>
                 <tr><td><span class="tier-chip A">A</span><b>Strategic</b></td><td class="num-cell">€799,000</td><td class="num-cell">26%</td><td class="num-cell">22%</td><td class="num-cell neg">−4pp</td><td class="num-cell">2</td><td>101580 dragging tier; 102330 healthy</td></tr>
@@ -5316,24 +5440,24 @@ body.pryzm-2026 #screen-margin .status-chip{ display:inline-flex; align-items:ce
                 <tr><td><span class="tier-chip C">C</span><b>Volume</b></td><td class="num-cell">€176,000</td><td class="num-cell">22%</td><td class="num-cell">24%</td><td class="num-cell pos">+2pp</td><td class="num-cell">1</td><td>101582 above plan — possible to monetize further</td></tr>
                 <tr><td><span class="tier-chip D">D</span><b>Problematic</b></td><td class="num-cell">€164,000</td><td class="num-cell">25%</td><td class="num-cell">14%</td><td class="num-cell neg">−11pp</td><td class="num-cell">1</td><td>101900 — raise price even at attrition risk</td></tr>
               </tbody>
-            </table>
+            </table></div></div>
             <p class="footer-note"><b>Story:</b> Strategic tier is leaking 4pp because of one customer (101580). Problematic tier should be repriced — 11pp gap is structural, not relationship-driven.</p>
           </div>
 
           <div class="seg-pane hidden" data-segpane="size">
-            <table>
+            <div class="sku-card"><div class="table-wrap"><table class="frank-table">
               <thead><tr><th>Deal size band</th><th># Quotes (LTM)</th><th>Revenue</th><th>Target margin</th><th>Actual margin</th><th>Gap (pp)</th></tr></thead>
               <tbody>
                 <tr><td><b>Large (&gt;€100K)</b></td><td class="num-cell">42</td><td class="num-cell">€5,840,000</td><td class="num-cell">26%</td><td class="num-cell">22%</td><td class="num-cell neg">−4pp</td></tr>
                 <tr><td><b>Medium (€20–100K)</b></td><td class="num-cell">218</td><td class="num-cell">€3,420,000</td><td class="num-cell">28%</td><td class="num-cell">25%</td><td class="num-cell neg">−3pp</td></tr>
                 <tr><td><b>Small (&lt;€20K)</b></td><td class="num-cell">1,640</td><td class="num-cell">€1,440,000</td><td class="num-cell">28%</td><td class="num-cell">28%</td><td class="num-cell pos">0pp</td></tr>
               </tbody>
-            </table>
+            </table></div></div>
             <p class="footer-note"><b>Story:</b> Counterintuitively, large deals leak the most (4pp gap). Sales discounting concentrates on big-customer negotiations — exactly where guardrails should bite hardest.</p>
           </div>
 
           <div class="seg-pane hidden" data-segpane="region">
-            <table>
+            <div class="sku-card"><div class="table-wrap"><table class="frank-table">
               <thead><tr><th>Region</th><th>Revenue (LTM)</th><th>Target margin</th><th>Actual margin</th><th>Gap (pp)</th><th>Notes</th></tr></thead>
               <tbody>
                 <tr><td><b>DACH</b></td><td class="num-cell">€7,820,000</td><td class="num-cell">27%</td><td class="num-cell">25%</td><td class="num-cell neg">−2pp</td><td>Healthy core market</td></tr>
@@ -5341,9 +5465,9 @@ body.pryzm-2026 #screen-margin .status-chip{ display:inline-flex; align-items:ce
                 <tr><td><b>Rest of EU</b></td><td class="num-cell">€780,000</td><td class="num-cell">28%</td><td class="num-cell">28%</td><td class="num-cell pos">0pp</td><td>Stable</td></tr>
                 <tr><td><b>Export (non-EU)</b></td><td class="num-cell">€460,000</td><td class="num-cell">30%</td><td class="num-cell">29%</td><td class="num-cell neg">−1pp</td><td>FX exposure muted</td></tr>
               </tbody>
-            </table>
+            </table></div></div>
             <p class="footer-note"><b>Story:</b> BKAGG is the single biggest regional drag (−7pp · €115K leakage). The Monday Briefing already flagged this — sales-rep level intervention needed, not a pricing change.</p>
-            <p class="footer-note" style="font-size:11px;color:#6d28d9;background:#faf5ff;padding:8px 10px;border-radius:6px;border-left:3px solid #7c3aed"><b>⚠ Naming caveat (Frank's note):</b> "BKAGG" here is a <i>regional sales label</i> — not the BKAGG <i>commodity cluster</i>. The two share the abbreviation by historical accident. Disambiguation pending in the next data-model update; treat them as distinct dimensions.</p>
+            <p class="footer-note" style="color:var(--violet);background:var(--violet-bg);padding:8px 10px;border-radius:6px;border-left:3px solid var(--violet)"><b>⚠ Naming caveat (Frank's note):</b> "BKAGG" here is a <i>regional sales label</i> — not the BKAGG <i>commodity cluster</i>. The two share the abbreviation by historical accident. Disambiguation pending in the next data-model update; treat them as distinct dimensions.</p>
           </div>
 
           <div class="tab-footer">
@@ -5360,73 +5484,73 @@ body.pryzm-2026 #screen-margin .status-chip{ display:inline-flex; align-items:ce
               <span class="muted small">Stale list prices · cost vs list movement.</span>
               <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('erodeInfoPanel').classList.toggle('show')">i</button>
             </div>
-            <button class="btn primary" onclick="toast('Price-book update cycle queued · 24 SKUs flagged for revision')">⚡ Trigger price-book cycle (24 SKUs)</button>
+            <button class="head-pill" style="background:var(--rose);color:#fff;border-color:var(--rose);font-weight:600" onclick="toast('Price-book update cycle queued · 24 SKUs flagged for revision')">⚡ Trigger price-book cycle (24 SKUs)</button>
           </div>
           <div class="info-panel" id="erodeInfoPanel">
             <p>List prices erode silently when cost moves up faster than the price book gets refreshed. The September price-book question, answered every Monday.</p>
             <p>Avg list-update lag across portfolio: <b style="color:var(--amber)">11 months</b> (industry best-practice: 6 months). Feeds <b>List-price erosion</b> bucket · €32K.</p>
           </div>
-          <table>
+          <div class="sku-card"><div class="table-wrap"><table class="frank-table">
             <thead><tr><th>Article</th><th>Cluster · conf</th><th>Last list update</th><th>Cost change since</th><th>List change since</th><th>Effective erosion</th><th>Margin compression</th><th>Last author · hash</th><th>Action</th></tr></thead>
             <tbody>
               <tr>
                 <td><b>200832-E</b></td>
-                <td><span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAGG 74%</span></td>
+                <td><span class="cluster-chip amber">BKAGG 74%</span></td>
                 <td><span class="age-bar"><span class="age-bar-fill r" style="width:90%"></span></span>14 mo</td>
                 <td class="num-cell neg">+6.2%</td>
                 <td class="num-cell">+1.0%</td>
                 <td class="num-cell neg">−5.2pp</td>
                 <td class="num-cell neg">−9pp</td>
-                <td style="font-size:10.5px;color:#475569">Frank · <code>a3f9c1</code></td>
+                <td style="font-size:10.5px;color:var(--ink-3)">Frank · <code>a3f9c1</code></td>
                 <td><button class="row-action primary" onclick="toast('Opening 200832-E in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
               </tr>
               <tr>
                 <td><b>205415-B</b></td>
-                <td><span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAGG 74%</span></td>
+                <td><span class="cluster-chip amber">BKAGG 74%</span></td>
                 <td><span class="age-bar"><span class="age-bar-fill r" style="width:75%"></span></span>11 mo</td>
                 <td class="num-cell neg">+3.8%</td>
                 <td class="num-cell">+0.5%</td>
                 <td class="num-cell neg">−3.3pp</td>
                 <td class="num-cell neg">−4pp</td>
-                <td style="font-size:10.5px;color:#475569">Frank · <code>7e21bd</code></td>
+                <td style="font-size:10.5px;color:var(--ink-3)">Frank · <code>7e21bd</code></td>
                 <td><button class="row-action" onclick="toast('Opening 205415-B in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
               </tr>
               <tr>
                 <td><b>211094-C</b></td>
-                <td><span style="background:#ecfdf5;color:#047857;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAES 82%</span></td>
+                <td><span class="cluster-chip green">BKAES 82%</span></td>
                 <td><span class="age-bar"><span class="age-bar-fill" style="width:55%"></span></span>8 mo</td>
                 <td class="num-cell neg">+2.1%</td>
                 <td class="num-cell">+0.0%</td>
                 <td class="num-cell neg">−2.1pp</td>
                 <td class="num-cell neg">−2pp</td>
-                <td style="font-size:10.5px;color:#475569">F. Bauer · <code>19f4a8</code></td>
+                <td style="font-size:10.5px;color:var(--ink-3)">F. Bauer · <code>19f4a8</code></td>
                 <td><button class="row-action" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
               </tr>
               <tr>
                 <td><b>218750-D</b></td>
-                <td><span style="background:#ecfdf5;color:#047857;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAES 82%</span></td>
+                <td><span class="cluster-chip green">BKAES 82%</span></td>
                 <td><span class="age-bar"><span class="age-bar-fill g" style="width:25%"></span></span>3 mo</td>
                 <td class="num-cell neg">+0.4%</td>
                 <td class="num-cell">+1.5%</td>
                 <td class="num-cell pos">+1.1pp</td>
                 <td class="num-cell">0pp</td>
-                <td style="font-size:10.5px;color:#475569">Frank · <code>c882e0</code></td>
+                <td style="font-size:10.5px;color:var(--ink-3)">Frank · <code>c882e0</code></td>
                 <td><span class="muted small">healthy · no action</span></td>
               </tr>
               <tr>
                 <td><b>205418-A</b></td>
-                <td><span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAGG 74%</span></td>
+                <td><span class="cluster-chip amber">BKAGG 74%</span></td>
                 <td><span class="age-bar"><span class="age-bar-fill g" style="width:10%"></span></span>1 mo</td>
                 <td class="num-cell">+0.2%</td>
                 <td class="num-cell">+6.0%</td>
                 <td class="num-cell pos">+5.8pp</td>
                 <td class="num-cell pos">+2pp</td>
-                <td style="font-size:10.5px;color:#475569">Frank · <code>4d2b8f</code></td>
+                <td style="font-size:10.5px;color:var(--ink-3)">Frank · <code>4d2b8f</code></td>
                 <td><span class="muted small">recent raise · 🧪 A/B 9/21</span></td>
               </tr>
             </tbody>
-          </table>
-          <p class="footer-note" style="font-size:11.5px;color:#475569;margin-top:6px"><b>Cycle output:</b> Triggering the price-book cycle auto-generates a <b>Branded PDF</b> (Scherzinger corporate design) with all 24 SKUs · audit-hash signed · routed to Till for sign-off.</p>
+          </table></div></div>
+          <p class="footer-note"><b>Cycle output:</b> Triggering the price-book cycle auto-generates a <b>Branded PDF</b> (Scherzinger corporate design) with all 24 SKUs · audit-hash signed · routed to Till for sign-off.</p>
           <div class="tab-footer">
             <span class="tf-icon">⚡</span>
             <span class="tf-text">Feeds <b>List-price erosion</b> bucket · €32K · 24 SKUs &gt; 9 months stale</span>
@@ -5443,7 +5567,7 @@ body.pryzm-2026 #screen-margin .status-chip{ display:inline-flex; align-items:ce
             <p>Status pill flags accounts needing intervention vs. healthy ones. Trend shows YoY margin movement (12-mo rolling).</p>
             <p>Use the <b>Drill</b> button on any row to open the per-month trajectory + cohort comparison; <b>Open action</b> routes the customer into your weekly queue.</p>
           </div>
-          <table>
+          <div class="sku-card"><div class="table-wrap"><table class="frank-table">
             <thead><tr><th>Customer</th><th>YTD Revenue</th><th>YTD Margin</th><th>Trend (12 mo)</th><th>Status</th><th>Action</th></tr></thead>
             <tbody>
               <tr><td><b>101580</b></td><td class="num-cell">€487,000</td><td class="num-cell">18%</td><td class="num-cell neg">↓ −6pp</td><td><span class="pill r"><span class="rag r"></span>Action</span></td><td><div class="row-actions"><button class="row-action primary" onclick="toast('Routing to weekly queue · 101580 retention review');setTimeout(()=>setScreen('action'),350)">Open action →</button><button class="row-action" onclick="toast('Opening 101580 per-month margin trajectory')">Drill →</button></div></td></tr>
@@ -5451,7 +5575,7 @@ body.pryzm-2026 #screen-margin .status-chip{ display:inline-flex; align-items:ce
               <tr><td><b>103044</b></td><td class="num-cell">€198,000</td><td class="num-cell">31%</td><td class="num-cell muted">→ flat</td><td><span class="pill g"><span class="rag g"></span>Healthy</span></td><td><button class="row-action" onclick="toast('Opening 103044 per-month margin trajectory')">Drill →</button></td></tr>
               <tr><td><b>101582</b></td><td class="num-cell">€176,000</td><td class="num-cell">24%</td><td class="num-cell pos">↑ +1pp</td><td><span class="pill g"><span class="rag g"></span>Healthy</span></td><td><button class="row-action" onclick="toast('Opening 101582 per-month margin trajectory')">Drill →</button></td></tr>
             </tbody>
-          </table>
+          </table></div></div>
           <div class="tab-footer">
             <span class="tf-icon">⚡</span>
             <span class="tf-text">1 churn-risk action open · 101580 · 5 days old</span>
@@ -5460,15 +5584,14 @@ body.pryzm-2026 #screen-margin .status-chip{ display:inline-flex; align-items:ce
         </div>
       </div>
 
-      <div style="margin-top:18px;padding:14px 18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#475569;display:flex;gap:18px;flex-wrap:wrap;align-items:center">
-        <span style="font-weight:700;color:#1e293b">Cross-links →</span>
-        <a href="#" data-jump="action" style="color:#1e3a8a;font-weight:600;text-decoration:none">Action queue · Action Center</a>
-        <span style="color:#cbd5e1">·</span>
-        <a href="#" data-jump="forecast" style="color:#1e3a8a;font-weight:600;text-decoration:none">Cluster forecast · Forecast</a>
-        <span style="color:#cbd5e1">·</span>
-        <a href="#" data-jump="studio" style="color:#1e3a8a;font-weight:600;text-decoration:none">SKU drill · Pricing Studio</a>
-        <span style="color:#cbd5e1">·</span>
-        <a href="#" data-jump="quotes" style="color:#1e3a8a;font-weight:600;text-decoration:none">Approval flow · Quotes &amp; Guardrails</a>
+      <div class="margin-xlinks">
+        <span class="ftxt">Cross-links →</span>
+        <div class="links">
+          <button class="head-pill" onclick="setScreen('action')">Action queue · Action Center</button>
+          <button class="head-pill" onclick="setScreen('forecast')">Cluster forecast · Forecast</button>
+          <button class="head-pill" onclick="setScreen('studio')">SKU drill · Pricing Studio</button>
+          <button class="head-pill" onclick="setScreen('quotes')">Approval flow · Quotes &amp; Guardrails</button>
+        </div>
       </div>
     </section>
 
@@ -7330,7 +7453,7 @@ document.querySelectorAll('#marginTabs .tab').forEach(t=>{
     document.querySelectorAll('[data-pane]').forEach(p=>p.classList.add('hidden'));
     document.querySelector(`[data-pane="${tab}"]`).classList.remove('hidden');
     const lbl = t.querySelector('.tab-label');
-    document.getElementById('marginTabName').textContent = lbl ? lbl.textContent : t.textContent;
+    const mtn = document.getElementById('marginTabName'); if (mtn) mtn.textContent = lbl ? lbl.textContent : t.textContent;
   });
 });
 
