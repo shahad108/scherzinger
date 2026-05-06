@@ -3335,6 +3335,201 @@ body.pryzm-2026 #screen-quotes .qg-changed-row:first-child{ border-top:none; }
 body.pryzm-2026 #screen-quotes .qd-dot{ width:8px; height:8px; border-radius:50%; margin-top:7px; }
 body.pryzm-2026 #screen-quotes .qd-num{ font-family:'Manrope',sans-serif; font-weight:700; color:var(--ink); margin-right:4px; }
 
+/* Q2 - escalations + funnel + guardrails */
+body.pryzm-2026 #screen-quotes .qg-section{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:18px 20px; margin-top:14px;
+}
+body.pryzm-2026 #screen-quotes .qg-section-head{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:14px;
+  margin-bottom:14px;
+}
+body.pryzm-2026 #screen-quotes .qg-section h2{
+  font-family:'Manrope',sans-serif; font-size:18px; font-weight:700;
+  color:var(--ink); letter-spacing:-0.018em; margin:0;
+}
+body.pryzm-2026 #screen-quotes .qg-section .qg-sub{
+  font-size:12px; color:var(--muted); margin-top:4px; line-height:1.5;
+}
+body.pryzm-2026 #screen-quotes .qg-section .info-tip{
+  background:none; border:1px solid var(--border); border-radius:50%;
+  width:18px; height:18px; font-size:10px; color:var(--muted); cursor:pointer;
+  font-family:ui-serif,Georgia,serif; padding:0; vertical-align:middle;
+}
+body.pryzm-2026 #screen-quotes .qg-section .info-panel{
+  background:var(--surface-soft); border:1px solid var(--hairline); border-radius:7px;
+  padding:10px 14px; margin:10px 0; font-size:12px; color:var(--ink-3); line-height:1.5;
+  display:none;
+}
+body.pryzm-2026 #screen-quotes .qg-section .info-panel.show{ display:block; }
+body.pryzm-2026 #screen-quotes .qg-section .info-panel p{ margin:0; }
+body.pryzm-2026 #screen-quotes .qg-section .info-panel b{ color:var(--ink); }
+
+body.pryzm-2026 #screen-quotes .status-chip{
+  display:inline-flex; align-items:center; padding:3px 9px; border-radius:7px;
+  font-size:11px; font-weight:600; background:var(--surface-sunken); color:var(--ink-2);
+}
+
+/* Escalation queue */
+body.pryzm-2026 #screen-quotes .qg-concentration{
+  display:flex; align-items:center; gap:10px;
+  padding:11px 14px; background:var(--rose-bg); border:1px solid var(--rose-tint);
+  border-radius:9px; margin-bottom:12px;
+  font-size:12.5px; color:var(--rose-deep); line-height:1.5;
+}
+body.pryzm-2026 #screen-quotes .qg-concentration .qc-ic{ font-size:14px; }
+body.pryzm-2026 #screen-quotes .qg-concentration b{ color:var(--rose-deep); font-weight:700; }
+body.pryzm-2026 #screen-quotes .qg-concentration .qc-link{
+  margin-left:auto; color:var(--rose-deep); font-weight:700; font-size:11.5px;
+  text-decoration:underline; cursor:pointer; white-space:nowrap;
+}
+
+body.pryzm-2026 #screen-quotes .esc-bulk{
+  display:flex; align-items:center; gap:10px;
+  padding:11px 14px; background:var(--ink); border-radius:11px; margin-bottom:14px;
+  color:#fff; font-size:12.5px; line-height:1.5;
+}
+body.pryzm-2026 #screen-quotes .esc-bulk .eb-ic{ font-size:14px; }
+body.pryzm-2026 #screen-quotes .esc-bulk b{ color:#fff; font-weight:700; }
+body.pryzm-2026 #screen-quotes .esc-bulk .eb-spacer{ flex:1; }
+body.pryzm-2026 #screen-quotes .esc-bulk .btn{
+  background:var(--rose); color:#fff; border:none; border-radius:8px;
+  padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer;
+}
+body.pryzm-2026 #screen-quotes .esc-bulk .btn:hover{ background:var(--rose-deep); }
+
+body.pryzm-2026 #screen-quotes .esc-card{
+  display:grid; grid-template-columns:36px 1fr; gap:14px;
+  padding:14px; border:1px solid var(--border); border-radius:11px;
+  background:var(--surface); margin-bottom:10px;
+  transition:box-shadow .2s, border-color .2s;
+}
+body.pryzm-2026 #screen-quotes .esc-card:hover{ box-shadow:var(--shadow-pop); border-color:var(--border-strong); }
+body.pryzm-2026 #screen-quotes .esc-rank{
+  width:32px; height:32px; border-radius:9px; background:var(--surface-sunken);
+  color:var(--ink-2); display:grid; place-items:center;
+  font-family:'Manrope',sans-serif; font-weight:700; font-size:14px;
+}
+body.pryzm-2026 #screen-quotes .esc-body{ display:flex; flex-direction:column; gap:8px; min-width:0; }
+body.pryzm-2026 #screen-quotes .esc-body h4{
+  font-family:'Manrope',sans-serif; font-size:14px; font-weight:700;
+  color:var(--ink); letter-spacing:-0.005em; margin:0;
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+}
+body.pryzm-2026 #screen-quotes .esc-detail{
+  font-size:12px; color:var(--ink-3); line-height:1.6;
+  padding:10px 12px; background:var(--surface-soft); border-radius:8px;
+}
+body.pryzm-2026 #screen-quotes .esc-detail b{ color:var(--ink); }
+body.pryzm-2026 #screen-quotes .esc-evidence{
+  font-size:12px; color:var(--ink-3); line-height:1.6;
+  padding:10px 12px; background:var(--green-bg); border-left:3px solid var(--green); border-radius:7px;
+}
+body.pryzm-2026 #screen-quotes .esc-evidence b{ color:var(--ink); }
+body.pryzm-2026 #screen-quotes .esc-meta{
+  font-size:11.5px; color:var(--muted); font-style:italic;
+}
+body.pryzm-2026 #screen-quotes .esc-actions{
+  grid-column:1 / -1;
+  display:flex; gap:6px; flex-wrap:wrap; padding-top:10px; border-top:1px solid var(--hairline);
+  margin-top:6px;
+}
+body.pryzm-2026 #screen-quotes .esc-actions button{
+  border:1px solid var(--border); border-radius:8px;
+  padding:8px 14px; font-size:12px; font-weight:600; cursor:pointer;
+  background:var(--surface); color:var(--ink-2);
+}
+body.pryzm-2026 #screen-quotes .esc-actions button:hover{ background:#fafaf7; border-color:var(--border-strong); }
+body.pryzm-2026 #screen-quotes .esc-actions .e-floor{ background:var(--rose); color:#fff; border-color:var(--rose); }
+body.pryzm-2026 #screen-quotes .esc-actions .e-floor:hover{ background:var(--rose-deep); border-color:var(--rose-deep); }
+body.pryzm-2026 #screen-quotes .esc-actions .e-counter{ background:var(--surface-soft); }
+body.pryzm-2026 #screen-quotes .esc-actions .e-app{ background:var(--green-bg); color:var(--green); border-color:var(--green-bg); }
+body.pryzm-2026 #screen-quotes .esc-actions .e-dec{ background:var(--surface); color:var(--red); border-color:var(--red-bg); }
+
+body.pryzm-2026 #screen-quotes .tier-chip{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:18px; height:18px; border-radius:5px; font-size:10px; font-weight:700; color:#fff;
+}
+body.pryzm-2026 #screen-quotes .tier-chip.A{ background:var(--rose); }
+body.pryzm-2026 #screen-quotes .tier-chip.B{ background:var(--ink-3); }
+body.pryzm-2026 #screen-quotes .tier-chip.C{ background:var(--amber); }
+body.pryzm-2026 #screen-quotes .tier-chip.D{ background:var(--red); }
+
+body.pryzm-2026 #screen-quotes .esc-auth{
+  display:inline-flex; align-items:center; padding:2px 7px; border-radius:5px;
+  font-size:10.5px; font-weight:700;
+  background:var(--surface-sunken); color:var(--ink-2);
+}
+body.pryzm-2026 #screen-quotes .esc-auth.you{ background:var(--green-bg); color:var(--green); }
+body.pryzm-2026 #screen-quotes .esc-auth.md{ background:var(--rose-bg); color:var(--rose-deep); }
+body.pryzm-2026 #screen-quotes .esc-studio-link{
+  font-size:10.5px; color:var(--rose-deep); font-weight:700; cursor:pointer; margin-left:6px;
+}
+
+/* Funnel */
+body.pryzm-2026 #screen-quotes .funnel{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:14px; background:var(--surface-soft); border:1px solid var(--hairline); border-radius:11px;
+}
+body.pryzm-2026 #screen-quotes .funnel-step{
+  flex:1 1 0; min-width:0;
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:10px 12px; background:var(--surface); border:1px solid var(--border); border-radius:9px;
+  text-align:center;
+}
+body.pryzm-2026 #screen-quotes .funnel-step.won{ background:var(--green-bg); border-color:var(--green-bg); }
+body.pryzm-2026 #screen-quotes .funnel-step.lost{ background:var(--rose-bg); border-color:var(--rose-tint); }
+body.pryzm-2026 #screen-quotes .funnel-step .fn-count{
+  font-family:'Manrope',sans-serif; font-size:24px; font-weight:700; color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+body.pryzm-2026 #screen-quotes .funnel-step.won .fn-count{ color:var(--green); }
+body.pryzm-2026 #screen-quotes .funnel-step.lost .fn-count{ color:var(--rose-deep); }
+body.pryzm-2026 #screen-quotes .funnel-step .fn-label{ font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+body.pryzm-2026 #screen-quotes .funnel-step .fn-pct{ font-size:11px; color:var(--ink-3); }
+body.pryzm-2026 #screen-quotes .funnel-arrow{ color:var(--muted-2); font-size:18px; }
+
+body.pryzm-2026 #screen-quotes .aging-strip{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px;
+}
+body.pryzm-2026 #screen-quotes .age-cell{
+  background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:12px 14px;
+}
+body.pryzm-2026 #screen-quotes .age-cell.warn{ background:var(--amber-bg); border-color:var(--amber-bg); }
+body.pryzm-2026 #screen-quotes .age-cell.alert{ background:var(--rose-bg); border-color:var(--rose-tint); }
+body.pryzm-2026 #screen-quotes .age-cell .ac-num{
+  font-family:'Manrope',sans-serif; font-size:24px; font-weight:700; color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+body.pryzm-2026 #screen-quotes .age-cell.warn .ac-num{ color:var(--amber); }
+body.pryzm-2026 #screen-quotes .age-cell.alert .ac-num{ color:var(--red); }
+body.pryzm-2026 #screen-quotes .age-cell .ac-lab{ font-size:11px; color:var(--muted); font-weight:700; margin-top:2px; }
+body.pryzm-2026 #screen-quotes .age-cell .ac-detail{ font-size:11px; color:var(--ink-3); margin-top:4px; line-height:1.4; }
+
+/* Guardrails */
+body.pryzm-2026 #screen-quotes .gr-history-chip{
+  display:inline-block; font-size:11.5px; color:var(--ink-3); font-weight:500; margin-top:6px;
+  padding:5px 10px; background:var(--surface-soft); border-radius:7px;
+}
+body.pryzm-2026 #screen-quotes .gr-history-chip b{ color:var(--ink); }
+body.pryzm-2026 #screen-quotes .guardrails-grid{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:10px;
+}
+body.pryzm-2026 #screen-quotes .gr-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:9px;
+  padding:14px; position:relative;
+}
+body.pryzm-2026 #screen-quotes .gr-card .gr-edit{
+  position:absolute; top:8px; right:10px; font-size:10px; color:var(--rose-deep);
+  font-weight:700; cursor:pointer; text-transform:uppercase; letter-spacing:.06em;
+}
+body.pryzm-2026 #screen-quotes .gr-card .gr-cat{ font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.06em; padding-right:36px; }
+body.pryzm-2026 #screen-quotes .gr-card .gr-val{
+  font-family:'Manrope',sans-serif; font-size:28px; font-weight:700; color:var(--ink);
+  letter-spacing:-0.025em; margin:6px 0 4px; font-variant-numeric:tabular-nums;
+}
+body.pryzm-2026 #screen-quotes .gr-card .gr-meta{ font-size:11px; color:var(--ink-3); line-height:1.4; }
+
 </style>
 </head>
 <body class="pryzm-2026">
@@ -5774,9 +5969,12 @@ body.pryzm-2026 #screen-quotes .qd-num{ font-family:'Manrope',sans-serif; font-w
       </div>
 
       <!-- B. Today's escalation queue -->
-      <div class="card card-pad mt-24">
-        <div class="between mb-16">
-          <h2 class="h2">4 quotes need your eyes <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('escInfoPanel').classList.toggle('show')">i</button></h2>
+      <div class="qg-section">
+        <div class="qg-section-head">
+          <div>
+            <h2>4 quotes need your eyes <button class="info-tip" onclick="this.closest('.qg-section').querySelector('.info-panel').classList.toggle('show')">i</button></h2>
+            <div class="qg-sub">All Red-flagged quotes are blocked from sending until you decide. 60-second decision per quote.</div>
+          </div>
           <span class="status-chip">Re-ranked by impact</span>
         </div>
         <div class="info-panel" id="escInfoPanel">
@@ -5787,7 +5985,7 @@ body.pryzm-2026 #screen-quotes .qd-num{ font-family:'Manrope',sans-serif; font-w
         <div class="qg-concentration">
           <span class="qc-ic">🎯</span>
           <div>All <b>4 escalations</b> sit with <b>3 reps</b> · <b>N. Bauer × 2</b>, F. Werner, T. Hoffmann · N. Bauer accounts for 41% of YTD breach leakage</div>
-          <a href="#" class="qc-link" onclick="event.preventDefault();document.querySelector('#qaTabs [data-qatab=&quot;rep&quot;]').click();document.getElementById('qaTabsBlock').scrollIntoView({behavior:'smooth',block:'start'})">See by-rep view →</a>
+          <a class="qc-link" onclick="document.querySelector('#qaTabs [data-qatab=&quot;rep&quot;]').click();document.getElementById('qaTabsBlock').scrollIntoView({behavior:'smooth',block:'start'})">See by-rep view →</a>
         </div>
 
         <!-- Bulk-accept Pryzm recommendations bar -->
@@ -5795,7 +5993,7 @@ body.pryzm-2026 #screen-quotes .qd-num{ font-family:'Manrope',sans-serif; font-w
           <span class="eb-ic">⚡</span>
           <div><b>Pryzm recommends</b> Counter-at-floor on #12848, Decline #12831, Counter at €2.55 on #12822, Approve #12815 — total leakage avoided <b>€2,710</b>.</div>
           <span class="eb-spacer"></span>
-          <button class="btn primary" onclick="toast('Pryzm recommendations applied to all 4 escalations · routed to sales')">Accept all (4)</button>
+          <button class="btn" onclick="toast('Pryzm recommendations applied to all 4 escalations · routed to sales')">Accept all (4)</button>
         </div>
 
         <!-- Escalation #1 -->
@@ -5879,9 +6077,12 @@ body.pryzm-2026 #screen-quotes .qd-num{ font-family:'Manrope',sans-serif; font-w
       </div>
 
       <!-- C. Pipeline funnel + aging -->
-      <div class="card card-pad mt-24">
-        <div class="between mb-16">
-          <h2 class="h2">Where quotes get stuck <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('funnelInfoPanel').classList.toggle('show')">i</button></h2>
+      <div class="qg-section">
+        <div class="qg-section-head">
+          <div>
+            <h2>Where quotes get stuck <button class="info-tip" onclick="this.closest('.qg-section').querySelector('.info-panel').classList.toggle('show')">i</button></h2>
+            <div class="qg-sub">Long-aging quotes lose. Velocity from Quoted → Pending → Won/Lost. Stale 30+ day quotes auto-flag for re-quote.</div>
+          </div>
           <span class="status-chip">Last 30 days</span>
         </div>
         <div class="info-panel" id="funnelInfoPanel">
@@ -5937,17 +6138,16 @@ body.pryzm-2026 #screen-quotes .qd-num{ font-family:'Manrope',sans-serif; font-w
       </div>
 
       <!-- D. Guardrail thresholds (PM write surface) -->
-      <div class="card card-pad mt-24">
-        <div class="between mb-16">
+      <div class="qg-section">
+        <div class="qg-section-head">
           <div>
-            <h2 class="h2">Guardrail thresholds <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('grInfoPanel').classList.toggle('show')">i</button></h2>
-            <div class="gr-history-chip">
-              ↗ <b>12 changes</b> in last 90d · <b>3 raised</b> · <b>1 lowered</b> · attributable margin uplift <b>+€12K</b>
-            </div>
+            <h2>Guardrail thresholds <button class="info-tip" onclick="this.closest('.qg-section').querySelector('.info-panel').classList.toggle('show')">i</button></h2>
+            <div class="qg-sub">These thresholds drive Red/Amber/Green on every active quote. Sales sees the result; changes propagate in 2 min.</div>
+            <div class="gr-history-chip">↗ <b>12 changes</b> in last 90d · <b>3 raised</b> · <b>1 lowered</b> · attributable margin uplift <b>+€12K</b></div>
           </div>
-          <div class="row" style="gap:8px">
-            <button class="btn" onclick="toast('Threshold history opened · last 12 changes')">📜 History</button>
-            <button class="btn primary" onclick="toast('Guardrail editor opened · changes propagate in 2 min')">⚙️ Edit thresholds</button>
+          <div style="display:flex;gap:8px">
+            <button class="head-pill" onclick="toast('Threshold history opened · last 12 changes')">History</button>
+            <button class="btn-primary-rose" onclick="toast('Guardrail editor opened · changes propagate in 2 min')">Edit thresholds →</button>
           </div>
         </div>
         <div class="info-panel" id="grInfoPanel">
