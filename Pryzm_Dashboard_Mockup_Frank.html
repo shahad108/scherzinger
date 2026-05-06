@@ -3015,6 +3015,117 @@ body.pryzm-2026 #screen-margin .mi-briefing .fc-briefing-body p.sig{
   font-style:italic; color:var(--muted);
 }
 
+/* === M2: Margin Leakage Waterfall + Movable/Locked + Lost-Quote + Cost-vs-Price + Recovery === */
+body.pryzm-2026 #screen-margin .mar-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:18px 20px; margin-top:14px;
+}
+body.pryzm-2026 #screen-margin .mar-card .mar-card-head{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:14px;
+  margin-bottom:14px;
+}
+body.pryzm-2026 #screen-margin .mar-card h2{
+  font-family:'Manrope',sans-serif; font-size:18px; font-weight:700;
+  color:var(--ink); letter-spacing:-0.018em; margin:0;
+}
+body.pryzm-2026 #screen-margin .mar-card .mar-sub{
+  font-size:12px; color:var(--muted); margin-top:4px; line-height:1.5; max-width:60ch;
+}
+
+body.pryzm-2026 #screen-margin .wf-row{
+  display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start;
+}
+body.pryzm-2026 #screen-margin .wf-chart-wrap{
+  height:280px; position:relative;
+  background:var(--surface-soft); border:1px solid var(--hairline); border-radius:11px;
+  padding:14px;
+}
+body.pryzm-2026 #screen-margin .wf-buckets h5{
+  font-family:'Manrope',sans-serif; font-size:13px; font-weight:700; color:var(--ink);
+  margin:0 0 10px;
+}
+body.pryzm-2026 #screen-margin .wf-list{ display:flex; flex-direction:column; gap:0; }
+body.pryzm-2026 #screen-margin .wf-bucket{
+  display:grid; grid-template-columns:8px 1fr auto auto auto; gap:10px; align-items:center;
+  padding:10px 12px; border-top:1px solid var(--hairline);
+  cursor:pointer; transition:background .15s; border-radius:6px;
+}
+body.pryzm-2026 #screen-margin .wf-bucket:first-child{ border-top:none; }
+body.pryzm-2026 #screen-margin .wf-bucket:hover{ background:var(--surface-soft); }
+body.pryzm-2026 #screen-margin .wf-bucket.green{ background:var(--green-bg); border-radius:8px; border:none; }
+body.pryzm-2026 #screen-margin .wf-bucket.green + .wf-bucket{ border-top:none; margin-top:4px; }
+body.pryzm-2026 #screen-margin .wf-bucket .wf-dot{ width:8px; height:8px; border-radius:50%; background:var(--rose); }
+body.pryzm-2026 #screen-margin .wf-bucket.green .wf-dot{ background:var(--green); }
+body.pryzm-2026 #screen-margin .wf-bucket .wf-name{ font-size:12.5px; color:var(--ink); font-weight:600; line-height:1.4; }
+body.pryzm-2026 #screen-margin .wf-bucket .wf-source{ font-size:10.5px; color:var(--muted); margin-top:3px; font-weight:500; line-height:1.4; }
+body.pryzm-2026 #screen-margin .wf-bucket .wf-source b{ color:var(--ink-2); }
+body.pryzm-2026 #screen-margin .wf-bucket .wf-pct{ font-family:'Manrope',sans-serif; font-size:13px; font-weight:700; color:var(--ink-2); font-variant-numeric:tabular-nums; min-width:50px; text-align:right; }
+body.pryzm-2026 #screen-margin .wf-bucket.green .wf-pct{ color:var(--green); }
+body.pryzm-2026 #screen-margin .wf-bucket .wf-eur{ font-size:11.5px; color:var(--muted); font-weight:600; min-width:54px; text-align:right; }
+body.pryzm-2026 #screen-margin .wf-bucket.green .wf-eur{ color:var(--green); }
+body.pryzm-2026 #screen-margin .wf-bucket .wf-jump{ font-size:11px; color:var(--rose-deep); font-weight:600; min-width:90px; text-align:right; }
+body.pryzm-2026 #screen-margin .wf-delta{ display:inline-block; padding:1px 6px; border-radius:5px; font-size:10px; font-weight:700; background:var(--surface-sunken); color:var(--ink-3); margin-left:6px; vertical-align:middle; }
+body.pryzm-2026 #screen-margin .wf-delta.up{ background:var(--red-bg); color:var(--red); }
+body.pryzm-2026 #screen-margin .wf-delta.down{ background:var(--green-bg); color:var(--green); }
+body.pryzm-2026 #screen-margin .wf-delta.flat{ background:var(--surface-sunken); color:var(--ink-3); }
+
+body.pryzm-2026 #screen-margin .ml-overlay{
+  margin-top:14px; padding:14px 16px;
+  background:var(--surface-soft); border:1px solid var(--hairline); border-radius:11px;
+}
+body.pryzm-2026 #screen-margin .ml-overlay-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; gap:10px; flex-wrap:wrap; }
+body.pryzm-2026 #screen-margin .ml-overlay-head .lbl{ font-size:12px; color:var(--ink); font-weight:700; }
+body.pryzm-2026 #screen-margin .ml-overlay-head .src{ font-size:11px; color:var(--muted); }
+body.pryzm-2026 #screen-margin .ml-overlay-head .src code{ font-family:ui-monospace,monospace; font-size:10.5px; background:var(--surface); color:var(--rose-deep); padding:1px 5px; border-radius:4px; }
+body.pryzm-2026 #screen-margin .ml-bar{ display:flex; height:30px; border-radius:7px; overflow:hidden; border:1px solid var(--border-strong); }
+body.pryzm-2026 #screen-margin .ml-bar-mov{ flex:62; background:var(--rose); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:12px; }
+body.pryzm-2026 #screen-margin .ml-bar-loc{ flex:38; background:var(--ink-3); opacity:.85; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:12px; }
+body.pryzm-2026 #screen-margin .ml-legend{ display:flex; gap:18px; margin-top:8px; font-size:11.5px; color:var(--muted); }
+body.pryzm-2026 #screen-margin .ml-legend b{ color:var(--ink-2); }
+
+body.pryzm-2026 #screen-margin .lq-card-mar{ border-left:4px solid var(--violet); }
+body.pryzm-2026 #screen-margin .lq-stats-mar{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:14px; }
+body.pryzm-2026 #screen-margin .lq-stat-tile{ background:var(--surface); border:1px solid var(--border); border-radius:11px; padding:14px; display:flex; flex-direction:column; gap:4px; }
+body.pryzm-2026 #screen-margin .lq-stat-tile.lost{ background:var(--rose-bg); border-color:var(--rose-tint); }
+body.pryzm-2026 #screen-margin .lq-stat-tile.diff{ background:var(--violet-bg); border-color:var(--violet-bg); }
+body.pryzm-2026 #screen-margin .lq-stat-tile .lab{ font-size:10.5px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+body.pryzm-2026 #screen-margin .lq-stat-tile.lost .lab{ color:var(--rose-deep); }
+body.pryzm-2026 #screen-margin .lq-stat-tile.diff .lab{ color:var(--violet); }
+body.pryzm-2026 #screen-margin .lq-stat-tile .big{ font-family:'Manrope',sans-serif; font-size:30px; font-weight:800; color:var(--ink); letter-spacing:-0.025em; margin-top:4px; font-variant-numeric:tabular-nums; }
+body.pryzm-2026 #screen-margin .lq-stat-tile.lost .big{ color:var(--rose-deep); }
+body.pryzm-2026 #screen-margin .lq-stat-tile.diff .big{ color:var(--violet); }
+body.pryzm-2026 #screen-margin .lq-stat-tile .sub{ font-size:11px; color:var(--muted); margin-top:4px; }
+body.pryzm-2026 #screen-margin .lq-stat-tile.lost .sub{ color:var(--rose-deep); }
+body.pryzm-2026 #screen-margin .lq-stat-tile.diff .sub{ color:var(--violet); }
+body.pryzm-2026 #screen-margin .lq-interp{ font-size:12.5px; color:var(--ink-3); line-height:1.6; margin:0; padding:12px 14px; background:var(--surface-soft); border-radius:7px; border-left:3px solid var(--violet); }
+body.pryzm-2026 #screen-margin .lq-interp b{ color:var(--ink); }
+body.pryzm-2026 #screen-margin .lq-source{ font-size:11.5px; color:var(--muted); margin:10px 0 0; }
+body.pryzm-2026 #screen-margin .lq-source code{ font-family:ui-monospace,monospace; font-size:10.5px; background:var(--surface-soft); color:var(--rose-deep); padding:1px 5px; border-radius:4px; }
+
+body.pryzm-2026 #screen-margin .cp-row{ display:grid; grid-template-columns:1.6fr 1fr; gap:14px; align-items:start; }
+body.pryzm-2026 #screen-margin .cp-chart-wrap{ height:240px; position:relative; background:var(--surface-soft); border:1px solid var(--hairline); border-radius:11px; padding:14px; }
+body.pryzm-2026 #screen-margin .cp-side{ display:flex; flex-direction:column; gap:10px; }
+body.pryzm-2026 #screen-margin .cp-mini-card{ background:var(--surface); border:1px solid var(--border); border-radius:11px; padding:14px; }
+body.pryzm-2026 #screen-margin .cp-mini-card.warn{ background:var(--rose-bg); border-color:var(--rose-tint); }
+body.pryzm-2026 #screen-margin .cp-mini-card .cp-head{ font-size:11px; color:var(--muted); font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+body.pryzm-2026 #screen-margin .cp-mini-card.warn .cp-head{ color:var(--rose-deep); }
+body.pryzm-2026 #screen-margin .cp-mini-card .cp-big{ font-family:'Manrope',sans-serif; font-size:28px; font-weight:700; color:var(--ink); letter-spacing:-0.025em; margin:6px 0 4px; font-variant-numeric:tabular-nums; }
+body.pryzm-2026 #screen-margin .cp-mini-card.warn .cp-big{ color:var(--rose-deep); }
+body.pryzm-2026 #screen-margin .cp-mini-card .cp-sub{ font-size:11.5px; color:var(--ink-3); line-height:1.5; }
+body.pryzm-2026 #screen-margin .cp-mini-card .cp-sub b{ color:var(--ink); }
+body.pryzm-2026 #screen-margin .cp-progress{ height:6px; background:var(--surface-sunken); border-radius:3px; overflow:hidden; margin:8px 0; }
+body.pryzm-2026 #screen-margin .cp-progress-fill{ height:100%; background:var(--rose); border-radius:3px; }
+body.pryzm-2026 #screen-margin .recovery-wrap{ height:80px; margin-top:8px; position:relative; }
+
+body.pryzm-2026 #screen-margin .info-panel{ background:var(--surface-soft); border:1px solid var(--hairline); border-radius:7px; padding:10px 14px; margin-top:8px; font-size:12px; color:var(--ink-3); line-height:1.5; display:none; }
+body.pryzm-2026 #screen-margin .info-panel.show{ display:block; }
+body.pryzm-2026 #screen-margin .info-panel p{ margin:0 0 6px; }
+body.pryzm-2026 #screen-margin .info-panel p:last-child{ margin-bottom:0; }
+body.pryzm-2026 #screen-margin .info-panel b{ color:var(--ink); }
+body.pryzm-2026 #screen-margin .info-tip{ background:none; border:1px solid var(--border); border-radius:50%; width:18px; height:18px; font-size:10px; color:var(--muted); cursor:pointer; font-family:ui-serif,Georgia,serif; padding:0; vertical-align:middle; }
+body.pryzm-2026 #screen-margin .info-tip:hover{ color:var(--ink); border-color:var(--ink-3); }
+body.pryzm-2026 #screen-margin .status-chip{ display:inline-flex; align-items:center; padding:3px 9px; border-radius:7px; font-size:11px; font-weight:600; background:var(--surface-sunken); color:var(--ink-2); }
+
 </style>
 </head>
 <body class="pryzm-2026">
@@ -4956,9 +5067,12 @@ body.pryzm-2026 #screen-margin .mi-briefing .fc-briefing-body p.sig{
       </div>
 
       <!-- Margin Leakage Waterfall (the story) -->
-      <div class="card card-pad mt-24">
-        <div class="between mb-16">
-          <h2 class="h2">Where the 3.9pp gap came from <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('wfInfoPanel').classList.toggle('show')">i</button></h2>
+      <div class="mar-card">
+        <div class="mar-card-head">
+          <div>
+            <h2>Where the 3.9pp gap came from <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('wfInfoPanel').classList.toggle('show')">i</button></h2>
+            <div class="mar-sub">Every PP of margin gap mapped to a cause bucket. Three account for 92% of the leak.</div>
+          </div>
           <span class="status-chip">€417K total leakage</span>
         </div>
         <div class="info-panel" id="wfInfoPanel">
@@ -4972,108 +5086,109 @@ body.pryzm-2026 #screen-margin .mi-briefing .fc-briefing-body p.sig{
             <div class="wf-list">
               <div class="wf-bucket green" style="cursor:default">
                 <span class="wf-dot"></span>
-                <span class="wf-name">Target margin</span>
+                <div><div class="wf-name">Target margin</div></div>
                 <span class="wf-pct">28.0%</span>
                 <span class="wf-eur">plan</span>
+                <span></span>
               </div>
               <div class="wf-bucket" onclick="document.querySelector('#marginTabs [data-tab=&quot;seg&quot;]').click();document.querySelector('#segTabs [data-seg=&quot;tier&quot;]').click();document.getElementById('marginTabsBlock').scrollIntoView({behavior:'smooth',block:'start'})">
                 <span class="wf-dot"></span>
-                <div class="wf-name">Customer mix shift <span class="wf-delta flat">flat MoM</span><div class="wf-source">More tier-C/D revenue · less tier-A growth · cluster mix BKAES/BKAGG conf <b>78%</b></div></div>
+                <div><div class="wf-name">Customer mix shift <span class="wf-delta flat">flat MoM</span></div><div class="wf-source">More tier-C/D revenue · less tier-A growth · cluster mix BKAES/BKAGG conf <b>78%</b></div></div>
                 <span class="wf-pct">−0.6pp</span>
                 <span class="wf-eur">€64K</span>
                 <span class="wf-jump">→ Tier pivot</span>
               </div>
               <div class="wf-bucket" onclick="setScreen('quotes');toast('Drilling into Quotes &amp; Guardrails · By-rep view')">
                 <span class="wf-dot"></span>
-                <div class="wf-name">Discounting (sales below guardrail) <span class="wf-delta flat">flat MoM</span><div class="wf-source">47 breaches Q1 · 12 reps · top 3 = 78% · cluster spread BKAES 82%, BKAGG 74%</div></div>
+                <div><div class="wf-name">Discounting (sales below guardrail) <span class="wf-delta flat">flat MoM</span></div><div class="wf-source">47 breaches Q1 · 12 reps · top 3 = 78% · cluster spread BKAES 82%, BKAGG 74%</div></div>
                 <span class="wf-pct">−1.1pp</span>
                 <span class="wf-eur">€117K</span>
                 <span class="wf-jump">→ By-rep</span>
               </div>
               <div class="wf-bucket" onclick="setScreen('forecast');toast('Drilling into Forecast · Input cost trajectory')">
                 <span class="wf-dot"></span>
-                <div class="wf-name">Cost not passed through <span class="wf-delta up">↑ +€18K MoM</span><div class="wf-source">7 of 18 indexed contracts un-triggered · <b>4 movable, 3 locked</b> · cluster mix BKAES/BKAGG conf 78%</div></div>
+                <div><div class="wf-name">Cost not passed through <span class="wf-delta up">↑ +€18K MoM</span></div><div class="wf-source">7 of 18 indexed contracts un-triggered · <b>4 movable, 3 locked</b> · cluster mix BKAES/BKAGG conf 78%</div></div>
                 <span class="wf-pct">−1.4pp</span>
                 <span class="wf-eur">€150K</span>
                 <span class="wf-jump">→ Cost trajectory</span>
               </div>
               <div class="wf-bucket" onclick="toast('Rebate accrual review opened · 3 customers above committed tier')">
                 <span class="wf-dot"></span>
-                <div class="wf-name">Rebate over-accrual <span class="wf-delta flat">flat MoM</span><div class="wf-source">3 customers above committed tier · cluster BKAGG conf 74%</div></div>
+                <div><div class="wf-name">Rebate over-accrual <span class="wf-delta flat">flat MoM</span></div><div class="wf-source">3 customers above committed tier · cluster BKAGG conf 74%</div></div>
                 <span class="wf-pct">−0.5pp</span>
                 <span class="wf-eur">€54K</span>
                 <span class="wf-jump">→ Review</span>
               </div>
               <div class="wf-bucket" onclick="document.querySelector('#marginTabs [data-tab=&quot;erode&quot;]').click();document.getElementById('marginTabsBlock').scrollIntoView({behavior:'smooth',block:'start'})">
                 <span class="wf-dot"></span>
-                <div class="wf-name">List-price erosion <span class="wf-delta up">↑ +€2K MoM</span><div class="wf-source">11mo avg list lag across 24 SKUs · cluster BKAES 82% · BKAIZ 64%</div></div>
+                <div><div class="wf-name">List-price erosion <span class="wf-delta up">↑ +€2K MoM</span></div><div class="wf-source">11mo avg list lag across 24 SKUs · cluster BKAES 82% · BKAIZ 64%</div></div>
                 <span class="wf-pct">−0.3pp</span>
                 <span class="wf-eur">€32K</span>
                 <span class="wf-jump">→ Erosion</span>
               </div>
               <div class="wf-bucket green" style="cursor:default">
                 <span class="wf-dot"></span>
-                <span class="wf-name">Actual margin</span>
+                <div><div class="wf-name">Actual margin</div></div>
                 <span class="wf-pct">24.1%</span>
                 <span class="wf-eur">−€417K</span>
+                <span></span>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- Movable / Locked overlay -->
-        <div style="margin-top:18px;padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
-            <span style="font-size:12px;color:#1e293b;font-weight:700">Of the €417K total leakage — what's actionable this cycle?</span>
-            <span style="font-size:11px;color:#64748b">Pilot estimate · derived from <code>price_governance.price_rules</code> + frame-contract dates</span>
+        <div class="ml-overlay">
+          <div class="ml-overlay-head">
+            <span class="lbl">Of the €417K total leakage — what's actionable this cycle?</span>
+            <span class="src">Pilot estimate · derived from <code>price_governance.price_rules</code> + frame-contract dates</span>
           </div>
-          <div style="display:flex;height:30px;border-radius:6px;overflow:hidden;border:1px solid #cbd5e1">
-            <div style="flex:62;background:linear-gradient(90deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px">Movable €260K (62%)</div>
-            <div style="flex:38;background:#94a3b8;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px">Locked €157K (38%)</div>
+          <div class="ml-bar">
+            <div class="ml-bar-mov">Movable €260K (62%)</div>
+            <div class="ml-bar-loc">Locked €157K (38%)</div>
           </div>
-          <div style="display:flex;gap:18px;margin-top:8px;font-size:11.5px;color:#475569">
-            <span><b style="color:#059669">●</b> Movable — Frank acts this cycle (Studio + A/B)</span>
-            <span><b style="color:#475569">●</b> Locked — under frame contracts; Till's renegotiation queue</span>
+          <div class="ml-legend">
+            <span><b style="color:var(--rose)">●</b> Movable — Frank acts this cycle (Studio + A/B)</span>
+            <span><b style="color:var(--ink-3)">●</b> Locked — under frame contracts; Till's renegotiation queue</span>
           </div>
         </div>
       </div>
 
       <!-- Lost-Quote Margin Differential · Frank's signature finding -->
-      <div class="card card-pad mt-24" style="border-left:4px solid #6d28d9">
-        <div class="between mb-16">
-          <h2 class="h2">Lost-quote margin differential — why we lose at the high-margin end</h2>
-          <span class="status-chip" style="background:#ecfdf5;color:#047857">p = 0.006 · statistically significant</span>
+      <div class="mar-card lq-card-mar">
+        <div class="mar-card-head">
+          <div>
+            <h2>Lost-quote margin differential — why we lose at the high-margin end</h2>
+            <div class="mar-sub">The lost-quote average margin is higher than the won-quote average. Different fix from leakage waterfall.</div>
+          </div>
+          <span class="status-chip" style="background:var(--green-bg);color:var(--green)">p = 0.006 · statistically significant</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
-          <div style="border:1px solid #e2e8f0;border-radius:8px;padding:14px">
-            <div style="font-size:10.5px;color:#64748b;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Won quotes · avg margin</div>
-            <div style="font-family:'Manrope',sans-serif;font-size:30px;font-weight:800;color:#1e293b;margin-top:4px">70.6%</div>
-            <div style="font-size:11px;color:#475569;margin-top:4px">n = 928 won quotes</div>
+        <div class="lq-stats-mar">
+          <div class="lq-stat-tile">
+            <div class="lab">Won quotes · avg margin</div>
+            <div class="big">70.6%</div>
+            <div class="sub">n = 928 won quotes</div>
           </div>
-          <div style="border:1px solid #fecaca;border-radius:8px;padding:14px;background:#fef2f2">
-            <div style="font-size:10.5px;color:#b91c1c;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Lost quotes · avg margin</div>
-            <div style="font-family:'Manrope',sans-serif;font-size:30px;font-weight:800;color:#991b1b;margin-top:4px">72.4%</div>
-            <div style="font-size:11px;color:#b91c1c;margin-top:4px">n = 385 lost quotes</div>
+          <div class="lq-stat-tile lost">
+            <div class="lab">Lost quotes · avg margin</div>
+            <div class="big">72.4%</div>
+            <div class="sub">n = 385 lost quotes</div>
           </div>
-          <div style="border:1px solid #ddd6fe;border-radius:8px;padding:14px;background:#faf5ff">
-            <div style="font-size:10.5px;color:#6d28d9;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Differential</div>
-            <div style="font-family:'Manrope',sans-serif;font-size:30px;font-weight:800;color:#5b21b6;margin-top:4px">+1.8pp</div>
-            <div style="font-size:11px;color:#6d28d9;margin-top:4px">Welch's t-test · p = 0.006 (significant)</div>
+          <div class="lq-stat-tile diff">
+            <div class="lab">Differential</div>
+            <div class="big">+1.8pp</div>
+            <div class="sub">Welch's t-test · p = 0.006 (significant)</div>
           </div>
         </div>
-        <p style="font-size:12.5px;color:#1e293b;line-height:1.55;margin:0;padding:12px 14px;background:#f8fafc;border-radius:6px;border-left:3px solid #6d28d9">
-          <b>Plain-language interpretation:</b> The lost-quote average margin is <b>higher</b> than the won-quote average. We are losing disproportionately on the high-margin end — the pricing model is leaving high-margin business on the table.
-          This is a <b>different problem</b> than the leakage waterfall above and needs a <b>different fix</b>: qualification + negotiation arguments + price-anchor coaching, not pass-through.
-        </p>
-        <p style="font-size:11.5px;color:#475569;margin:10px 0 0">
-          Source · <code>pricing_analysis.price_sensitivity</code> · <span style="color:#6d28d9;font-weight:600">Shared with Heiko (Sales)</span> — appears in Deal Empowerment as lost-deal analytics. Same finding shared with Till in monthly briefing.
-        </p>
+        <p class="lq-interp"><b>Plain-language interpretation:</b> The lost-quote average margin is <b>higher</b> than the won-quote average. We are losing disproportionately on the high-margin end — the pricing model is leaving high-margin business on the table. This is a <b>different problem</b> than the leakage waterfall above and needs a <b>different fix</b>: qualification + negotiation arguments + price-anchor coaching, not pass-through.</p>
+        <p class="lq-source">Source · <code>pricing_analysis.price_sensitivity</code> · <span style="color:var(--violet);font-weight:600">Shared with Heiko (Sales)</span> — appears in Deal Empowerment as lost-deal analytics. Same finding shared with Till in monthly briefing.</p>
       </div>
 
       <!-- Cost-vs-Price gap + Pass-through completion + Recovery trajectory -->
-      <div class="card card-pad mt-24">
-        <div class="between mb-16">
-          <h2 class="h2">Input cost vs realized price · last 24 months <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('cpInfoPanel').classList.toggle('show')">i</button></h2>
+      <div class="mar-card">
+        <div class="mar-card-head">
+          <div>
+            <h2>Input cost vs realized price · last 24 months <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('cpInfoPanel').classList.toggle('show')">i</button></h2>
+            <div class="mar-sub">When the cost line rises faster than the price line, your margin is compressing — visible here before it shows up in the P&amp;L.</div>
+          </div>
           <span class="status-chip">Indexed Apr 2024 = 100</span>
         </div>
         <div class="info-panel" id="cpInfoPanel">
@@ -5090,14 +5205,14 @@ body.pryzm-2026 #screen-margin .mi-briefing .fc-briefing-body p.sig{
               <div class="cp-big">61%</div>
               <div class="cp-sub"><b>11 of 18</b> indexed contracts triggered YTD · 7 un-triggered = €150K leakage</div>
               <div class="cp-progress"><div class="cp-progress-fill" style="width:61%"></div></div>
-              <div style="margin-top:8px;padding-top:8px;border-top:1px dashed #e2e8f0;font-size:10.5px;color:#475569;line-height:1.5">
-                Of the 7 un-triggered: <b style="color:#059669">4 movable</b> (Frank can renegotiate index trigger this cycle) · <b style="color:#475569">3 locked</b> (Till to take to MD review at frame renewal).
+              <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--hairline);font-size:11px;color:var(--ink-3);line-height:1.5">
+                Of the 7 un-triggered: <b style="color:var(--green)">4 movable</b> (Frank can renegotiate index trigger this cycle) · <b style="color:var(--ink-3)">3 locked</b> (Till to take to MD review at frame renewal).
               </div>
             </div>
             <div class="cp-mini-card">
               <div class="cp-head">YTD margin recovery via Pryzm</div>
               <div class="cp-big" style="color:var(--green)">€147K</div>
-              <div class="cp-sub">From 38 implemented actions · cumulative · <span style="color:#6d28d9;font-weight:600">12 went through A/B tracker before broad rollout</span> · all hash-signed</div>
+              <div class="cp-sub">From 38 implemented actions · cumulative · <span style="color:var(--violet);font-weight:600">12 went through A/B tracker before broad rollout</span> · all hash-signed</div>
               <div class="recovery-wrap"><canvas id="recoveryChart"></canvas></div>
             </div>
           </div>
@@ -7121,8 +7236,8 @@ function initWaterfall(){
         [24.1,24.4],
         [0,24.1]
       ],
-      backgroundColor:['#0393da','#dc2626','#dc2626','#dc2626','#dc2626','#dc2626','#059669'],
-      borderColor:['#0277b5','#b91c1c','#b91c1c','#b91c1c','#b91c1c','#b91c1c','#047857'],
+      backgroundColor:['#2f7d5b','#a35a5a','#a35a5a','#a35a5a','#a35a5a','#a35a5a','#2f7d5b'],
+      borderColor:['#2f7d5b','#a35a5a','#a35a5a','#a35a5a','#a35a5a','#a35a5a','#2f7d5b'],
       borderWidth:1,
       borderSkipped:false,
       borderRadius:3
@@ -7145,8 +7260,8 @@ function initWaterfall(){
         }}}
       },
       scales:{
-        y:{min:23,max:29,ticks:{callback:v=>v+'%',font:{size:11},color:'#737373'},grid:{color:'#f0f0f0'}},
-        x:{ticks:{font:{size:10.5},color:'#404040',maxRotation:0,minRotation:0,callback:function(val){return this.getLabelForValue(val).split('\n');}},grid:{display:false}}
+        y:{min:23,max:29,ticks:{callback:v=>v+'%',font:{size:11,family:'Inter'},color:'#56544f'},grid:{color:'rgba(0,0,0,0.05)'}},
+        x:{ticks:{font:{size:10.5,family:'Inter'},color:'#56544f',maxRotation:0,minRotation:0,callback:function(val){return this.getLabelForValue(val).split('\n');}},grid:{display:false}}
       }
     }
   });
@@ -7162,8 +7277,8 @@ function initCostPriceGap(){
   charts.costprice = new Chart(c,{
     type:'line',
     data:{labels,datasets:[
-      {label:'Input cost index',data:cost,borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,.1)',fill:false,tension:.3,borderWidth:2.5,pointRadius:0,pointHoverRadius:4},
-      {label:'Realized price index',data:price,borderColor:'#0393da',backgroundColor:'rgba(3,147,218,.08)',fill:'-1',tension:.3,borderWidth:2.5,pointRadius:0,pointHoverRadius:4}
+      {label:'Input cost index',data:cost,borderColor:'#a35a5a',fill:false,tension:.3,borderWidth:2,pointRadius:0,pointHoverRadius:4},
+      {label:'Realized price index',data:price,borderColor:'#15140f',fill:false,tension:.3,borderWidth:2,pointRadius:0,pointHoverRadius:4}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{
@@ -7175,8 +7290,8 @@ function initCostPriceGap(){
         }}}
       },
       scales:{
-        y:{ticks:{callback:v=>v,font:{size:11},color:'#737373'},grid:{color:'#f0f0f0'}},
-        x:{ticks:{font:{size:10.5},color:'#737373'},grid:{display:false}}
+        y:{ticks:{callback:v=>v,font:{size:11,family:'Inter'},color:'#56544f'},grid:{color:'rgba(0,0,0,0.05)'}},
+        x:{ticks:{font:{size:10.5,family:'Inter'},color:'#56544f'},grid:{display:false}}
       }}
   });
 }
@@ -7186,12 +7301,9 @@ function initRecoveryChart(){
   destroy('recovery');
   const labels=Array.from({length:12},(_,i)=>'M'+(i+1));
   const cumul=[6,14,22,32,42,55,68,82,98,114,131,147].map(v=>v*1000);
-  const grad = c.getContext('2d').createLinearGradient(0,0,0,80);
-  grad.addColorStop(0,'rgba(5,150,105,.45)');
-  grad.addColorStop(1,'rgba(5,150,105,0)');
   charts.recovery = new Chart(c,{
     type:'line',
-    data:{labels,datasets:[{data:cumul,borderColor:'#059669',borderWidth:2,fill:true,backgroundColor:grad,tension:.4,pointRadius:0}]},
+    data:{labels,datasets:[{data:cumul,borderColor:'#a35a5a',borderWidth:2,fill:true,backgroundColor:'rgba(163,90,90,0.10)',tension:.35,pointRadius:0}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{enabled:false}},
       scales:{x:{display:false},y:{display:false}}}
