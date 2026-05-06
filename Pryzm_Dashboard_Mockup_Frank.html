@@ -3276,110 +3276,100 @@ body.pryzm-2026 #screen-forecast .fc-changed-row:first-child{ border-top:none; }
       </div>
 
       <!-- Per-cluster forecast lens (Frank · heterogeneous portfolio diagnostics) -->
-      <div class="card card-pad mt-24">
-        <div class="between mb-16">
-          <h2 class="h2">Per-cluster forecast lens</h2>
-          <span class="status-chip">Heterogeneous portfolio</span>
+      <div class="section-row" id="sec-fc-clusters">
+        <div>
+          <h2>Per-cluster forecast lens</h2>
+          <div class="sub">Heterogeneous portfolio diagnostics — cluster-level forecast bands &amp; confidence. Click to filter the main chart.</div>
         </div>
-        <div class="muted small" style="margin-top:-6px">Heterogeneous portfolio diagnostics · cluster-level forecast bands and confidence. Click a cluster to filter the main chart.</div>
-        <div class="cluster-lens" id="frankClusterLens">
-          <div class="cluster-card" onclick="toast('Filtering main chart to BKAES')">
-            <div class="cl-name">BKAES</div>
-            <div class="cl-ltm">LTM €12.3M</div>
-            <div class="cl-fc">€12.7M</div>
-            <div class="cl-band">band ±6% · next 12mo</div>
-            <div class="cl-conf"><span class="cluster-chip" data-conf="green" style="margin-left:0">BKAES 82%</span></div>
-          </div>
-          <div class="cluster-card" onclick="toast('Filtering main chart to BKAGG')">
-            <div class="cl-name">BKAGG</div>
-            <div class="cl-ltm">LTM €5.3M</div>
-            <div class="cl-fc">€5.4M</div>
-            <div class="cl-band">band ±9% · next 12mo</div>
-            <div class="cl-conf"><span class="cluster-chip" data-conf="amber" style="margin-left:0">BKAGG 74%</span></div>
-          </div>
-          <div class="cluster-card" onclick="toast('Filtering main chart to BKAIZ')">
-            <div class="cl-name">BKAIZ</div>
-            <div class="cl-ltm">LTM €564K</div>
-            <div class="cl-fc">€581K</div>
-            <div class="cl-band">band ±12% · next 12mo</div>
-            <div class="cl-conf"><span class="cluster-chip" data-conf="amber" style="margin-left:0">BKAIZ 64%</span></div>
-          </div>
-          <div class="cluster-card lown" onclick="toast('Filtering main chart to SOPU — low-n cluster, manual review recommended')">
-            <div class="cl-name">SOPU</div>
-            <div class="cl-ltm">LTM €170K · low-n</div>
-            <div class="cl-fc">€165K</div>
-            <div class="cl-band">band ±22% · next 12mo</div>
-            <div class="cl-conf"><span class="cluster-chip lown" data-conf="red" style="margin-left:0">SOPU 38%</span></div>
-          </div>
+        <span class="tag-chip">Heterogeneous portfolio</span>
+      </div>
+      <div class="round-grid" id="frankClusterLens" style="grid-template-columns:repeat(4,1fr)">
+        <div class="round-card" onclick="toast('Filtering main chart to BKAES')">
+          <div class="rc-title"><h3>BKAES</h3><div class="sub">LTM €12.3M</div></div>
+          <div style="font-family:'Manrope',sans-serif;font-size:24px;font-weight:700;color:var(--ink);letter-spacing:-0.02em">€12.7M</div>
+          <div style="font-size:11.5px;color:var(--muted)">band ±6% · next 12mo</div>
+          <div class="round-tags"><span class="tag-chip status">BKAES 82%</span></div>
+        </div>
+        <div class="round-card" onclick="toast('Filtering main chart to BKAGG')">
+          <div class="rc-title"><h3>BKAGG</h3><div class="sub">LTM €5.3M</div></div>
+          <div style="font-family:'Manrope',sans-serif;font-size:24px;font-weight:700;color:var(--ink);letter-spacing:-0.02em">€5.4M</div>
+          <div style="font-size:11.5px;color:var(--muted)">band ±9% · next 12mo</div>
+          <div class="round-tags"><span class="tag-chip status amber">BKAGG 74%</span></div>
+        </div>
+        <div class="round-card" onclick="toast('Filtering main chart to BKAIZ')">
+          <div class="rc-title"><h3>BKAIZ</h3><div class="sub">LTM €564K</div></div>
+          <div style="font-family:'Manrope',sans-serif;font-size:24px;font-weight:700;color:var(--ink);letter-spacing:-0.02em">€581K</div>
+          <div style="font-size:11.5px;color:var(--muted)">band ±12% · next 12mo</div>
+          <div class="round-tags"><span class="tag-chip status amber">BKAIZ 64%</span></div>
+        </div>
+        <div class="round-card" onclick="toast('Filtering main chart to SOPU — low-n cluster, manual review recommended')">
+          <div class="rc-title"><h3>SOPU</h3><div class="sub">LTM €170K · low-n</div></div>
+          <div style="font-family:'Manrope',sans-serif;font-size:24px;font-weight:700;color:var(--ink);letter-spacing:-0.02em">€165K</div>
+          <div style="font-size:11.5px;color:var(--muted)">band ±22% · next 12mo</div>
+          <div class="round-tags"><span class="tag-chip status red">SOPU 38%</span></div>
         </div>
       </div>
 
       <!-- Walk-forward backtest panel (replaces 4-card KPI strip) -->
-      <div class="card card-pad mt-24">
-        <div class="between mb-16">
-          <h2 class="h2">Walk-forward backtest · 12-month MAPE</h2>
-          <span class="status-chip up">Target &lt;5%</span>
+      <div class="section-row" id="sec-fc-wf">
+        <div>
+          <h2>Walk-forward backtest · 12-month MAPE</h2>
+          <div class="sub">Each Monday's primary forecast tested against next month's actuals. Walk-forward retraining ensures accuracy improves over time.</div>
         </div>
-        <div class="muted small" style="margin-top:-6px">Each Monday's primary forecast tested against the next month's actuals. Target: &lt;5% MAPE. Walk-forward retraining ensures accuracy improves over time.</div>
-        <div style="height:180px;margin-top:14px;position:relative"><canvas id="walkForwardChart"></canvas></div>
-        <div class="wf-stats">
-          <div class="wf-stat good">Latest MAPE (April) <b>4.7%</b></div>
-          <div class="wf-stat good">Avg trailing 6mo <b>4.6%</b></div>
-          <div class="wf-stat good">Best month (Jan) <b>4.4%</b></div>
-          <div class="wf-stat good">YoY trend <b>−2.1pp</b></div>
-        </div>
+        <span class="tag-chip status">Target &lt;5%</span>
+      </div>
+      <div class="lq-card">
+        <div style="height:180px;position:relative"><canvas id="walkForwardChart"></canvas></div>
+      </div>
+      <div class="trust-grid" style="margin-top:14px">
+        <div class="trust-tile"><div class="lab">Latest MAPE (April)</div><div class="big" style="color:var(--green)">4.7%</div><div class="cap">below target</div></div>
+        <div class="trust-tile"><div class="lab">Avg trailing 6mo</div><div class="big" style="color:var(--green)">4.6%</div><div class="cap">stable</div></div>
+        <div class="trust-tile"><div class="lab">Best month (Jan)</div><div class="big" style="color:var(--green)">4.4%</div><div class="cap">peak accuracy</div></div>
+        <div class="trust-tile"><div class="lab">YoY trend</div><div class="big" style="color:var(--green)">−2.1pp</div><div class="cap">improving</div></div>
       </div>
 
       <!-- Input cost trajectory · the manufacturing PM's #1 watched signal -->
-      <div class="card card-pad mt-24">
-        <div class="between mb-16">
-          <h2 class="h2">Input cost trajectory · next 12 months <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('costInfoPanel').classList.toggle('show')">i</button></h2>
-          <span class="status-chip">LME · VDMA · Bundesnetzagentur</span>
+      <div class="section-row" id="sec-fc-cost">
+        <div>
+          <h2>Input cost trajectory · next 12 months</h2>
+          <div class="sub">Your revenue forecasts are net of these inputs. Pass-through % = how much is contractually indexed; the rest is absorbed in margin.</div>
         </div>
-        <div class="info-panel" id="costInfoPanel">
-          <p>Your revenue forecasts above are <b>net of these inputs</b>. If steel moves +6.8% next quarter, every price floor moves with it.</p>
-          <p><b>Pass-through %</b> = how much of your revenue is contractually indexed to that input. The rest is absorbed in margin. Hover any card to see the WoW move and contract count.</p>
+        <span class="tag-chip">LME · VDMA · Bundesnetzagentur</span>
+      </div>
+      <div class="trust-grid">
+        <div class="trust-tile">
+          <div class="lab">Steel S355 / S275</div>
+          <div class="big">€1,180<span style="font-size:12px;color:var(--muted);font-weight:500;letter-spacing:0">/t</span></div>
+          <div class="cap"><b style="color:var(--red)">↑ +6.8%</b> by Q3 → €1,260 · 62% pass-through · WoW <b style="color:var(--red)">+1.6pp accelerating</b></div>
         </div>
-        <div class="cost-grid">
-          <div class="cost-card up">
-            <div class="cost-cat">Steel S355 / S275</div>
-            <div class="cost-now">€1,180 / t</div>
-            <div class="cost-fc"><span class="dir up">↑ +6.8%</span> by Q3 → €1,260</div>
-            <div class="cost-pt"><b>62%</b> pass-through</div>
-            <div class="cost-extra">band ±4.2% · 12 contracts indexed · WoW <b style="color:var(--red)">+1.6pp accelerating</b> (was +5.2%)</div>
-          </div>
-          <div class="cost-card flat">
-            <div class="cost-cat">Alloys (Cr-Mo, Ni)</div>
-            <div class="cost-now">€2,840 / t</div>
-            <div class="cost-fc"><span class="dir flat">→ +0.4%</span> stable</div>
-            <div class="cost-pt"><b>28%</b> pass-through</div>
-            <div class="cost-extra">band ±7.1% · 4 contracts indexed · WoW <b>−0.2pp easing</b> (was +0.6%)</div>
-          </div>
-          <div class="cost-card up">
-            <div class="cost-cat">Copper</div>
-            <div class="cost-now">€8,420 / t</div>
-            <div class="cost-fc"><span class="dir up">↑ +3.1%</span> by Q4 → €8,680</div>
-            <div class="cost-pt"><b>15%</b> pass-through</div>
-            <div class="cost-extra">band ±9.0% · 2 contracts indexed · WoW <b>+0.2pp drift</b> (was +2.9%)</div>
-          </div>
-          <div class="cost-card down">
-            <div class="cost-cat">Energy (industrial kWh)</div>
-            <div class="cost-now">€0.184 / kWh</div>
-            <div class="cost-fc"><span class="dir down">↓ −2.4%</span> by Q2 → €0.180</div>
-            <div class="cost-pt"><b>0%</b> pass-through · absorbed</div>
-            <div class="cost-extra">band ±11% · no indexed contracts · WoW <b>−0.6pp easing further</b> (was −1.8%)</div>
-          </div>
+        <div class="trust-tile">
+          <div class="lab">Alloys (Cr-Mo, Ni)</div>
+          <div class="big">€2,840<span style="font-size:12px;color:var(--muted);font-weight:500;letter-spacing:0">/t</span></div>
+          <div class="cap"><b style="color:var(--ink-3)">→ +0.4%</b> stable · 28% pass-through · WoW <b>−0.2pp easing</b></div>
         </div>
-
-        <!-- Stress-test strip — single line, click for full breakdown -->
-        <div class="stress-strip">
-          <span class="ss-ic">🧪</span>
-          <div><b>Steel +10% stress test:</b> −€42K margin · below-floor 2 → 5 quotes <button class="info-tip" onclick="this.classList.toggle('active');document.getElementById('stressInfoPanel').classList.toggle('show')">i</button></div>
-          <button class="ss-toggle" onclick="toast('Stress test scenarios opened — base / steel +10% / multi-input shock')">Open scenarios →</button>
+        <div class="trust-tile">
+          <div class="lab">Copper</div>
+          <div class="big">€8,420<span style="font-size:12px;color:var(--muted);font-weight:500;letter-spacing:0">/t</span></div>
+          <div class="cap"><b style="color:var(--amber)">↑ +3.1%</b> by Q4 → €8,680 · 15% pass-through · WoW <b>+0.2pp drift</b></div>
         </div>
-        <div class="info-panel" id="stressInfoPanel" style="margin-top:8px">
-          <p>Worst-case steel +10% scenario compresses margin by <b>€42K</b> across 47 SKUs. Floors auto-recalibrate per SKU. Headroom on alloys absorbs partially; energy buffer holds.</p>
-          <p>At central case, <b style="color:var(--red)">€18–28K compression next quarter</b> if alloy and energy move adversely — 38% of revenue is fixed-price with no pass-through. <a href="#" data-jump="quotes">Review contracts with escalators →</a></p>
+        <div class="trust-tile">
+          <div class="lab">Energy (industrial kWh)</div>
+          <div class="big">€0.184<span style="font-size:12px;color:var(--muted);font-weight:500;letter-spacing:0">/kWh</span></div>
+          <div class="cap"><b style="color:var(--green)">↓ −2.4%</b> by Q2 → €0.180 · 0% pass-through (absorbed) · WoW <b>−0.6pp easing</b></div>
+        </div>
+      </div>
+      <div class="signal-with-trend" style="margin-top:14px">
+        <div class="signal-pane">
+          <div class="ttl">Stress test <span class="ttl-sub">— worst-case steel +10%</span></div>
+          <ul style="margin:0;padding:0;list-style:none;color:var(--ink-3);font-size:12.5px;line-height:1.7">
+            <li>Compresses margin by <b style="color:var(--ink)">€42K</b> across 47 SKUs. Floors auto-recalibrate per SKU.</li>
+            <li>Headroom on alloys absorbs partially; energy buffer holds.</li>
+          </ul>
+        </div>
+        <div class="trend-pane">
+          <div class="lab">Central case</div>
+          <div class="v" style="color:var(--red)">€18–28K</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.4">compression next quarter (38% of revenue is fixed-price, no pass-through)</div>
         </div>
       </div>
 
@@ -6291,15 +6281,15 @@ function initWalkForwardChart(){
   charts.walkForward = new Chart(c,{
     type:'line',
     data:{labels:wf.labels,datasets:[
-      {label:'MAPE %', data:wf.values, borderColor:'#0393da', backgroundColor:'rgba(3,147,218,.12)', borderWidth:2.5, tension:.35, fill:true, pointRadius:3, pointBackgroundColor:'#0393da'},
-      {label:'Target (5%)', data:target, borderColor:'rgba(220,38,38,.7)', borderWidth:1.5, borderDash:[5,4], pointRadius:0, fill:false}
+      {label:'MAPE %', data:wf.values, borderColor:'#15140f', backgroundColor:'rgba(163,90,90,0.10)', borderWidth:2.5, tension:.35, fill:true, pointRadius:3, pointBackgroundColor:'#15140f'},
+      {label:'Target (5%)', data:target, borderColor:'rgba(163,90,90,0.7)', borderWidth:1.5, borderDash:[5,4], pointRadius:0, fill:false}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12,font:{size:11}}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12,font:{size:11,family:'Inter'},color:'#56544f'}},
         tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`}}},
       scales:{
-        y:{ticks:{callback:v=>v+'%',font:{size:10},color:'#737373'},grid:{color:'#f0f0f0'},beginAtZero:false,suggestedMin:3,suggestedMax:8},
-        x:{ticks:{font:{size:10},color:'#737373'},grid:{display:false}}
+        y:{ticks:{callback:v=>v+'%',font:{size:10,family:'Inter'},color:'#56544f'},grid:{color:'rgba(0,0,0,0.05)'},beginAtZero:false,suggestedMin:3,suggestedMax:8},
+        x:{ticks:{font:{size:10,family:'Inter'},color:'#56544f'},grid:{display:false}}
       }}
   });
 }
