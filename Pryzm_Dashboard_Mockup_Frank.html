@@ -1070,6 +1070,64 @@
   .row-action.queue{background:#fff;color:var(--primary);border-color:#bae3f5}
   .row-action.queue:hover{background:#eff6ff}
 
+  /* ============== Frank · Forecast Screen ============== */
+  /* Cluster confidence chip — green/amber/red traffic-light */
+  .cluster-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:10px;font-family:'Manrope',sans-serif;font-size:10px;font-weight:800;letter-spacing:.03em;border:1px solid;margin-left:6px;white-space:nowrap}
+  .cluster-chip[data-conf="green"]{background:#ecfdf5;color:#047857;border-color:#a7f3d0}
+  .cluster-chip[data-conf="amber"]{background:#fffbeb;color:#a16207;border-color:#fde68a}
+  .cluster-chip[data-conf="red"]{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
+  .cluster-chip.lown::after{content:'⚠';margin-left:3px;font-size:9px}
+  .ab-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:10px;background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;font-family:'Manrope',sans-serif;font-size:10px;font-weight:800;margin-left:5px;cursor:pointer;letter-spacing:.03em}
+  .ab-chip:hover{background:#e0e7ff}
+
+  /* Per-cluster forecast lens */
+  .cluster-lens{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+  @media (max-width:980px){ .cluster-lens{grid-template-columns:repeat(2,1fr)} }
+  .cluster-card{padding:14px 16px;border:1px solid var(--border);border-radius:10px;background:var(--surface);cursor:pointer;transition:box-shadow .12s,border-color .12s}
+  .cluster-card:hover{box-shadow:var(--shadow-md);border-color:var(--ink-2)}
+  .cluster-card .cl-name{font-family:'Manrope',sans-serif;font-weight:800;font-size:13px;color:var(--ink);letter-spacing:.04em}
+  .cluster-card .cl-ltm{font-size:10.5px;color:var(--muted);margin-top:2px}
+  .cluster-card .cl-fc{font-family:'Manrope',sans-serif;font-weight:700;font-size:16px;color:var(--ink);margin-top:8px}
+  .cluster-card .cl-band{font-size:10.5px;color:var(--muted);margin-top:2px}
+  .cluster-card .cl-conf{margin-top:8px}
+  .cluster-card.lown{border-left:3px solid var(--red)}
+
+  /* Walk-forward backtest panel */
+  .wf-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--border)}
+  @media (max-width:760px){ .wf-stats{grid-template-columns:repeat(2,1fr)} }
+  .wf-stat{font-size:11.5px;color:var(--muted)}
+  .wf-stat b{display:block;font-family:'Manrope',sans-serif;font-weight:800;color:var(--ink);font-size:18px;letter-spacing:.02em;margin-top:2px}
+  .wf-stat.good b{color:var(--green)}
+
+  /* Movable-vs-locked split toggle + bar */
+  .frank-split-toggle{margin-top:14px;display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--ink-2);cursor:pointer;user-select:none}
+  .frank-split-toggle .fst-box{width:14px;height:14px;border:1.5px solid var(--border-strong);border-radius:3px;background:#fff;flex-shrink:0;position:relative}
+  .frank-split-toggle.on .fst-box{background:var(--primary);border-color:var(--primary)}
+  .frank-split-toggle.on .fst-box::after{content:'✓';position:absolute;top:-2px;left:1px;color:#fff;font-size:11px;font-weight:800}
+  .frank-split-toggle b{color:var(--ink);font-weight:700}
+  .frank-split-bar{display:none;margin-top:10px;padding:14px 16px;background:#f8fafc;border:1px solid var(--border);border-radius:8px}
+  .frank-split-bar.show{display:block}
+  .fsb-track{display:flex;height:22px;border-radius:5px;overflow:hidden;border:1px solid var(--border)}
+  .fsb-mov{background:linear-gradient(135deg,#10b981,#059669);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Manrope',sans-serif;font-weight:800;font-size:11px;letter-spacing:.04em}
+  .fsb-loc{background:linear-gradient(135deg,#94a3b8,#64748b);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Manrope',sans-serif;font-weight:800;font-size:11px;letter-spacing:.04em}
+  .fsb-cap{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  /* New product forecast card */
+  .npf-stats{display:flex;gap:18px;flex-wrap:wrap;margin-top:6px;font-size:12px;color:var(--muted)}
+  .npf-stats b{color:var(--ink);font-family:'Manrope',sans-serif;font-weight:800}
+  .npf-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+  .npf-row{display:grid;grid-template-columns:90px 1fr auto auto;gap:14px;align-items:center;padding:10px 14px;background:#fff;border:1px solid var(--border);border-radius:8px;font-size:12px}
+  .npf-row .npf-sku{font-family:'Manrope',sans-serif;font-weight:800;color:var(--ink)}
+  .npf-row .npf-meta{color:var(--ink-2);line-height:1.45}
+  .npf-row .npf-meta .muted{color:var(--muted)}
+  .npf-row .npf-fc{font-family:'Manrope',sans-serif;font-weight:700;color:var(--ink);text-align:right;font-size:13px}
+  .npf-row.lown{border-left:3px solid var(--red)}
+
+  /* Frank cross-link strip (forecast bottom) */
+  .frank-xlink{margin-top:18px;padding:10px 14px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);text-align:center}
+  .frank-xlink a{color:var(--primary);font-weight:700;text-decoration:none;cursor:pointer}
+  .frank-xlink a:hover{text-decoration:underline}
+
   /* ============== Action Center · Markus additions ============== */
   /* Quiet "session resume" subline under the H1 — not an alert, just orientation */
   .page-sub{margin-top:6px;font-size:12.5px;color:var(--muted);line-height:1.5}
@@ -1144,6 +1202,13 @@
   .ws-filter{padding:5px 9px;border:1px solid var(--border-strong);border-radius:999px;background:#fff;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit}
   .ws-filter:hover{border-color:var(--ink-2);color:var(--ink-2)}
   .ws-filter.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .ws-filter.toggle{border-style:dashed}
+  .ws-filter.toggle.active{background:#1e3a8a;color:#fff;border-color:#1e3a8a;border-style:solid}
+  .ws-clu{display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:4px;letter-spacing:.2px;vertical-align:middle}
+  .ws-clu.hi{background:#ecfdf5;color:#047857}
+  .ws-clu.mid{background:#fef3c7;color:#b45309}
+  .ws-clu.lo{background:#fee2e2;color:#b91c1c}
+  .ws-locked{display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:4px;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1}
   .ws-list{overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px;padding:0 2px 4px}
   .ws-row{padding:9px 11px;background:#fff;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .12s;display:grid;grid-template-columns:1fr auto;column-gap:8px;row-gap:2px}
   .ws-row:hover{border-color:var(--primary);background:#f8fafc}
@@ -1173,7 +1238,11 @@
   .ws-options-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:2px;padding:0 2px}
   .ws-options-head h4{font-family:'Manrope',sans-serif;font-size:14.5px;font-weight:700;color:var(--ink);margin:0}
   .ws-options-head .ws-opts-sub{color:var(--muted);font-size:12px}
-  .ws-options{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .ws-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+  .ws-opt.abtest{border-color:#7c3aed;background:#faf5ff}
+  .ws-opt.abtest:hover{border-color:#6d28d9}
+  .ws-opt.abtest .ws-opt-lab{color:#6d28d9}
+  .ws-opt.abtest.active{border-color:#7c3aed;background:#ede9fe;box-shadow:0 0 0 2px rgba(124,58,237,.18)}
   .ws-opt{padding:14px 16px;border:2px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;text-align:left;font-family:inherit;transition:all .12s;display:flex;flex-direction:column;gap:4px;min-width:0}
   .ws-opt:hover{border-color:var(--primary)}
   .ws-opt.active{border-color:var(--primary);background:#eff6ff;box-shadow:0 0 0 2px rgba(3,147,218,.15)}
@@ -1475,8 +1544,39 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
 .dc-row .dc-bar .dc-fill.warn{background:linear-gradient(90deg,#fcd34d,#d97706)}
 .section-spacer{height:24px}
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style data-theme="pryzm-2026">
+body.pryzm-2026{
+  --canvas:#dcdbd6; --shell:#eeece8; --surface:#ffffff;
+  --surface-soft:#f6f4f0; --surface-sunken:#ecebe6;
+  --ink:#15140f; --ink-2:#2c2a26; --ink-3:#56544f; --muted:#8a877f; --muted-2:#b3b0a8;
+  --border:#e6e4de; --border-strong:#d6d3cc; --hairline:#eae8e2;
+  --rose:#a35a5a; --rose-deep:#874646; --rose-soft:#c98989; --rose-tint:#f1dede; --rose-bg:#f8eded;
+  --green:#2f7d5b; --green-bg:#e3efe6;
+  --amber:#a5701f; --amber-bg:#f5ecd9;
+  --red:#9a3232; --red-bg:#f1dcdc;
+  --violet:#6d4ec5; --violet-bg:#ece4f6;
+  --shadow-card: 0 1px 0 rgba(20,16,12,.04), 0 1px 2px rgba(20,16,12,.04);
+  --shadow-pop:  0 12px 28px -14px rgba(20,16,12,.14), 0 2px 6px rgba(20,16,12,.05);
+  --r-sm:8px; --r:12px; --r-md:14px; --r-lg:18px; --r-xl:24px; --r-2xl:32px;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--canvas); color:var(--ink);
+  font-size:13.5px; line-height:1.5; letter-spacing:-0.005em;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+body.pryzm-2026 h1,
+body.pryzm-2026 h2,
+body.pryzm-2026 h3,
+body.pryzm-2026 h4,
+body.pryzm-2026 h5{
+  font-family:'Manrope','Inter',sans-serif; margin:0; color:var(--ink);
+  letter-spacing:-0.022em; font-weight:700;
+}
+</style>
 </head>
-<body>
+<body class="pryzm-2026">
 
 <div class="app">
   <header>
@@ -2073,7 +2173,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
     <section id="screen-forecast" class="screen hidden">
       <div class="page-head">
         <div>
-          <div class="crumbs">Forecast · <b id="fcModeCrumb">Revenue</b></div>
+          <div class="crumbs">Forecast · <b>Predictive Portfolio Pricing</b> · <span id="fcModeCrumb">Revenue</span></div>
           <h1 id="fcTitle">Revenue Forecast — Next 12 Months</h1>
           <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">
             <span class="status-chip live">Updated Mon 06:14</span>
@@ -2084,7 +2184,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
         <div class="row" style="gap:6px;flex-wrap:wrap">
           <button class="filter-chip">Tier · All ▾</button>
           <button class="filter-chip">Family · All ▾</button>
-          <button class="filter-chip">My approval lvl ▾</button>
+          <button class="filter-chip" id="fcClusterLens" onclick="toast('Cluster lens: filter to BKAES / BKAGG / BKAIZ / SOPU')">Cluster lens · All ▾</button>
           <button class="btn primary" id="fcBriefingBtn">📋 Generate forecast briefing</button>
         </div>
       </div>
@@ -2099,12 +2199,11 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
           <button class="btn ghost" onclick="document.getElementById('fcBriefing').classList.remove('show')">× Close</button>
         </div>
         <div class="fc-briefing-body" contenteditable="true">
-          <p><b>Subject:</b> Revenue forecast — next 12 months · Week 18</p>
-          <p>Primary band points to <b>€5.92M</b> revenue over the next 12 months, with conservative–aggressive envelope <b>€4.97M – €6.87M</b>. Order book already covers <b>€805K (14%)</b> for the next quarter. Confidence: <b>78% High · 22% Medium · 8% Thin data</b>.</p>
-          <p><b>Top driver:</b> repeat customers (Pareto) — top 20 customers account for ~80% of forecast revenue. Of those, <b>Customer 101900</b> is the only one drifting below band (Tier-D, −22% YoY); attrition is acceptable strategically.</p>
-          <p><b>Cost-side risk:</b> Steel S355 forecast <b>+6.8% by Q3</b> (was +5.2% last week — accelerating). 38% of revenue is fixed-price with no pass-through indexing → <b>€18K–28K margin compression next quarter</b> if alloy and energy bands move adversely.</p>
-          <p><b>Action implications:</b> 2 below-floor quotes open this week (Article 200832-E for Customer 101580; Article 211094-C for 101900). <b>€1.50/unit at risk on combined volume of 1,680 units.</b> Floors auto-recalibrate when material costs move.</p>
-          <p class="sig">— M. Weber, Pricing · drafted by Pryzm · please review before forwarding.</p>
+          <p><b>Subject:</b> Forecast model · accuracy &amp; cluster signal · Week 18</p>
+          <p>Walk-forward MAPE held at <b>4.7%</b> on Q1 2025 actuals (target &lt;5%). April actuals came in <b>−1.7%</b> vs primary band — within tolerance. <b>Per-cluster confidence diverges:</b> BKAES 82%, BKAGG 74%, BKAIZ 64%, SOPU 38% (low-n — do not auto-act on SOPU).</p>
+          <p><b>Movable-revenue split:</b> €3.88M (62%) on the band is repriceable; €2.37M (38%) sits under multi-year contracts and absorbs cost shock without margin response. Steel S355 <b>+6.8% by Q3</b> (was +5.2%) → ~<b>€18–28K compression</b> on the contracted share.</p>
+          <p><b>Action implications:</b> 2 below-floor quotes open (200832-E for 101580; 211094-C for 101900). 1 SKU in active A/B test (<b>205418-A</b> · day 9 of 21 · trending positive).</p>
+          <p class="sig">— Frank · Pricing Analyst · drafted by Pryzm · please review before forwarding to MD.</p>
         </div>
       </div>
 
@@ -2139,6 +2238,19 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
           </div>
         </div>
 
+        <!-- Movable vs locked overlay (Frank · pricing leverage on contracted share) -->
+        <div class="frank-split-toggle" onclick="this.classList.toggle('on');document.getElementById('frankSplitBar').classList.toggle('show')">
+          <span class="fst-box"></span>
+          <span>Show movable vs locked split  ·  Movable <b>€3.88M (62%)</b> · Locked <b>€2.37M (38%, multi-year contracts)</b></span>
+        </div>
+        <div class="frank-split-bar" id="frankSplitBar">
+          <div class="fsb-track">
+            <div class="fsb-mov" style="width:62%">Movable €3.88M · 62%</div>
+            <div class="fsb-loc" style="width:38%">Locked €2.37M · 38%</div>
+          </div>
+          <div class="fsb-cap">Locked revenue absorbs cost shock without margin response — pricing leverage sits in the movable share.</div>
+        </div>
+
         <!-- Seasonality annotations · why the band moves (compact) -->
         <div class="seasonality-strip">
           <div class="row" style="justify-content:space-between;align-items:center;gap:10px">
@@ -2161,33 +2273,58 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
         </div>
       </div>
 
-      <div class="grid-3 mt-24" style="grid-template-columns:repeat(4,1fr)">
-        <div class="card counter live">
-          <div class="label"><span class="pin" style="background:var(--green)"></span>April actual vs forecast<span class="live-pulse"></span></div>
-          <div class="value pos" style="color:var(--green)">−1.7%</div>
-          <div class="cap">€342K vs €348K · within band · refreshed today</div>
+      <!-- Per-cluster forecast lens (Frank · heterogeneous portfolio diagnostics) -->
+      <div class="card card-pad mt-24">
+        <div class="between mb-16">
+          <h2 class="h2">Per-cluster forecast lens</h2>
+          <span class="status-chip">Heterogeneous portfolio</span>
         </div>
-        <div class="card counter green">
-          <div class="label"><span class="pin"></span>Q1 2025 historical error</div>
-          <div class="value">&lt;5%</div>
-          <div class="cap">vs primary band · model-routing agent</div>
-        </div>
-        <div class="card counter below-band">
-          <div class="label"><span class="pin" style="background:var(--red)"></span>Customers below band</div>
-          <div class="value">1 of 10</div>
-          <div class="cap"><b style="color:var(--red)">101900</b> · Tier-D · −22% YoY trending</div>
-          <a class="more" href="#" onclick="event.preventDefault();const r=document.querySelector('[data-aid=\'101900-row\']');if(r){r.scrollIntoView({behavior:'smooth',block:'center'});r.classList.add('hl');setTimeout(()=>r.classList.remove('hl'),2500);}">Jump to row →</a>
-        </div>
-        <div class="card counter confidence">
-          <div class="label"><span class="pin" style="background:var(--primary)"></span>Confidence index</div>
-          <div class="value">78% High</div>
-          <div class="cap">22% Medium · 8% Thin data</div>
-          <div class="conf-index-bar">
-            <div class="ci-h" style="width:78%"></div>
-            <div class="ci-m" style="width:14%"></div>
-            <div class="ci-t" style="width:8%"></div>
+        <div class="muted small" style="margin-top:-6px">Heterogeneous portfolio diagnostics · cluster-level forecast bands and confidence. Click a cluster to filter the main chart.</div>
+        <div class="cluster-lens" id="frankClusterLens">
+          <div class="cluster-card" onclick="toast('Filtering main chart to BKAES')">
+            <div class="cl-name">BKAES</div>
+            <div class="cl-ltm">LTM €12.3M</div>
+            <div class="cl-fc">€12.7M</div>
+            <div class="cl-band">band ±6% · next 12mo</div>
+            <div class="cl-conf"><span class="cluster-chip" data-conf="green" style="margin-left:0">BKAES 82%</span></div>
           </div>
-          <div class="conf-index-legend"><span>High</span><span>Med</span><span>Thin</span></div>
+          <div class="cluster-card" onclick="toast('Filtering main chart to BKAGG')">
+            <div class="cl-name">BKAGG</div>
+            <div class="cl-ltm">LTM €5.3M</div>
+            <div class="cl-fc">€5.4M</div>
+            <div class="cl-band">band ±9% · next 12mo</div>
+            <div class="cl-conf"><span class="cluster-chip" data-conf="amber" style="margin-left:0">BKAGG 74%</span></div>
+          </div>
+          <div class="cluster-card" onclick="toast('Filtering main chart to BKAIZ')">
+            <div class="cl-name">BKAIZ</div>
+            <div class="cl-ltm">LTM €564K</div>
+            <div class="cl-fc">€581K</div>
+            <div class="cl-band">band ±12% · next 12mo</div>
+            <div class="cl-conf"><span class="cluster-chip" data-conf="amber" style="margin-left:0">BKAIZ 64%</span></div>
+          </div>
+          <div class="cluster-card lown" onclick="toast('Filtering main chart to SOPU — low-n cluster, manual review recommended')">
+            <div class="cl-name">SOPU</div>
+            <div class="cl-ltm">LTM €170K · low-n</div>
+            <div class="cl-fc">€165K</div>
+            <div class="cl-band">band ±22% · next 12mo</div>
+            <div class="cl-conf"><span class="cluster-chip lown" data-conf="red" style="margin-left:0">SOPU 38%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Walk-forward backtest panel (replaces 4-card KPI strip) -->
+      <div class="card card-pad mt-24">
+        <div class="between mb-16">
+          <h2 class="h2">Walk-forward backtest · 12-month MAPE</h2>
+          <span class="status-chip up">Target &lt;5%</span>
+        </div>
+        <div class="muted small" style="margin-top:-6px">Each Monday's primary forecast tested against the next month's actuals. Target: &lt;5% MAPE. Walk-forward retraining ensures accuracy improves over time.</div>
+        <div style="height:180px;margin-top:14px;position:relative"><canvas id="walkForwardChart"></canvas></div>
+        <div class="wf-stats">
+          <div class="wf-stat good">Latest MAPE (April) <b>4.7%</b></div>
+          <div class="wf-stat good">Avg trailing 6mo <b>4.6%</b></div>
+          <div class="wf-stat good">Best month (Jan) <b>4.4%</b></div>
+          <div class="wf-stat good">YoY trend <b>−2.1pp</b></div>
         </div>
       </div>
 
@@ -2280,7 +2417,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
             </thead>
             <tbody>
               <tr class="drill-row expandable" data-cust="101580">
-                <td class="cust-cell expandable tip" data-tip="Strategic tier — largest single ARR. Order frequency down 40% in Q1; assumes continued decline. Sensitive to retention-offer outcome."><span class="exp-arrow">▶</span><span class="tier-chip A">A</span><b>101580</b></td>
+                <td class="cust-cell expandable tip" data-tip="Strategic tier — largest single ARR. Order frequency down 40% in Q1; assumes continued decline. Sensitive to retention-offer outcome."><span class="exp-arrow">▶</span><span class="tier-chip A">A</span><b>101580</b><span class="cluster-chip" data-conf="green">BKAES 82%</span></td>
                 <td class="num-cell">€487,000<div class="booked-bar"><div class="booked-track"><div class="booked-fill" style="width:30%"></div></div><span class="booked-text">€120K / 30%</span></div></td>
                 <td class="num-cell"><b>€398,000</b><br><span class="band">band ±9% · €362K–434K</span></td>
                 <td><span class="trend-arrow down">↓ −18%</span><span class="vp-split"><span class="vp-vol">Vol −14%</span> · <span class="vp-prc">Price −4%</span></span></td>
@@ -2325,7 +2462,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
                 </td>
               </tr>
               <tr class="drill-row">
-                <td class="cust-cell tip" data-tip="Strategic tier — high margin, growing. Repeat-buyer pattern stable; volume tier shifted up after H2 2025 expansion."><span class="tier-chip A">A</span><b>102330</b></td>
+                <td class="cust-cell tip" data-tip="Strategic tier — high margin, growing. Repeat-buyer pattern stable; volume tier shifted up after H2 2025 expansion."><span class="tier-chip A">A</span><b>102330</b><span class="cluster-chip" data-conf="green">BKAES 82%</span></td>
                 <td class="num-cell">€312,000<div class="booked-bar"><div class="booked-track"><div class="booked-fill" style="width:50%"></div></div><span class="booked-text">€180K / 50%</span></div></td>
                 <td class="num-cell"><b>€358,000</b><br><span class="band">band ±5% · €340K–376K</span></td>
                 <td><span class="trend-arrow up">↑ +15%</span><span class="vp-split"><span class="vp-vol">Vol +10%</span> · <span class="vp-prc">Price +5%</span></span></td>
@@ -2333,7 +2470,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
                 <td>Annual · Q4</td>
               </tr>
               <tr class="drill-row">
-                <td class="cust-cell tip" data-tip="Standard tier — stable repeat customer; small upside from new SKU 218750-D in product mix."><span class="tier-chip B">B</span><b>103044</b></td>
+                <td class="cust-cell tip" data-tip="Standard tier — stable repeat customer; small upside from new SKU 218750-D in product mix."><span class="tier-chip B">B</span><b>103044</b><span class="cluster-chip" data-conf="amber">BKAGG 74%</span></td>
                 <td class="num-cell">€198,000<div class="booked-bar"><div class="booked-track"><div class="booked-fill" style="width:19%"></div></div><span class="booked-text">€38K / 19%</span></div></td>
                 <td class="num-cell"><b>€214,000</b><br><span class="band">band ±6% · €201K–227K</span></td>
                 <td><span class="trend-arrow up">↑ +8%</span><span class="vp-split"><span class="vp-vol">Vol +6%</span> · <span class="vp-prc">Price +2%</span></span></td>
@@ -2341,7 +2478,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
                 <td>Q3 2026</td>
               </tr>
               <tr class="drill-row">
-                <td class="cust-cell tip" data-tip="Volume tier — mature account, low-margin contract held to fill capacity. Review at renewal."><span class="tier-chip C">C</span><b>101582</b></td>
+                <td class="cust-cell tip" data-tip="Volume tier — mature account, low-margin contract held to fill capacity. Review at renewal."><span class="tier-chip C">C</span><b>101582</b><span class="cluster-chip" data-conf="green">BKAES 82%</span></td>
                 <td class="num-cell">€176,000<div class="booked-bar"><div class="booked-track"><div class="booked-fill" style="width:50%"></div></div><span class="booked-text">€88K / 50%</span></div></td>
                 <td class="num-cell"><b>€182,000</b><br><span class="band">band ±7% · €169K–195K</span></td>
                 <td><span class="trend-arrow flat">→ +3%</span><span class="vp-split"><span class="vp-vol">Vol +1%</span> · <span class="vp-prc">Price +2%</span></span></td>
@@ -2349,7 +2486,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
                 <td>Annual · Jul 15</td>
               </tr>
               <tr class="drill-row" data-aid="101900-row">
-                <td class="cust-cell tip" data-tip="Problematic tier — recent discount-driven volume below floor. Drifting below band. Sustainability uncertain."><span class="tier-chip D">D</span><b>101900</b><span style="color:var(--red);font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-left:6px;font-family:'Manrope',sans-serif">below band</span></td>
+                <td class="cust-cell tip" data-tip="Problematic tier — recent discount-driven volume below floor. Drifting below band. Sustainability uncertain."><span class="tier-chip D">D</span><b>101900</b><span class="cluster-chip lown" data-conf="red">SOPU 38%</span><span style="color:var(--red);font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-left:6px;font-family:'Manrope',sans-serif">below band</span></td>
                 <td class="num-cell">€164,000<div class="booked-bar"><div class="booked-track"><div class="booked-fill" style="width:12%"></div></div><span class="booked-text">€20K / 12%</span></div></td>
                 <td class="num-cell"><b>€128,000</b><br><span class="band">band ±15% · €109K–147K</span></td>
                 <td><span class="trend-arrow down">↓ −22%</span><span class="vp-split"><span class="vp-vol">Vol −19%</span> · <span class="vp-prc">Price −3%</span></span></td>
@@ -2357,7 +2494,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
                 <td>Q3 2026</td>
               </tr>
               <tr class="drill-row">
-                <td class="cust-cell tip" data-tip="Standard tier — growing tier-1 customer; new product mix, first full year forecasted."><span class="tier-chip B">B</span><b>102801</b></td>
+                <td class="cust-cell tip" data-tip="Standard tier — growing tier-1 customer; new product mix, first full year forecasted."><span class="tier-chip B">B</span><b>102801</b><span class="cluster-chip" data-conf="amber">BKAGG 74%</span></td>
                 <td class="num-cell">€142,000<div class="booked-bar"><div class="booked-track"><div class="booked-fill" style="width:21%"></div></div><span class="booked-text">€30K / 21%</span></div></td>
                 <td class="num-cell"><b>€151,000</b><br><span class="band">band ±8% · €139K–163K</span></td>
                 <td><span class="trend-arrow up">↑ +6%</span><span class="vp-split"><span class="vp-vol">Vol +4%</span> · <span class="vp-prc">Price +2%</span></span></td>
@@ -2365,7 +2502,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
                 <td>Q1 2027</td>
               </tr>
               <tr class="drill-row">
-                <td class="cust-cell tip" data-tip="Standard tier — seasonality-heavy buyer; web-enriched maintenance cycle drives band shape (see annotations above)."><span class="tier-chip B">B</span><b>104210</b></td>
+                <td class="cust-cell tip" data-tip="Standard tier — seasonality-heavy buyer; web-enriched maintenance cycle drives band shape (see annotations above)."><span class="tier-chip B">B</span><b>104210</b><span class="cluster-chip" data-conf="green">BKAES 82%</span></td>
                 <td class="num-cell">€118,000<div class="booked-bar"><div class="booked-track"><div class="booked-fill" style="width:48%"></div></div><span class="booked-text">€57K / 48%</span></div></td>
                 <td class="num-cell"><b>€124,000</b><br><span class="band">band ±11% · €110K–138K</span></td>
                 <td><span class="trend-arrow flat">→ +5%</span><span class="vp-split"><span class="vp-vol">Vol +3%</span> · <span class="vp-prc">Price +2%</span></span></td>
@@ -2390,7 +2527,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
             </thead>
             <tbody>
               <tr class="drill-row">
-                <td class="sku-cell tip" data-tip="Highest leakage SKU. Forecast assumes guardrail enforcement raises actual margin from 8% → 22% by Q3."><b>200832-E</b></td>
+                <td class="sku-cell tip" data-tip="Highest leakage SKU. Forecast assumes guardrail enforcement raises actual margin from 8% → 22% by Q3."><b>200832-E</b><span class="cluster-chip" data-conf="green">BKAES 82%</span></td>
                 <td>Precision shaft</td>
                 <td class="num-cell">4,200</td>
                 <td class="num-cell"><b>4,400</b><br><span class="band">band ±8%</span></td>
@@ -2400,7 +2537,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
                 <td><button class="row-action primary" onclick="toast('Opening 200832-E in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
               </tr>
               <tr class="drill-row">
-                <td class="sku-cell tip" data-tip="Stable high-volume sleeve SKU. Slight tailwind from 102801 expansion."><b>218750-D</b></td>
+                <td class="sku-cell tip" data-tip="Stable high-volume sleeve SKU. Slight tailwind from 102801 expansion."><b>218750-D</b><span class="cluster-chip" data-conf="green">BKAES 82%</span></td>
                 <td>Sleeve</td>
                 <td class="num-cell">6,400</td>
                 <td class="num-cell"><b>6,800</b><br><span class="band">band ±5%</span></td>
@@ -2410,7 +2547,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
                 <td><button class="row-action" onclick="toast('Opening 218750-D in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
               </tr>
               <tr class="drill-row">
-                <td class="sku-cell tip" data-tip="Cross-customer spread proprietary signal · 34% spread between 101582 and 102801."><b>205415-B</b></td>
+                <td class="sku-cell tip" data-tip="Cross-customer spread proprietary signal · 34% spread between 101582 and 102801."><b>205415-B</b><span class="cluster-chip" data-conf="green">BKAES 82%</span></td>
                 <td>Coupling A</td>
                 <td class="num-cell">1,840</td>
                 <td class="num-cell"><b>2,100</b><br><span class="band">band ±10%</span></td>
@@ -2420,7 +2557,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
                 <td><button class="row-action" onclick="toast('Opening 205415-B in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
               </tr>
               <tr class="drill-row">
-                <td class="sku-cell tip" data-tip="Below-floor pricing on 101900 distorts trend. Bayesian fallback used due to thin tier-3 data."><b>211094-C</b></td>
+                <td class="sku-cell tip" data-tip="Below-floor pricing on 101900 distorts trend. Bayesian fallback used due to thin tier-3 data."><b>211094-C</b><span class="cluster-chip" data-conf="amber">BKAGG 74%</span></td>
                 <td>Bearing housing</td>
                 <td class="num-cell">980</td>
                 <td class="num-cell"><b>920</b><br><span class="band">band ±18%</span></td>
@@ -2430,7 +2567,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
                 <td><button class="row-action" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
               </tr>
               <tr class="drill-row">
-                <td class="sku-cell tip" data-tip="Recently raised +6% on 101582 (last week). Forecast assumes price holds; volume expected stable."><b>205418-A</b></td>
+                <td class="sku-cell tip" data-tip="Recently raised +6% on 101582 (last week). Forecast assumes price holds; volume expected stable."><b>205418-A</b><span class="cluster-chip" data-conf="green">BKAES 82%</span><span class="ab-chip" onclick="event.stopPropagation();toast('A/B test 205418-A · day 9 of 21 · see Action Center');setTimeout(()=>setScreen('action'),350)">🧪 A/B running</span></td>
                 <td>Coupling B</td>
                 <td class="num-cell">2,100</td>
                 <td class="num-cell"><b>2,200</b><br><span class="band">band ±7%</span></td>
@@ -2440,7 +2577,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
                 <td><button class="row-action" onclick="toast('Opening 205418-A in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
               </tr>
               <tr class="drill-row">
-                <td class="sku-cell tip" data-tip="Newer SKU added in 2024. 102330 is anchor account — extrapolation from 18 months of data."><b>201104-G</b></td>
+                <td class="sku-cell tip" data-tip="Newer SKU added in 2024. 102330 is anchor account — extrapolation from 18 months of data."><b>201104-G</b><span class="cluster-chip" data-conf="green">BKAES 82%</span></td>
                 <td>Coupling C</td>
                 <td class="num-cell">540</td>
                 <td class="num-cell"><b>620</b><br><span class="band">band ±12%</span></td>
@@ -2469,11 +2606,14 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
           <p>Floor = primary forecast band × cost trajectory × volume tier. Walk-forward retrained monthly. Below-floor quotes auto-flag in <a href="#" data-jump="quotes">Quotes &amp; Guardrails</a>.</p>
           <p>Use this table for negotiation prep: it answers <b>"what's the minimum price I should hold?"</b> for every customer × SKU pair.</p>
         </div>
+        <p class="muted small" style="margin:6px 0 10px"><b>Cluster confidence and movable share now disclosed per SKU</b> — locked SKUs (multi-year contracts) absorb cost shock without margin response.</p>
         <table>
           <thead>
             <tr>
               <th>Customer</th><th>Article</th><th>Current price</th>
-              <th>Forecast-informed floor</th><th>Headroom for discount</th><th>Next quote / contract</th>
+              <th>Forecast-informed floor</th><th>Headroom for discount</th>
+              <th>Movable share</th><th>Cluster confidence</th>
+              <th>Next quote / contract</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -2483,6 +2623,8 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
               <td class="num-cell">€4.20</td>
               <td class="num-cell pos">€5.10 minimum</td>
               <td class="num-cell neg">below floor by €0.90</td>
+              <td class="num-cell pos">100% movable</td>
+              <td><span class="cluster-chip" data-conf="green" style="margin-left:0">BKAES 82%</span></td>
               <td>Quote #12848 · <a href="#" data-jump="quotes">review now</a></td>
               <td><div class="row-actions"><button class="row-action primary" onclick="toast('Opening 200832-E in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button><button class="row-action queue" onclick="toast('Added to weekly queue → Action Center')">+ Queue</button></div></td>
             </tr>
@@ -2491,6 +2633,8 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
               <td class="num-cell">€18.40</td>
               <td class="num-cell">€16.20 minimum</td>
               <td class="num-cell pos">€2.20 / 12% room</td>
+              <td class="num-cell pos">100% movable</td>
+              <td><span class="cluster-chip" data-conf="green" style="margin-left:0">BKAES 82%</span></td>
               <td>Quote #12847 · this week</td>
               <td><div class="row-actions"><button class="row-action" onclick="toast('Opening 201104-G in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></div></td>
             </tr>
@@ -2499,6 +2643,8 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
               <td class="num-cell">€5.10</td>
               <td class="num-cell">€4.40 minimum</td>
               <td class="num-cell pos">€0.70 / 14% room</td>
+              <td class="num-cell pos">100% movable</td>
+              <td><span class="cluster-chip" data-conf="amber" style="margin-left:0">BKAGG 74%</span></td>
               <td>Quote #12849 · this week</td>
               <td><div class="row-actions"><button class="row-action" onclick="toast('Opening 205415-B in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></div></td>
             </tr>
@@ -2507,6 +2653,8 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
               <td class="num-cell">€4.10</td>
               <td class="num-cell">€3.90 minimum</td>
               <td class="num-cell pos">€0.20 / 5% room</td>
+              <td class="num-cell pos">100% movable</td>
+              <td><span class="cluster-chip" data-conf="green" style="margin-left:0">BKAES 82%</span></td>
               <td>Annual contract · Jul 15</td>
               <td><div class="row-actions"><button class="row-action" onclick="toast('Opening 205418-A in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></div></td>
             </tr>
@@ -2515,6 +2663,8 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
               <td class="num-cell">€13.80</td>
               <td class="num-cell pos">€14.40 minimum</td>
               <td class="num-cell neg">below floor by €0.60</td>
+              <td class="num-cell pos">100% movable</td>
+              <td><span class="cluster-chip" data-conf="amber" style="margin-left:0">BKAGG 74%</span></td>
               <td>Quote #12850 · marginal</td>
               <td><div class="row-actions"><button class="row-action primary" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button><button class="row-action queue" onclick="toast('Added to weekly queue → Action Center')">+ Queue</button></div></td>
             </tr>
@@ -2523,12 +2673,64 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
               <td class="num-cell">€2.60</td>
               <td class="num-cell">€2.45 minimum</td>
               <td class="num-cell pos">€0.15 / 6% room</td>
+              <td class="num-cell pos">100% movable</td>
+              <td><span class="cluster-chip" data-conf="green" style="margin-left:0">BKAES 82%</span></td>
               <td>Quote #12851 · this week</td>
               <td><div class="row-actions"><button class="row-action" onclick="toast('Opening 218750-D in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></div></td>
+            </tr>
+            <tr>
+              <td><span class="tier-chip B">B</span><b>104210</b></td><td>205169</td>
+              <td class="num-cell muted">€7.40 (locked)</td>
+              <td class="num-cell muted">— floor n/a</td>
+              <td class="num-cell muted">no headroom (locked)</td>
+              <td class="num-cell neg">0% · Locked Q3'26</td>
+              <td><span class="cluster-chip" data-conf="green" style="margin-left:0">BKAES 82%</span></td>
+              <td>Multi-year contract · expires Q3 2026</td>
+              <td><div class="row-actions"><button class="row-action" onclick="toast('Locked SKU — review at contract renewal Q3 2026')">Renewal note →</button></div></td>
             </tr>
           </tbody>
         </table>
         <p class="footer-note"><b style="color:var(--red)">2 quotes below floor this week</b> · €1.50/unit at risk on 1,680 units.</p>
+      </div>
+
+      <!-- New product forecast · cluster-derived bands for SKUs with no historical baseline -->
+      <div class="card card-pad mt-24">
+        <div class="between mb-16">
+          <h2 class="h2">New product forecast · comparable cluster</h2>
+          <span class="status-chip">Predictive Portfolio Pricing</span>
+        </div>
+        <div class="muted small" style="margin-top:-6px">Frank's job: price new products without a historical baseline. Model assigns each new SKU to the closest cluster and forecasts band from cluster average.</div>
+        <div class="npf-stats">
+          <span><b>203</b> new SKUs in last 12mo</span>
+          <span><b>€1.5M</b> revenue</span>
+          <span><b>8.3%</b> of total</span>
+        </div>
+        <div style="height:160px;margin-top:12px;position:relative"><canvas id="newProductTrendChart"></canvas></div>
+        <div class="npf-list">
+          <div class="npf-row">
+            <span class="npf-sku">218812-K</span>
+            <span class="npf-meta">Sleeve variant · cluster <b>BKAES</b> (n=627) · <span class="muted">forecast €42K ± 18% · confidence 76% (cluster-derived)</span> <span class="cluster-chip" data-conf="green" style="margin-left:4px">BKAES 76%</span></span>
+            <span class="npf-fc">€42K</span>
+            <button class="row-action primary" onclick="toast('Assigning 218812-K to comparable cluster BKAES — band copied from cluster average')">Assign to cluster →</button>
+          </div>
+          <div class="npf-row">
+            <span class="npf-sku">220114-A</span>
+            <span class="npf-meta">Bearing housing variant · cluster <b>BKAGG</b> (n=370) · <span class="muted">forecast €28K ± 24% · confidence 68%</span> <span class="cluster-chip" data-conf="amber" style="margin-left:4px">BKAGG 68%</span></span>
+            <span class="npf-fc">€28K</span>
+            <button class="row-action primary" onclick="toast('Assigning 220114-A to comparable cluster BKAGG — band copied from cluster average')">Assign to cluster →</button>
+          </div>
+          <div class="npf-row lown">
+            <span class="npf-sku">221305</span>
+            <span class="npf-meta">Custom pump · cluster <b>SOPU</b> (n=6) · <span class="muted">forecast €11K ± 38%</span> · <b style="color:var(--red)">⚠️ low-n cluster, manual review recommended</b> <span class="cluster-chip lown" data-conf="red" style="margin-left:4px">SOPU 38%</span></span>
+            <span class="npf-fc">€11K</span>
+            <button class="row-action" onclick="toast('221305 routed to manual review — SOPU cluster has only 6 SKUs, do not auto-act')">Manual review →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cross-link strip · where to act on this -->
+      <div class="frank-xlink">
+        <a onclick="setScreen('action')">Action queue → Action Center</a>  ·  <a onclick="setScreen('action')">Annual list-price negotiation cockpit → Action Center</a>  ·  <a onclick="setScreen('studio')">SKU drill → Pricing Studio</a>
       </div>
     </section>
 
@@ -2542,11 +2744,11 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
     <section id="screen-studio" class="screen hidden">
       <div class="page-head">
         <div>
-          <div class="crumbs">Pricing Studio · <b>SKU pricing workbench</b></div>
+          <div class="crumbs">Pricing Studio · <b>SKU pricing workbench</b> · Predictive Portfolio Pricing</div>
           <h1>Pricing Studio</h1>
-          <p class="muted small" style="margin-top:6px;max-width:720px">
-            Where prices get set. Pick a SKU on the left, pick a target price, and the workbench produces the rationale memo you'll send up the chain.
-            <span class="muted">Looking for the action queue? <a href="#" data-jump="action">Action Center</a> · Approvals: <a href="#" data-jump="quotes">Quotes &amp; Guardrails</a></span>
+          <p class="muted small" style="margin-top:6px;max-width:780px">
+            Pick a SKU, model the cluster-confidence-aware target, and generate the audit-ready memo. A/B-test before broad rollout — never ship a price change blind.
+            <span class="muted">Action queue → <a href="#" data-jump="action">Action Center</a> · Cluster forecast → <a href="#" data-jump="forecast">Forecast</a> · Approvals → <a href="#" data-jump="quotes">Quotes &amp; Guardrails</a></span>
           </p>
         </div>
       </div>
@@ -2561,67 +2763,87 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
             <button class="ws-filter" data-filter="cost">Cost-shifted</button>
             <button class="ws-filter" data-filter="stale">Stale &gt; 12mo</button>
             <button class="ws-filter" data-filter="frame">Frame contract due</button>
+            <button class="ws-filter toggle" data-toggle="hide-locked" title="Hide contract-locked SKUs (relevance filter — Frank)">🔒 Hide locked</button>
+            <button class="ws-filter toggle" data-toggle="new-skus" title="Surface SKUs without history — comparable-cluster pricing">🆕 New SKUs</button>
           </div>
           <div class="ws-list" id="wsList">
-            <div class="ws-row active" data-aid="200832-E" data-flag="floor">
+            <div class="ws-row active" data-aid="200832-E" data-flag="floor" data-cluster="BKAGG" data-conf="74" data-locked="false" data-new="false">
               <span class="ws-aid">200832-E</span>
               <span class="ws-marg lo">−1.3%</span>
-              <span class="ws-desc">Zahnradpumpe · BKAGG · €4.20 · 9 customers</span>
+              <span class="ws-desc">Zahnradpumpe · BKAGG · €4.20 · 9 customers <span class="ws-clu mid">BKAGG 74%</span></span>
               <span class="ws-tag floor">Floor</span>
             </div>
-            <div class="ws-row" data-aid="201438-B" data-flag="floor">
+            <div class="ws-row" data-aid="201438-B" data-flag="floor" data-cluster="BKAGG" data-conf="74" data-locked="false" data-new="false">
               <span class="ws-aid">201438-B</span>
               <span class="ws-marg lo">33.0%</span>
-              <span class="ws-desc">Zahnrad-Flanschpumpe · BKAGG · €156</span>
+              <span class="ws-desc">Zahnrad-Flanschpumpe · BKAGG · €156 <span class="ws-clu mid">BKAGG 74%</span></span>
               <span class="ws-tag floor">Floor</span>
             </div>
-            <div class="ws-row" data-aid="205345-A" data-flag="floor">
+            <div class="ws-row" data-aid="205345-A" data-flag="floor" data-cluster="BKAIZ" data-conf="64" data-locked="false" data-new="false">
               <span class="ws-aid">205345-A</span>
               <span class="ws-marg mid">42.0%</span>
-              <span class="ws-desc">Zahnradpumpe · BKAIZ · €284</span>
+              <span class="ws-desc">Zahnradpumpe · BKAIZ · €284 <span class="ws-clu mid">BKAIZ 64%</span></span>
               <span class="ws-tag floor">Floor</span>
             </div>
-            <div class="ws-row" data-aid="201827" data-flag="stale">
+            <div class="ws-row" data-aid="201827" data-flag="stale" data-cluster="BKAES" data-conf="82" data-locked="false" data-new="false">
               <span class="ws-aid">201827</span>
               <span class="ws-marg mid">39.7%</span>
-              <span class="ws-desc">Elektro-Zahnradpumpe · BKAES · €791 · last reprice 2022-Q3</span>
+              <span class="ws-desc">Elektro-Zahnradpumpe · BKAES · €791 · last reprice 2022-Q3 <span class="ws-clu hi">BKAES 82%</span></span>
               <span class="ws-tag stale">Stale</span>
             </div>
-            <div class="ws-row" data-aid="205178" data-flag="cost">
+            <div class="ws-row" data-aid="205178" data-flag="cost" data-cluster="BKAES" data-conf="82" data-locked="false" data-new="false">
               <span class="ws-aid">205178</span>
               <span class="ws-marg mid">44.2%</span>
-              <span class="ws-desc">Zahnradpumpe MV0665 · BKAES · €624</span>
+              <span class="ws-desc">Zahnradpumpe MV0665 · BKAES · €624 <span class="ws-clu hi">BKAES 82%</span></span>
               <span class="ws-tag cost">Cost ↑</span>
             </div>
-            <div class="ws-row" data-aid="300143" data-flag="cost">
+            <div class="ws-row" data-aid="300143" data-flag="cost" data-cluster="BKAGG" data-conf="74" data-locked="false" data-new="false">
               <span class="ws-aid">300143</span>
               <span class="ws-marg mid">42.8%</span>
-              <span class="ws-desc">Innenzahnringpumpe · BKAGG · €1,240</span>
+              <span class="ws-desc">Innenzahnringpumpe · BKAGG · €1,240 <span class="ws-clu mid">BKAGG 74%</span></span>
               <span class="ws-tag cost">Cost ↑</span>
             </div>
-            <div class="ws-row" data-aid="205165" data-flag="cost">
+            <div class="ws-row" data-aid="205165" data-flag="cost" data-cluster="BKAES" data-conf="82" data-locked="false" data-new="false">
               <span class="ws-aid">205165</span>
               <span class="ws-marg hi">46.1%</span>
-              <span class="ws-desc">Zahnradpumpe MV0669 · BKAES · €612</span>
+              <span class="ws-desc">Zahnradpumpe MV0669 · BKAES · €612 <span class="ws-clu hi">BKAES 82%</span></span>
               <span class="ws-tag cost">Cost ↑</span>
             </div>
-            <div class="ws-row" data-aid="200834-B" data-flag="cost">
+            <div class="ws-row" data-aid="200834-B" data-flag="cost" data-cluster="BKAES" data-conf="82" data-locked="false" data-new="false">
               <span class="ws-aid">200834-B</span>
               <span class="ws-marg hi">46.5%</span>
-              <span class="ws-desc">Zahnradpumpe · BKAES · €389</span>
+              <span class="ws-desc">Zahnradpumpe · BKAES · €389 <span class="ws-clu hi">BKAES 82%</span></span>
               <span class="ws-tag cost">Cost ↑</span>
             </div>
-            <div class="ws-row" data-aid="205180" data-flag="frame">
+            <div class="ws-row" data-aid="205180" data-flag="frame" data-cluster="BKAES" data-conf="82" data-locked="true" data-new="false">
               <span class="ws-aid">205180</span>
               <span class="ws-marg hi">47.0%</span>
-              <span class="ws-desc">Zahnradpumpe MV0666 · BKAES · €498 · frame due Jul</span>
+              <span class="ws-desc">Zahnradpumpe MV0666 · BKAES · €498 · frame due Jul <span class="ws-clu hi">BKAES 82%</span><span class="ws-locked">🔒 Locked</span></span>
               <span class="ws-tag frame">Frame</span>
             </div>
-            <div class="ws-row" data-aid="120584" data-flag="frame">
+            <div class="ws-row" data-aid="120584" data-flag="frame" data-cluster="SOPU" data-conf="38" data-locked="true" data-new="false">
               <span class="ws-aid">120584</span>
               <span class="ws-marg hi">47.5%</span>
-              <span class="ws-desc">Zahnradflanschpumpe · SOPU · €412 · frame due Aug</span>
+              <span class="ws-desc">Zahnradflanschpumpe · SOPU · €412 · frame due Aug <span class="ws-clu lo">SOPU 38% ⚠</span><span class="ws-locked">🔒 Locked</span></span>
               <span class="ws-tag frame">Frame</span>
+            </div>
+            <div class="ws-row" data-aid="218812-K" data-flag="all" data-cluster="BKAES" data-conf="76" data-locked="false" data-new="true" style="display:none">
+              <span class="ws-aid">218812-K</span>
+              <span class="ws-marg mid">—</span>
+              <span class="ws-desc">Sleeve variant · BKAES · no price yet · comparable-cluster <span class="ws-clu hi">BKAES 76%</span></span>
+              <span class="ws-tag stale">New</span>
+            </div>
+            <div class="ws-row" data-aid="220114-A" data-flag="all" data-cluster="BKAGG" data-conf="68" data-locked="false" data-new="true" style="display:none">
+              <span class="ws-aid">220114-A</span>
+              <span class="ws-marg mid">—</span>
+              <span class="ws-desc">Bearing housing variant · BKAGG · no price yet <span class="ws-clu mid">BKAGG 68%</span></span>
+              <span class="ws-tag stale">New</span>
+            </div>
+            <div class="ws-row" data-aid="221305" data-flag="all" data-cluster="SOPU" data-conf="38" data-locked="false" data-new="true" style="display:none">
+              <span class="ws-aid">221305</span>
+              <span class="ws-marg mid">—</span>
+              <span class="ws-desc">Custom pump · SOPU · low-n cluster <span class="ws-clu lo">SOPU 38% ⚠</span></span>
+              <span class="ws-tag stale">New</span>
             </div>
           </div>
         </aside>
@@ -2634,8 +2856,14 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
             <div>
               <div class="ws-hero-eyebrow">Selected SKU · workbench</div>
               <h3 id="wbTitle">Article 200832-E · Zahnradpumpe (Precision shaft)</h3>
-              <div class="ws-hero-sub" id="wbSub">Group <b style="color:#fff">BKAGG</b> · 9 customers · 4,200 units/yr · €18.6K annual revenue · Approval level <b style="color:#fff">VP</b></div>
-              <div class="ws-hero-meta" id="wbMeta">Last repriced 2024-Q1 (€3.80→€4.20) by M. Weber · 23 months ago · floor breached since steel +5.8% in 2025</div>
+              <div class="ws-hero-sub" id="wbSub">Group <b style="color:#fff">BKAGG</b> · 9 customers · 4,200 units/yr · €18.6K annual revenue</div>
+              <div class="ws-hero-chips" id="wbHeroChips" style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+                <span style="background:rgba(255,255,255,.18);color:#fff;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600">Cluster: BKAGG · confidence 74%</span>
+                <span style="background:#fbbf24;color:#78350f;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700">Movable</span>
+                <span style="background:rgba(255,255,255,.12);color:#fff;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;border:1px dashed rgba(255,255,255,.4)">A/B status: not yet tested</span>
+                <span style="background:rgba(255,255,255,.12);color:#fff;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600">Approval: Frank → Till (board)</span>
+              </div>
+              <div class="ws-hero-meta" id="wbMeta" style="margin-top:8px">Last repriced 2024-Q1 (€3.80→€4.20) by <b style="color:#fff">Frank</b> · 23 months ago · floor breached since steel +5.8% in 2025</div>
             </div>
             <div class="ws-hero-num">
               <div class="ws-cur" id="wbCur">€4.20</div>
@@ -2644,10 +2872,10 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
             </div>
           </div>
 
-          <!-- THREE PRICE OPTIONS -->
+          <!-- PRICE OPTIONS -->
           <div class="ws-options-head">
             <h4>Pick a target price</h4>
-            <span class="ws-opts-sub">Each option pre-modelled · €recovery, churn risk, and win-rate impact computed at click</span>
+            <span class="ws-opts-sub">Each option pre-modelled · €recovery, churn risk, and win-rate band shown with cluster-confidence (BKAGG 74%, n=247) · <button class="link-btn" type="button" onclick="openExplainDrawer('floor')" style="background:none;border:none;color:#1e3a8a;font-weight:700;cursor:pointer;font-size:12px">🔍 Why this price?</button></span>
           </div>
           <div class="ws-options" id="wbOptions">
             <button class="ws-opt hold" data-opt="hold">
@@ -2655,21 +2883,21 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
               <span class="ws-opt-price" id="wbHoldPrice">€4.20</span>
               <span class="ws-opt-delta">no change</span>
               <span class="ws-opt-impact neg" id="wbHoldImpact">−€31K/yr leakage continues</span>
-              <span class="ws-opt-risk">0 churn · margin keeps falling</span>
+              <span class="ws-opt-risk">0 churn · margin keeps falling · <i>±0pp</i></span>
             </button>
             <button class="ws-opt active" data-opt="floor">
               <span class="ws-opt-lab">Cost-floor</span>
               <span class="ws-opt-price" id="wbFloorPrice">€5.10</span>
               <span class="ws-opt-delta" id="wbFloorDelta">+€0.90 · +21.4%</span>
               <span class="ws-opt-impact" id="wbFloorImpact">+€18.6K/yr recovery</span>
-              <span class="ws-opt-risk" id="wbFloorRisk">1 of 9 churn · win-rate −15pp</span>
+              <span class="ws-opt-risk" id="wbFloorRisk">1 of 9 churn · win-rate −15pp · <i>±5pp at 74% conf</i></span>
             </button>
             <button class="ws-opt" data-opt="market">
               <span class="ws-opt-lab">Market anchor</span>
               <span class="ws-opt-price" id="wbMarketPrice">€5.85</span>
               <span class="ws-opt-delta" id="wbMarketDelta">+€1.65 · +39.3%</span>
               <span class="ws-opt-impact" id="wbMarketImpact">+€34.7K/yr recovery</span>
-              <span class="ws-opt-risk" id="wbMarketRisk">3 of 9 churn · win-rate −31pp</span>
+              <span class="ws-opt-risk" id="wbMarketRisk">3 of 9 churn · win-rate −31pp · <i>±8pp at 74% conf</i></span>
             </button>
             <button class="ws-opt custom" data-opt="custom">
               <span class="ws-opt-lab">Custom</span>
@@ -2677,6 +2905,13 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
               <span class="ws-opt-delta" id="wbCustomDelta">type a value</span>
               <span class="ws-opt-impact" id="wbCustomImpact">€recovery · — </span>
               <span class="ws-opt-risk" id="wbCustomRisk">churn risk · —</span>
+            </button>
+            <button class="ws-opt abtest" data-opt="abtest" type="button">
+              <span class="ws-opt-lab">🧪 Slice as A/B</span>
+              <span class="ws-opt-price" style="font-size:18px">12% slice</span>
+              <span class="ws-opt-delta">21-day test · €5.10 vs hold</span>
+              <span class="ws-opt-impact" style="color:#6d28d9">Confirm lift before broad rollout</span>
+              <span class="ws-opt-risk">Success criterion: margin pre→post, p&lt;0.05 · matches Action Center A/B tracker</span>
             </button>
           </div>
 
@@ -2686,6 +2921,9 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
             <!-- LEFT pane: per-customer fan-out -->
             <div class="ws-pane">
               <h4>Customer fan-out · this SKU only <span class="ws-pane-sub">if priced at <b id="wbFanPrice">€5.10</b> (cost-floor)</span></h4>
+              <p style="font-size:11.5px;color:#475569;margin:0 0 8px;padding:6px 10px;background:#f1f5f9;border-radius:6px;border-left:3px solid #059669">
+                Cluster <b>BKAGG</b>, n=247 historical repricings, confidence <b>74%</b> — fan-out predictions reliable. (For SOPU SKUs, fan-out flagged low-n.)
+              </p>
               <div class="ws-fanout">
                 <div class="ws-fan-row alert">
                   <span class="tier-chip A">A</span>
@@ -2717,10 +2955,10 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
                 </div>
                 <div class="ws-fan-row alert">
                   <span class="tier-chip D">D</span>
-                  <span class="ws-fan-cust">101900<span class="ws-fan-sub">7% · €164K ARR · problematic</span></span>
+                  <span class="ws-fan-cust">101900<span class="ws-fan-sub">7% · €164K ARR · problematic · <i style="color:#1e3a8a">→ surfaced in Heiko's Deal Empowerment</i></span></span>
                   <span class="ws-fan-num">+€264<span class="ws-fan-sub">on 294 units</span></span>
                   <span class="ws-fan-churn"><span class="n r">71%</span><span class="l">churn risk</span></span>
-                  <span class="ws-fan-rec">Attrition acceptable</span>
+                  <span class="ws-fan-rec">Attrition acceptable · Heiko can flag</span>
                 </div>
                 <div class="ws-fan-row">
                   <span class="tier-chip C">C</span>
@@ -2759,36 +2997,104 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
                 </div>
               </div>
               <p class="ws-cost-foot"><span id="wbCostNote">Material 52% (above 40% threshold) → supplier-sensitive. Steel-dominant precision shaft.</span> For full cost-vs-price 24-mo trajectory see <a href="#" data-jump="margin">Margin Intelligence</a>.</p>
+              <div style="margin-top:10px;padding:10px 12px;background:#fafafa;border:1px solid #e2e8f0;border-radius:6px">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:#475569;font-weight:600;margin-bottom:4px">
+                  <span>4-yr cluster cost trajectory · BKAGG</span>
+                  <span style="color:#dc2626">Material +18.4% '22→'25</span>
+                </div>
+                <svg viewBox="0 0 240 38" width="100%" height="38" preserveAspectRatio="none" style="display:block">
+                  <polyline fill="none" stroke="#dc2626" stroke-width="2" points="4,30 84,24 164,16 236,8" />
+                  <polyline fill="none" stroke="#1e3a8a" stroke-width="2" stroke-dasharray="3 3" points="4,28 84,25 164,18 236,12" />
+                  <text x="4" y="36" font-size="8" fill="#475569">2022</text>
+                  <text x="220" y="36" font-size="8" fill="#475569">2025</text>
+                </svg>
+                <div style="font-size:10.5px;color:#64748b;margin-top:2px"><span style="color:#dc2626">— Material cost</span> · <span style="color:#1e3a8a">— Quoted price</span> · gap = pass-through deficit (4.6pp on this SKU)</div>
+              </div>
 
-              <h4 class="row2">Repricing history <span class="ws-pane-sub">this SKU only</span></h4>
+              <h4 class="row2">Repricing history <span class="ws-pane-sub">this SKU only · audit-hash signed</span></h4>
               <div class="ws-history">
                 <div class="ws-hist-row">
                   <span class="ws-hist-date">2024-Q1</span>
                   <span class="ws-hist-move">€3.80 → €4.20 (+10.5%)</span>
                   <span class="ws-hist-vol down">vol −3%</span>
-                  <span class="ws-hist-by">M. Weber</span>
+                  <span class="ws-hist-by">Frank · <code style="font-size:9.5px;color:#64748b">a3f9c1</code></span>
                 </div>
                 <div class="ws-hist-row">
                   <span class="ws-hist-date">2022-Q3</span>
                   <span class="ws-hist-move">€3.60 → €3.80 (+5.6%)</span>
                   <span class="ws-hist-vol up">vol +1%</span>
-                  <span class="ws-hist-by">K. Hoffman</span>
+                  <span class="ws-hist-by">Frank · <code style="font-size:9.5px;color:#64748b">7e21bd</code></span>
                 </div>
                 <div class="ws-hist-row">
                   <span class="ws-hist-date">2020-Q4</span>
                   <span class="ws-hist-move">€3.40 → €3.60 (+5.9%)</span>
                   <span class="ws-hist-vol up">vol +4%</span>
-                  <span class="ws-hist-by">M. Weber</span>
+                  <span class="ws-hist-by">F. Bauer · <code style="font-size:9.5px;color:#64748b">19f4a8</code></span>
                 </div>
                 <div class="ws-hist-row">
                   <span class="ws-hist-date">2019-Q1</span>
                   <span class="ws-hist-move">€3.20 → €3.40 (+6.3%)</span>
                   <span class="ws-hist-vol flat">vol flat</span>
-                  <span class="ws-hist-by">K. Hoffman</span>
+                  <span class="ws-hist-by">F. Bauer · <code style="font-size:9.5px;color:#64748b">c882e0</code></span>
                 </div>
               </div>
             </div>
           </div>
+
+          <!-- COMPARABLE-CLUSTER PANEL · for new SKUs without history -->
+          <div id="wsComparablePanel" style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:18px 20px;margin-top:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06)">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
+              <h4 style="margin:0;font-family:'Manrope',sans-serif;font-size:14.5px;font-weight:700;color:#1e293b">Comparable-cluster pricing · for SKUs without history</h4>
+              <span style="font-size:11px;color:#64748b">When a SKU has no history, we price by its cluster's behavior — not by averages of unrelated SKUs.</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+              <div style="border:1px solid #e2e8f0;border-radius:8px;padding:14px">
+                <div style="font-size:10.5px;color:#6d28d9;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Target SKU</div>
+                <div style="font-family:'Manrope',sans-serif;font-size:18px;font-weight:700;color:#1e293b;margin:4px 0">218812-K</div>
+                <div style="font-size:11.5px;color:#475569">Sleeve variant · cluster <b>BKAES</b></div>
+                <div style="font-size:10.5px;color:#64748b;margin-top:6px">No price history · 0 prior repricings</div>
+              </div>
+              <div style="border:1px solid #e2e8f0;border-radius:8px;padding:14px;background:#f8fafc">
+                <div style="font-size:10.5px;color:#1e3a8a;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Cluster benchmark</div>
+                <div style="font-family:'Manrope',sans-serif;font-size:18px;font-weight:700;color:#1e293b;margin:4px 0">BKAES · n=627</div>
+                <div style="font-size:11.5px;color:#475569">Mean margin <b>68.0%</b> · Win-rate <b>52.7%</b></div>
+                <div style="font-size:10.5px;color:#059669;margin-top:6px;font-weight:600">Confidence 76% · MAPE 4.7%</div>
+              </div>
+              <div style="border:1px solid #ecfdf5;border-radius:8px;padding:14px;background:#ecfdf5">
+                <div style="font-size:10.5px;color:#047857;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Suggested price band</div>
+                <div style="font-family:'Manrope',sans-serif;font-size:18px;font-weight:700;color:#065f46;margin:4px 0">€42 – €58</div>
+                <div style="font-size:11.5px;color:#047857">Centered on €49 (cluster median margin × cost)</div>
+                <div style="font-size:10.5px;color:#059669;margin-top:6px;font-weight:600">Recommend A/B at €49 before broad launch</div>
+              </div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+              <span style="font-size:11px;color:#475569;font-weight:600">Other new SKUs:</span>
+              <span style="font-size:11px;background:#eff6ff;color:#1e3a8a;padding:2px 8px;border-radius:999px">220114-A · BKAGG · band €18–€26</span>
+              <span style="font-size:11px;background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:999px">221305 · SOPU n=6 ⚠ low-n · manual review required</span>
+            </div>
+            <p style="font-size:11px;color:#64748b;margin:10px 0 0">Source · <code>products_detail.commodity_scorecard</code> + <code>forecasting.json</code> · cross-link to <a href="#" data-jump="forecast">Forecast → New product card</a>.</p>
+          </div>
+
+          <!-- EXPLAINABILITY DRAWER -->
+          <div id="explainDrawer" style="position:fixed;top:0;right:-460px;width:440px;height:100vh;background:#fff;box-shadow:-4px 0 16px rgba(15,23,42,.12);transition:right .24s,visibility .24s;visibility:hidden;z-index:9999;overflow-y:auto;border-left:1px solid #e2e8f0">
+            <div style="padding:20px 24px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:#1e3a8a;color:#fff">
+              <span style="font-size:13px;font-weight:700;letter-spacing:.04em">🔍 Explainability · why this price?</span>
+              <button onclick="closeExplainDrawer()" type="button" style="background:none;border:none;color:#fff;cursor:pointer;font-size:18px;font-weight:700">×</button>
+            </div>
+            <div class="explain-body" style="padding:20px 24px"></div>
+          </div>
+          <style>
+            #explainDrawer.show{right:0;visibility:visible}
+            .explain-eyebrow{font-size:10.5px;color:#6d28d9;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+            .explain-lead{font-size:12.5px;color:#475569;line-height:1.5;margin:0 0 14px;padding:10px 12px;background:#f8fafc;border-radius:6px;border-left:3px solid #1e3a8a}
+            .explain-fi{display:flex;flex-direction:column;gap:7px}
+            .explain-fi-row{display:grid;grid-template-columns:1fr 80px 40px;align-items:center;gap:8px}
+            .explain-fi-name{font-size:11.5px;color:#1e293b;font-weight:600}
+            .explain-fi-bar{height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+            .explain-fi-fill{display:block;height:100%;background:#1e3a8a;border-radius:4px}
+            .explain-fi-pct{font-size:11px;color:#475569;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+            .explain-foot{font-size:10.5px;color:#64748b;margin:14px 0 0;line-height:1.5}
+          </style>
 
           <!-- DECISION FOOTER -->
           <div class="ws-decision">
@@ -2800,44 +3106,59 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
             </div>
             <div class="ws-decision-controls">
               <label>Effective date <input type="date" value="2026-06-01"></label>
-              <label><input type="checkbox" checked> Notify Sales (M. Weber)</label>
+              <label><input type="checkbox" checked> Notify <b>Heiko</b> (Sales)</label>
               <label><input type="checkbox"> Notify customers (1 affected)</label>
-              <label><input type="checkbox"> Escalate to MD for approval (VP-level)</label>
+              <label><input type="checkbox"> Escalate to <b>Till</b> (MD) for board-level approval</label>
+              <label><input type="checkbox" id="wbAbToggle"> 🧪 Open A/B test (slice 12%, 21 days) before broad rollout</label>
             </div>
             <div class="ws-decision-buttons">
-              <button class="btn primary" onclick="toast('Price proposal saved — pending VP sign-off')">📌 Save as proposal</button>
-              <button class="btn dark" onclick="toast('Pushed to quoting system — guardrails updated for this SKU')">⚡ Push to quoting system</button>
+              <button class="btn primary" onclick="toast('Price proposal saved — Frank pending Till sign-off · audit hash generated')">📌 Save as proposal</button>
+              <button class="btn dark" onclick="toast(document.getElementById('wbAbToggle')&amp;&amp;document.getElementById('wbAbToggle').checked ? 'Pushed slice (12%) to quoting · A/B tracker updated' : 'Pushed to quoting system — guardrails updated for this SKU')">⚡ Push to quoting</button>
               <button class="btn" onclick="toast('Added to weekly action queue → Action Center')">🗂 Add to weekly queue</button>
-              <button class="btn" onclick="toast('Routed to MD for approval (VP-level change)')">↗ Escalate to MD</button>
+              <button class="btn" onclick="toast('Routed to Till (MD) for board-level approval')">↗ Escalate to Till</button>
+              <button class="btn" onclick="toast('Branded PDF generated · Scherzinger corporate design · audit hash attached')">📄 Branded PDF</button>
             </div>
           </div>
 
           <!-- AUTO-DRAFTED RATIONALE MEMO -->
           <div class="ws-memo">
             <div class="ws-memo-head">
-              <span class="ws-memo-title">Rationale memo · auto-drafted, editable</span>
+              <span class="ws-memo-title">Rationale memo · auto-drafted, editable · audit-ready</span>
               <span class="ws-memo-edit">click to edit</span>
               <button class="btn" onclick="toast('Memo copied to clipboard')">📋 Copy</button>
-              <button class="btn" onclick="toast('Memo emailed to MD as proposal attachment')">✉ Email to MD</button>
-              <button class="btn" onclick="toast('Memo exported as PDF')">⬇ PDF</button>
+              <button class="btn" onclick="toast('Memo emailed to Till (MD) as proposal attachment')">✉ Email to Till</button>
+              <button class="btn" onclick="toast('Branded PDF · Scherzinger corporate design · hash signed')">⬇ Branded PDF</button>
             </div>
             <div class="ws-memo-body" contenteditable="true" id="wbMemoBody">
               <p><b>Subject:</b> Price proposal — Article 200832-E (Zahnradpumpe, Precision shaft)</p>
-              <p>Article 200832-E currently sells at <b>€4.20</b> for an effective margin of <b>−1.3%</b> — 26pp below our 25% guardrail.
-              Material cost rose <b>5.8%</b> in 2025 while we passed through only 1.2%, leaving a <b>4.6pp pass-through gap</b> on this SKU alone.</p>
-              <p>I'm proposing to raise to <b>€5.10</b> (cost-floor at 25% target margin), effective <b>2026-06-01</b>.</p>
-              <p>Customer impact: of 9 customers on this SKU, 1 (Tier-D 101900) sits at meaningful churn risk; six are below 15%.
+              <p>Article 200832-E sits in cluster <b>BKAGG</b> (confidence <b>74%</b>, n=247 historical repricings, MAPE 4.7%). Contract status: <b>movable</b> — no frame contract blocks repricing.</p>
+              <p>The article currently sells at <b>€4.20</b> for an effective margin of <b>−1.3%</b> — 26pp below our 25% guardrail.
+              Material cost rose <b>5.8%</b> in 2025 while we passed through only 1.2%, leaving a <b>4.6pp pass-through gap</b> on this SKU alone (4-yr trend confirms 18.4% material rise vs 3.1% quoted rise on this cluster).</p>
+              <p><b>Proposal:</b> raise to <b>€5.10</b> (cost-floor at 25% target margin), effective <b>2026-06-01</b>.</p>
+              <p><b>Plan:</b> open a 21-day A/B at 12% slice (Action Center A/B tracker). If margin lift confirms (p&lt;0.05) we proceed to broad rollout 2026-07-01; if not, revert to hold and re-train cluster model. <i>Never ship a price change blind.</i></p>
+              <p>Customer impact: of 9 customers on this SKU, 1 (Tier-D 101900) sits at meaningful churn risk and is flagged in Heiko's Deal Empowerment view; six are below 15%.
               Tier-A 102330 already pays <b>€6.80</b>/unit on the same volume tier — the proposed floor is conservative, not aggressive.
-              For tier-A 101580 I will counter-propose €4.65 in Phase 1 to manage relationship risk.</p>
+              For Tier-A 101580 I will counter-propose €4.65 in Phase 1 to manage relationship risk.</p>
               <p>Net annual recovery: <b>+€13,800</b> (€18,600 raised − €4,800 lost to projected churn).
               Cumulative leakage stopped: <b>~€34,800</b> across the 24 months this floor was breached.</p>
-              <p>Evidence: cross-customer same-volume price spread (102330 €6.80 vs 101580 €4.10), 4-year cost trend, and 3-year retention curve modelled on 247 historical SKU repricings.</p>
-              <p class="sig">— M. Weber, Pricing · drafted by Pryzm · please review before forwarding.</p>
+              <p><b>Evidence:</b> cross-customer same-volume price spread (102330 €6.80 vs 101580 €4.10) · 4-year cost trend (price_history_with_margin) · cluster retention curve modelled on 247 historical BKAGG repricings · top driver: material cost trend (24.5% feature importance, forecast_model).</p>
+              <p class="sig">— <b>Frank</b>, Pricing Analyst / Head of Controlling · drafted by Pryzm · audit hash <code style="font-size:10.5px">a3f9c1</code> · please review before forwarding to Till.</p>
             </div>
           </div>
 
         </div><!-- /.ws-bench -->
       </div><!-- /.ws-grid -->
+
+      <div style="margin-top:18px;padding:14px 18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#475569;display:flex;gap:18px;flex-wrap:wrap;align-items:center">
+        <span style="font-weight:700;color:#1e293b">Cross-links →</span>
+        <a href="#" data-jump="action" style="color:#1e3a8a;font-weight:600;text-decoration:none">Action queue · Action Center</a>
+        <span style="color:#cbd5e1">·</span>
+        <a href="#" data-jump="forecast" style="color:#1e3a8a;font-weight:600;text-decoration:none">Cluster forecast · Forecast</a>
+        <span style="color:#cbd5e1">·</span>
+        <a href="#" data-jump="quotes" style="color:#1e3a8a;font-weight:600;text-decoration:none">Approval flow · Quotes &amp; Guardrails</a>
+        <span style="color:#cbd5e1">·</span>
+        <a href="#" data-jump="margin" style="color:#1e3a8a;font-weight:600;text-decoration:none">Margin trajectory · Margin Intelligence</a>
+      </div>
 
     </section>
 
@@ -2845,17 +3166,20 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
     <section id="screen-margin" class="screen hidden">
       <div class="page-head">
         <div>
-          <div class="crumbs">Margin Intelligence</div>
+          <div class="crumbs">Margin Intelligence · <b>Predictive Portfolio Pricing</b> · Diagnostics</div>
           <h1>Margin Intelligence</h1>
           <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">
             <span class="status-chip live">LTM · refreshed today</span>
             <span class="status-chip">5,565 invoices · 4,605 quotes</span>
+            <span class="status-chip" style="background:#ede9fe;color:#6d28d9">Audit-ready · all changes hash-signed</span>
           </div>
         </div>
         <div class="row" style="gap:6px;flex-wrap:wrap">
+          <button class="filter-chip">Cluster lens · All ▾</button>
           <button class="filter-chip">Family · All ▾</button>
           <button class="filter-chip">Tier · All ▾</button>
           <button class="btn primary" id="miBriefingBtn">📋 Generate margin briefing</button>
+          <button class="btn" onclick="toast('Branded PDF · Scherzinger corporate design · audit hash attached')">📄 Branded PDF</button>
           <button class="btn">⬇ Export to deck</button>
         </div>
       </div>
@@ -2863,19 +3187,22 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
       <!-- Auto-drafted margin briefing memo (hidden, opens via button) -->
       <div class="mi-briefing" id="miBriefing">
         <div class="fc-briefing-head">
-          <span class="fcb-title">Margin briefing · auto-drafted, editable</span>
+          <span class="fcb-title">Margin briefing · auto-drafted, editable · audit-ready</span>
           <button class="btn" onclick="toast('Briefing copied to clipboard')">📋 Copy</button>
-          <button class="btn" onclick="toast('Briefing emailed to MD + CFO')">✉ Email to MD</button>
-          <button class="btn" onclick="toast('Briefing exported as PDF')">⬇ PDF</button>
+          <button class="btn" onclick="toast('Briefing emailed to Till (MD)')">✉ Email to Till</button>
+          <button class="btn" onclick="toast('Branded PDF · Scherzinger corporate design · hash signed')">⬇ Branded PDF</button>
           <button class="btn ghost" onclick="document.getElementById('miBriefing').classList.remove('show')">× Close</button>
         </div>
         <div class="fc-briefing-body" contenteditable="true">
-          <p><b>Subject:</b> Margin position · YTD Apr 2026</p>
+          <p><b>Subject:</b> Margin position by cluster · YTD Apr 2026</p>
           <p>YTD margin <b>24.1%</b>, <b>3.9pp below plan</b> (industry typical 27–30% for VDMA precision pumps). Total leakage <b>−€187K</b> across 5,565 invoices.</p>
-          <p><b>Three buckets account for 92% of the leak:</b> cost not passed through <b>€150K</b> (7 of 18 indexed contracts un-triggered), discounting <b>€117K</b> (47 below-guardrail breaches across 12 reps — 78% concentrated in 3 reps), customer-mix shift <b>€64K</b> (more tier-C/D revenue, less tier-A growth).</p>
-          <p><b>What shifted vs last month:</b> Cost-not-passed-through <b style="color:var(--red)">+€18K</b> (steel +1.6pp WoW), Discounting <b>flat</b>, Cross-customer-spread <b style="color:var(--green)">−€4K</b> (one fix shipped). <b>Net −€14K worse.</b></p>
-          <p><b>Recovery via Pryzm:</b> €147K captured YTD across 38 implemented actions. Closable gap in the pipeline: <b>€280K</b> (€180K within my authority · €100K needs MD escalation).</p>
-          <p class="sig">— M. Weber, Pricing · drafted by Pryzm · please review before forwarding.</p>
+          <p><b>Margin by cluster:</b> BKAES <b>25%</b> (target 28%, conf 82%) · BKAGG <b>21%</b> (target 26%, conf 74%) · BKAIZ <b>18%</b> (low-n, conf 64%) · SOPU <b>14%</b> (⚠ low-n, conf 38%, do not auto-act).</p>
+          <p><b>Movable lens:</b> Of the −€187K YTD leakage, ~<b>€116K (62%)</b> sits on movable revenue and is actionable this cycle. ~<b>€71K (38%)</b> is locked under frame contracts and belongs in Till's renegotiation queue.</p>
+          <p><b>Three buckets account for 92% of the leak:</b> cost not passed through <b>€150K</b> (7 of 18 indexed contracts un-triggered — 4 movable, 3 locked), discounting <b>€117K</b> (47 below-guardrail breaches across 12 reps — 78% concentrated in 3 reps; Heiko coordinating), customer-mix shift <b>€64K</b> (more tier-C/D revenue, less tier-A growth).</p>
+          <p><b>Lost-quote margin differential:</b> Won quotes carried <b>70.6%</b> margin vs <b>72.4%</b> on lost (diff <b>+1.8pp</b>, p=0.006, n=1,313). The lost-quote margin is <b>higher</b> than won — we lose disproportionately on the high-margin end. Different problem from the leakage waterfall, different fix (qualification/negotiation, not pass-through). Shared with Heiko in Deal Empowerment.</p>
+          <p><b>What shifted vs last month:</b> Cost-not-passed-through <b style="color:var(--red)">+€18K</b> (steel +1.6pp WoW), Discounting <b>flat</b>, Cross-customer-spread <b style="color:var(--green)">−€4K</b> (one fix shipped after 21-day A/B confirmed +2.4pp lift, p=0.018). <b>Net −€14K worse.</b></p>
+          <p><b>Recovery via Pryzm:</b> €147K captured YTD across 38 implemented actions — all hash-signed, 12 went through A/B tracker before broad rollout. Closable gap in the pipeline: <b>€280K</b> (€180K within my authority · €100K needs Till's sign-off).</p>
+          <p class="sig">— <b>Frank</b>, Pricing Analyst / Head of Controlling · drafted by Pryzm · audit hash <code style="font-size:10.5px">m4r9bx</code> · please review before forwarding to Till.</p>
         </div>
       </div>
 
@@ -2914,6 +3241,16 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
         </div>
       </div>
 
+      <!-- Cluster mini-row · Frank's heterogeneous-portfolio lens -->
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px">
+        <span style="font-size:11px;color:#475569;font-weight:700;letter-spacing:.04em;text-transform:uppercase">Margin by cluster →</span>
+        <button class="filter-chip" onclick="toast('Filtering Margin Intelligence to BKAES (627 SKUs)')" style="background:#ecfdf5;color:#047857;border-color:#a7f3d0">BKAES <b>25%</b> · target 28% · conf <b>82%</b></button>
+        <button class="filter-chip" onclick="toast('Filtering Margin Intelligence to BKAGG (370 SKUs)')" style="background:#fef3c7;color:#b45309;border-color:#fde68a">BKAGG <b>21%</b> · target 26% · conf <b>74%</b></button>
+        <button class="filter-chip" onclick="toast('Filtering Margin Intelligence to BKAIZ (13 SKUs)')" style="background:#fef3c7;color:#b45309;border-color:#fde68a">BKAIZ <b>18%</b> · target 26% · conf <b>64%</b></button>
+        <button class="filter-chip" onclick="toast('SOPU is low-n (n=6) — manual review required, do not auto-act')" style="background:#fee2e2;color:#b91c1c;border-color:#fecaca">SOPU <b>14%</b> · target 25% · conf <b>38%</b> ⚠ low-n</button>
+        <span style="font-size:11px;color:#64748b;margin-left:auto">Source · <code>products_detail.commodity_scorecard</code></span>
+      </div>
+
       <!-- "What shifted this month" delta strip — rows mirror waterfall click destinations -->
       <div class="ms-shifted">
         <h5>What shifted in the leak vs last month</h5>
@@ -2928,7 +3265,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
           </div>
           <div class="ms-shifted-row clickable" onclick="document.querySelector('#marginTabs [data-tab=&quot;cross&quot;]').click();document.getElementById('marginTabsBlock').scrollIntoView({behavior:'smooth',block:'start'})">
             <span class="ms-dot" style="background:var(--green)"></span>
-            <div>Cross-customer spread <span class="ms-d-down">−€4K</span> · 1 fix shipped (Article 205418-A · Customer 101582) <span class="ms-jump">→ Cross-customer</span></div>
+            <div>Cross-customer spread <span class="ms-d-down">−€4K</span> · 1 fix shipped (Article 205418-A · Customer 101582) <span style="font-size:10.5px;color:#6d28d9;font-weight:600">🧪 21-day A/B confirmed +2.4pp lift, p=0.018</span> <span class="ms-jump">→ Cross-customer</span></div>
           </div>
           <div class="ms-shifted-row clickable" onclick="document.querySelector('#marginTabs [data-tab=&quot;erode&quot;]').click();document.getElementById('marginTabsBlock').scrollIntoView({behavior:'smooth',block:'start'})">
             <span class="ms-dot" style="background:var(--amber)"></span>
@@ -2961,35 +3298,35 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
               </div>
               <div class="wf-bucket" onclick="document.querySelector('#marginTabs [data-tab=&quot;seg&quot;]').click();document.querySelector('#segTabs [data-seg=&quot;tier&quot;]').click();document.getElementById('marginTabsBlock').scrollIntoView({behavior:'smooth',block:'start'})">
                 <span class="wf-dot"></span>
-                <div class="wf-name">Customer mix shift <span class="wf-delta flat">flat MoM</span><div class="wf-source">More tier-C/D revenue · less tier-A growth</div></div>
+                <div class="wf-name">Customer mix shift <span class="wf-delta flat">flat MoM</span><div class="wf-source">More tier-C/D revenue · less tier-A growth · cluster mix BKAES/BKAGG conf <b>78%</b></div></div>
                 <span class="wf-pct">−0.6pp</span>
                 <span class="wf-eur">€64K</span>
                 <span class="wf-jump">→ Tier pivot</span>
               </div>
               <div class="wf-bucket" onclick="setScreen('quotes');toast('Drilling into Quotes &amp; Guardrails · By-rep view')">
                 <span class="wf-dot"></span>
-                <div class="wf-name">Discounting (sales below guardrail) <span class="wf-delta flat">flat MoM</span><div class="wf-source">47 breaches Q1 · 12 reps · top 3 = 78%</div></div>
+                <div class="wf-name">Discounting (sales below guardrail) <span class="wf-delta flat">flat MoM</span><div class="wf-source">47 breaches Q1 · 12 reps · top 3 = 78% · cluster spread BKAES 82%, BKAGG 74%</div></div>
                 <span class="wf-pct">−1.1pp</span>
                 <span class="wf-eur">€117K</span>
                 <span class="wf-jump">→ By-rep</span>
               </div>
               <div class="wf-bucket" onclick="setScreen('forecast');toast('Drilling into Forecast · Input cost trajectory')">
                 <span class="wf-dot"></span>
-                <div class="wf-name">Cost not passed through <span class="wf-delta up">↑ +€18K MoM</span><div class="wf-source">7 of 18 indexed contracts un-triggered</div></div>
+                <div class="wf-name">Cost not passed through <span class="wf-delta up">↑ +€18K MoM</span><div class="wf-source">7 of 18 indexed contracts un-triggered · <b>4 movable, 3 locked</b> · cluster mix BKAES/BKAGG conf 78%</div></div>
                 <span class="wf-pct">−1.4pp</span>
                 <span class="wf-eur">€150K</span>
                 <span class="wf-jump">→ Cost trajectory</span>
               </div>
               <div class="wf-bucket" onclick="toast('Rebate accrual review opened · 3 customers above committed tier')">
                 <span class="wf-dot"></span>
-                <div class="wf-name">Rebate over-accrual <span class="wf-delta flat">flat MoM</span><div class="wf-source">3 customers above committed tier</div></div>
+                <div class="wf-name">Rebate over-accrual <span class="wf-delta flat">flat MoM</span><div class="wf-source">3 customers above committed tier · cluster BKAGG conf 74%</div></div>
                 <span class="wf-pct">−0.5pp</span>
                 <span class="wf-eur">€54K</span>
                 <span class="wf-jump">→ Review</span>
               </div>
               <div class="wf-bucket" onclick="document.querySelector('#marginTabs [data-tab=&quot;erode&quot;]').click();document.getElementById('marginTabsBlock').scrollIntoView({behavior:'smooth',block:'start'})">
                 <span class="wf-dot"></span>
-                <div class="wf-name">List-price erosion <span class="wf-delta up">↑ +€2K MoM</span><div class="wf-source">11mo avg list lag across 24 SKUs</div></div>
+                <div class="wf-name">List-price erosion <span class="wf-delta up">↑ +€2K MoM</span><div class="wf-source">11mo avg list lag across 24 SKUs · cluster BKAES 82% · BKAIZ 64%</div></div>
                 <span class="wf-pct">−0.3pp</span>
                 <span class="wf-eur">€32K</span>
                 <span class="wf-jump">→ Erosion</span>
@@ -3003,6 +3340,54 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
             </div>
           </div>
         </div>
+
+        <!-- Movable / Locked overlay -->
+        <div style="margin-top:18px;padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+            <span style="font-size:12px;color:#1e293b;font-weight:700">Of the €417K total leakage — what's actionable this cycle?</span>
+            <span style="font-size:11px;color:#64748b">Pilot estimate · derived from <code>price_governance.price_rules</code> + frame-contract dates</span>
+          </div>
+          <div style="display:flex;height:30px;border-radius:6px;overflow:hidden;border:1px solid #cbd5e1">
+            <div style="flex:62;background:linear-gradient(90deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px">Movable €260K (62%)</div>
+            <div style="flex:38;background:#94a3b8;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px">Locked €157K (38%)</div>
+          </div>
+          <div style="display:flex;gap:18px;margin-top:8px;font-size:11.5px;color:#475569">
+            <span><b style="color:#059669">●</b> Movable — Frank acts this cycle (Studio + A/B)</span>
+            <span><b style="color:#475569">●</b> Locked — under frame contracts; Till's renegotiation queue</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lost-Quote Margin Differential · Frank's signature finding -->
+      <div class="card card-pad mt-24" style="border-left:4px solid #6d28d9">
+        <div class="between mb-16">
+          <h2 class="h2">Lost-quote margin differential — why we lose at the high-margin end</h2>
+          <span class="status-chip" style="background:#ecfdf5;color:#047857">p = 0.006 · statistically significant</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+          <div style="border:1px solid #e2e8f0;border-radius:8px;padding:14px">
+            <div style="font-size:10.5px;color:#64748b;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Won quotes · avg margin</div>
+            <div style="font-family:'Manrope',sans-serif;font-size:30px;font-weight:800;color:#1e293b;margin-top:4px">70.6%</div>
+            <div style="font-size:11px;color:#475569;margin-top:4px">n = 928 won quotes</div>
+          </div>
+          <div style="border:1px solid #fecaca;border-radius:8px;padding:14px;background:#fef2f2">
+            <div style="font-size:10.5px;color:#b91c1c;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Lost quotes · avg margin</div>
+            <div style="font-family:'Manrope',sans-serif;font-size:30px;font-weight:800;color:#991b1b;margin-top:4px">72.4%</div>
+            <div style="font-size:11px;color:#b91c1c;margin-top:4px">n = 385 lost quotes</div>
+          </div>
+          <div style="border:1px solid #ddd6fe;border-radius:8px;padding:14px;background:#faf5ff">
+            <div style="font-size:10.5px;color:#6d28d9;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Differential</div>
+            <div style="font-family:'Manrope',sans-serif;font-size:30px;font-weight:800;color:#5b21b6;margin-top:4px">+1.8pp</div>
+            <div style="font-size:11px;color:#6d28d9;margin-top:4px">Welch's t-test · p = 0.006 (significant)</div>
+          </div>
+        </div>
+        <p style="font-size:12.5px;color:#1e293b;line-height:1.55;margin:0;padding:12px 14px;background:#f8fafc;border-radius:6px;border-left:3px solid #6d28d9">
+          <b>Plain-language interpretation:</b> The lost-quote average margin is <b>higher</b> than the won-quote average. We are losing disproportionately on the high-margin end — the pricing model is leaving high-margin business on the table.
+          This is a <b>different problem</b> than the leakage waterfall above and needs a <b>different fix</b>: qualification + negotiation arguments + price-anchor coaching, not pass-through.
+        </p>
+        <p style="font-size:11.5px;color:#475569;margin:10px 0 0">
+          Source · <code>pricing_analysis.price_sensitivity</code> · <span style="color:#6d28d9;font-weight:600">Shared with Heiko (Sales)</span> — appears in Deal Empowerment as lost-deal analytics. Same finding shared with Till in monthly briefing.
+        </p>
       </div>
 
       <!-- Cost-vs-Price gap + Pass-through completion + Recovery trajectory -->
@@ -3023,13 +3408,16 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
             <div class="cp-mini-card warn">
               <div class="cp-head">Cost pass-through completion</div>
               <div class="cp-big">61%</div>
-              <div class="cp-sub"><b>11 of 18</b> indexed contracts triggered YTD · 7 still un-triggered = €150K leakage</div>
+              <div class="cp-sub"><b>11 of 18</b> indexed contracts triggered YTD · 7 un-triggered = €150K leakage</div>
               <div class="cp-progress"><div class="cp-progress-fill" style="width:61%"></div></div>
+              <div style="margin-top:8px;padding-top:8px;border-top:1px dashed #e2e8f0;font-size:10.5px;color:#475569;line-height:1.5">
+                Of the 7 un-triggered: <b style="color:#059669">4 movable</b> (Frank can renegotiate index trigger this cycle) · <b style="color:#475569">3 locked</b> (Till to take to MD review at frame renewal).
+              </div>
             </div>
             <div class="cp-mini-card">
               <div class="cp-head">YTD margin recovery via Pryzm</div>
               <div class="cp-big" style="color:var(--green)">€147K</div>
-              <div class="cp-sub">From 38 implemented actions · cumulative</div>
+              <div class="cp-sub">From 38 implemented actions · cumulative · <span style="color:#6d28d9;font-weight:600">12 went through A/B tracker before broad rollout</span> · all hash-signed</div>
               <div class="recovery-wrap"><canvas id="recoveryChart"></canvas></div>
             </div>
           </div>
@@ -3054,16 +3442,17 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
             <p>This is the data layer no Excel can build. Cross-checks <b>5,565 invoices</b> against <b>4,605 quotes</b>, normalizes for tier and quarter, flags pairs where the spread can't be justified by volume or contract terms.</p>
           </div>
           <table>
-            <thead><tr><th>Article</th><th>Customer A</th><th>Price A</th><th>Customer B</th><th>Price B</th><th>Volume tier</th><th>Spread %</th><th>Action</th></tr></thead>
+            <thead><tr><th>Article</th><th>Cluster · conf</th><th>Customer A</th><th>Price A</th><th>Customer B</th><th>Price B</th><th>Volume tier</th><th>Spread %</th><th>Action</th></tr></thead>
             <tbody>
-              <tr id="crossHL"><td><b>200832-E</b></td><td>101580</td><td class="num-cell">€4.10</td><td>102330</td><td class="num-cell">€6.80</td><td>Tier 2</td><td class="num-cell neg">66%</td><td><button class="row-action primary" onclick="toast('Opening 200832-E in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
-              <tr><td><b>205415-B</b></td><td>101582</td><td class="num-cell">€4.10</td><td>102801</td><td class="num-cell">€5.50</td><td>Tier 1</td><td class="num-cell neg">34%</td><td><button class="row-action" onclick="toast('Opening 205415-B in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
-              <tr><td><b>211094-C</b></td><td>103044</td><td class="num-cell">€12.20</td><td>101900</td><td class="num-cell">€15.40</td><td>Tier 3</td><td class="num-cell neg">26%</td><td><button class="row-action" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr id="crossHL"><td><b>200832-E</b></td><td><span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAGG 74%</span></td><td>101580</td><td class="num-cell">€4.10</td><td>102330</td><td class="num-cell">€6.80</td><td>Tier 2</td><td class="num-cell neg">66%</td><td><button class="row-action primary" onclick="toast('Opening 200832-E in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr><td><b>205415-B</b></td><td><span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAGG 74%</span></td><td>101582</td><td class="num-cell">€4.10</td><td>102801</td><td class="num-cell">€5.50</td><td>Tier 1</td><td class="num-cell neg">34%</td><td><button class="row-action" onclick="toast('Opening 205415-B in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr><td><b>211094-C</b></td><td><span style="background:#ecfdf5;color:#047857;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAES 82%</span></td><td>103044</td><td class="num-cell">€12.20</td><td>101900</td><td class="num-cell">€15.40</td><td>Tier 3</td><td class="num-cell neg">26%</td><td><button class="row-action" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
             </tbody>
           </table>
+          <p class="footer-note" style="font-size:11.5px;color:#475569;margin-top:6px"><b>Cluster note:</b> Spreads in low-n clusters (SOPU n=6, conf 38%) are flagged ⚠ — review manually before raising in Studio. None in this view.</p>
           <div class="tab-footer">
             <span class="tf-icon">⚡</span>
-            <span class="tf-text">3 actions / 90d · 1 implemented · <b>€8,400 captured</b></span>
+            <span class="tf-text">3 actions / 90d · 1 implemented (A/B-confirmed) · <b>€8,400 captured</b></span>
             <a href="#" class="tf-link" data-jump="action">Action Center →</a>
           </div>
         </div>
@@ -3077,18 +3466,18 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
             <p>Feeds the <b>Discounting bucket</b> in the waterfall above (€117K of €417K total leakage). The gap between quoted margin and actual margin = price erosion at invoice time.</p>
           </div>
           <table>
-            <thead><tr><th>Article</th><th>Description</th><th>Volume (units)</th><th>Quoted margin</th><th>Actual margin</th><th>Gap (pp)</th><th>Opportunity (€)</th><th>Action</th></tr></thead>
+            <thead><tr><th>Article</th><th>Description</th><th>Volume (units)</th><th>Quoted margin</th><th>Actual margin</th><th>Gap (pp)</th><th>Opportunity (€)</th><th>A/B status</th><th>Audit hash</th><th>Action</th></tr></thead>
             <tbody>
-              <tr><td><b>200832-E</b></td><td>Precision shaft</td><td class="num-cell">4,200</td><td class="num-cell">25%</td><td class="num-cell">8%</td><td class="num-cell neg">−17pp</td><td class="num-cell pos">€18,600</td><td><button class="row-action primary" onclick="toast('Opening 200832-E in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
-              <tr><td><b>205415-B</b></td><td>Coupling A</td><td class="num-cell">1,840</td><td class="num-cell">32%</td><td class="num-cell">24%</td><td class="num-cell neg">−8pp</td><td class="num-cell pos">€12,400</td><td><button class="row-action" onclick="toast('Opening 205415-B in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
-              <tr><td><b>211094-C</b></td><td>Bearing housing</td><td class="num-cell">980</td><td class="num-cell">28%</td><td class="num-cell">22%</td><td class="num-cell neg">−6pp</td><td class="num-cell pos">€7,200</td><td><button class="row-action" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
-              <tr><td><b>218750-D</b></td><td>Sleeve</td><td class="num-cell">6,400</td><td class="num-cell">30%</td><td class="num-cell">26%</td><td class="num-cell neg">−4pp</td><td class="num-cell pos">€4,800</td><td><button class="row-action" onclick="toast('Opening 218750-D in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
-              <tr><td><b>205418-A</b></td><td>Coupling B</td><td class="num-cell">2,100</td><td class="num-cell">31%</td><td class="num-cell">29%</td><td class="num-cell neg">−2pp</td><td class="num-cell pos">€1,400</td><td><button class="row-action" onclick="toast('Opening 205418-A in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr><td><b>200832-E</b></td><td>Precision shaft</td><td class="num-cell">4,200</td><td class="num-cell">25%</td><td class="num-cell">8%</td><td class="num-cell neg">−17pp</td><td class="num-cell pos">€18,600</td><td style="font-size:11px;color:#64748b">—</td><td style="font-size:10.5px;color:#64748b"><code>a3f9c1</code></td><td><button class="row-action primary" onclick="toast('Opening 200832-E in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr><td><b>205415-B</b></td><td>Coupling A</td><td class="num-cell">1,840</td><td class="num-cell">32%</td><td class="num-cell">24%</td><td class="num-cell neg">−8pp</td><td class="num-cell pos">€12,400</td><td style="font-size:11px;color:#64748b">—</td><td style="font-size:10.5px;color:#64748b">—</td><td><button class="row-action" onclick="toast('Opening 205415-B in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr><td><b>211094-C</b></td><td>Bearing housing</td><td class="num-cell">980</td><td class="num-cell">28%</td><td class="num-cell">22%</td><td class="num-cell neg">−6pp</td><td class="num-cell pos">€7,200</td><td style="font-size:11px;color:#6d28d9;font-weight:600">🧪 running 3/14</td><td style="font-size:10.5px;color:#64748b">—</td><td><button class="row-action" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr><td><b>218750-D</b></td><td>Sleeve</td><td class="num-cell">6,400</td><td class="num-cell">30%</td><td class="num-cell">26%</td><td class="num-cell neg">−4pp</td><td class="num-cell pos">€4,800</td><td style="font-size:11px;color:#64748b">—</td><td style="font-size:10.5px;color:#64748b">—</td><td><button class="row-action" onclick="toast('Opening 218750-D in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
+              <tr><td><b>205418-A</b></td><td>Coupling B</td><td class="num-cell">2,100</td><td class="num-cell">31%</td><td class="num-cell">29%</td><td class="num-cell neg">−2pp</td><td class="num-cell pos">€1,400</td><td style="font-size:11px;color:#6d28d9;font-weight:600">🧪 running 9/21</td><td style="font-size:10.5px;color:#64748b"><code>7e21bd</code></td><td><button class="row-action" onclick="toast('Opening 205418-A in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td></tr>
             </tbody>
           </table>
           <div class="tab-footer">
             <span class="tf-icon">⚡</span>
-            <span class="tf-text">11 actions / 90d · 6 implemented · <b>€44,200 captured YTD</b></span>
+            <span class="tf-text">11 actions / 90d · 6 implemented (all hash-signed) · 4 went through A/B before broad rollout · <b>€44,200 captured YTD</b></span>
             <a href="#" class="tf-link" data-jump="action">Action Center →</a>
           </div>
         </div>
@@ -3159,6 +3548,7 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
               </tbody>
             </table>
             <p class="footer-note"><b>Story:</b> BKAGG is the single biggest regional drag (−7pp · €115K leakage). The Monday Briefing already flagged this — sales-rep level intervention needed, not a pricing change.</p>
+            <p class="footer-note" style="font-size:11px;color:#6d28d9;background:#faf5ff;padding:8px 10px;border-radius:6px;border-left:3px solid #7c3aed"><b>⚠ Naming caveat (Frank's note):</b> "BKAGG" here is a <i>regional sales label</i> — not the BKAGG <i>commodity cluster</i>. The two share the abbreviation by historical accident. Disambiguation pending in the next data-model update; treat them as distinct dimensions.</p>
           </div>
 
           <div class="tab-footer">
@@ -3182,55 +3572,66 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
             <p>Avg list-update lag across portfolio: <b style="color:var(--amber)">11 months</b> (industry best-practice: 6 months). Feeds <b>List-price erosion</b> bucket · €32K.</p>
           </div>
           <table>
-            <thead><tr><th>Article</th><th>Last list update</th><th>Cost change since</th><th>List change since</th><th>Effective erosion</th><th>Margin compression</th><th>Action</th></tr></thead>
+            <thead><tr><th>Article</th><th>Cluster · conf</th><th>Last list update</th><th>Cost change since</th><th>List change since</th><th>Effective erosion</th><th>Margin compression</th><th>Last author · hash</th><th>Action</th></tr></thead>
             <tbody>
               <tr>
                 <td><b>200832-E</b></td>
+                <td><span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAGG 74%</span></td>
                 <td><span class="age-bar"><span class="age-bar-fill r" style="width:90%"></span></span>14 mo</td>
                 <td class="num-cell neg">+6.2%</td>
                 <td class="num-cell">+1.0%</td>
                 <td class="num-cell neg">−5.2pp</td>
                 <td class="num-cell neg">−9pp</td>
+                <td style="font-size:10.5px;color:#475569">Frank · <code>a3f9c1</code></td>
                 <td><button class="row-action primary" onclick="toast('Opening 200832-E in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
               </tr>
               <tr>
                 <td><b>205415-B</b></td>
+                <td><span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAGG 74%</span></td>
                 <td><span class="age-bar"><span class="age-bar-fill r" style="width:75%"></span></span>11 mo</td>
                 <td class="num-cell neg">+3.8%</td>
                 <td class="num-cell">+0.5%</td>
                 <td class="num-cell neg">−3.3pp</td>
                 <td class="num-cell neg">−4pp</td>
+                <td style="font-size:10.5px;color:#475569">Frank · <code>7e21bd</code></td>
                 <td><button class="row-action" onclick="toast('Opening 205415-B in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
               </tr>
               <tr>
                 <td><b>211094-C</b></td>
+                <td><span style="background:#ecfdf5;color:#047857;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAES 82%</span></td>
                 <td><span class="age-bar"><span class="age-bar-fill" style="width:55%"></span></span>8 mo</td>
                 <td class="num-cell neg">+2.1%</td>
                 <td class="num-cell">+0.0%</td>
                 <td class="num-cell neg">−2.1pp</td>
                 <td class="num-cell neg">−2pp</td>
+                <td style="font-size:10.5px;color:#475569">F. Bauer · <code>19f4a8</code></td>
                 <td><button class="row-action" onclick="toast('Opening 211094-C in Pricing Studio');setTimeout(()=>setScreen('studio'),350)">Open in Studio →</button></td>
               </tr>
               <tr>
                 <td><b>218750-D</b></td>
+                <td><span style="background:#ecfdf5;color:#047857;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAES 82%</span></td>
                 <td><span class="age-bar"><span class="age-bar-fill g" style="width:25%"></span></span>3 mo</td>
                 <td class="num-cell neg">+0.4%</td>
                 <td class="num-cell">+1.5%</td>
                 <td class="num-cell pos">+1.1pp</td>
                 <td class="num-cell">0pp</td>
+                <td style="font-size:10.5px;color:#475569">Frank · <code>c882e0</code></td>
                 <td><span class="muted small">healthy · no action</span></td>
               </tr>
               <tr>
                 <td><b>205418-A</b></td>
+                <td><span style="background:#fef3c7;color:#b45309;padding:2px 7px;border-radius:8px;font-size:10.5px;font-weight:700">BKAGG 74%</span></td>
                 <td><span class="age-bar"><span class="age-bar-fill g" style="width:10%"></span></span>1 mo</td>
                 <td class="num-cell">+0.2%</td>
                 <td class="num-cell">+6.0%</td>
                 <td class="num-cell pos">+5.8pp</td>
                 <td class="num-cell pos">+2pp</td>
-                <td><span class="muted small">recent raise · monitor</span></td>
+                <td style="font-size:10.5px;color:#475569">Frank · <code>4d2b8f</code></td>
+                <td><span class="muted small">recent raise · 🧪 A/B 9/21</span></td>
               </tr>
             </tbody>
           </table>
+          <p class="footer-note" style="font-size:11.5px;color:#475569;margin-top:6px"><b>Cycle output:</b> Triggering the price-book cycle auto-generates a <b>Branded PDF</b> (Scherzinger corporate design) with all 24 SKUs · audit-hash signed · routed to Till for sign-off.</p>
           <div class="tab-footer">
             <span class="tf-icon">⚡</span>
             <span class="tf-text">Feeds <b>List-price erosion</b> bucket · €32K · 24 SKUs &gt; 9 months stale</span>
@@ -3262,6 +3663,17 @@ body[data-frank-locked-hidden="true"] tr[data-status="locked"]{display:none}
             <a href="#" class="tf-link" data-jump="action">Action Center →</a>
           </div>
         </div>
+      </div>
+
+      <div style="margin-top:18px;padding:14px 18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#475569;display:flex;gap:18px;flex-wrap:wrap;align-items:center">
+        <span style="font-weight:700;color:#1e293b">Cross-links →</span>
+        <a href="#" data-jump="action" style="color:#1e3a8a;font-weight:600;text-decoration:none">Action queue · Action Center</a>
+        <span style="color:#cbd5e1">·</span>
+        <a href="#" data-jump="forecast" style="color:#1e3a8a;font-weight:600;text-decoration:none">Cluster forecast · Forecast</a>
+        <span style="color:#cbd5e1">·</span>
+        <a href="#" data-jump="studio" style="color:#1e3a8a;font-weight:600;text-decoration:none">SKU drill · Pricing Studio</a>
+        <span style="color:#cbd5e1">·</span>
+        <a href="#" data-jump="quotes" style="color:#1e3a8a;font-weight:600;text-decoration:none">Approval flow · Quotes &amp; Guardrails</a>
       </div>
     </section>
 
@@ -4426,7 +4838,28 @@ const FRANK_DATA = {
     {group:'SOPU',  revenue:170000,   margin:0.464, winRate:null,  skus:6,   orders:12}
   ],
   totalRevenue2025: 6250360,
-  movableEstimate: 0.62
+  movableEstimate: 0.62,
+  clusterForecast: [
+    {group:'BKAES', ltm:12300000, fc12:12700000, bandPct:0.06, confidence:0.82, lowN:false},
+    {group:'BKAGG', ltm:5300000, fc12:5400000, bandPct:0.09, confidence:0.74, lowN:false},
+    {group:'BKAIZ', ltm:564000, fc12:581000, bandPct:0.12, confidence:0.64, lowN:false},
+    {group:'SOPU', ltm:170000, fc12:165000, bandPct:0.22, confidence:0.38, lowN:true}
+  ],
+  walkForwardMAPE: {
+    labels: ['May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr'],
+    values: [6.8, 6.2, 5.9, 5.5, 5.1, 4.9, 4.7, 4.6, 4.4, 4.6, 4.5, 4.7],
+    target: 5.0,
+    latest: 4.7, avg6mo: 4.6, best: 4.4, yoy: -2.1
+  },
+  movableSplit: { movable: 3880000, locked: 2370000, totalForecast: 5920000 },
+  newProductForecast: {
+    monthlyTrend: [42000, 68000, 85000, 94000, 112000, 128000, 145000, 161000, 172000, 183000, 196000, 204000],
+    examples: [
+      {sku:'218812-K', desc:'Sleeve variant', cluster:'BKAES', n:627, fc:42000, bandPct:0.18, confidence:0.76},
+      {sku:'220114-A', desc:'Bearing housing variant', cluster:'BKAGG', n:370, fc:28000, bandPct:0.24, confidence:0.68},
+      {sku:'221305', desc:'Custom pump', cluster:'SOPU', n:6, fc:11000, bandPct:0.38, confidence:0.38, lowN:true}
+    ]
+  }
 };
 
 /* ----------------- state ----------------- */
@@ -4725,6 +5158,49 @@ function initForecast(){
       scales:{
         y:{ticks:{callback:m.yFmt,font:{size:11},color:'#737373'},grid:{color:'#f0f0f0'}},
         x:{ticks:{font:{size:11},color:'#737373'},grid:{display:false}}
+      }}
+  });
+  initWalkForwardChart();
+  initNewProductTrendChart();
+}
+
+function initWalkForwardChart(){
+  const c = document.getElementById('walkForwardChart'); if (!c) return;
+  destroy('walkForward');
+  const wf = FRANK_DATA.walkForwardMAPE;
+  const target = wf.values.map(()=>wf.target);
+  charts.walkForward = new Chart(c,{
+    type:'line',
+    data:{labels:wf.labels,datasets:[
+      {label:'MAPE %', data:wf.values, borderColor:'#0393da', backgroundColor:'rgba(3,147,218,.12)', borderWidth:2.5, tension:.35, fill:true, pointRadius:3, pointBackgroundColor:'#0393da'},
+      {label:'Target (5%)', data:target, borderColor:'rgba(220,38,38,.7)', borderWidth:1.5, borderDash:[5,4], pointRadius:0, fill:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12,font:{size:11}}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`}}},
+      scales:{
+        y:{ticks:{callback:v=>v+'%',font:{size:10},color:'#737373'},grid:{color:'#f0f0f0'},beginAtZero:false,suggestedMin:3,suggestedMax:8},
+        x:{ticks:{font:{size:10},color:'#737373'},grid:{display:false}}
+      }}
+  });
+}
+
+function initNewProductTrendChart(){
+  const c = document.getElementById('newProductTrendChart'); if (!c) return;
+  destroy('newProductTrend');
+  const npf = FRANK_DATA.newProductForecast;
+  const labels = ['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M12'];
+  charts.newProductTrend = new Chart(c,{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'New-product revenue (€K)', data:npf.monthlyTrend.map(v=>v/1000), borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.14)', borderWidth:2.5, tension:.35, fill:true, pointRadius:3, pointBackgroundColor:'#16a34a'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>`€${ctx.parsed.y.toFixed(0)}K`}}},
+      scales:{
+        y:{ticks:{callback:v=>'€'+v+'K',font:{size:10},color:'#737373'},grid:{color:'#f0f0f0'},beginAtZero:true},
+        x:{ticks:{font:{size:10},color:'#737373'},grid:{display:false}}
       }}
   });
 }
@@ -5043,8 +5519,8 @@ function wbSelect(aid){
   // Hero
   document.getElementById('wbTitle').textContent = `Article ${aid} · ${s.desc}`;
   const annualRev = (s.cur * s.units / 1000).toFixed(1);
-  document.getElementById('wbSub').innerHTML = `Group <b style="color:#fff">${s.grp}</b> · ${s.customers} customers · ${s.units.toLocaleString('en-US')} units/yr · €${annualRev}K annual revenue · Approval level <b style="color:#fff">${s.approval}</b>`;
-  document.getElementById('wbMeta').textContent = `Last repriced ${s.lastReprice} by ${s.lastBy} · ${s.lastMonths} months ago · ${s.flagNote}`;
+  document.getElementById('wbSub').innerHTML = `Group <b style="color:#fff">${s.grp}</b> · ${s.customers} customers · ${s.units.toLocaleString('en-US')} units/yr · €${annualRev}K annual revenue`;
+  document.getElementById('wbMeta').innerHTML = `Last repriced ${s.lastReprice} (€${(s.cur*0.9).toFixed(2)}→${fmtPrice(s.cur)}) by <b style="color:#fff">Frank</b> · ${s.lastMonths} months ago · ${s.flagNote}`;
   document.getElementById('wbCur').textContent = fmtPrice(s.cur);
   const marg = document.getElementById('wbMargNow');
   marg.textContent = (s.marg>=0?'':'') + s.marg.toFixed(1) + '% margin';
@@ -5092,6 +5568,11 @@ function wbApplyOption(opt){
   if (opt==='hold'){ price=s.cur; rec=s.holdLeak; churn=0; marg=s.marg; }
   else if (opt==='floor'){ price=s.floor; rec=s.floorRec; churn=s.churnFloor; marg=s.target; }
   else if (opt==='market'){ price=s.market; rec=s.marketRec; churn=s.churnMarket; marg=Math.min(95, ((s.market-s.cost)/s.market)*100); }
+  else if (opt==='abtest'){
+    // 12% slice: 88% at hold, 12% at floor — proportionally scaled
+    price=s.floor; rec=Math.round(s.floorRec*0.12); churn=0; marg=s.target;
+    document.getElementById('wbDecRisk') && (document.getElementById('wbDecRisk').textContent='A/B slice 12% · success criterion margin lift, p<0.05');
+  }
   else { // custom
     const v = parseFloat(document.getElementById('wbCustomInput').value);
     if (!v || v<=0){ price=s.cur; rec=0; churn=0; marg=s.marg; }
@@ -5131,19 +5612,41 @@ document.querySelectorAll('#wsList .ws-row').forEach(row=>{
   row.addEventListener('click',()=>wbSelect(row.dataset.aid));
 });
 
-/* Filter chips */
+/* Filter chips · main filter is exclusive; toggles compose */
+const wsFilterState = { mode:'all', hideLocked:false, newSkus:false };
+function wsApplyFilters(){
+  let visible = 0;
+  document.querySelectorAll('#wsList .ws-row').forEach(r=>{
+    const isNew = r.dataset.new==='true';
+    const isLocked = r.dataset.locked==='true';
+    let show;
+    if (wsFilterState.newSkus){
+      show = isNew; // when "New SKUs" toggle on, only show new
+    } else {
+      show = !isNew && (wsFilterState.mode==='all' || r.dataset.flag===wsFilterState.mode);
+      if (wsFilterState.hideLocked && isLocked) show = false;
+    }
+    r.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  document.getElementById('wsCount').textContent = visible;
+  // Toggle the comparable-cluster panel visibility based on New SKUs filter
+  const ccp = document.getElementById('wsComparablePanel');
+  if (ccp) ccp.style.display = wsFilterState.newSkus ? '' : 'none';
+}
 document.querySelectorAll('#wsFilters .ws-filter').forEach(b=>{
   b.addEventListener('click',()=>{
-    document.querySelectorAll('#wsFilters .ws-filter').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active');
-    const f = b.dataset.filter;
-    let visible = 0;
-    document.querySelectorAll('#wsList .ws-row').forEach(r=>{
-      const show = (f==='all') || r.dataset.flag===f;
-      r.style.display = show ? '' : 'none';
-      if (show) visible++;
-    });
-    document.getElementById('wsCount').textContent = visible;
+    if (b.dataset.toggle){
+      b.classList.toggle('active');
+      const t = b.dataset.toggle;
+      if (t==='hide-locked') wsFilterState.hideLocked = b.classList.contains('active');
+      if (t==='new-skus') wsFilterState.newSkus = b.classList.contains('active');
+    } else {
+      document.querySelectorAll('#wsFilters .ws-filter:not(.toggle)').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      wsFilterState.mode = b.dataset.filter;
+    }
+    wsApplyFilters();
   });
 });
 
@@ -5166,6 +5669,32 @@ if (customInput){
 /* Boot — init workbench with default SKU */
 function initWorkbench(){
   wbSelect(wbState.aid);
+}
+
+/* Explainability drawer · feature importance + cluster MAPE */
+function openExplainDrawer(opt){
+  const d = document.getElementById('explainDrawer');
+  if (!d) return;
+  const fi = FRANK_DATA.featureImportance.forecast_model.slice(0,5);
+  const max = fi[0].importance;
+  const optName = ({hold:'Hold', floor:'Cost-floor', market:'Market anchor', abtest:'A/B slice'})[opt] || 'Selected option';
+  d.querySelector('.explain-body').innerHTML = `
+    <div class="explain-eyebrow">${optName} · why this price?</div>
+    <p class="explain-lead">Cluster <b>BKAGG</b> · n=247 historical repricings · MAPE 4.7% on this cluster (forecast model). Top drivers below.</p>
+    <div class="explain-fi">
+      ${fi.map(f=>`
+        <div class="explain-fi-row">
+          <span class="explain-fi-name">${f.feature}</span>
+          <span class="explain-fi-bar"><span class="explain-fi-fill" style="width:${(f.importance/max*100).toFixed(0)}%"></span></span>
+          <span class="explain-fi-pct">${(f.importance*100).toFixed(1)}%</span>
+        </div>`).join('')}
+    </div>
+    <p class="explain-foot">Source · <code>ml_analytics.feature_importance.forecast_model</code> · Last trained ${FRANK_DATA.trainingHistory[1].last}, next ${FRANK_DATA.trainingHistory[1].next}.</p>`;
+  d.classList.add('show');
+}
+function closeExplainDrawer(){
+  const d = document.getElementById('explainDrawer');
+  if (d) d.classList.remove('show');
 }
 
 /* Action Center · alert bar expand/collapse */
