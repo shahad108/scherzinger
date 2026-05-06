@@ -2351,6 +2351,29 @@ body.pryzm-2026 .sec-row .meta .s{font-size:11.5px;color:var(--muted);margin-top
 body.pryzm-2026 .sec-row .sec-arr{font-size:13px;color:var(--muted-2);transition:transform .15s, color .15s}
 body.pryzm-2026 .sec-row:hover .sec-arr{transform:translateX(2px);color:var(--ink-2)}
 
+/* === Forecast screen — F1 additions === */
+body.pryzm-2026 #screen-forecast .fc-mode-toggle{
+  display:inline-flex; background:var(--surface-sunken); border-radius:10px;
+  padding:3px; gap:2px; border:none;
+}
+body.pryzm-2026 #screen-forecast .fc-mode-toggle button{
+  border:none; background:transparent;
+  padding:7px 14px; border-radius:8px;
+  font-size:12.5px; color:var(--ink-3); font-weight:500;
+  font-family:inherit; cursor:pointer; transition:background .15s, color .15s;
+}
+body.pryzm-2026 #screen-forecast .fc-mode-toggle button:hover{ color:var(--ink-2); }
+body.pryzm-2026 #screen-forecast .fc-mode-toggle button.active{
+  background:var(--surface); color:var(--ink);
+  box-shadow:var(--shadow-card); font-weight:600;
+}
+body.pryzm-2026 #screen-forecast .fc-changed-row{
+  display:flex; align-items:flex-start; gap:10px;
+  padding:8px 0; border-top:1px solid var(--hairline);
+  font-size:12.5px; color:var(--ink-2); line-height:1.5;
+}
+body.pryzm-2026 #screen-forecast .fc-changed-row:first-child{ border-top:none; }
+
 </style>
 </head>
 <body class="pryzm-2026">
@@ -3172,104 +3195,82 @@ body.pryzm-2026 .sec-row:hover .sec-arr{transform:translateX(2px);color:var(--in
 
     <!-- ============== FORECAST ============== -->
     <section id="screen-forecast" class="screen hidden">
+      <div class="crumbs"><span>Cockpit</span><span class="sep">/</span><span>Pricing Analyst · Frank</span><span class="sep">/</span><b>Forecast</b></div>
       <div class="page-head">
         <div>
-          <div class="crumbs">Forecast · <b>Predictive Portfolio Pricing</b> · <span id="fcModeCrumb">Revenue</span></div>
           <h1 id="fcTitle">Revenue Forecast — Next 12 Months</h1>
-          <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">
-            <span class="status-chip live">Updated Mon 06:14</span>
-            <span class="status-chip up">Band +€8K WoW</span>
-            <button class="info-tip tip center" data-tip="Walk-forward model retrains weekly. Each Monday 06:00 CET, last week's actuals feed back into the next 12-month band.">i</button>
+          <div class="page-sub">
+            <span class="sub-pill">Predictive Portfolio Pricing</span>
+            <span class="sub-stat"><b>Updated</b> Mon 06:14</span>
+            <span class="sub-stat"><b>Band</b> +€8K WoW</span>
+            <span class="sub-stat" id="fcModeCrumb">Revenue mode</span>
           </div>
         </div>
-        <div class="row" style="gap:6px;flex-wrap:wrap">
-          <button class="filter-chip">Tier · All ▾</button>
-          <button class="filter-chip">Family · All ▾</button>
-          <button class="filter-chip" id="fcClusterLens" onclick="toast('Cluster lens: filter to BKAES / BKAGG / BKAIZ / SOPU')">Cluster lens · All ▾</button>
-          <button class="btn primary" id="fcBriefingBtn">📋 Generate forecast briefing</button>
+        <div class="head-actions">
+          <button class="head-pill">Tier · All ▾</button>
+          <button class="head-pill">Family · All ▾</button>
+          <button class="head-pill" id="fcClusterLens" onclick="toast('Cluster lens: filter to BKAES / BKAGG / BKAIZ / SOPU')">Cluster lens · All ▾</button>
+          <button class="btn-primary-rose" id="fcBriefingBtn">Generate forecast briefing →</button>
         </div>
       </div>
 
       <!-- Auto-drafted forecast briefing memo (hidden, opens via button) -->
-      <div class="fc-briefing" id="fcBriefing">
-        <div class="fc-briefing-head">
-          <span class="fcb-title">Forecast briefing · auto-drafted, editable</span>
-          <button class="btn" onclick="toast('Briefing copied to clipboard')">📋 Copy</button>
-          <button class="btn" onclick="toast('Briefing emailed to MD + CFO')">✉ Email to MD</button>
-          <button class="btn" onclick="toast('Briefing exported as PDF')">⬇ PDF</button>
-          <button class="btn ghost" onclick="document.getElementById('fcBriefing').classList.remove('show')">× Close</button>
+      <div class="lq-card fc-briefing" id="fcBriefing" style="display:none;margin-top:14px">
+        <div class="lq-foot" style="border-top:none;padding-top:0;margin-top:0;align-items:center">
+          <div class="ftxt"><b>Forecast briefing</b> · auto-drafted, editable</div>
+          <div style="display:flex;gap:6px">
+            <button class="head-pill" onclick="toast('Briefing copied to clipboard')">Copy</button>
+            <button class="head-pill" onclick="toast('Briefing emailed to MD + CFO')">Email to MD</button>
+            <button class="head-pill" onclick="toast('Briefing exported as PDF')">PDF</button>
+            <button class="head-pill" onclick="document.getElementById('fcBriefing').style.display='none'">× Close</button>
+          </div>
         </div>
-        <div class="fc-briefing-body" contenteditable="true">
-          <p><b>Subject:</b> Forecast model · accuracy &amp; cluster signal · Week 18</p>
-          <p>Walk-forward MAPE held at <b>4.7%</b> on Q1 2025 actuals (target &lt;5%). April actuals came in <b>−1.7%</b> vs primary band — within tolerance. <b>Per-cluster confidence diverges:</b> BKAES 82%, BKAGG 74%, BKAIZ 64%, SOPU 38% (low-n — do not auto-act on SOPU).</p>
-          <p><b>Movable-revenue split:</b> €3.88M (62%) on the band is repriceable; €2.37M (38%) sits under multi-year contracts and absorbs cost shock without margin response. Steel S355 <b>+6.8% by Q3</b> (was +5.2%) → ~<b>€18–28K compression</b> on the contracted share.</p>
-          <p><b>Action implications:</b> 2 below-floor quotes open (200832-E for 101580; 211094-C for 101900). 1 SKU in active A/B test (<b>205418-A</b> · day 9 of 21 · trending positive).</p>
-          <p class="sig">— Frank · Pricing Analyst · drafted by Pryzm · please review before forwarding to MD.</p>
+        <div class="fc-briefing-body" contenteditable="true" style="margin-top:14px;color:var(--ink-3);font-size:13px;line-height:1.6">
+          <p><b style="color:var(--ink)">Subject:</b> Forecast model · accuracy &amp; cluster signal · Week 18</p>
+          <p>Walk-forward MAPE held at <b style="color:var(--ink)">4.7%</b> on Q1 2025 actuals (target &lt;5%). April actuals came in <b style="color:var(--ink)">−1.7%</b> vs primary band — within tolerance. <b style="color:var(--ink)">Per-cluster confidence diverges:</b> BKAES 82%, BKAGG 74%, BKAIZ 64%, SOPU 38% (low-n — do not auto-act on SOPU).</p>
+          <p><b style="color:var(--ink)">Movable-revenue split:</b> €3.88M (62%) on the band is repriceable; €2.37M (38%) sits under multi-year contracts and absorbs cost shock without margin response. Steel S355 <b style="color:var(--ink)">+6.8% by Q3</b> (was +5.2%) → ~<b style="color:var(--ink)">€18–28K compression</b> on the contracted share.</p>
+          <p><b style="color:var(--ink)">Action implications:</b> 2 below-floor quotes open (200832-E for 101580; 211094-C for 101900). 1 SKU in active A/B test (<b style="color:var(--ink)">205418-A</b> · day 9 of 21 · trending positive).</p>
+          <p style="font-style:italic;color:var(--muted);margin-top:14px">— Frank · Pricing Analyst · drafted by Pryzm · please review before forwarding to MD.</p>
         </div>
       </div>
 
-      <div class="card card-pad">
-        <div class="between mb-16">
+      <div class="hero-card" style="margin-top:14px" id="sec-forecast-main">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:14px">
           <div class="fc-mode-toggle" id="fcModeToggle">
             <button class="active" data-mode="revenue">Revenue €</button>
             <button data-mode="margin">Margin %</button>
             <button data-mode="volume">Volume (units)</button>
           </div>
-          <button class="info-tip tip center" data-tip="Solid line = primary forecast. Shaded band = conservative–aggressive envelope. Dashed grey = last quarter's forecast (backtest overlay).">i</button>
+          <span class="tag-chip">Walk-forward · solid line = primary · shaded = envelope</span>
         </div>
-
         <div style="height:340px;position:relative"><canvas id="forecastChart"></canvas></div>
 
-        <!-- "What changed since last week" — tightened to one line per row -->
-        <div class="fc-changed">
-          <h5>What changed since last week</h5>
-          <div class="fc-changed-rows">
-            <div class="fc-changed-row">
-              <span class="fcc-ic" style="background:var(--green);width:6px;height:6px;border-radius:50%;margin-top:7px"></span>
-              <div>Band <span class="delta-up">+€8K</span> · driven by <b>102330</b> frame uplift, offset 101900 <span class="tip" data-tip="Customer 102330 added 50% of next-12mo revenue to order book this week (€180K). Offset by 101900 cancellations (−€4K).">ⓘ</span></div>
+        <div class="signal-with-trend" style="margin-top:18px">
+          <div class="signal-pane">
+            <div class="ttl">What changed since last week <span class="ttl-sub">— top 3 movers</span></div>
+            <div class="fact-list">
+              <div class="fact-row"><div class="fact-l">Band</div><div class="fact-mid"><div class="fact-v green">+€8K WoW</div><div class="fact-s">Driven by <b>102330</b> frame uplift, offset by 101900 cancellations</div></div></div>
+              <div class="fact-row"><div class="fact-l">Steel PPI</div><div class="fact-mid"><div class="fact-v red">+1.2pp WoW</div><div class="fact-s">Trajectory steepening (was +5.2% → now +6.8% by Q3)</div></div></div>
+              <div class="fact-row"><div class="fact-l">101900 conf.</div><div class="fact-mid"><div class="fact-v amber">High → Medium</div><div class="fact-s">2 customers re-tiered</div></div></div>
             </div>
-            <div class="fc-changed-row">
-              <span class="fcc-ic" style="background:var(--red);width:6px;height:6px;border-radius:50%;margin-top:7px"></span>
-              <div>Steel PPI <span class="delta-down">+1.2pp WoW</span> · trajectory steepening (was +5.2% → now +6.8% by Q3)</div>
+          </div>
+          <div class="trend-pane">
+            <div class="lab">Movable / Locked</div>
+            <div class="v">62% / 38%</div>
+            <div style="display:flex;height:6px;border-radius:4px;overflow:hidden;margin-top:10px;background:var(--surface-soft)">
+              <div style="flex:0 0 62%;background:var(--rose)"></div>
+              <div style="flex:1;background:var(--ink-3);opacity:.35"></div>
             </div>
-            <div class="fc-changed-row">
-              <span class="fcc-ic" style="background:var(--amber);width:6px;height:6px;border-radius:50%;margin-top:7px"></span>
-              <div><b>101900</b> confidence: High → Medium · 2 customers re-tiered</div>
-            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.4">€3.88M movable · €2.37M locked (multi-year contracts absorb cost shock)</div>
           </div>
         </div>
 
-        <!-- Movable vs locked overlay (Frank · pricing leverage on contracted share) -->
-        <div class="frank-split-toggle" onclick="this.classList.toggle('on');document.getElementById('frankSplitBar').classList.toggle('show')">
-          <span class="fst-box"></span>
-          <span>Show movable vs locked split  ·  Movable <b>€3.88M (62%)</b> · Locked <b>€2.37M (38%, multi-year contracts)</b></span>
-        </div>
-        <div class="frank-split-bar" id="frankSplitBar">
-          <div class="fsb-track">
-            <div class="fsb-mov" style="width:62%">Movable €3.88M · 62%</div>
-            <div class="fsb-loc" style="width:38%">Locked €2.37M · 38%</div>
-          </div>
-          <div class="fsb-cap">Locked revenue absorbs cost shock without margin response — pricing leverage sits in the movable share.</div>
-        </div>
-
-        <!-- Seasonality annotations · why the band moves (compact) -->
-        <div class="seasonality-strip">
-          <div class="row" style="justify-content:space-between;align-items:center;gap:10px">
-            <div class="section-title" style="margin:0">Why the band moves <button class="info-tip tip center" data-tip="Each spike or trough is auto-explained against external signals — VDMA reports, customer maintenance calendars, macro indices. 14 sources scanned, refreshed today 06:14.">i</button></div>
-          </div>
-          <div class="ann-grid" style="margin-top:10px">
-            <div class="ann tip" data-tip="Sources: VDMA 2024 capex report · EuroBlech show calendar">
-              <span class="ann-mo">Aug</span>
-              <div><span class="ann-txt"><b>+22%</b> · industrial maintenance cycle peak — top 5 customers restock heavy</span></div>
-            </div>
-            <div class="ann tip" data-tip="Sources: customer maintenance calendars · holiday schedule">
-              <span class="ann-mo">Dec</span>
-              <div><span class="ann-txt"><b>−31%</b> · plant winter shutdowns — orders drop last 3 weeks</span></div>
-            </div>
-            <div class="ann tip" data-tip="Sources: Bundesbank IFO index · Q1 invoice patterns 2023–2025">
-              <span class="ann-mo">Mar</span>
-              <div><span class="ann-txt"><b>+18%</b> · German fiscal-year-end inventory builds (IFO-correlated)</span></div>
-            </div>
+        <div class="lq-card" style="margin-top:14px;padding:18px 20px">
+          <div class="ttl" style="font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:12px">Why the band moves <span style="color:var(--muted);font-weight:500">— seasonality annotations · 14 sources</span></div>
+          <div class="fact-list">
+            <div class="fact-row"><div class="fact-l">Aug</div><div class="fact-mid"><div class="fact-v green">+22%</div><div class="fact-s">Industrial maintenance cycle peak — top 5 customers restock heavy (VDMA / EuroBlech)</div></div></div>
+            <div class="fact-row"><div class="fact-l">Dec</div><div class="fact-mid"><div class="fact-v red">−31%</div><div class="fact-s">Plant winter shutdowns — orders drop last 3 weeks</div></div></div>
+            <div class="fact-row"><div class="fact-l">Mar</div><div class="fact-mid"><div class="fact-v green">+18%</div><div class="fact-s">German fiscal-year-end inventory builds (IFO-correlated)</div></div></div>
           </div>
         </div>
       </div>
@@ -6264,18 +6265,18 @@ function initForecast(){
   charts.forecast = new Chart(c,{
     type:'line',
     data:{labels,datasets:[
-      {label:'Aggressive',data:aggr,borderColor:'rgba(3,147,218,.45)',backgroundColor:'rgba(3,147,218,.14)',fill:'+1',tension:.35,borderWidth:1.5,pointRadius:0,order:3},
-      {label:'Primary forecast',data:primary,borderColor:'#0393da',backgroundColor:'rgba(3,147,218,.2)',fill:'+1',tension:.35,borderWidth:3,pointRadius:4,pointBackgroundColor:'#0393da',order:2},
-      {label:'Conservative',data:cons,borderColor:'rgba(3,147,218,.4)',fill:false,tension:.35,borderWidth:1.5,pointRadius:0,borderDash:[4,4],order:4},
-      {label:'Last quarter\'s forecast (backtest)',data:backtest,borderColor:'rgba(115,115,115,.55)',fill:false,tension:.35,borderWidth:1.5,pointRadius:0,borderDash:[2,3],order:5},
-      ...(state.forecastMode!=='margin' ? [{label:'Already booked (order book)',data:m.booked,borderColor:'#0277b5',backgroundColor:'rgba(2,119,181,.35)',fill:'origin',tension:.25,borderWidth:2,pointRadius:0,order:1}] : [])
+      {label:'Aggressive',data:aggr,borderColor:'rgba(163,90,90,.45)',backgroundColor:'rgba(163,90,90,.10)',fill:'+1',tension:.35,borderWidth:1.5,pointRadius:0,order:3},
+      {label:'Primary forecast',data:primary,borderColor:'#a35a5a',backgroundColor:'rgba(163,90,90,.10)',fill:'+1',tension:.35,borderWidth:3,pointRadius:4,pointBackgroundColor:'#a35a5a',order:2},
+      {label:'Conservative',data:cons,borderColor:'rgba(163,90,90,.4)',fill:false,tension:.35,borderWidth:1.5,pointRadius:0,borderDash:[4,4],order:4},
+      {label:'Last quarter\'s forecast (backtest)',data:backtest,borderColor:'#15140f',fill:false,tension:.35,borderWidth:1.5,pointRadius:0,borderDash:[2,3],order:5},
+      ...(state.forecastMode!=='margin' ? [{label:'Already booked (order book)',data:m.booked,borderColor:'#874646',backgroundColor:'rgba(135,70,70,.20)',fill:'origin',tension:.25,borderWidth:2,pointRadius:0,order:1}] : [])
     ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:14,font:{size:12}}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:14,font:{size:12,family:'Inter'},color:'#56544f'}},
         tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+m.yFmt(ctx.parsed.y)}}},
       scales:{
-        y:{ticks:{callback:m.yFmt,font:{size:11},color:'#737373'},grid:{color:'#f0f0f0'}},
-        x:{ticks:{font:{size:11},color:'#737373'},grid:{display:false}}
+        y:{ticks:{callback:m.yFmt,font:{size:11,family:'Inter'},color:'#56544f'},grid:{color:'rgba(0,0,0,0.05)'}},
+        x:{ticks:{font:{size:11,family:'Inter'},color:'#56544f'},grid:{display:false}}
       }}
   });
   initWalkForwardChart();
@@ -6338,8 +6339,10 @@ const _fcBriefingBtn = document.getElementById('fcBriefingBtn');
 if (_fcBriefingBtn){
   _fcBriefingBtn.addEventListener('click',()=>{
     const memo = document.getElementById('fcBriefing');
-    memo.classList.toggle('show');
-    if (memo.classList.contains('show')) memo.scrollIntoView({behavior:'smooth',block:'center'});
+    if (!memo) return;
+    const isOpen = memo.style.display !== 'none' && memo.style.display !== '';
+    memo.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen) memo.scrollIntoView({behavior:'smooth',block:'center'});
   });
 }
 
