@@ -3611,6 +3611,62 @@ body.pryzm-2026 #screen-quotes .cluster-chip.green{ background:var(--green-bg); 
 body.pryzm-2026 #screen-quotes .cluster-chip.amber{ background:var(--amber-bg); color:var(--amber); }
 body.pryzm-2026 #screen-quotes .cluster-chip.red{ background:var(--rose-bg); color:var(--rose-deep); }
 
+/* ============== AI Briefing scoped (#screen-ai) ============== */
+body.pryzm-2026 #screen-ai .ai-memo{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:24px 28px; margin-top:14px;
+}
+body.pryzm-2026 #screen-ai .ai-memo h3{
+  font-family:'Manrope',sans-serif; font-size:20px; font-weight:700;
+  color:var(--ink); letter-spacing:-0.018em; margin:0 0 6px;
+}
+body.pryzm-2026 #screen-ai .ai-memo .from{
+  font-size:11.5px; color:var(--muted); margin-bottom:18px; padding-bottom:14px;
+  border-bottom:1px solid var(--hairline);
+}
+body.pryzm-2026 #screen-ai .ai-memo p{
+  font-size:14px; color:var(--ink-2); line-height:1.7; margin:0 0 14px;
+}
+body.pryzm-2026 #screen-ai .ai-memo p:last-of-type{ margin-bottom:14px; }
+body.pryzm-2026 #screen-ai .ai-memo .sig{
+  margin-top:14px; padding-top:14px; border-top:1px solid var(--hairline);
+  font-size:12.5px; color:var(--muted); font-style:italic;
+}
+
+body.pryzm-2026 #screen-ai .ai-grid-3{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:14px;
+}
+body.pryzm-2026 #screen-ai .ai-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:18px 20px;
+  display:flex; flex-direction:column; gap:10px;
+}
+body.pryzm-2026 #screen-ai .ai-card-head{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+body.pryzm-2026 #screen-ai .ai-card-title{
+  font-family:'Manrope',sans-serif; font-size:13px; font-weight:700;
+  color:var(--ink); letter-spacing:-0.005em;
+}
+body.pryzm-2026 #screen-ai .ai-card .ai-tag-amber{
+  background:var(--amber-bg); color:var(--amber);
+  padding:3px 9px; border-radius:6px; font-size:11px; font-weight:700;
+}
+body.pryzm-2026 #screen-ai .ai-card ul{
+  margin:0; padding-left:18px; color:var(--ink-2); font-size:13px; line-height:1.8;
+}
+body.pryzm-2026 #screen-ai .ai-card ul li{ margin-bottom:4px; }
+body.pryzm-2026 #screen-ai .ai-card ul li b{ color:var(--ink); }
+body.pryzm-2026 #screen-ai .ai-card .ai-prose{
+  font-size:13px; color:var(--ink-3); line-height:1.6;
+}
+body.pryzm-2026 #screen-ai .ai-card .ai-prose.italic{ font-style:italic; color:var(--muted); }
+body.pryzm-2026 #screen-ai .quotes-xlinks{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:14px 18px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+}
+
 </style>
 </head>
 <body class="pryzm-2026">
@@ -6759,49 +6815,66 @@ body.pryzm-2026 #screen-quotes .cluster-chip.red{ background:var(--rose-bg); col
 
     <!-- ============== AI BRIEFING ============== -->
     <section id="screen-ai" class="screen hidden">
+      <div class="crumbs">
+        <span>Cockpit</span>
+        <span class="sep">/</span>
+        <span>Pricing Analyst · Frank</span>
+        <span class="sep">/</span>
+        <b>AI Briefing</b>
+      </div>
       <div class="page-head">
         <div>
-          <div class="crumbs">AI Briefing · <b>Monday memo</b></div>
           <h1>Monday Briefing</h1>
+          <div class="page-sub">
+            <span class="sub-pill">Pryzm, in the voice of a 10-year senior pricing manager</span>
+            <span class="sub-stat"><b>Generated</b> 06:02 CET</span>
+            <span class="sub-stat"><b>Sources</b> 5,565 invoices · 4,605 quotes</span>
+          </div>
         </div>
-        <div class="row" style="gap:8px">
-          <button class="btn">📨 Forward to MD</button>
-          <button class="btn">⬇ Save as PDF</button>
+        <div class="head-actions">
+          <button class="head-pill" onclick="toast('Briefing forwarded to Till (MD)')">Forward to MD</button>
+          <button class="head-pill" onclick="toast('Branded PDF · Scherzinger corporate design · audit hash attached')">Save as PDF</button>
+          <button class="btn-primary-rose" onclick="toast('Briefing emailed to Frank + cross-functional pricing panel')">Email weekly →</button>
         </div>
       </div>
 
-      <div class="memo">
+      <div class="ai-memo">
         <h3>Monday Briefing — Pricing Manager — Week of Apr 27, 2026</h3>
         <div class="from">From: Pryzm · To: M. Weber · Generated 06:02 CET · Sources: 5,565 invoices, 4,605 quotes</div>
-
-        <p>Margin gap on DB2 deals widened 0.4pp last week, driven primarily by the BKAGG region — three deals were priced 6–9% below guardrail. Recommend immediate review of BKAGG quote pipeline before Friday: sales team has 4 open quotes that will compound the gap if approved at current levels.</p>
-
-        <p>The biggest open opportunity remains Article 200832-E. Same article was sold to Customer 102330 at €6.80 vs Customer 101580 at €4.10 — same volume tier, same month. €18,600/year recoverable if 101580 pricing is aligned to the peer benchmark.</p>
-
+        <p>Margin gap on DB2 deals widened <b>0.4pp</b> last week, driven primarily by the BKAGG region — three deals were priced 6–9% below guardrail. Recommend immediate review of BKAGG quote pipeline before Friday: sales team has 4 open quotes that will compound the gap if approved at current levels.</p>
+        <p>The biggest open opportunity remains <b>Article 200832-E</b>. Same article was sold to Customer 102330 at <b>€6.80</b> vs Customer 101580 at <b>€4.10</b> — same volume tier, same month. <b>€18,600/year recoverable</b> if 101580 pricing is aligned to the peer benchmark.</p>
         <p>Next week, watch the Customer 101580 churn signal. Order frequency is down 40% and the retention offer hasn't been sent yet. If frequency doesn't recover by end of week 18, treat as confirmed churn and reroute to account management.</p>
-
         <div class="sig">— Pryzm, in the voice of a 10-year senior pricing manager</div>
       </div>
 
-      <div class="grid-3 mt-24">
-        <div class="card card-pad">
-          <div class="section-title">What changed this week</div>
-          <ul style="margin:8px 0 0;padding-left:18px;color:var(--ink-2);font-size:13.5px;line-height:1.8">
+      <div class="ai-grid-3">
+        <div class="ai-card">
+          <div class="ai-card-head"><div class="ai-card-title">What changed this week</div></div>
+          <ul>
             <li>Margin gap on DB2 deals: <b style="color:var(--red)">+0.4pp</b> (worsening)</li>
             <li>3 BKAGG deals breached guardrail</li>
             <li>Article 200832-E discrepancy first detected</li>
           </ul>
         </div>
-        <div class="card card-pad">
-          <div class="row" style="justify-content:space-between">
-            <div class="section-title">Self-correction notes</div>
-            <span class="tag amber">Pryzm flagged itself</span>
+        <div class="ai-card">
+          <div class="ai-card-head">
+            <div class="ai-card-title">Self-correction notes</div>
+            <span class="ai-tag-amber">Pryzm flagged itself</span>
           </div>
-          <p class="muted" style="font-size:13.2px;line-height:1.6;margin-top:10px">Recommendation #128 (raise Article 220011-A by 8%) backfired — Customer 101900 reduced order volume by 22%. Suggested rollback to original price. Investigation ongoing.</p>
+          <p class="ai-prose">Recommendation #128 (raise Article 220011-A by 8%) backfired — Customer 101900 reduced order volume by 22%. Suggested rollback to original price. Investigation ongoing.</p>
         </div>
-        <div class="card card-pad">
-          <div class="section-title">Voice &amp; framing</div>
-          <p class="muted" style="font-size:13.2px;line-height:1.6;margin-top:10px;font-style:italic">"This briefing is generated from your data, in the voice of a 10-year senior pricing manager. Replaces the previous AI Insights page."</p>
+        <div class="ai-card">
+          <div class="ai-card-head"><div class="ai-card-title">Voice &amp; framing</div></div>
+          <p class="ai-prose italic">"This briefing is generated from your data, in the voice of a 10-year senior pricing manager. Replaces the previous AI Insights page."</p>
+        </div>
+      </div>
+
+      <div class="quotes-xlinks" style="margin-top:14px">
+        <span class="ftxt" style="font-size:12px;color:var(--muted);font-weight:600">Cross-links →</span>
+        <div class="links" style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="head-pill" onclick="setScreen('action')">Action queue · Action Center</button>
+          <button class="head-pill" onclick="setScreen('margin')">Margin trajectory · Margin Intelligence</button>
+          <button class="head-pill" onclick="setScreen('forecast')">Forecast · 12-mo band</button>
         </div>
       </div>
     </section>
