@@ -3250,6 +3250,91 @@ body.pryzm-2026 #screen-margin .margin-xlinks{
 body.pryzm-2026 #screen-margin .margin-xlinks .ftxt{ font-size:12px; color:var(--muted); font-weight:600; }
 body.pryzm-2026 #screen-margin .margin-xlinks .links{ display:flex; gap:6px; flex-wrap:wrap; }
 
+/* === Quotes & Guardrails Q1 === */
+body.pryzm-2026 #screen-quotes .qg-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:18px 20px; margin-top:14px;
+}
+
+body.pryzm-2026 #screen-quotes .qg-briefing{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:18px 20px; margin-top:14px;
+  display:none;
+}
+body.pryzm-2026 #screen-quotes .qg-briefing.show{ display:block; }
+body.pryzm-2026 #screen-quotes .qg-briefing .fc-briefing-head{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding-bottom:12px; border-bottom:1px solid var(--hairline); margin-bottom:14px;
+}
+body.pryzm-2026 #screen-quotes .qg-briefing .fcb-title{
+  font-family:'Manrope',sans-serif; font-size:13px; font-weight:700; color:var(--ink);
+  margin-right:auto;
+}
+body.pryzm-2026 #screen-quotes .qg-briefing .btn{
+  background:var(--surface-soft); border:1px solid var(--hairline); border-radius:8px;
+  padding:6px 12px; font-size:11.5px; color:var(--ink-2); font-weight:500; cursor:pointer;
+}
+body.pryzm-2026 #screen-quotes .qg-briefing .btn.ghost{ background:none; border:none; color:var(--muted); }
+body.pryzm-2026 #screen-quotes .qg-briefing .fc-briefing-body{
+  font-family:'Inter',sans-serif; font-size:13px; color:var(--ink-3); line-height:1.7;
+}
+body.pryzm-2026 #screen-quotes .qg-briefing .fc-briefing-body p{ margin:0 0 10px; }
+body.pryzm-2026 #screen-quotes .qg-briefing .fc-briefing-body p:last-child{ margin-bottom:0; }
+body.pryzm-2026 #screen-quotes .qg-briefing .fc-briefing-body b{ color:var(--ink); font-weight:600; }
+body.pryzm-2026 #screen-quotes .qg-briefing .fc-briefing-body p.sig{
+  margin-top:14px; padding-top:10px; border-top:1px solid var(--hairline);
+  font-style:italic; color:var(--muted);
+}
+
+body.pryzm-2026 #screen-quotes .qg-pipeline-strip{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:14px;
+}
+body.pryzm-2026 #screen-quotes .qg-counter{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:16px 18px;
+  display:flex; flex-direction:column; gap:6px;
+}
+body.pryzm-2026 #screen-quotes .qg-counter.warn{ border-color:rgba(165,112,31,.3); background:linear-gradient(135deg,var(--surface) 0%,var(--amber-bg) 200%); }
+body.pryzm-2026 #screen-quotes .qg-counter.alert{ border-color:rgba(154,50,50,.3); background:linear-gradient(135deg,var(--surface) 0%,var(--rose-bg) 200%); }
+body.pryzm-2026 #screen-quotes .qc-lab{ font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
+body.pryzm-2026 #screen-quotes .qc-val{
+  font-family:'Manrope',sans-serif; font-size:30px; font-weight:700;
+  color:var(--ink); letter-spacing:-0.025em; line-height:1.05; margin:4px 0;
+  font-variant-numeric:tabular-nums;
+}
+body.pryzm-2026 #screen-quotes .qc-sub{ font-size:11.5px; color:var(--muted); line-height:1.4; }
+body.pryzm-2026 #screen-quotes .qc-mini{
+  display:flex; gap:8px; flex-wrap:wrap; font-size:10.5px; font-weight:700;
+}
+body.pryzm-2026 #screen-quotes .qc-mini .rm{ color:var(--red); }
+body.pryzm-2026 #screen-quotes .qc-mini .am{ color:var(--amber); }
+body.pryzm-2026 #screen-quotes .qc-mini .gm{ color:var(--green); }
+body.pryzm-2026 #screen-quotes .qg-counter.live-counter{ position:relative; }
+body.pryzm-2026 #screen-quotes .qg-counter.live-counter::after{
+  content:""; position:absolute; top:14px; right:14px; width:8px; height:8px; border-radius:50%;
+  background:var(--red); box-shadow:0 0 0 4px rgba(154,50,50,.18);
+  animation:pulse-dot 1.6s ease-in-out infinite;
+}
+@keyframes pulse-dot{ 50%{ opacity:.5; } }
+
+body.pryzm-2026 #screen-quotes .qg-changed{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:18px 20px; margin-top:14px;
+}
+body.pryzm-2026 #screen-quotes .qg-changed h5{
+  font-family:'Manrope',sans-serif; font-size:14px; font-weight:700; color:var(--ink);
+  letter-spacing:-0.005em; margin:0 0 12px;
+}
+body.pryzm-2026 #screen-quotes .qg-changed-rows{ display:flex; flex-direction:column; gap:0; }
+body.pryzm-2026 #screen-quotes .qg-changed-row{
+  display:grid; grid-template-columns:8px 1fr; gap:12px; align-items:start;
+  padding:10px 0; border-top:1px solid var(--hairline);
+  font-size:12.5px; color:var(--ink-3); line-height:1.5;
+}
+body.pryzm-2026 #screen-quotes .qg-changed-row:first-child{ border-top:none; }
+body.pryzm-2026 #screen-quotes .qd-dot{ width:8px; height:8px; border-radius:50%; margin-top:7px; }
+body.pryzm-2026 #screen-quotes .qd-num{ font-family:'Manrope',sans-serif; font-weight:700; color:var(--ink); margin-right:4px; }
+
 </style>
 </head>
 <body class="pryzm-2026">
@@ -5597,20 +5682,28 @@ body.pryzm-2026 #screen-margin .margin-xlinks .links{ display:flex; gap:6px; fle
 
     <!-- ============== QUOTES & GUARDRAILS ============== -->
     <section id="screen-quotes" class="screen hidden">
+      <div class="crumbs">
+        <span>Cockpit</span>
+        <span class="sep">/</span>
+        <span>Pricing Analyst · Frank</span>
+        <span class="sep">/</span>
+        <b>Quotes &amp; Guardrails</b>
+      </div>
       <div class="page-head">
         <div>
-          <div class="crumbs">Quotes &amp; Guardrails</div>
           <h1>Quotes &amp; Guardrails</h1>
-          <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">
-            <span class="status-chip live">Re-evaluates every 2 min</span>
-            <span class="status-chip">Routed Mon 06:00</span>
+          <div class="page-sub">
+            <span class="sub-pill">Re-evaluates every 2 min</span>
+            <span class="sub-stat"><b>Routed</b> Mon 06:00</span>
+            <span class="sub-stat"><b>47</b> active quotes</span>
+            <span class="sub-stat"><b>4</b> need approval today</span>
           </div>
         </div>
-        <div class="row" style="gap:6px;flex-wrap:wrap">
-          <button class="filter-chip">Week 18 ▾</button>
-          <button class="filter-chip">All sales reps ▾</button>
-          <button class="btn primary" id="qgBriefingBtn">📋 Generate quote-decision briefing</button>
-          <button class="btn">⬇ Export</button>
+        <div class="head-actions">
+          <button class="head-pill">Week 18 ▾</button>
+          <button class="head-pill">All sales reps ▾</button>
+          <button class="btn-primary-rose" id="qgBriefingBtn">Generate quote-decision briefing →</button>
+          <button class="head-pill">Export</button>
         </div>
       </div>
 
@@ -5618,9 +5711,9 @@ body.pryzm-2026 #screen-margin .margin-xlinks .links{ display:flex; gap:6px; fle
       <div class="qg-briefing" id="qgBriefing">
         <div class="fc-briefing-head">
           <span class="fcb-title">Quote-decision briefing · auto-drafted, editable</span>
-          <button class="btn" onclick="toast('Briefing copied to clipboard')">📋 Copy</button>
-          <button class="btn" onclick="toast('Briefing emailed to MD + Sales lead')">✉ Email</button>
-          <button class="btn" onclick="toast('Briefing exported as PDF')">⬇ PDF</button>
+          <button class="btn" onclick="toast('Briefing copied to clipboard')">Copy</button>
+          <button class="btn" onclick="toast('Briefing emailed to MD + Sales lead')">Email</button>
+          <button class="btn" onclick="toast('Briefing exported as PDF')">PDF</button>
           <button class="btn ghost" onclick="document.getElementById('qgBriefing').classList.remove('show')">× Close</button>
         </div>
         <div class="fc-briefing-body" contenteditable="true">
@@ -5670,7 +5763,7 @@ body.pryzm-2026 #screen-margin .margin-xlinks .links{ display:flex; gap:6px; fle
             <div><span class="qd-num">2</span> escalations resolved · <b>€7,400</b> margin recovered</div>
           </div>
           <div class="qg-changed-row">
-            <span class="qd-dot" style="background:var(--primary)"></span>
+            <span class="qd-dot" style="background:var(--green)"></span>
             <div><span class="qd-num">11</span> green quotes auto-approved · <b>€186K</b> sent to sales</div>
           </div>
           <div class="qg-changed-row">
