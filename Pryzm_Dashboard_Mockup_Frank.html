@@ -2880,6 +2880,141 @@ body.pryzm-2026 #screen-studio .studio-xlinks{
 body.pryzm-2026 #screen-studio .studio-xlinks .ftxt{ font-size:12px; color:var(--muted); font-weight:600; }
 body.pryzm-2026 #screen-studio .studio-xlinks .links{ display:flex; gap:6px; flex-wrap:wrap; }
 
+/* ==================== MARGIN INTELLIGENCE (M1) ==================== */
+body.pryzm-2026 #screen-margin .mh-strip{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:14px;
+}
+body.pryzm-2026 #screen-margin .mh-cell{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:16px 18px;
+  display:flex; flex-direction:column; gap:6px; min-width:0;
+  transition:border-color .2s, box-shadow .2s, transform .2s;
+}
+body.pryzm-2026 #screen-margin .mh-cell.clickable{ cursor:pointer; }
+body.pryzm-2026 #screen-margin .mh-cell.clickable:hover{ border-color:var(--border-strong); box-shadow:var(--shadow-pop); transform:translateY(-1px); }
+body.pryzm-2026 #screen-margin .mh-lab{ font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
+body.pryzm-2026 #screen-margin .mh-val{
+  font-family:'Manrope',sans-serif; font-size:26px; font-weight:700;
+  color:var(--ink); letter-spacing:-0.025em; line-height:1.05; margin:4px 0;
+  font-variant-numeric:tabular-nums;
+}
+body.pryzm-2026 #screen-margin .mh-trend{ font-size:12px; color:var(--red); margin-left:8px; font-weight:700; }
+body.pryzm-2026 #screen-margin .mh-sub{ font-size:11.5px; color:var(--muted); line-height:1.4; }
+body.pryzm-2026 #screen-margin .mh-benchmark{ font-size:11px; color:var(--ink-3); margin-top:6px; padding-top:6px; border-top:1px solid var(--hairline); }
+body.pryzm-2026 #screen-margin .mh-benchmark b{ color:var(--ink); }
+body.pryzm-2026 #screen-margin .mh-score-ring{
+  width:56px; height:56px; border-radius:50%; flex:none;
+  background:conic-gradient(var(--amber) 273deg, var(--surface-sunken) 0);
+  display:grid; place-items:center; font-family:'Manrope',sans-serif; font-size:18px; font-weight:700;
+  color:var(--ink); position:relative; margin-right:12px; isolation:isolate;
+}
+body.pryzm-2026 #screen-margin .mh-score-ring::before{
+  content:""; position:absolute; inset:5px; background:var(--surface); border-radius:50%; z-index:0;
+}
+body.pryzm-2026 #screen-margin .mh-score-ring > *{ position:relative; z-index:1; }
+body.pryzm-2026 #screen-margin .mh-auth-split{
+  display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;
+  font-size:10.5px; color:var(--muted); font-weight:600;
+}
+body.pryzm-2026 #screen-margin .mh-auth-split .ms-yours{ background:var(--green-bg); color:var(--green); padding:2px 6px; border-radius:5px; }
+body.pryzm-2026 #screen-margin .mh-auth-split .ms-md{ background:var(--rose-bg); color:var(--rose-deep); padding:2px 6px; border-radius:5px; }
+
+body.pryzm-2026 #screen-margin .cluster-mini-row{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:10px 14px; margin-top:14px;
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+}
+body.pryzm-2026 #screen-margin .cluster-mini-row .cm-lab{
+  font-size:10.5px; color:var(--ink-3); font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+}
+body.pryzm-2026 #screen-margin .cluster-mini-row .cm-source{
+  font-size:11px; color:var(--muted); margin-left:auto;
+}
+body.pryzm-2026 #screen-margin .cluster-mini-row .cm-source code{
+  font-family:ui-monospace,'SF Mono',monospace; font-size:10.5px;
+  background:var(--surface-soft); color:var(--rose-deep); padding:1px 5px; border-radius:4px;
+}
+body.pryzm-2026 #screen-margin .cm-chip{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:5px 10px; border-radius:7px; font-size:11.5px; font-weight:600;
+  border:1px solid var(--border); background:var(--surface);
+  color:var(--ink-2); cursor:pointer;
+  transition:background .15s, border-color .15s;
+}
+body.pryzm-2026 #screen-margin .cm-chip:hover{ background:#fafaf7; border-color:var(--border-strong); }
+body.pryzm-2026 #screen-margin .cm-chip b{ color:var(--ink); font-weight:700; }
+body.pryzm-2026 #screen-margin .cm-chip.green{ background:var(--green-bg); border-color:var(--green-bg); color:var(--green); }
+body.pryzm-2026 #screen-margin .cm-chip.amber{ background:var(--amber-bg); border-color:var(--amber-bg); color:var(--amber); }
+body.pryzm-2026 #screen-margin .cm-chip.red{ background:var(--rose-bg); border-color:var(--rose-bg); color:var(--rose-deep); }
+body.pryzm-2026 #screen-margin .cm-chip.green b, body.pryzm-2026 #screen-margin .cm-chip.amber b, body.pryzm-2026 #screen-margin .cm-chip.red b{ color:inherit; }
+
+body.pryzm-2026 #screen-margin .ms-shifted{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:18px 20px; margin-top:14px;
+}
+body.pryzm-2026 #screen-margin .ms-shifted h5{
+  font-family:'Manrope',sans-serif; font-size:14px; font-weight:700; color:var(--ink);
+  letter-spacing:-0.005em; margin:0 0 12px;
+}
+body.pryzm-2026 #screen-margin .ms-shifted-rows{ display:flex; flex-direction:column; gap:0; }
+body.pryzm-2026 #screen-margin .ms-shifted-row{
+  display:grid; grid-template-columns:8px 1fr; gap:12px; align-items:start;
+  padding:10px 0; border-top:1px solid var(--hairline); font-size:12.5px; color:var(--ink-3); line-height:1.5;
+  cursor:pointer; transition:background .15s;
+}
+body.pryzm-2026 #screen-margin .ms-shifted-row:first-child{ border-top:none; }
+body.pryzm-2026 #screen-margin .ms-shifted-row:hover{ background:var(--surface-soft); border-radius:6px; padding-left:6px; padding-right:6px; }
+body.pryzm-2026 #screen-margin .ms-dot{
+  width:8px; height:8px; border-radius:50%; margin-top:7px;
+}
+body.pryzm-2026 #screen-margin .ms-d-up{ color:var(--red); font-weight:700; }
+body.pryzm-2026 #screen-margin .ms-d-down{ color:var(--green); font-weight:700; }
+body.pryzm-2026 #screen-margin .ms-d-flat{ color:var(--ink-3); font-weight:600; }
+body.pryzm-2026 #screen-margin .ms-jump{
+  font-size:11px; color:var(--rose-deep); font-weight:600; margin-left:8px;
+}
+body.pryzm-2026 #screen-margin .ms-shifted-net{
+  margin-top:14px; padding-top:12px; border-top:1px solid var(--hairline);
+  font-size:12px; color:var(--muted);
+}
+body.pryzm-2026 #screen-margin .ms-shifted-net b{ color:var(--red); }
+
+/* Margin briefing memo (mirror forecast briefing) */
+body.pryzm-2026 #screen-margin .mi-briefing{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:18px 20px; margin-top:14px;
+  display:none;
+}
+body.pryzm-2026 #screen-margin .mi-briefing.show{ display:block; }
+body.pryzm-2026 #screen-margin .mi-briefing .fc-briefing-head{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding-bottom:12px; border-bottom:1px solid var(--hairline); margin-bottom:14px;
+}
+body.pryzm-2026 #screen-margin .mi-briefing .fcb-title{
+  font-family:'Manrope',sans-serif; font-size:13px; font-weight:700; color:var(--ink);
+  margin-right:auto;
+}
+body.pryzm-2026 #screen-margin .mi-briefing .btn{
+  background:var(--surface-soft); border:1px solid var(--hairline); border-radius:8px;
+  padding:6px 12px; font-size:11.5px; color:var(--ink-2); font-weight:500; cursor:pointer;
+}
+body.pryzm-2026 #screen-margin .mi-briefing .btn:hover{ background:var(--surface-sunken); }
+body.pryzm-2026 #screen-margin .mi-briefing .btn.ghost{ background:none; border:none; color:var(--muted); }
+body.pryzm-2026 #screen-margin .mi-briefing .fc-briefing-body{
+  font-family:'Inter',sans-serif; font-size:13px; color:var(--ink-3); line-height:1.7;
+}
+body.pryzm-2026 #screen-margin .mi-briefing .fc-briefing-body p{ margin:0 0 10px; }
+body.pryzm-2026 #screen-margin .mi-briefing .fc-briefing-body p:last-child{ margin-bottom:0; }
+body.pryzm-2026 #screen-margin .mi-briefing .fc-briefing-body b{ color:var(--ink); font-weight:600; }
+body.pryzm-2026 #screen-margin .mi-briefing .fc-briefing-body code{
+  font-family:ui-monospace,'SF Mono',monospace; font-size:11.5px;
+  background:var(--surface-soft); color:var(--rose-deep); padding:1px 5px; border-radius:4px;
+}
+body.pryzm-2026 #screen-margin .mi-briefing .fc-briefing-body p.sig{
+  margin-top:14px; padding-top:10px; border-top:1px solid var(--hairline);
+  font-style:italic; color:var(--muted);
+}
+
 </style>
 </head>
 <body class="pryzm-2026">
@@ -4702,23 +4837,31 @@ body.pryzm-2026 #screen-studio .studio-xlinks .links{ display:flex; gap:6px; fle
 
     <!-- ============== MARGIN INTELLIGENCE ============== -->
     <section id="screen-margin" class="screen hidden">
+      <div class="crumbs">
+        <span>Cockpit</span>
+        <span class="sep">/</span>
+        <span>Pricing Analyst · Frank</span>
+        <span class="sep">/</span>
+        <b>Margin Intelligence</b>
+      </div>
       <div class="page-head">
         <div>
-          <div class="crumbs">Margin Intelligence · <b>Predictive Portfolio Pricing</b> · Diagnostics</div>
           <h1>Margin Intelligence</h1>
-          <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">
-            <span class="status-chip live">LTM · refreshed today</span>
-            <span class="status-chip">5,565 invoices · 4,605 quotes</span>
-            <span class="status-chip" style="background:#ede9fe;color:#6d28d9">Audit-ready · all changes hash-signed</span>
+          <div class="page-sub">
+            <span class="sub-pill">Predictive Portfolio Pricing</span>
+            <span class="sub-pill">Diagnostics</span>
+            <span class="sub-stat"><b>LTM</b> · refreshed today</span>
+            <span class="sub-stat"><b>5,565</b> invoices · <b>4,605</b> quotes</span>
+            <span class="sub-stat" style="background:var(--violet-bg);color:var(--violet)">Audit-ready · hash-signed</span>
           </div>
         </div>
-        <div class="row" style="gap:6px;flex-wrap:wrap">
-          <button class="filter-chip">Cluster lens · All ▾</button>
-          <button class="filter-chip">Family · All ▾</button>
-          <button class="filter-chip">Tier · All ▾</button>
-          <button class="btn primary" id="miBriefingBtn">📋 Generate margin briefing</button>
-          <button class="btn" onclick="toast('Branded PDF · Scherzinger corporate design · audit hash attached')">📄 Branded PDF</button>
-          <button class="btn">⬇ Export to deck</button>
+        <div class="head-actions">
+          <button class="head-pill">Cluster · All ▾</button>
+          <button class="head-pill">Family · All ▾</button>
+          <button class="head-pill">Tier · All ▾</button>
+          <button class="btn-primary-rose" id="miBriefingBtn">Generate margin briefing →</button>
+          <button class="head-pill" onclick="toast('Branded PDF · Scherzinger corporate design · audit hash attached')">Branded PDF</button>
+          <button class="head-pill">Export to deck</button>
         </div>
       </div>
 
@@ -4726,9 +4869,9 @@ body.pryzm-2026 #screen-studio .studio-xlinks .links{ display:flex; gap:6px; fle
       <div class="mi-briefing" id="miBriefing">
         <div class="fc-briefing-head">
           <span class="fcb-title">Margin briefing · auto-drafted, editable · audit-ready</span>
-          <button class="btn" onclick="toast('Briefing copied to clipboard')">📋 Copy</button>
-          <button class="btn" onclick="toast('Briefing emailed to Till (MD)')">✉ Email to Till</button>
-          <button class="btn" onclick="toast('Branded PDF · Scherzinger corporate design · hash signed')">⬇ Branded PDF</button>
+          <button class="btn" onclick="toast('Briefing copied to clipboard')">Copy</button>
+          <button class="btn" onclick="toast('Briefing emailed to Till (MD)')">Email to Till</button>
+          <button class="btn" onclick="toast('Branded PDF · Scherzinger corporate design · hash signed')">Branded PDF</button>
           <button class="btn ghost" onclick="document.getElementById('miBriefing').classList.remove('show')">× Close</button>
         </div>
         <div class="fc-briefing-body" contenteditable="true">
@@ -4740,18 +4883,18 @@ body.pryzm-2026 #screen-studio .studio-xlinks .links{ display:flex; gap:6px; fle
           <p><b>Lost-quote margin differential:</b> Won quotes carried <b>70.6%</b> margin vs <b>72.4%</b> on lost (diff <b>+1.8pp</b>, p=0.006, n=1,313). The lost-quote margin is <b>higher</b> than won — we lose disproportionately on the high-margin end. Different problem from the leakage waterfall, different fix (qualification/negotiation, not pass-through). Shared with Heiko in Deal Empowerment.</p>
           <p><b>What shifted vs last month:</b> Cost-not-passed-through <b style="color:var(--red)">+€18K</b> (steel +1.6pp WoW), Discounting <b>flat</b>, Cross-customer-spread <b style="color:var(--green)">−€4K</b> (one fix shipped after 21-day A/B confirmed +2.4pp lift, p=0.018). <b>Net −€14K worse.</b></p>
           <p><b>Recovery via Pryzm:</b> €147K captured YTD across 38 implemented actions — all hash-signed, 12 went through A/B tracker before broad rollout. Closable gap in the pipeline: <b>€280K</b> (€180K within my authority · €100K needs Till's sign-off).</p>
-          <p class="sig">— <b>Frank</b>, Pricing Analyst / Head of Controlling · drafted by Pryzm · audit hash <code style="font-size:10.5px">m4r9bx</code> · please review before forwarding to Till.</p>
+          <p class="sig">— <b>Frank</b>, Pricing Analyst / Head of Controlling · drafted by Pryzm · audit hash <code>m4r9bx</code> · please review before forwarding to Till.</p>
         </div>
       </div>
 
       <!-- Margin Health summary strip -->
-      <div class="margin-health">
+      <div class="mh-strip">
         <div class="mh-cell">
           <div class="mh-lab">Margin health score</div>
-          <div style="display:flex;align-items:center">
-            <div class="mh-score-ring">76</div>
+          <div style="display:flex;align-items:center;margin-top:4px">
+            <div class="mh-score-ring"><span>76</span></div>
             <div>
-              <div class="mh-val" style="font-size:22px">Watch</div>
+              <div class="mh-val" style="font-size:20px;color:var(--amber);margin:0">Watch</div>
               <div class="mh-sub">−4 vs last month · 3.9pp gap to plan</div>
             </div>
           </div>
@@ -4764,53 +4907,52 @@ body.pryzm-2026 #screen-studio .studio-xlinks .links{ display:flex; gap:6px; fle
         </div>
         <div class="mh-cell">
           <div class="mh-lab">€ below plan YTD</div>
-          <div class="mh-val" style="color:#fca5a5">−€187,000</div>
+          <div class="mh-val" style="color:var(--red)">−€187,000</div>
           <div class="mh-sub">across 5,565 invoices · 4 product families</div>
         </div>
         <div class="mh-cell clickable" onclick="setScreen('action');toast('Opening Action Center · 24 open recommendations')">
           <div class="mh-lab">Closable gap (in pipeline)</div>
-          <div class="mh-val" style="color:#86efac">€280,000</div>
+          <div class="mh-val" style="color:var(--green)">€280,000</div>
           <div class="mh-sub">via 24 open Pryzm actions</div>
           <div class="mh-auth-split">
             <span class="ms-yours">€180K your authority</span>
-            <span class="sep">·</span>
             <span class="ms-md">€100K needs MD</span>
           </div>
         </div>
       </div>
 
       <!-- Cluster mini-row · Frank's heterogeneous-portfolio lens -->
-      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px">
-        <span style="font-size:11px;color:#475569;font-weight:700;letter-spacing:.04em;text-transform:uppercase">Margin by cluster →</span>
-        <button class="filter-chip" onclick="toast('Filtering Margin Intelligence to BKAES (627 SKUs)')" style="background:#ecfdf5;color:#047857;border-color:#a7f3d0">BKAES <b>25%</b> · target 28% · conf <b>82%</b></button>
-        <button class="filter-chip" onclick="toast('Filtering Margin Intelligence to BKAGG (370 SKUs)')" style="background:#fef3c7;color:#b45309;border-color:#fde68a">BKAGG <b>21%</b> · target 26% · conf <b>74%</b></button>
-        <button class="filter-chip" onclick="toast('Filtering Margin Intelligence to BKAIZ (13 SKUs)')" style="background:#fef3c7;color:#b45309;border-color:#fde68a">BKAIZ <b>18%</b> · target 26% · conf <b>64%</b></button>
-        <button class="filter-chip" onclick="toast('SOPU is low-n (n=6) — manual review required, do not auto-act')" style="background:#fee2e2;color:#b91c1c;border-color:#fecaca">SOPU <b>14%</b> · target 25% · conf <b>38%</b> ⚠ low-n</button>
-        <span style="font-size:11px;color:#64748b;margin-left:auto">Source · <code>products_detail.commodity_scorecard</code></span>
+      <div class="cluster-mini-row">
+        <span class="cm-lab">Margin by cluster →</span>
+        <button class="cm-chip green" onclick="toast('Filtering Margin Intelligence to BKAES (627 SKUs)')">BKAES <b>25%</b> · target 28% · conf <b>82%</b></button>
+        <button class="cm-chip amber" onclick="toast('Filtering Margin Intelligence to BKAGG (370 SKUs)')">BKAGG <b>21%</b> · target 26% · conf <b>74%</b></button>
+        <button class="cm-chip amber" onclick="toast('Filtering Margin Intelligence to BKAIZ (13 SKUs)')">BKAIZ <b>18%</b> · target 26% · conf <b>64%</b></button>
+        <button class="cm-chip red" onclick="toast('SOPU is low-n (n=6) — manual review required, do not auto-act')">SOPU <b>14%</b> · target 25% · conf <b>38%</b> ⚠ low-n</button>
+        <span class="cm-source">Source · <code>products_detail.commodity_scorecard</code></span>
       </div>
 
       <!-- "What shifted this month" delta strip — rows mirror waterfall click destinations -->
       <div class="ms-shifted">
         <h5>What shifted in the leak vs last month</h5>
         <div class="ms-shifted-rows">
-          <div class="ms-shifted-row clickable" onclick="setScreen('forecast');toast('Drilling into Forecast · Input cost trajectory')">
+          <div class="ms-shifted-row" onclick="setScreen('forecast');toast('Drilling into Forecast · Input cost trajectory')">
             <span class="ms-dot" style="background:var(--red)"></span>
             <div>Cost not passed through <span class="ms-d-up">+€18K</span> · steel +1.6pp WoW · 7 contracts still un-triggered <span class="ms-jump">→ Cost trajectory</span></div>
           </div>
-          <div class="ms-shifted-row clickable" onclick="setScreen('quotes');toast('Drilling into Quotes &amp; Guardrails · By-rep view')">
+          <div class="ms-shifted-row" onclick="setScreen('quotes');toast('Drilling into Quotes &amp; Guardrails · By-rep view')">
             <span class="ms-dot" style="background:var(--muted-2)"></span>
             <div>Discounting <span class="ms-d-flat">flat</span> · 47 breaches across 12 reps · top 3 reps = 78% <span class="ms-jump">→ By-rep</span></div>
           </div>
-          <div class="ms-shifted-row clickable" onclick="document.querySelector('#marginTabs [data-tab=&quot;cross&quot;]').click();document.getElementById('marginTabsBlock').scrollIntoView({behavior:'smooth',block:'start'})">
+          <div class="ms-shifted-row" onclick="document.querySelector('#marginTabs [data-tab=&quot;cross&quot;]').click();document.getElementById('marginTabsBlock').scrollIntoView({behavior:'smooth',block:'start'})">
             <span class="ms-dot" style="background:var(--green)"></span>
-            <div>Cross-customer spread <span class="ms-d-down">−€4K</span> · 1 fix shipped (Article 205418-A · Customer 101582) <span style="font-size:10.5px;color:#6d28d9;font-weight:600">🧪 21-day A/B confirmed +2.4pp lift, p=0.018</span> <span class="ms-jump">→ Cross-customer</span></div>
+            <div>Cross-customer spread <span class="ms-d-down">−€4K</span> · 1 fix shipped (Article 205418-A · Customer 101582) <span style="font-size:10.5px;color:var(--violet);font-weight:600">🧪 21-day A/B confirmed +2.4pp lift, p=0.018</span> <span class="ms-jump">→ Cross-customer</span></div>
           </div>
-          <div class="ms-shifted-row clickable" onclick="document.querySelector('#marginTabs [data-tab=&quot;erode&quot;]').click();document.getElementById('marginTabsBlock').scrollIntoView({behavior:'smooth',block:'start'})">
+          <div class="ms-shifted-row" onclick="document.querySelector('#marginTabs [data-tab=&quot;erode&quot;]').click();document.getElementById('marginTabsBlock').scrollIntoView({behavior:'smooth',block:'start'})">
             <span class="ms-dot" style="background:var(--amber)"></span>
             <div>List-price erosion <span class="ms-d-up">+€2K</span> · 24 SKUs &gt; 9 months stale <span class="ms-jump">→ Erosion</span></div>
           </div>
         </div>
-        <div class="ms-shifted-net">Net month-over-month: <b style="color:var(--red)">−€14K worse</b> · driven by steel pass-through gap.</div>
+        <div class="ms-shifted-net">Net month-over-month: <b>−€14K worse</b> · driven by steel pass-through gap.</div>
       </div>
 
       <!-- Margin Leakage Waterfall (the story) -->
