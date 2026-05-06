@@ -1,56 +1,37 @@
-import { MessageStrip } from '@/components/fiori/MessageStrip';
-import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { useActionCards } from '@/data/api/useActionCards';
-import { fmt } from '@/lib/format';
+import { useActionCenter } from '@/data/api/useActionCenter';
+import { PageHead } from './components/PageHead';
+import { MovableHero } from './components/MovableHero';
+import { BucketGrid } from './components/BucketGrid';
+import { DecisionCards } from './components/DecisionCards';
+import { TrustStrip } from './components/TrustStrip';
+import { LostQuoteCard } from './components/LostQuoteCard';
+import { AbTestList } from './components/AbTestList';
 
 export function ActionCenterPage() {
-  const { data, isLoading, error } = useActionCards();
+  const { data, isLoading, error } = useActionCenter();
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-[1400px] p-8 text-sm text-[var(--muted)]">Lade…</div>
+    );
+  }
+  if (error || !data) {
+    return (
+      <div className="mx-auto max-w-[1400px] p-8 text-sm text-[var(--red)]">
+        Fehler: {(error as Error)?.message ?? 'unbekannt'}
+      </div>
+    );
+  }
 
   return (
-    <div className="mx-auto max-w-7xl p-6">
-      <div className="mb-6 flex items-end justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Aktionszentrale</h1>
-          <p className="text-sm text-gray-600">Frank · {new Date().toLocaleDateString('de-DE')}</p>
-        </div>
-      </div>
-      <MessageStrip severity="info" closable className="mb-4">
-        Phase 0 Foundation — placeholder cards rendered from mock JSON.
-      </MessageStrip>
-      {isLoading && <div className="text-sm text-gray-500">Lade…</div>}
-      {error && <div className="text-sm text-red-600">Fehler: {(error as Error).message}</div>}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {data?.map((card) => (
-          <Card key={card.id}>
-            <CardHeader className="flex items-center justify-between">
-              <CardTitle>{card.title}</CardTitle>
-              <Badge
-                tone={
-                  card.severity === 'error'
-                    ? 'negative'
-                    : card.severity === 'warning'
-                      ? 'warning'
-                      : card.severity === 'success'
-                        ? 'positive'
-                        : 'info'
-                }
-              >
-                {card.type}
-              </Badge>
-            </CardHeader>
-            <CardBody>
-              <p className="text-sm text-gray-600">{card.subtitle}</p>
-              {card.amount !== undefined && (
-                <p className="mt-2 text-lg font-semibold tabular-nums">{fmt.eur(card.amount)}</p>
-              )}
-              {card.recommendedAction && (
-                <p className="mt-2 text-xs text-gray-500">→ {card.recommendedAction}</p>
-              )}
-            </CardBody>
-          </Card>
-        ))}
-      </div>
+    <div className="mx-auto max-w-[1400px] px-8 py-6">
+      <PageHead header={data.header} />
+      <MovableHero hero={data.movableHero} />
+      <BucketGrid buckets={data.buckets} />
+      <DecisionCards decisions={data.decisions} />
+      <TrustStrip tiles={data.trust} />
+      <LostQuoteCard data={data.lostQuote} />
+      <AbTestList tests={data.abTests} />
     </div>
   );
 }

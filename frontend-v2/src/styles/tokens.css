@@ -1,59 +1,43 @@
-/* Pryzm 2026 design tokens — warm gray + rose, Manrope display + Inter body */
+/* Pryzm 2026 — Frank-mockup-aligned tokens */
 @layer base {
   :root {
-    /* Warm gray scale */
-    --color-gray-50: #faf9f7;
-    --color-gray-100: #f3f1ee;
-    --color-gray-200: #e7e3dd;
-    --color-gray-300: #d4cec5;
-    --color-gray-400: #a8a195;
-    --color-gray-500: #7c7468;
-    --color-gray-600: #5b544a;
-    --color-gray-700: #423d36;
-    --color-gray-800: #2b2823;
-    --color-gray-900: #1a1815;
-    --color-gray-950: #0e0d0b;
+    /* Surface */
+    --bg: #f5f5f4;
+    --surface: #ffffff;
+    --surface-soft: #f8fafc;
+    --hairline: #e7e5e4;
+    --border: #e5e7eb;
+    --border-strong: #d6d3d1;
+    --grey-bg: #f5f5f4;
 
-    /* Rose accent */
-    --color-rose-50: #fff1f2;
-    --color-rose-100: #ffe4e6;
-    --color-rose-200: #fecdd3;
-    --color-rose-300: #fda4af;
-    --color-rose-400: #fb7185;
-    --color-rose-500: #e11d48;
-    --color-rose-600: #be123c;
-    --color-rose-700: #9f1239;
-    --color-rose-800: #881337;
-    --color-rose-900: #4c0519;
+    /* Ink (text) */
+    --ink: #0f172a;
+    --ink-2: #404040;
+    --ink-3: #525252;
+    --muted: #737373;
+    --muted-2: #a3a3a3;
+
+    /* Brand */
+    --rose: #e11d48;
+    --rose-deep: #be123c;
+    --rose-soft: #fff1f2;
+    --rose-border: #fecdd3;
+    --primary: #0284c7;
+    --primary-deep: #075985;
 
     /* Semantic */
-    --color-success: #16a34a;
-    --color-success-bg: #f0fdf4;
-    --color-warning: #d97706;
-    --color-warning-bg: #fffbeb;
-    --color-error: #dc2626;
-    --color-error-bg: #fef2f2;
-    --color-info: #2563eb;
-    --color-info-bg: #eff6ff;
-
-    /* Surfaces */
-    --surface-base: var(--color-gray-50);
-    --surface-raised: #ffffff;
-    --surface-sunken: var(--color-gray-100);
-    --surface-overlay: rgba(26, 24, 21, 0.4);
-
-    /* Text */
-    --text-primary: var(--color-gray-900);
-    --text-secondary: var(--color-gray-600);
-    --text-muted: var(--color-gray-500);
-    --text-inverse: var(--color-gray-50);
-
-    /* Borders */
-    --border-subtle: var(--color-gray-200);
-    --border-default: var(--color-gray-300);
-    --border-strong: var(--color-gray-400);
+    --green: #059669;
+    --green-bg: #ecfdf5;
+    --green-border: #a7f3d0;
+    --amber: #d97706;
+    --amber-bg: #fffbeb;
+    --amber-border: #fde68a;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --red-border: #fecaca;
 
     /* Radii */
+    --r: 12px;
     --radius-sm: 4px;
     --radius-md: 6px;
     --radius-lg: 10px;
@@ -61,11 +45,18 @@
     --radius-2xl: 20px;
     --radius-pill: 9999px;
 
-    /* Shadows */
-    --shadow-1: 0 1px 2px rgba(26, 24, 21, 0.06);
-    --shadow-2: 0 2px 8px rgba(26, 24, 21, 0.08);
-    --shadow-3: 0 8px 24px rgba(26, 24, 21, 0.10);
-    --shadow-4: 0 24px 48px rgba(26, 24, 21, 0.16);
+    /* Shadow */
+    --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
+    --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
+    --shadow-1: var(--shadow);
+    --shadow-2: var(--shadow-md);
+    --shadow-3: var(--shadow-lg);
+    --shadow-4: 0 24px 48px rgba(15, 23, 42, 0.16);
+    --surface-overlay: rgba(15, 23, 42, 0.4);
+    --border-subtle: var(--hairline);
+    --text-primary: var(--ink);
+    --text-muted: var(--muted);
 
     /* Motion */
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -73,7 +64,7 @@
     --duration-base: 220ms;
     --duration-slow: 320ms;
 
-    /* Density (cozy default) */
+    /* Density */
     --density-row: 44px;
     --density-pad-x: 16px;
     --density-pad-y: 12px;

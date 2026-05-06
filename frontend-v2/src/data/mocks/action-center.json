@@ -1,0 +1,142 @@
+{
+  "header": {
+    "greeting": "Good morning, Frank.",
+    "week": "Week 18",
+    "dateRange": "Apr 27 – May 3, 2026",
+    "stats": [
+      { "label": "records", "value": "1,313" },
+      { "label": "SKUs", "value": "1,015" },
+      { "label": "commodity groups", "value": "4" }
+    ]
+  },
+  "movableHero": {
+    "value": "€3.88M",
+    "delta": "+9.2% vs Wk 17",
+    "deltaDirection": "up",
+    "totalRevenue": "€6.25M",
+    "movablePct": 62,
+    "skusInScope": 628,
+    "skusTotal": 1015,
+    "lockedValue": "€2.37M",
+    "lockedPct": 38,
+    "spark": [2.8, 2.95, 3.05, 3.1, 3.2, 3.18, 3.25, 3.4, 3.45, 3.55, 3.62, 3.7, 3.78, 3.88]
+  },
+  "buckets": [
+    {
+      "id": "movable",
+      "title": "Movable bucket",
+      "subtitle": "808 SKUs · 4 commodity groups · BKAES leads",
+      "tags": [
+        { "label": "€3.88M open", "tone": "neutral" },
+        { "label": "Movable", "tone": "info" }
+      ],
+      "avatars": ["FK", "HM", "TH", "+5"],
+      "cta": "View SKUs"
+    },
+    {
+      "id": "locked",
+      "title": "Locked bucket",
+      "subtitle": "207 SKUs · 18 contracts · earliest renew Q3 '26",
+      "tags": [
+        { "label": "€2.37M locked", "tone": "neutral" },
+        { "label": "In renewal queue", "tone": "warning" }
+      ],
+      "avatars": ["MD", "TI", "+3"],
+      "cta": "View renewals"
+    }
+  ],
+  "decisions": [
+    {
+      "rank": "A",
+      "severity": "error",
+      "title": "Margin erosion · SKU 200832-E (Elektro-Zahnradpumpe)",
+      "why": "Historical margin 30.6% has dropped to 6.4% over 8 weeks. Cluster confidence 82%. Material cost +6.2% YoY, price unchanged 14 months.",
+      "tags": [
+        { "label": "BKAES cluster", "tone": "info" },
+        { "label": "82% confidence", "tone": "positive" }
+      ],
+      "meta": [
+        { "k": "Margin Δ", "v": "30.6% → 6.4%", "tone": "negative" },
+        { "k": "Revenue at risk", "v": "€184k", "tone": "negative" },
+        { "k": "Recommended price", "v": "€4.10 → €4.38", "tone": "neutral" },
+        { "k": "Window", "v": "Q2 2026", "tone": "neutral" }
+      ],
+      "cta": "Open in Pricing Studio"
+    },
+    {
+      "rank": "B",
+      "severity": "warning",
+      "title": "Customer churn signal · Müller GmbH",
+      "why": "Order rhythm down 38% vs 90-day baseline. Last 3 quotes lost on price. Heiko owns the relationship — escalate.",
+      "tags": [
+        { "label": "Top-20 account", "tone": "warning" },
+        { "label": "82% conf.", "tone": "positive" }
+      ],
+      "meta": [
+        { "k": "ARR at risk", "v": "€184k", "tone": "negative" },
+        { "k": "Last order", "v": "32d ago", "tone": "negative" },
+        { "k": "Suggested action", "v": "Account review", "tone": "neutral" },
+        { "k": "Owner", "v": "Heiko", "tone": "neutral" }
+      ],
+      "cta": "Open customer dossier"
+    },
+    {
+      "rank": "C",
+      "severity": "info",
+      "title": "Cross-sell opportunity · Bauer KG",
+      "why": "SKU mix analysis flags 3 complementary products missing from typical orders. Estimated lift €76k if attached.",
+      "tags": [
+        { "label": "Cross-sell", "tone": "info" },
+        { "label": "71% conf.", "tone": "warning" }
+      ],
+      "meta": [
+        { "k": "Lift potential", "v": "€76k", "tone": "positive" },
+        { "k": "SKUs", "v": "201267-B/C/D", "tone": "neutral" },
+        { "k": "Last bundle", "v": "never", "tone": "neutral" },
+        { "k": "Confidence", "v": "71%", "tone": "warning" }
+      ],
+      "cta": "Draft quote"
+    }
+  ],
+  "trust": [
+    { "label": "Churn model F1", "value": "0.76", "caption": "precision 0.72 · recall 0.81 · n=827 customers" },
+    { "label": "Forecast error", "value": "<5%", "caption": "Q1 2025 actuals · walk-forward · MC bands" },
+    { "label": "Anomalies caught", "value": "33", "caption": "15 negative-margin · 18 missing · €342k exposure" },
+    { "label": "Data coverage", "value": "99.2%", "caption": "Invoices 99.2% · Margin 89.4% · Quote 73.1% (gap)" }
+  ],
+  "lostQuote": {
+    "wonAvg": 70.6,
+    "lostAvg": 72.4,
+    "differential": 1.8,
+    "pValue": 0.006,
+    "implication": "Customers walk away from premium-margin quotes. Pricing logic on premium tier is leaving deals on the table."
+  },
+  "abTests": [
+    {
+      "id": "ab-1",
+      "rank": "A",
+      "title": "205418-A · Coupling B",
+      "subtitle": "slice 12% · day 9 of 21",
+      "trend": "trending positive",
+      "trendTone": "positive",
+      "preMargin": "24.0%",
+      "postMargin": "27.3%",
+      "lift": "+3.3pp",
+      "liftTone": "positive",
+      "status": "Day 9 / 21"
+    },
+    {
+      "id": "ab-2",
+      "rank": "B",
+      "title": "211094-C · Bearing housing",
+      "subtitle": "slice 8% · day 3 of 14",
+      "trend": "too few samples",
+      "trendTone": "warning",
+      "preMargin": "22.0%",
+      "postMargin": "21.5%",
+      "lift": "-0.5pp",
+      "liftTone": "neutral",
+      "status": "Day 3 / 14"
+    }
+  ]
+}
