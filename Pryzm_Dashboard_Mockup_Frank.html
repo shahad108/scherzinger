@@ -2788,6 +2788,98 @@ body.pryzm-2026 #screen-studio #explainDrawer .explain-fi-name{ color:var(--ink)
 body.pryzm-2026 #screen-studio #explainDrawer .explain-fi-pct{ color:var(--ink-3) !important; }
 body.pryzm-2026 #screen-studio #explainDrawer .explain-foot{ color:var(--muted) !important; }
 
+/* ===== PS4: ws-decision + ws-memo + studio-xlinks ===== */
+body.pryzm-2026 #screen-studio .ws-decision{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:18px 20px;
+  display:flex; flex-direction:column; gap:14px;
+}
+body.pryzm-2026 #screen-studio .ws-decision-summary{
+  font-size:13px; color:var(--ink-3); line-height:1.7;
+}
+body.pryzm-2026 #screen-studio .ws-decision-summary b{ color:var(--ink); font-weight:700; }
+body.pryzm-2026 #screen-studio .ws-decision-controls{
+  display:grid; grid-template-columns:repeat(2,1fr); gap:8px 14px;
+  font-size:12.5px; color:var(--ink-2);
+}
+body.pryzm-2026 #screen-studio .ws-decision-controls label{
+  display:flex; align-items:center; gap:8px;
+  padding:6px 10px; background:var(--surface-soft); border-radius:7px;
+  border:1px solid var(--hairline);
+}
+body.pryzm-2026 #screen-studio .ws-decision-controls input[type="date"]{
+  background:var(--surface); border:1px solid var(--border); border-radius:6px;
+  padding:4px 8px; font-family:'Inter',sans-serif; font-size:12px; color:var(--ink);
+}
+body.pryzm-2026 #screen-studio .ws-decision-controls input[type="checkbox"]{
+  width:14px; height:14px; accent-color:var(--rose);
+}
+body.pryzm-2026 #screen-studio .ws-decision-controls b{ color:var(--ink); font-weight:600; }
+body.pryzm-2026 #screen-studio .ws-decision-buttons{
+  display:flex; gap:8px; flex-wrap:wrap;
+  padding-top:14px; border-top:1px solid var(--hairline);
+}
+body.pryzm-2026 #screen-studio .ws-decision-buttons .btn{
+  background:var(--surface); border:1px solid var(--border); border-radius:9px;
+  padding:9px 14px; font-size:12.5px; color:var(--ink-2); font-weight:500; cursor:pointer;
+  transition:background .15s, border-color .15s, transform .12s;
+}
+body.pryzm-2026 #screen-studio .ws-decision-buttons .btn:hover{ background:#fafaf7; border-color:var(--border-strong); }
+body.pryzm-2026 #screen-studio .ws-decision-buttons .btn.primary{
+  background:var(--rose); border-color:var(--rose); color:#fff; font-weight:600;
+}
+body.pryzm-2026 #screen-studio .ws-decision-buttons .btn.primary:hover{ background:var(--rose-deep); border-color:var(--rose-deep); }
+body.pryzm-2026 #screen-studio .ws-decision-buttons .btn.dark{
+  background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600;
+}
+body.pryzm-2026 #screen-studio .ws-decision-buttons .btn.dark:hover{ background:#2a2723; border-color:#2a2723; }
+
+body.pryzm-2026 #screen-studio .ws-memo{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:18px 20px;
+  display:flex; flex-direction:column; gap:12px;
+}
+body.pryzm-2026 #screen-studio .ws-memo-head{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding-bottom:12px; border-bottom:1px solid var(--hairline);
+}
+body.pryzm-2026 #screen-studio .ws-memo-title{
+  font-family:'Manrope',sans-serif; font-size:13px; font-weight:700; color:var(--ink);
+  margin-right:auto;
+}
+body.pryzm-2026 #screen-studio .ws-memo-edit{
+  font-size:11px; color:var(--muted); font-style:italic;
+}
+body.pryzm-2026 #screen-studio .ws-memo-head .btn{
+  background:var(--surface-soft); border:1px solid var(--hairline); border-radius:8px;
+  padding:6px 12px; font-size:11.5px; color:var(--ink-2); font-weight:500; cursor:pointer;
+}
+body.pryzm-2026 #screen-studio .ws-memo-head .btn:hover{ background:var(--surface-sunken); }
+body.pryzm-2026 #screen-studio .ws-memo-body{
+  font-family:'Inter',sans-serif; font-size:13px; color:var(--ink-3); line-height:1.7;
+}
+body.pryzm-2026 #screen-studio .ws-memo-body p{ margin:0 0 10px; }
+body.pryzm-2026 #screen-studio .ws-memo-body p:last-child{ margin-bottom:0; }
+body.pryzm-2026 #screen-studio .ws-memo-body b{ color:var(--ink); font-weight:600; }
+body.pryzm-2026 #screen-studio .ws-memo-body code{
+  font-family:ui-monospace,'SF Mono',Menlo,monospace; font-size:11.5px;
+  background:var(--surface-soft); color:var(--rose-deep); padding:1px 5px; border-radius:4px;
+}
+body.pryzm-2026 #screen-studio .ws-memo-body p.sig{
+  margin-top:14px; padding-top:10px; border-top:1px solid var(--hairline);
+  font-style:italic; color:var(--muted);
+}
+body.pryzm-2026 #screen-studio .ws-memo-body p.sig b{ color:var(--ink-2); }
+
+body.pryzm-2026 #screen-studio .studio-xlinks{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow-card); padding:14px 18px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  margin-top:14px;
+}
+body.pryzm-2026 #screen-studio .studio-xlinks .ftxt{ font-size:12px; color:var(--muted); font-weight:600; }
+body.pryzm-2026 #screen-studio .studio-xlinks .links{ display:flex; gap:6px; flex-wrap:wrap; }
+
 </style>
 </head>
 <body class="pryzm-2026">
@@ -4589,22 +4681,21 @@ body.pryzm-2026 #screen-studio #explainDrawer .explain-foot{ color:var(--muted) 
               <p>Net annual recovery: <b>+€13,800</b> (€18,600 raised − €4,800 lost to projected churn).
               Cumulative leakage stopped: <b>~€34,800</b> across the 24 months this floor was breached.</p>
               <p><b>Evidence:</b> cross-customer same-volume price spread (102330 €6.80 vs 101580 €4.10) · 4-year cost trend (price_history_with_margin) · cluster retention curve modelled on 247 historical BKAGG repricings · top driver: material cost trend (24.5% feature importance, forecast_model).</p>
-              <p class="sig">— <b>Frank</b>, Pricing Analyst / Head of Controlling · drafted by Pryzm · audit hash <code style="font-size:10.5px">a3f9c1</code> · please review before forwarding to Till.</p>
+              <p class="sig">— <b>Frank</b>, Pricing Analyst / Head of Controlling · drafted by Pryzm · audit hash <code>a3f9c1</code> · please review before forwarding to Till.</p>
             </div>
           </div>
 
         </div><!-- /.ws-bench -->
       </div><!-- /.ws-grid -->
 
-      <div style="margin-top:18px;padding:14px 18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#475569;display:flex;gap:18px;flex-wrap:wrap;align-items:center">
-        <span style="font-weight:700;color:#1e293b">Cross-links →</span>
-        <a href="#" data-jump="action" style="color:#1e3a8a;font-weight:600;text-decoration:none">Action queue · Action Center</a>
-        <span style="color:#cbd5e1">·</span>
-        <a href="#" data-jump="forecast" style="color:#1e3a8a;font-weight:600;text-decoration:none">Cluster forecast · Forecast</a>
-        <span style="color:#cbd5e1">·</span>
-        <a href="#" data-jump="quotes" style="color:#1e3a8a;font-weight:600;text-decoration:none">Approval flow · Quotes &amp; Guardrails</a>
-        <span style="color:#cbd5e1">·</span>
-        <a href="#" data-jump="margin" style="color:#1e3a8a;font-weight:600;text-decoration:none">Margin trajectory · Margin Intelligence</a>
+      <div class="studio-xlinks">
+        <span class="ftxt">Cross-links →</span>
+        <div class="links">
+          <button class="head-pill" onclick="setScreen('action')">Action queue · Action Center</button>
+          <button class="head-pill" onclick="setScreen('forecast')">Cluster forecast · Forecast</button>
+          <button class="head-pill" onclick="setScreen('quotes')">Approval flow · Quotes &amp; Guardrails</button>
+          <button class="head-pill" onclick="setScreen('margin')">Margin trajectory · Margin Intelligence</button>
+        </div>
       </div>
 
     </section>
