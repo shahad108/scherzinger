@@ -2695,125 +2695,194 @@ body.pryzm-2026 .sec-row:hover .sec-arr{transform:translateX(2px);color:var(--in
         </div>
       </div>
 
-      <!-- 7. Heterogeneous Portfolio Diagnostics -->
-      <div class="card card-pad mt-24">
-        <div class="section-title">Heterogeneous portfolio diagnostics</div>
-        <h2 class="h2">Win-rate by margin band × commodity group</h2>
-        <div class="muted small" style="margin:4px 0 14px">Low-n cells flagged — do not auto-act.</div>
-        <div class="heatmap" id="frankHeatmap"></div>
-        <div class="commodity-scorecards" id="frankScorecards"></div>
+      <!-- 8. Heterogeneous Portfolio Diagnostics -->
+      <div class="section-row" id="sec-portfolio">
+        <div>
+          <h2>Heterogeneous portfolio diagnostics</h2>
+          <div class="sub">Win-rate by margin band × commodity group. Low-n cells flagged — do not auto-act.</div>
+        </div>
+      </div>
+      <div class="lq-card">
+        <div class="heatmap" id="frankHeatmap" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px"></div>
+        <div class="commodity-scorecards" id="frankScorecards" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px"></div>
       </div>
 
-      <!-- 8. Long-tail coverage -->
-      <div class="card card-pad mt-24">
-        <div class="section-title">Long-tail coverage · B and C products</div>
-        <div class="longtail mt-16">
-          <div class="lt-stat"><div class="lt-lab">Top-10 SKU concentration</div><div class="lt-num">38%</div><div class="lt-cap">of revenue</div></div>
-          <div class="lt-stat"><div class="lt-lab">SKUs below DB-II target</div><div class="lt-num">207</div><div class="lt-cap">warning 145 + critical 62</div></div>
-          <div class="lt-stat"><div class="lt-lab">New products (last 12mo)</div><div class="lt-num">203</div><div class="lt-cap">€1.5M revenue · 8.3% of total</div></div>
+      <!-- 9. Long-tail coverage -->
+      <div class="section-row" id="sec-longtail">
+        <div>
+          <h2>Long-tail coverage · B and C products</h2>
+          <div class="sub">C-tier coverage gap — 47 SKUs price-frozen &gt;9 months.</div>
         </div>
-        <div class="stack-bar">
-          <div class="seg a" style="width:38%">A · top 10% (well-covered)</div>
-          <div class="seg b" style="width:35%">B · mid 40% (partial)</div>
-          <div class="seg c" style="width:27%">C · bottom 50% (gap)</div>
+      </div>
+      <div class="trust-grid">
+        <div class="trust-tile"><div class="lab">Top-10 SKU concentration</div><div class="big">38%</div><div class="cap">of revenue</div></div>
+        <div class="trust-tile"><div class="lab">SKUs below DB-II target</div><div class="big">207</div><div class="cap">warning 145 + critical 62</div></div>
+        <div class="trust-tile"><div class="lab">New products (last 12mo)</div><div class="big">203</div><div class="cap">€1.5M revenue · 8.3% of total</div></div>
+        <div class="trust-tile"><div class="lab">C-tier price-frozen</div><div class="big">47</div><div class="cap">SKUs untouched &gt;9 months</div></div>
+      </div>
+      <div class="lq-card" style="margin-top:14px;padding:18px 20px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:8px">Revenue mix · A / B / C</div>
+        <div style="display:flex;height:10px;border-radius:6px;overflow:hidden;background:var(--surface-soft)">
+          <div style="flex:0 0 38%;background:var(--rose)" title="A · 38%"></div>
+          <div style="flex:0 0 35%;background:var(--amber)" title="B · 35%"></div>
+          <div style="flex:1;background:var(--muted-2)" title="C · 27%"></div>
         </div>
-        <div class="muted small" style="margin-top:10px">C-tier coverage gap — 47 SKUs price-frozen &gt;9 months.</div>
+        <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:8px">
+          <span><b style="color:var(--ink-2)">A · 38%</b> top 10% (well-covered)</span>
+          <span><b style="color:var(--ink-2)">B · 35%</b> mid 40% (partial)</span>
+          <span><b style="color:var(--ink-2)">C · 27%</b> bottom 50% (gap)</span>
+        </div>
       </div>
 
-      <!-- 9. Annual list-price negotiation cockpit (collapsible) -->
-      <div class="collapsible-card mt-24" id="negCockpit">
-        <div class="col-head" onclick="document.getElementById('negCockpit').classList.toggle('open')">
-          <span>📅 Annual list-price negotiation cockpit · synthesized prep · click to expand</span>
-          <span class="caret">▸</span>
+      <!-- 10. Annual list-price negotiation cockpit (collapsible) -->
+      <div class="section-row" id="sec-neg">
+        <div>
+          <h2>Annual list-price negotiation cockpit</h2>
+          <div class="sub">Synthesized prep — list vs quoted, commodity trajectory, market direction.</div>
         </div>
-        <div class="col-body">
-          <div style="margin-top:14px">
-            <h3 style="margin:0 0 8px;font-size:14px">4-year price/margin trend</h3>
-            <div class="muted small">List vs quoted average · discount narrowing 32.4% → 17.4%.</div>
+        <button class="head-pill" id="negToggle">Expand <span style="font-size:9px;color:var(--muted)">▾</span></button>
+      </div>
+      <div class="lq-card" id="negCockpit" style="display:none">
+        <div class="signal-with-trend">
+          <div class="signal-pane">
+            <div class="ttl">4-year price/margin trend <span class="ttl-sub">— list vs quoted average · discount narrowing 32.4% → 17.4%</span></div>
             <div style="height:200px;margin-top:10px"><canvas id="frankPriceTrend"></canvas></div>
           </div>
-          <div style="margin-top:18px">
-            <h3 style="margin:0 0 8px;font-size:14px">8-commodity trajectory</h3>
-            <div class="commodity-traj">
-              <div class="ct-row"><span class="ct-name">Steel</span><span class="ct-spark"></span><span class="ct-pos">+5.8% YTD</span></div>
-              <div class="ct-row"><span class="ct-name">Aluminum</span><span class="ct-spark"></span><span class="ct-pos">+2.1%</span></div>
-              <div class="ct-row"><span class="ct-name">Copper</span><span class="ct-spark"></span><span class="ct-neg">−1.4%</span></div>
-              <div class="ct-row"><span class="ct-name">Brass</span><span class="ct-spark"></span><span class="ct-pos">+3.2%</span></div>
-              <div class="ct-row"><span class="ct-name">Cast iron</span><span class="ct-spark"></span><span class="ct-pos">+0.9%</span></div>
-              <div class="ct-row"><span class="ct-name">Plastic resin</span><span class="ct-spark"></span><span class="ct-neg">−0.6%</span></div>
-              <div class="ct-row"><span class="ct-name">Stainless</span><span class="ct-spark"></span><span class="ct-pos">+4.1%</span></div>
-              <div class="ct-row"><span class="ct-name">Electronics</span><span class="ct-spark"></span><span class="ct-pos">+1.7%</span></div>
-            </div>
+          <div class="trend-pane">
+            <div class="lab">Discount gap</div>
+            <div class="v">17.4% <span class="down" style="color:var(--green)">−15pp</span></div>
           </div>
-          <div style="margin-top:18px">
-            <h3 style="margin:0 0 8px;font-size:14px">Market direction summary</h3>
-            <ul style="margin:0;padding-left:20px;color:#334155;line-height:1.7;font-style:italic">
-              <li>Steel pass-through 3pp behind cost</li>
-              <li>Raw materials moderating</li>
-              <li>Negotiation window: Sep–Nov 2026</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <!-- 10. A/B Test Tracker -->
-      <div class="card card-pad mt-24">
-        <div class="between">
-          <div>
-            <div class="section-title">A/B Test Tracker</div>
-            <div class="muted small">Test before broad rollout. Frank's first-class workflow.</div>
-          </div>
-          <button class="btn" onclick="toast('A/B test wizard opened (mock)')">+ Start new A/B test</button>
         </div>
         <div style="margin-top:14px">
-          <div class="ab-row">
-            <div><div class="ab-title">205418-A · Coupling B</div><div class="ab-meta">slice 12% · day 9 of 21</div></div>
-            <div class="ab-num">24.0% <small>pre</small></div>
-            <div class="ab-num">27.3% <small>post (n=18)</small></div>
-            <div class="ab-status green">🟢 trending positive</div>
-            <button class="btn primary" onclick="toast('Promoted to full rollout (mock)')">Promote to full rollout →</button>
-          </div>
-          <div class="ab-row">
-            <div><div class="ab-title">211094-C · Bearing housing</div><div class="ab-meta">slice 8% · day 3 of 14</div></div>
-            <div class="ab-num">22.0% <small>pre</small></div>
-            <div class="ab-num">21.5% <small>post (n=4)</small></div>
-            <div class="ab-status amber">🟡 too few samples</div>
-            <button class="btn" onclick="toast('Holding for more data')">Hold for more data</button>
+          <div class="ttl" style="font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:10px">8-commodity trajectory</div>
+          <div class="fact-list">
+            <div class="fact-row"><div class="fact-l">Steel</div><div class="fact-mid"><div class="fact-v green">+5.8% YTD</div><div class="fact-s">pass-through 3pp behind cost</div></div></div>
+            <div class="fact-row"><div class="fact-l">Aluminum</div><div class="fact-mid"><div class="fact-v green">+2.1%</div></div></div>
+            <div class="fact-row"><div class="fact-l">Copper</div><div class="fact-mid"><div class="fact-v red">−1.4%</div></div></div>
+            <div class="fact-row"><div class="fact-l">Brass</div><div class="fact-mid"><div class="fact-v green">+3.2%</div></div></div>
+            <div class="fact-row"><div class="fact-l">Cast iron</div><div class="fact-mid"><div class="fact-v green">+0.9%</div></div></div>
+            <div class="fact-row"><div class="fact-l">Plastic resin</div><div class="fact-mid"><div class="fact-v red">−0.6%</div></div></div>
+            <div class="fact-row"><div class="fact-l">Stainless</div><div class="fact-mid"><div class="fact-v green">+4.1%</div></div></div>
+            <div class="fact-row"><div class="fact-l">Electronics</div><div class="fact-mid"><div class="fact-v green">+1.7%</div></div></div>
           </div>
         </div>
-        <div class="muted small" style="margin-top:6px;font-style:italic">demo data — A/B workflow scaffold; real tests start in pilot week 4.</div>
+        <div style="margin-top:14px">
+          <div class="ttl" style="font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:8px">Market direction summary</div>
+          <ul style="margin:0;padding:0;list-style:none;color:var(--ink-3);font-size:12.5px;line-height:1.7">
+            <li>Steel pass-through 3pp behind cost</li>
+            <li>Raw materials moderating</li>
+            <li><b style="color:var(--ink)">Negotiation window: Sep–Nov 2026</b></li>
+          </ul>
+        </div>
       </div>
+      <script>
+      (function(){
+        const t=document.getElementById('negToggle'); const c=document.getElementById('negCockpit');
+        if(t&&c) t.addEventListener('click',()=>{ const open=c.style.display==='block'; c.style.display=open?'none':'block'; t.firstChild.textContent=open?'Expand ':'Collapse '; });
+      })();
+      </script>
 
-      <!-- 11. Why we lose · rejection codes -->
-      <div class="card card-pad mt-24">
-        <div class="section-title">Why we lose · ranked by revenue lost</div>
-        <div class="muted small" style="margin:4px 0 14px">Rejection codes from the lost-quote pipeline. KA dominates — data-quality issue you should drive.</div>
-        <div class="rejection-list" id="frankRejections"></div>
+      <!-- 11. A/B Test Tracker -->
+      <div class="section-row" id="sec-ab">
+        <div>
+          <h2>A/B Test Tracker</h2>
+          <div class="sub">Test before broad rollout. Frank's first-class workflow.</div>
+        </div>
+        <button class="head-pill" onclick="toast && toast('A/B wizard opened')">+ Start new A/B test</button>
       </div>
+      <div class="actions-list">
+        <div class="action-card">
+          <div class="ac-section">
+            <div class="ac-head">
+              <div class="ac-rank">A</div>
+              <div class="ac-title"><div class="h">205418-A · Coupling B</div><div class="t">slice 12% · day 9 of 21</div></div>
+              <div class="ac-tools"><span class="tag-chip status">trending positive</span></div>
+            </div>
+            <div class="ac-meta-grid" style="margin-top:14px">
+              <div class="meta-block"><div class="lab">Pre margin</div><div class="val">24.0%</div></div>
+              <div class="meta-block"><div class="lab">Post margin (n=18)</div><div class="val green">27.3%</div></div>
+              <div class="meta-block"><div class="lab">Lift</div><div class="val green">+3.3pp</div></div>
+              <div class="meta-block"><div class="lab">Status</div><div class="val">Day 9 / 21</div></div>
+            </div>
+            <div class="ac-cta-row" style="margin-top:14px">
+              <button class="btn-secondary">Hold</button>
+              <button class="btn-primary-rose" onclick="toast && toast('Promoted')">Promote to full rollout →</button>
+            </div>
+          </div>
+        </div>
+        <div class="action-card">
+          <div class="ac-section">
+            <div class="ac-head">
+              <div class="ac-rank">B</div>
+              <div class="ac-title"><div class="h">211094-C · Bearing housing</div><div class="t">slice 8% · day 3 of 14</div></div>
+              <div class="ac-tools"><span class="tag-chip status amber">too few samples</span></div>
+            </div>
+            <div class="ac-meta-grid" style="margin-top:14px">
+              <div class="meta-block"><div class="lab">Pre margin</div><div class="val">22.0%</div></div>
+              <div class="meta-block"><div class="lab">Post margin (n=4)</div><div class="val">21.5%</div></div>
+              <div class="meta-block"><div class="lab">Lift</div><div class="val">−0.5pp</div></div>
+              <div class="meta-block"><div class="lab">Status</div><div class="val">Day 3 / 14</div></div>
+            </div>
+            <div class="ac-cta-row" style="margin-top:14px">
+              <button class="btn-secondary" onclick="toast && toast('Holding for more data')">Hold for more data</button>
+              <button class="btn-secondary">Stop test</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="muted" style="margin-top:6px;font-style:italic;font-size:11.5px;color:var(--muted)">demo data — A/B workflow scaffold; real tests start in pilot week 4.</div>
 
-      <!-- 12. Audit trail -->
-      <div class="card card-pad mt-24">
-        <div class="section-title">Audit trail · last 30 days</div>
-        <div class="muted small" style="margin:4px 0 14px">Author · timestamp · change · pre→post. Audit-ready.</div>
-        <div class="audit-list">
-          <div class="au-row"><div class="au-ts">2026-04-30 14:22</div><div class="au-actor">Frank</div><div class="au-detail">Updated rule <b>"Min DB II margin 45%"</b> · pre: 42% → post: <b>45%</b> · 531 violations affected</div></div>
-          <div class="au-row"><div class="au-ts">2026-04-28 09:15</div><div class="au-actor">System</div><div class="au-detail"><b>Churn model retrained</b> · 2022-Q1 to 2024-Q3 · 827 customers · F1 0.74→<b>0.76</b></div></div>
-          <div class="au-row"><div class="au-ts">2026-04-26 16:48</div><div class="au-actor">Frank</div><div class="au-detail">Adjusted catalog price <b>200832-E</b> · €4.10 → <b>€4.38</b> · A/B initiated</div></div>
-          <div class="au-row"><div class="au-ts">2026-04-22 11:03</div><div class="au-actor">M. Becker</div><div class="au-detail"><b>Approved discount exception</b> · Customer 102330 · −12% (justified)</div></div>
-          <div class="au-row"><div class="au-ts">2026-04-15 08:30</div><div class="au-actor">System</div><div class="au-detail"><b>Anomaly detection retrained</b> · monthly · 18,462 invoices</div></div>
-          <div class="au-row"><div class="au-ts">2026-04-10 15:55</div><div class="au-actor">Frank</div><div class="au-detail">Added cluster definition · BKAGG sub-cluster <b>"Standard pumps"</b> · n=287</div></div>
+      <!-- 12. Why we lose · rejection codes -->
+      <div class="section-row" id="sec-rej">
+        <div>
+          <h2>Why we lose · ranked by revenue lost</h2>
+          <div class="sub">Rejection codes from the lost-quote pipeline. KA dominates — data-quality issue you should drive.</div>
+        </div>
+      </div>
+      <div class="actions-list" id="frankRejections"></div>
+
+      <!-- 13. Audit trail -->
+      <div class="section-row" id="sec-audit">
+        <div>
+          <h2>Audit trail · last 30 days</h2>
+          <div class="sub">Author · timestamp · change · pre→post. Audit-ready.</div>
+        </div>
+      </div>
+      <div class="lq-card">
+        <div class="fact-list">
+          <div class="fact-row"><div class="fact-l">2026-04-30 14:22</div><div class="fact-mid"><div class="fact-v">Frank — Updated rule "Min DB II margin 45%"</div><div class="fact-s">pre: 42% → post: <b>45%</b> · 531 violations affected</div></div></div>
+          <div class="fact-row"><div class="fact-l">2026-04-28 09:15</div><div class="fact-mid"><div class="fact-v">System — Churn model retrained</div><div class="fact-s">2022-Q1 to 2024-Q3 · 827 customers · F1 0.74→<b>0.76</b></div></div></div>
+          <div class="fact-row"><div class="fact-l">2026-04-26 16:48</div><div class="fact-mid"><div class="fact-v">Frank — Adjusted catalog price 200832-E</div><div class="fact-s">€4.10 → <b>€4.38</b> · A/B initiated</div></div></div>
+          <div class="fact-row"><div class="fact-l">2026-04-22 11:03</div><div class="fact-mid"><div class="fact-v">M. Becker — Approved discount exception</div><div class="fact-s">Customer 102330 · −12% (justified)</div></div></div>
+          <div class="fact-row"><div class="fact-l">2026-04-15 08:30</div><div class="fact-mid"><div class="fact-v">System — Anomaly detection retrained</div><div class="fact-s">monthly · 18,462 invoices</div></div></div>
+          <div class="fact-row"><div class="fact-l">2026-04-10 15:55</div><div class="fact-mid"><div class="fact-v">Frank — Added cluster definition BKAGG sub-cluster "Standard pumps"</div><div class="fact-s">n=287</div></div></div>
         </div>
       </div>
 
-      <!-- 13. Generate branded report -->
-      <div class="card card-pad mt-24">
-        <div class="section-title">Generate branded report</div>
-        <div class="muted small" style="margin:4px 0 14px">Auto-generated in Scherzinger corporate design. Audit trail attached. Reports persisted for board review.</div>
-        <div class="row" style="gap:10px">
-          <button class="btn primary" onclick="toast('Branded PDF generation queued (mock)')">📄 Branded PDF — corporate design</button>
-          <button class="btn" onclick="toast('Board pack queued for Till (mock)')">📊 Send to Till (board pack)</button>
+      <!-- 14. Generate branded report -->
+      <div class="section-row" id="sec-report">
+        <div>
+          <h2>Generate branded report</h2>
+          <div class="sub">Auto-generated in Scherzinger corporate design. Audit trail attached. Reports persisted for board review.</div>
         </div>
-        <div class="muted small" style="margin-top:10px">Forwardable, audit-ready. Reports synthesize Frank's outputs for upward communication.</div>
+      </div>
+      <div class="round-grid">
+        <div class="round-card">
+          <div class="rc-title"><h3>Branded PDF</h3><div class="sub">Corporate design · audit trail attached</div></div>
+          <div class="round-tags"><span class="tag-chip">PDF</span><span class="tag-chip">Audit-ready</span></div>
+          <div class="round-foot">
+            <div></div>
+            <button class="btn-act" onclick="toast && toast('Branded PDF queued')">Generate PDF <span class="arr">→</span></button>
+          </div>
+        </div>
+        <div class="round-card">
+          <div class="rc-title"><h3>Send to Till</h3><div class="sub">Board pack · synthesizes Frank's outputs for upward communication</div></div>
+          <div class="round-tags"><span class="tag-chip">Board pack</span><span class="tag-chip status">Forwardable</span></div>
+          <div class="round-foot">
+            <div></div>
+            <button class="btn-act" onclick="toast && toast('Sent to Till')">Send to Till <span class="arr">→</span></button>
+          </div>
+        </div>
       </div>
 
       <!-- Drawer (model trust panel) -->
@@ -6785,13 +6854,19 @@ function initFrankCockpit(){
 function initFrankHeatmap(){
   const root = document.getElementById('frankHeatmap'); if (!root) return;
   const bands = FRANK_DATA.bands;
-  let html = '<div class="hm-h"></div>' + bands.map(b=>`<div class="hm-h">${b}</div>`).join('');
+  const headStyle = 'font-size:10.5px;color:var(--muted);font-weight:600;text-align:center;padding:6px 4px;letter-spacing:.04em;text-transform:uppercase';
+  const rowHeadStyle = 'font-size:11.5px;color:var(--ink-2);font-weight:700;padding:8px 4px;display:flex;align-items:center';
+  let html = `<div style="${headStyle}"></div>` + bands.map(b=>`<div style="${headStyle}">${b}</div>`).join('');
   FRANK_DATA.commodityHeatmap.forEach(row=>{
-    html += `<div class="hm-row-h">${row.group}</div>`;
+    html += `<div style="${rowHeadStyle}">${row.group}</div>`;
     row.cells.forEach(v=>{
-      const cls = v>=55?'green':v>=35?'amber':'red';
-      const lown = row.lowN ? ' lown' : '';
-      html += `<div class="hm-cell ${cls}${lown}" title="${row.group} ${v}% win rate${row.lowN?' · low n':''}">${v.toFixed(1)}%</div>`;
+      let bg, color, border = '1px solid var(--border)';
+      if (row.lowN) { bg = 'var(--surface-sunken)'; color = 'var(--muted)'; border = '1px dashed var(--border-strong)'; }
+      else if (v >= 55) { bg = 'var(--green-bg)'; color = 'var(--green)'; }
+      else if (v >= 35) { bg = 'var(--amber-bg)'; color = 'var(--amber)'; }
+      else { bg = 'var(--rose-bg)'; color = 'var(--rose-deep)'; }
+      const cellStyle = `background:${bg};color:${color};border:${border};border-radius:8px;padding:10px 6px;text-align:center;font-size:12.5px;font-weight:600`;
+      html += `<div style="${cellStyle}" title="${row.group} ${v}% win rate${row.lowN?' · low n':''}">${v.toFixed(1)}%</div>`;
     });
   });
   root.innerHTML = html;
@@ -6800,31 +6875,27 @@ function initFrankHeatmap(){
 function initFrankScorecards(){
   const root = document.getElementById('frankScorecards'); if (!root) return;
   const fmtRev = r=> r>=1e6 ? '€'+(r/1e6).toFixed(1)+'M' : '€'+(r/1e3).toFixed(0)+'K';
-  root.innerHTML = FRANK_DATA.commodityScorecard.map(c=>`
-    <div class="sc">
-      <h4>${c.group}</h4>
-      <div class="sc-row"><span>Revenue</span><b>${fmtRev(c.revenue)}</b></div>
-      <div class="sc-row"><span>Margin</span><b>${(c.margin*100).toFixed(1)}%</b></div>
-      <div class="sc-row"><span>Win rate</span><b>${c.winRate==null?'n/a (low coverage)':(c.winRate*100).toFixed(1)+'%'}</b></div>
-      <div class="sc-row"><span>SKUs / orders</span><b>${c.skus} / ${c.orders}</b></div>
-    </div>
-  `).join('');
+  root.innerHTML = FRANK_DATA.commodityScorecard.map(c=>{
+    const wr = c.winRate==null ? 'n/a' : (c.winRate*100).toFixed(1)+'%';
+    return `<span class="tag-chip" style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;padding:8px 12px;line-height:1.3">
+      <span style="font-weight:700;color:var(--ink);font-size:12px">${c.group}</span>
+      <span style="font-size:11px;color:var(--ink-3)">Rev ${fmtRev(c.revenue)} · Margin ${(c.margin*100).toFixed(1)}% · Win ${wr}</span>
+      <span style="font-size:10.5px;color:var(--muted)">${c.skus} SKUs / ${c.orders} orders</span>
+    </span>`;
+  }).join('');
 }
 
 function initFrankRejections(){
   const root = document.getElementById('frankRejections'); if (!root) return;
-  const max = Math.max(...FRANK_DATA.rejectionCodes.map(r=>r.revenue));
   root.innerHTML = FRANK_DATA.rejectionCodes.map((r,i)=>{
-    const w = (r.revenue/max)*100;
     const eur = '€'+(r.revenue/1e6).toFixed(2)+'M';
-    const flag = i===0 ? ' flag' : '';
-    const fix = i===0 ? ' <button class="btn" style="margin-left:8px;background:#fee2e2;color:#991b1b;border-color:#fecaca;font-size:11px;padding:4px 8px" onclick="toast(\'Data-quality fix routed to ops — KA closure rate review\')">Data-quality fix</button>' : '';
-    return `
-      <div class="rej-row${flag}">
-        <div class="rej-code">${r.code}</div>
-        <div class="rej-bar-wrap"><div class="rej-bar" style="width:${w}%"></div><div class="rej-label">${r.desc} · ${r.count} quotes${fix}</div></div>
-        <div class="rej-eur">${eur}</div>
-      </div>`;
+    const sharePct = (r.pct*100).toFixed(1);
+    const severity = i===0 ? 'red' : (i<=2 ? 'amber' : '');
+    return `<div class="action-card"><div class="ac-section"><div class="ac-head">
+      <div class="ac-rank">${i+1}</div>
+      <div class="ac-title"><div class="h">${r.code} · ${r.desc}</div><div class="t">${r.count} quotes · ${sharePct}% of losses</div></div>
+      <div class="ac-tools"><span class="tag-chip status ${severity}">${eur} lost</span></div>
+    </div></div></div>`;
   }).join('');
 }
 
@@ -6835,13 +6906,13 @@ function initFrankPriceTrend(){
   charts.frankPriceTrend = new Chart(c,{
     type:'line',
     data:{labels,datasets:[
-      {label:'Avg list price',   data:FRANK_DATA.priceHistory.map(p=>p.list),   borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.08)', borderWidth:2, tension:.3, fill:false, pointRadius:4},
-      {label:'Avg quoted price', data:FRANK_DATA.priceHistory.map(p=>p.quoted), borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.08)',  borderWidth:2, tension:.3, fill:false, pointRadius:4}
+      {label:'Avg list price',   data:FRANK_DATA.priceHistory.map(p=>p.list),   borderColor:'#a35a5a', backgroundColor:'rgba(163,90,90,.10)', borderWidth:2, tension:.3, fill:false, pointRadius:4},
+      {label:'Avg quoted price', data:FRANK_DATA.priceHistory.map(p=>p.quoted), borderColor:'#15140f', backgroundColor:'rgba(20,16,12,.06)',  borderWidth:2, tension:.3, fill:false, pointRadius:4}
     ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{font:{size:11}}},
+      plugins:{legend:{position:'bottom',labels:{font:{size:11,family:'Inter'},color:'#56544f'}},
         tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: €${ctx.parsed.y.toLocaleString()}`}}},
-      scales:{y:{beginAtZero:false,ticks:{font:{size:10},callback:v=>'€'+v}},x:{ticks:{font:{size:11}}}}}
+      scales:{y:{beginAtZero:false,grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:10,family:'Inter'},color:'#56544f',callback:v=>'€'+v}},x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11,family:'Inter'},color:'#56544f'}}}}
   });
 }
 
