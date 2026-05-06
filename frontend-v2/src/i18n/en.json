@@ -1,0 +1,12 @@
+{
+  "app": { "title": "Pryzm" },
+  "nav": {
+    "actionCenter": "Action Center",
+    "margin": "Margin Cockpit",
+    "quotes": "Quotes",
+    "forecasting": "Forecasting",
+    "pricing": "Pricing Studio",
+    "ai": "AI Briefing"
+  },
+  "common": { "search": "Search", "filter": "Filter", "save": "Save", "cancel": "Cancel" }
+}

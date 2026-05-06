@@ -1,0 +1,12 @@
+{
+  "app": { "title": "Pryzm" },
+  "nav": {
+    "actionCenter": "Aktionszentrale",
+    "margin": "Margen-Cockpit",
+    "quotes": "Angebote",
+    "forecasting": "Forecast",
+    "pricing": "Preisstudio",
+    "ai": "KI-Briefing"
+  },
+  "common": { "search": "Suchen", "filter": "Filter", "save": "Speichern", "cancel": "Abbrechen" }
+}

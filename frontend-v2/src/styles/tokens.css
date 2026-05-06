@@ -1,0 +1,89 @@
+/* Pryzm 2026 design tokens — warm gray + rose, Manrope display + Inter body */
+@layer base {
+  :root {
+    /* Warm gray scale */
+    --color-gray-50: #faf9f7;
+    --color-gray-100: #f3f1ee;
+    --color-gray-200: #e7e3dd;
+    --color-gray-300: #d4cec5;
+    --color-gray-400: #a8a195;
+    --color-gray-500: #7c7468;
+    --color-gray-600: #5b544a;
+    --color-gray-700: #423d36;
+    --color-gray-800: #2b2823;
+    --color-gray-900: #1a1815;
+    --color-gray-950: #0e0d0b;
+
+    /* Rose accent */
+    --color-rose-50: #fff1f2;
+    --color-rose-100: #ffe4e6;
+    --color-rose-200: #fecdd3;
+    --color-rose-300: #fda4af;
+    --color-rose-400: #fb7185;
+    --color-rose-500: #e11d48;
+    --color-rose-600: #be123c;
+    --color-rose-700: #9f1239;
+    --color-rose-800: #881337;
+    --color-rose-900: #4c0519;
+
+    /* Semantic */
+    --color-success: #16a34a;
+    --color-success-bg: #f0fdf4;
+    --color-warning: #d97706;
+    --color-warning-bg: #fffbeb;
+    --color-error: #dc2626;
+    --color-error-bg: #fef2f2;
+    --color-info: #2563eb;
+    --color-info-bg: #eff6ff;
+
+    /* Surfaces */
+    --surface-base: var(--color-gray-50);
+    --surface-raised: #ffffff;
+    --surface-sunken: var(--color-gray-100);
+    --surface-overlay: rgba(26, 24, 21, 0.4);
+
+    /* Text */
+    --text-primary: var(--color-gray-900);
+    --text-secondary: var(--color-gray-600);
+    --text-muted: var(--color-gray-500);
+    --text-inverse: var(--color-gray-50);
+
+    /* Borders */
+    --border-subtle: var(--color-gray-200);
+    --border-default: var(--color-gray-300);
+    --border-strong: var(--color-gray-400);
+
+    /* Radii */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 10px;
+    --radius-xl: 14px;
+    --radius-2xl: 20px;
+    --radius-pill: 9999px;
+
+    /* Shadows */
+    --shadow-1: 0 1px 2px rgba(26, 24, 21, 0.06);
+    --shadow-2: 0 2px 8px rgba(26, 24, 21, 0.08);
+    --shadow-3: 0 8px 24px rgba(26, 24, 21, 0.10);
+    --shadow-4: 0 24px 48px rgba(26, 24, 21, 0.16);
+
+    /* Motion */
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --duration-fast: 150ms;
+    --duration-base: 220ms;
+    --duration-slow: 320ms;
+
+    /* Density (cozy default) */
+    --density-row: 44px;
+    --density-pad-x: 16px;
+    --density-pad-y: 12px;
+    --font-size-base: 14px;
+  }
+
+  [data-density='compact'] {
+    --density-row: 36px;
+    --density-pad-x: 12px;
+    --density-pad-y: 8px;
+    --font-size-base: 13px;
+  }
+}

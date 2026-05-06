@@ -1,0 +1,38 @@
+[
+  {
+    "id": "ac-1",
+    "type": "churn",
+    "severity": "warning",
+    "title": "Kunde Müller GmbH zeigt Abwanderungs-Signal",
+    "subtitle": "Bestellrhythmus -38% vs. 90-Tage-Schnitt",
+    "customer": "Müller GmbH",
+    "amount": 184000,
+    "confidence": 0.82,
+    "createdAt": "2026-05-06T08:12:00Z",
+    "recommendedAction": "Account Review mit Heiko terminieren"
+  },
+  {
+    "id": "ac-2",
+    "type": "margin",
+    "severity": "error",
+    "title": "Marge auf SKU 200940-A unter 18%",
+    "subtitle": "Material +6.2% YoY, Preis seit 14 Monaten unverändert",
+    "sku": "200940-A",
+    "amount": -42000,
+    "confidence": 0.94,
+    "createdAt": "2026-05-06T07:55:00Z",
+    "recommendedAction": "Preisrunde Q2 vorziehen"
+  },
+  {
+    "id": "ac-3",
+    "type": "opportunity",
+    "severity": "success",
+    "title": "Cross-Sell potenzial bei Bauer KG",
+    "subtitle": "SKU-Mix-Analyse: 3 Komplementärprodukte fehlen",
+    "customer": "Bauer KG",
+    "amount": 76000,
+    "confidence": 0.71,
+    "createdAt": "2026-05-06T06:40:00Z",
+    "recommendedAction": "Quote erstellen für SKU 201267-B/C/D"
+  }
+]
