@@ -111,6 +111,176 @@
     "pValue": 0.006,
     "implication": "Customers walk away from premium-margin quotes. Pricing logic on premium tier is leaving deals on the table."
   },
+  "skuTable": [
+    {
+      "article": "200832-E",
+      "description": "Elektro-Zahnradpumpe",
+      "commodity": "BKAES",
+      "clusterConf": 82,
+      "clusterTone": "high",
+      "marginDelta": "30.6% → 6.4%",
+      "marginTone": "negative",
+      "status": "movable",
+      "statusLabel": "Movable",
+      "actionLabel": "Open in Studio"
+    },
+    {
+      "article": "204604",
+      "description": "Zahnradpumpe",
+      "commodity": "BKAGG",
+      "clusterConf": 74,
+      "clusterTone": "mid",
+      "marginDelta": "32.7% → 11.8%",
+      "marginTone": "negative",
+      "status": "movable",
+      "statusLabel": "Movable",
+      "actionLabel": "Open in Studio"
+    },
+    {
+      "article": "205169",
+      "description": "Zahnradpumpe",
+      "commodity": "BKAGG",
+      "clusterConf": 74,
+      "clusterTone": "mid",
+      "marginDelta": "70.1% → 44.2%",
+      "marginTone": "warning",
+      "status": "locked",
+      "statusLabel": "Locked Q3",
+      "actionLabel": "Queue renewal"
+    },
+    {
+      "article": "200834-B",
+      "description": "Elektro-Zahnradpumpe",
+      "commodity": "BKAES",
+      "clusterConf": 82,
+      "clusterTone": "high",
+      "marginDelta": "55.8% → 36.8%",
+      "marginTone": "neutral",
+      "status": "movable",
+      "statusLabel": "Movable",
+      "actionLabel": "Open in Studio"
+    },
+    {
+      "article": "201773",
+      "description": "Zahnradpumpe",
+      "commodity": "BKAGG",
+      "clusterConf": 74,
+      "clusterTone": "mid",
+      "marginDelta": "62.5% → 23.1%",
+      "marginTone": "warning",
+      "status": "locked",
+      "statusLabel": "Locked Q1",
+      "actionLabel": "Queue renewal"
+    },
+    {
+      "article": "205418-A",
+      "description": "Coupling B",
+      "commodity": "BKAES",
+      "clusterConf": 82,
+      "clusterTone": "high",
+      "marginDelta": "—",
+      "marginTone": "neutral",
+      "status": "abtest",
+      "statusLabel": "A/B",
+      "actionLabel": "View test"
+    }
+  ],
+  "longTail": {
+    "tiles": [
+      { "label": "Top-10 SKU concentration", "value": "38%", "caption": "of revenue" },
+      { "label": "SKUs below DB-II target", "value": "207", "caption": "warning 145 + critical 62" },
+      { "label": "New products (last 12mo)", "value": "203", "caption": "€1.5M revenue · 8.3% of total" },
+      { "label": "C-tier price-frozen", "value": "47", "caption": "SKUs untouched >9 months" }
+    ],
+    "mix": [
+      { "label": "A · 38%", "subtitle": "top 10% (well-covered)", "pct": 38, "tone": "rose" },
+      { "label": "B · 35%", "subtitle": "mid 40% (partial)", "pct": 35, "tone": "amber" },
+      { "label": "C · 27%", "subtitle": "bottom 50% (gap)", "pct": 27, "tone": "muted" }
+    ]
+  },
+  "negotiation": {
+    "discountGap": "17.4%",
+    "discountGapDelta": "−15pp",
+    "commodities": [
+      { "name": "Steel", "delta": "+5.8% YTD", "tone": "positive", "note": "pass-through 3pp behind cost" },
+      { "name": "Aluminum", "delta": "+2.1%", "tone": "positive" },
+      { "name": "Copper", "delta": "−1.4%", "tone": "negative" },
+      { "name": "Brass", "delta": "+3.2%", "tone": "positive" },
+      { "name": "Cast iron", "delta": "+0.9%", "tone": "positive" },
+      { "name": "Plastic resin", "delta": "−0.6%", "tone": "negative" },
+      { "name": "Stainless", "delta": "+4.1%", "tone": "positive" },
+      { "name": "Electronics", "delta": "+1.7%", "tone": "positive" }
+    ],
+    "summary": [
+      "Steel pass-through 3pp behind cost",
+      "Raw materials moderating",
+      "Negotiation window: Sep–Nov 2026"
+    ]
+  },
+  "rejections": [
+    {
+      "rank": "1",
+      "code": "KA · Data quality",
+      "subtitle": "Quote pipeline missing competitor price field — drives 41% of misclassified rejections.",
+      "lostRevenue": "€842k",
+      "share": "41%",
+      "owner": "Frank · drive data fix"
+    },
+    {
+      "rank": "2",
+      "code": "Price too high",
+      "subtitle": "Customers comparing against incumbent supplier. Most often on B-tier SKUs.",
+      "lostRevenue": "€612k",
+      "share": "30%",
+      "owner": "Heiko · negotiation"
+    },
+    {
+      "rank": "3",
+      "code": "Lead time",
+      "subtitle": "Manufacturing capacity constraint — 6 of 33 lost on delivery promise alone.",
+      "lostRevenue": "€198k",
+      "share": "10%",
+      "owner": "Operations"
+    }
+  ],
+  "audit": [
+    {
+      "ts": "2026-04-30 14:22",
+      "actor": "Frank",
+      "change": "Updated rule \"Min DB II margin 45%\"",
+      "delta": "pre: 42% → post: 45% · 531 violations affected"
+    },
+    {
+      "ts": "2026-04-28 09:15",
+      "actor": "System",
+      "change": "Churn model retrained",
+      "delta": "2022-Q1 to 2024-Q3 · 827 customers · F1 0.74→0.76"
+    },
+    {
+      "ts": "2026-04-26 16:48",
+      "actor": "Frank",
+      "change": "Adjusted catalog price 200832-E",
+      "delta": "€4.10 → €4.38 · A/B initiated"
+    },
+    {
+      "ts": "2026-04-22 11:03",
+      "actor": "M. Becker",
+      "change": "Approved discount exception",
+      "delta": "Customer 102330 · −12% (justified)"
+    },
+    {
+      "ts": "2026-04-15 08:30",
+      "actor": "System",
+      "change": "Anomaly detection retrained",
+      "delta": "monthly · 18,462 invoices"
+    },
+    {
+      "ts": "2026-04-10 15:55",
+      "actor": "Frank",
+      "change": "Added cluster definition BKAGG sub-cluster \"Standard pumps\"",
+      "delta": "n=287"
+    }
+  ],
   "abTests": [
     {
       "id": "ab-1",

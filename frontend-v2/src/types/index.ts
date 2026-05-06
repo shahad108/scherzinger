@@ -117,6 +117,61 @@ export interface AbTestCard {
   status: string;
 }
 
+export interface SkuRow {
+  article: string;
+  description: string;
+  commodity: string;
+  clusterConf: number;
+  clusterTone: 'high' | 'mid' | 'low';
+  marginDelta: string;
+  marginTone: Tone;
+  status: 'movable' | 'locked' | 'abtest';
+  statusLabel: string;
+  actionLabel: string;
+}
+
+export interface LongTailMixSegment {
+  label: string;
+  subtitle: string;
+  pct: number;
+  tone: 'rose' | 'amber' | 'muted';
+}
+
+export interface LongTailData {
+  tiles: TrustTile[];
+  mix: LongTailMixSegment[];
+}
+
+export interface CommodityRow {
+  name: string;
+  delta: string;
+  tone: Tone;
+  note?: string;
+}
+
+export interface NegotiationData {
+  discountGap: string;
+  discountGapDelta: string;
+  commodities: CommodityRow[];
+  summary: string[];
+}
+
+export interface RejectionRow {
+  rank: string;
+  code: string;
+  subtitle: string;
+  lostRevenue: string;
+  share: string;
+  owner: string;
+}
+
+export interface AuditRow {
+  ts: string;
+  actor: string;
+  change: string;
+  delta: string;
+}
+
 export interface ActionCenterData {
   header: ActionCenterHeader;
   movableHero: MovableHero;
@@ -124,5 +179,10 @@ export interface ActionCenterData {
   decisions: DecisionCard[];
   trust: TrustTile[];
   lostQuote: LostQuoteData;
+  skuTable: SkuRow[];
+  longTail: LongTailData;
+  negotiation: NegotiationData;
+  rejections: RejectionRow[];
+  audit: AuditRow[];
   abTests: AbTestCard[];
 }
