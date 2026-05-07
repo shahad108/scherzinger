@@ -1,34 +1,38 @@
-import { usePersona } from '@/hooks/usePersona';
-import { cn } from '@/lib/cn';
-import type { Persona } from '@/types';
+import { usePersonaStore } from '@/stores/personaStore';
 
-const personas: { id: Persona; label: string }[] = [
+const personas = [
   { id: 'frank', label: 'Frank' },
-  { id: 'till', label: 'Till' },
-  { id: 'heiko', label: 'Heiko' },
-];
+  { id: 'till', label: 'Till', external: '/demo/#?persona=md' },
+  { id: 'heiko', label: 'Heiko', external: '/demo/#?persona=sr' },
+] as const;
 
 export function PersonaSwitcher() {
-  const { persona, setPersona } = usePersona();
+  const persona = usePersonaStore((s) => s.persona);
+  const setPersona = usePersonaStore((s) => s.setPersona);
+
   return (
-    <div className="inline-flex rounded-full border border-[var(--border-subtle)] bg-gray-50 p-0.5">
-      {personas.map((p) => (
-        <button
-          key={p.id}
-          onClick={() => setPersona(p.id)}
-          className={cn(
-            'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-            persona === p.id
-              ? 'bg-white text-gray-900 shadow-[var(--shadow-1)]'
-              : 'text-gray-600 hover:text-gray-900',
-            p.id !== 'frank' && 'cursor-not-allowed opacity-60',
-          )}
-          disabled={p.id !== 'frank'}
-          title={p.id !== 'frank' ? 'Frank only in v2' : undefined}
-        >
-          {p.label}
-        </button>
-      ))}
+    <div className="pz-persona" role="tablist" aria-label="Persona">
+      {personas.map((p) => {
+        const active = persona === p.id;
+        return (
+          <button
+            key={p.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            className={active ? 'active' : undefined}
+            onClick={() => {
+              if ('external' in p && p.external) {
+                window.location.assign(p.external);
+                return;
+              }
+              setPersona(p.id);
+            }}
+          >
+            {p.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
