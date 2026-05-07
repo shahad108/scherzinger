@@ -32,7 +32,8 @@ export function MovableHero({ hero }: Props) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-      className="mb-6 rounded-2xl border border-[var(--hairline)] bg-white p-7 shadow-[var(--shadow-card)]"
+      className="mb-6 rounded-[14px] border border-[var(--border)] bg-white shadow-[var(--shadow-card)]"
+      style={{ padding: '24px 28px 22px' }}
       id="sec-movable"
     >
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-stretch">
@@ -54,8 +55,8 @@ export function MovableHero({ hero }: Props) {
               {hero.value}
             </span>
             <span
-              className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[12px] font-semibold tabular-nums"
-              style={{ background: 'var(--green-bg)', color: 'var(--green)' }}
+              className="inline-flex items-center gap-1.5 text-[13px] font-semibold tabular-nums"
+              style={{ background: 'var(--green-bg)', color: 'var(--green)', padding: '5px 10px', borderRadius: 7, letterSpacing: '-0.005em' }}
             >
               <svg viewBox="0 0 12 12" width={11} height={11} fill="none" aria-hidden>
                 <path
@@ -118,7 +119,7 @@ export function MovableHero({ hero }: Props) {
             </div>
           </div>
 
-          <div className="mt-4 flex h-2 overflow-hidden rounded-full bg-[var(--surface-soft)]">
+          <div className="mt-3.5 flex h-1.5 overflow-hidden rounded bg-[var(--surface-soft)]">
             <div style={{ width: `${movablePct}%`, background: 'var(--rose)' }} />
             <div className="flex-1" style={{ background: 'var(--ink-3)', opacity: 0.35 }} />
           </div>
@@ -129,8 +130,8 @@ export function MovableHero({ hero }: Props) {
             </span>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition-colors"
-              style={{ background: 'var(--ink)' }}
+              className="inline-flex items-center gap-1.5 rounded-lg text-[12.5px] font-semibold text-white shadow-sm transition-colors"
+              style={{ background: 'var(--ink)', padding: '9px 14px' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = '#000')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ink)')}
             >
