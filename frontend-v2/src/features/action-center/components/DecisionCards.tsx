@@ -47,7 +47,10 @@ function MiniSpark({ trend }: { trend: DecisionTrend }) {
 function ChipCluster({ c }: { c: NonNullable<DecisionCard['cluster']> }) {
   const dot = c.confidence >= 80 ? 'var(--green)' : c.confidence >= 60 ? 'var(--amber)' : 'var(--red)';
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--hairline)] bg-white px-2.5 py-1 text-[11px] font-semibold text-[var(--ink-2)]">
+    <span
+      className="inline-flex items-center gap-1.5 whitespace-nowrap text-[11.5px] font-medium text-[var(--ink-2)]"
+      style={{ background: 'var(--surface-sunken)', borderRadius: 7, padding: '5px 9px' }}
+    >
       <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: dot }} />
       Cluster {c.label} · {c.confidence}% (n={c.n})
     </span>
@@ -56,13 +59,17 @@ function ChipCluster({ c }: { c: NonNullable<DecisionCard['cluster']> }) {
 
 function ChipContract({ kind }: { kind: NonNullable<DecisionCard['contract']> }) {
   const map = {
-    movable: { bg: 'var(--green-bg)', color: 'var(--green)', label: 'Movable' },
-    locked:  { bg: 'var(--amber-bg)', color: 'var(--amber)', label: 'Locked' },
-    abtest:  { bg: 'var(--violet-bg)', color: 'var(--violet)', label: 'A/B' },
+    movable: { dot: 'var(--green)',  label: 'Movable' },
+    locked:  { dot: 'var(--amber)',  label: 'Locked' },
+    abtest:  { dot: 'var(--violet)', label: 'A/B' },
   } as const;
   const s = map[kind];
   return (
-    <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{ background: s.bg, color: s.color }}>
+    <span
+      className="inline-flex items-center gap-1.5 whitespace-nowrap text-[11.5px] font-medium text-[var(--ink-2)]"
+      style={{ background: 'var(--surface-sunken)', borderRadius: 7, padding: '5px 9px' }}
+    >
+      <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: s.dot }} />
       {s.label}
     </span>
   );
@@ -285,7 +292,10 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
                 {d.cluster && <ChipCluster c={d.cluster} />}
                 {d.contract && <ChipContract kind={d.contract} />}
                 {d.tag && (
-                  <span className="inline-flex items-center rounded-full border border-[var(--hairline)] bg-white px-2.5 py-1 text-[11px] font-semibold text-[var(--ink-2)]">
+                  <span
+                    className="inline-flex items-center whitespace-nowrap text-[11.5px] font-medium text-[var(--ink-2)]"
+                    style={{ background: 'var(--surface-sunken)', borderRadius: 7, padding: '5px 9px' }}
+                  >
                     {d.tag}
                   </span>
                 )}
