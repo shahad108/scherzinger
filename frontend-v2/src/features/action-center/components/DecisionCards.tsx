@@ -109,19 +109,19 @@ function FeedbackRow({ id }: { id: string }) {
   const accText = accSelected && act ? accLabel[act as 'acc' | 'nim' | 'par'] : 'Accept & implement';
 
   // Accept is GREEN by default (selected on mount); Reject is white-with-red-text default; A/B is white-with-violet-text default.
-  const baseFbtn = 'inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-[12.5px] font-semibold transition-colors';
+  const baseFbtn = 'inline-flex items-center gap-1.5 rounded-[10px] border text-[12.5px] font-medium transition-colors';
 
   const accStyle: React.CSSProperties = accSelected
-    ? { background: 'var(--green)', borderColor: 'transparent', color: '#fff' }
-    : { background: '#fff', borderColor: 'var(--green-border)', color: 'var(--green)' };
+    ? { background: 'var(--green)', borderColor: 'transparent', color: '#fff', padding: '8px 12px', fontWeight: 600 }
+    : { background: '#fff', borderColor: 'var(--border)', color: 'var(--ink-2)', padding: '8px 12px', fontWeight: 500 };
 
   const rejStyle: React.CSSProperties = act === 'rej'
-    ? { background: 'var(--red)', borderColor: 'transparent', color: '#fff' }
-    : { background: '#fff', borderColor: 'var(--red-border)', color: 'var(--red)' };
+    ? { background: 'var(--red)', borderColor: 'transparent', color: '#fff', padding: '8px 12px', fontWeight: 600 }
+    : { background: '#fff', borderColor: 'var(--border)', color: 'var(--ink-2)', padding: '8px 12px', fontWeight: 500 };
 
   const abStyle: React.CSSProperties = act === 'ab'
-    ? { background: 'var(--violet)', borderColor: 'transparent', color: '#fff' }
-    : { background: '#fff', borderColor: 'var(--hairline)', color: 'var(--violet)' };
+    ? { background: 'var(--violet)', borderColor: 'transparent', color: '#fff', padding: '8px 12px', fontWeight: 600 }
+    : { background: '#fff', borderColor: 'var(--border)', color: 'var(--ink-2)', padding: '8px 12px', fontWeight: 500 };
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -138,8 +138,8 @@ function FeedbackRow({ id }: { id: string }) {
           type="button"
           aria-label="Accept variant menu"
           onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
-          className={`${baseFbtn} rounded-l-none border-l-0 px-2`}
-          style={accStyle}
+          className={`${baseFbtn} rounded-l-none border-l-0`}
+          style={{ ...accStyle, padding: '8px 9px' }}
         >
           <ChevronDown size={12} />
         </button>
@@ -363,31 +363,48 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
               )}
             </div>
 
-            {/* Bottom section: feedback row */}
-            <div className="border-t border-[var(--hairline)] px-5 py-4">
+            {/* Bottom section: feedback row + CTA row, SAME ac-section */}
+            <div style={{ padding: '18px 22px', borderTop: '1px solid var(--hairline)' }}>
               <FeedbackRow id={d.rank} />
-            </div>
-            {/* CTA row: secondary on left, big primary rose on the right */}
-            <div className="grid grid-cols-1 gap-0 border-t border-[var(--hairline)] sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-              <div className="flex items-center px-5 py-3">
+              <div className="mt-3.5 flex items-stretch" style={{ gap: 10 }}>
                 {d.secondaryCta && (
                   <button
                     type="button"
-                    className="rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-[12.5px] font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--surface-soft)]"
+                    className="inline-flex flex-1 items-center justify-center gap-2 text-[13px] font-medium text-[var(--ink)] transition-colors hover:bg-[var(--surface-soft)]"
+                    style={{
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 12,
+                      padding: '11px 18px',
+                      cursor: 'pointer',
+                    }}
                   >
                     {d.secondaryCta}
                   </button>
                 )}
+                <button
+                  type="button"
+                  className="inline-flex flex-1 items-center justify-center gap-2 text-[13px] font-semibold text-white transition-colors"
+                  style={{
+                    background: 'var(--rose)',
+                    border: '1px solid var(--rose)',
+                    borderRadius: 12,
+                    padding: '11px 18px',
+                    boxShadow: '0 1px 0 rgba(0,0,0,0.06)',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--rose-deep)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px -8px rgba(90,125,163,0.55)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'var(--rose)';
+                    e.currentTarget.style.boxShadow = '0 1px 0 rgba(0,0,0,0.06)';
+                  }}
+                >
+                  {d.primaryCta ?? d.cta}
+                </button>
               </div>
-              <button
-                type="button"
-                className="flex w-full items-center justify-center gap-2 rounded-bl-2xl rounded-br-2xl px-5 py-4 text-[14px] font-semibold text-white transition-colors sm:rounded-bl-none"
-                style={{ background: 'var(--rose)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--rose-deep)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--rose)')}
-              >
-                {d.primaryCta ?? d.cta}
-              </button>
             </div>
           </motion.div>
         ))}
