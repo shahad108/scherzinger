@@ -5,14 +5,16 @@ interface Props {
 }
 
 export function MovableLockedOverlay({ data }: Props) {
-  const sourceText = 'Pilot estimate · ' + data.source.replace(/^Pilot estimate · /, '');
   return (
     <div className="mt-4 rounded-xl border border-dashed border-[var(--hairline)] bg-[var(--surface-soft)] p-3">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2 text-[11.5px]">
         <span className="font-semibold text-[var(--ink-2)]">
           Of the {data.totalLeakage} total leakage — what's actionable this cycle?
         </span>
-        <span className="text-[var(--muted)]">{sourceText}</span>
+        <span
+          className="text-[var(--muted)]"
+          dangerouslySetInnerHTML={{ __html: data.source }}
+        />
       </div>
       <div className="flex h-7 overflow-hidden rounded-md text-[11px] font-semibold text-white">
         <div
