@@ -1,84 +1,84 @@
-/* Pryzm 2026 — Frank-mockup-aligned tokens */
+/* Pryzm 2026 — Frank-mockup-aligned tokens (Phase 2.5) */
 @layer base {
-  :root {
+  :root, body.pryzm-2026 {
     /* Surface */
-    --bg: #f5f5f4;
+    --canvas: #cdd5de;
+    --shell: #eef1f5;
     --surface: #ffffff;
-    --surface-soft: #f8fafc;
-    --hairline: #e7e5e4;
-    --border: #e5e7eb;
-    --border-strong: #d6d3d1;
-    --grey-bg: #f5f5f4;
+    --surface-soft: #f3f5f8;
+    --surface-sunken: #e7eaef;
+    --bg: var(--canvas);
+
+    --hairline: #eaedf1;
+    --border: #dde1e7;
+    --border-strong: #c8cdd4;
+    --border-subtle: var(--hairline);
 
     /* Ink (text) */
-    --ink: #0f172a;
-    --ink-2: #404040;
-    --ink-3: #525252;
-    --muted: #737373;
-    --muted-2: #a3a3a3;
-
-    /* Brand */
-    --rose: #e11d48;
-    --rose-deep: #be123c;
-    --rose-soft: #fff1f2;
-    --rose-bg: #fff1f2;
-    --rose-border: #fecdd3;
-    --violet: #6d4ec5;
-    --violet-bg: #ece4f6;
-    --primary: #0284c7;
-    --primary-deep: #075985;
-
-    /* Semantic */
-    --green: #059669;
-    --green-bg: #ecfdf5;
-    --green-border: #a7f3d0;
-    --amber: #d97706;
-    --amber-bg: #fffbeb;
-    --amber-border: #fde68a;
-    --red: #dc2626;
-    --red-bg: #fef2f2;
-    --red-border: #fecaca;
-
-    /* Radii */
-    --r: 12px;
-    --radius-sm: 4px;
-    --radius-md: 6px;
-    --radius-lg: 10px;
-    --radius-xl: 14px;
-    --radius-2xl: 20px;
-    --radius-pill: 9999px;
-
-    /* Shadow */
-    --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
-    --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
-    --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
-    --shadow-1: var(--shadow);
-    --shadow-2: var(--shadow-md);
-    --shadow-3: var(--shadow-lg);
-    --shadow-4: 0 24px 48px rgba(15, 23, 42, 0.16);
-    --shadow-pop: 0 14px 32px -14px rgba(15, 20, 28, 0.20), 0 3px 8px rgba(15, 20, 28, 0.07);
-    --surface-overlay: rgba(15, 23, 42, 0.4);
-    --border-subtle: var(--hairline);
+    --ink: #101418;
+    --ink-2: #1f2530;
+    --ink-3: #4a5360;
+    --muted: #7d8693;
+    --muted-2: #aab2bd;
     --text-primary: var(--ink);
     --text-muted: var(--muted);
 
-    /* Motion */
-    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-    --duration-fast: 150ms;
-    --duration-base: 220ms;
-    --duration-slow: 320ms;
+    /* Brand — steel-rose */
+    --rose: #5a7da3;
+    --rose-deep: #3e5d80;
+    --rose-soft: #9eb6ce;
+    --rose-tint: #dde7f1;
+    --rose-bg: #edf3f9;
+    --rose-border: #c5d4e3;
 
-    /* Density */
-    --density-row: 44px;
-    --density-pad-x: 16px;
-    --density-pad-y: 12px;
-    --font-size-base: 14px;
-  }
+    /* Semantic — softened palette */
+    --green: #2f7d5b;
+    --green-bg: #e3efe6;
+    --green-border: #b9d4c3;
 
-  [data-density='compact'] {
-    --density-row: 36px;
-    --density-pad-x: 12px;
-    --density-pad-y: 8px;
-    --font-size-base: 13px;
+    --amber: #a5701f;
+    --amber-bg: #f5ecd9;
+    --amber-border: #e0caa3;
+
+    --red: #9a3232;
+    --red-bg: #f1dcdc;
+    --red-border: #d8a9a9;
+
+    --violet: #6d4ec5;
+    --violet-bg: #ece4f6;
+
+    --primary: var(--rose);
+    --primary-deep: var(--rose-deep);
+
+    /* Radii */
+    --r-sm: 8px;
+    --r: 12px;
+    --r-md: 14px;
+    --r-lg: 18px;
+    --r-xl: 24px;
+    --r-2xl: 32px;
+    --radius-sm: var(--r-sm);
+    --radius-md: var(--r);
+    --radius-lg: var(--r-md);
+    --radius-xl: var(--r-lg);
+    --radius-2xl: var(--r-xl);
+    --radius-pill: 9999px;
+
+    /* Shadow */
+    --shadow-card: 0 1px 0 rgba(15, 20, 28, 0.05), 0 2px 6px rgba(15, 20, 28, 0.06);
+    --shadow-pop: 0 14px 32px -14px rgba(15, 20, 28, 0.20), 0 3px 8px rgba(15, 20, 28, 0.07);
+    --shadow: var(--shadow-card);
+    --shadow-md: var(--shadow-pop);
+    --shadow-lg: 0 24px 48px rgba(15, 20, 28, 0.16);
+    --shadow-1: var(--shadow);
+    --shadow-2: var(--shadow-md);
+    --shadow-3: var(--shadow-lg);
+    --shadow-4: var(--shadow-lg);
+    --surface-overlay: rgba(15, 20, 28, 0.4);
+
+    /* Type */
+    --font-display: 'Manrope', 'Inter', system-ui, sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --grey-bg: var(--surface-soft);
   }
 }
