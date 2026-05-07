@@ -47,55 +47,82 @@
   ],
   "decisions": [
     {
-      "rank": "A",
-      "severity": "error",
-      "title": "Margin erosion · SKU 200832-E (Elektro-Zahnradpumpe)",
-      "why": "Historical margin 30.6% has dropped to 6.4% over 8 weeks. Cluster confidence 82%. Material cost +6.2% YoY, price unchanged 14 months.",
-      "tags": [
-        { "label": "BKAES cluster", "tone": "info" },
-        { "label": "82% confidence", "tone": "positive" }
-      ],
-      "meta": [
-        { "k": "Margin Δ", "v": "30.6% → 6.4%", "tone": "negative" },
-        { "k": "Revenue at risk", "v": "€184k", "tone": "negative" },
-        { "k": "Recommended price", "v": "€4.10 → €4.38", "tone": "neutral" },
-        { "k": "Window", "v": "Q2 2026", "tone": "neutral" }
-      ],
-      "cta": "Open in Pricing Studio"
-    },
-    {
-      "rank": "B",
+      "rank": "1",
       "severity": "warning",
-      "title": "Customer churn signal · Müller GmbH",
-      "why": "Order rhythm down 38% vs 90-day baseline. Last 3 quotes lost on price. Heiko owns the relationship — escalate.",
-      "tags": [
-        { "label": "Top-20 account", "tone": "warning" },
-        { "label": "82% conf.", "tone": "positive" }
+      "title": "Margin erosion · SKU 200832-E (Elektro-Zahnradpumpe)",
+      "why": "Same article sold to Customer 101580 at €4.10 vs Customer 102330 at €6.80, same Tier-2 volume.",
+      "headline": "Article 200832-E (Elektro-Zahnradpumpe, BKAES) · margin 30.6% → 6.4% over 2yr",
+      "tag": "Margin Erosion",
+      "daysOpenLabel": "1 day open",
+      "authorityLabel": "Your authority",
+      "tags": [],
+      "meta": [],
+      "cluster": { "label": "BKAES", "confidence": 82, "n": 627 },
+      "contract": "movable",
+      "recommendation": "Open in Pricing Studio",
+      "timeMinutes": 10,
+      "confLabel": "High",
+      "facts": [
+        { "label": "Margin drift",       "value": "30.6% → 6.4%",   "detail": "over 2 years",                                  "tone": "negative" },
+        { "label": "Customer mismatch",  "value": "€4.10 vs €6.80", "detail": "Cust. 101580 vs 102330 · same Tier-2 volume",  "tone": "neutral"  },
+        { "label": "Expected impact",    "value": "€18,600 / yr",   "detail": "High confidence",                              "tone": "positive" }
       ],
-      "meta": [
-        { "k": "ARR at risk", "v": "€184k", "tone": "negative" },
-        { "k": "Last order", "v": "32d ago", "tone": "negative" },
-        { "k": "Suggested action", "v": "Account review", "tone": "neutral" },
-        { "k": "Owner", "v": "Heiko", "tone": "neutral" }
-      ],
-      "cta": "Open customer dossier"
+      "trend": { "label": "Margin · 2yr", "value": "6.4%", "delta": "↓ 24.2pp", "spark": [30.6, 26.5, 22.0, 17.8, 12.1, 6.4] },
+      "primaryCta": "Open in Studio →",
+      "secondaryCta": "Insert From Library",
+      "cta": "Open in Studio →"
     },
     {
-      "rank": "C",
-      "severity": "info",
-      "title": "Cross-sell opportunity · Bauer KG",
-      "why": "SKU mix analysis flags 3 complementary products missing from typical orders. Estimated lift €76k if attached.",
-      "tags": [
-        { "label": "Cross-sell", "tone": "info" },
-        { "label": "71% conf.", "tone": "warning" }
+      "rank": "2",
+      "severity": "warning",
+      "title": "Cluster leak · SKU 204604 (Zahnradpumpe)",
+      "why": "BKAGG cluster shows margin erosion across 31 SKUs below critical threshold; this is the highest-revenue example.",
+      "headline": "Article 204604 (Zahnradpumpe, BKAGG) · margin 32.7% → 11.8%",
+      "tag": "Cluster Leak",
+      "daysOpenLabel": "2 days open",
+      "authorityLabel": "Your authority",
+      "tags": [],
+      "meta": [],
+      "cluster": { "label": "BKAGG", "confidence": 74, "n": 370 },
+      "contract": "movable",
+      "recommendation": "Open in Pricing Studio",
+      "timeMinutes": 10,
+      "confLabel": "High",
+      "facts": [
+        { "label": "Margin drift",       "value": "32.7% → 11.8%",   "detail": "over 2 years",                          "tone": "negative" },
+        { "label": "Customer mismatch",  "value": "€5.20 vs €7.10",  "detail": "31 SKUs in BKAGG cluster below threshold","tone": "neutral"  },
+        { "label": "Expected impact",    "value": "€12,400 / quarter","detail": "High confidence",                       "tone": "positive" }
       ],
-      "meta": [
-        { "k": "Lift potential", "v": "€76k", "tone": "positive" },
-        { "k": "SKUs", "v": "201267-B/C/D", "tone": "neutral" },
-        { "k": "Last bundle", "v": "never", "tone": "neutral" },
-        { "k": "Confidence", "v": "71%", "tone": "warning" }
+      "trend": { "label": "Margin · 2yr", "value": "11.8%", "delta": "↓ 20.9pp", "spark": [32.7, 28.1, 23.5, 19.0, 14.6, 11.8] },
+      "primaryCta": "Open in Studio →",
+      "secondaryCta": "Insert From Library",
+      "cta": "Open in Studio →"
+    },
+    {
+      "rank": "3",
+      "severity": "warning",
+      "title": "Renewal watch · SKU 205169 (Zahnradpumpe)",
+      "why": "Recommend: queue for August renewal review, do not act now.",
+      "headline": "Article 205169 (Zahnradpumpe, BKAGG) · margin 70.1% → 44.2%",
+      "tag": "Renewal Watch",
+      "daysOpenLabel": "3 days open",
+      "authorityLabel": "Locked until Q3 2026",
+      "tags": [],
+      "meta": [],
+      "cluster": { "label": "BKAGG", "confidence": 74, "n": 370 },
+      "contract": "locked",
+      "recommendation": "Queue for renewal",
+      "timeMinutes": 10,
+      "confLabel": "Medium",
+      "facts": [
+        { "label": "Margin drift",       "value": "70.1% → 44.2%",  "detail": "over 2 years",                  "tone": "negative" },
+        { "label": "Customer mismatch",  "value": "€8.40 vs €11.20","detail": "Locked until Q3 — queue for renewal","tone": "neutral"  },
+        { "label": "Expected impact",    "value": "€7,200 (deferred)","detail": "Medium confidence",            "tone": "neutral"  }
       ],
-      "cta": "Draft quote"
+      "trend": { "label": "Margin · 2yr", "value": "44.2%", "delta": "↓ 25.9pp", "spark": [70.1, 63.2, 56.1, 50.0, 47.0, 44.2] },
+      "primaryCta": "Queue renewal →",
+      "secondaryCta": "Insert From Library",
+      "cta": "Queue renewal →"
     }
   ],
   "trust": [

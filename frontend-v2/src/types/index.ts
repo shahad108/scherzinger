@@ -79,6 +79,26 @@ export interface DecisionMeta {
   tone: Tone;
 }
 
+export interface DecisionCluster {
+  label: string;
+  confidence: number;
+  n: number;
+}
+
+export interface DecisionFact {
+  label: string;
+  value: string;
+  detail: string;
+  tone?: 'negative' | 'positive' | 'neutral';
+}
+
+export interface DecisionTrend {
+  label: string;
+  value: string;
+  delta: string;
+  spark: number[];
+}
+
 export interface DecisionCard {
   rank: string;
   severity: Severity;
@@ -87,6 +107,19 @@ export interface DecisionCard {
   tags: Tag[];
   meta: DecisionMeta[];
   cta: string;
+  headline?: string;
+  tag?: string;
+  daysOpenLabel?: string;
+  authorityLabel?: string;
+  cluster?: DecisionCluster;
+  contract?: 'movable' | 'locked' | 'abtest';
+  recommendation?: string;
+  timeMinutes?: number;
+  confLabel?: string;
+  facts?: DecisionFact[];
+  trend?: DecisionTrend;
+  primaryCta?: string;
+  secondaryCta?: string;
 }
 
 export interface TrustTile {
