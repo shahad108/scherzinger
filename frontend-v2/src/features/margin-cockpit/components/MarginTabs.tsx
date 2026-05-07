@@ -1,7 +1,9 @@
 import type { MarginTabs as MarginTabsType } from '@/types';
 import { CrossCustomerPane } from './panes/CrossCustomerPane';
 import { SkuLeakagePane } from './panes/SkuLeakagePane';
-// SegmentPane, ErosionPane, CustomerTrendPane added in Tasks 6 + 7
+import { SegmentPane } from './panes/SegmentPane';
+import { ErosionPane } from './panes/ErosionPane';
+// CustomerTrendPane added in Task 7
 
 interface Props {
   tabs: MarginTabsType;
@@ -19,7 +21,7 @@ const TAB_DEFS: { id: keyof MarginTabsType; label: string; badge?: string }[] = 
   { id: 'cust',  label: 'Customer trend' },
 ];
 
-export function MarginTabs({ tabs, activeTab, onTabChange }: Props) {
+export function MarginTabs({ tabs, activeTab, onTabChange, activeSegTab, onSegTabChange }: Props) {
   return (
     <div id="marginTabsBlock" className="mb-4 rounded-2xl border border-[var(--hairline)] bg-white p-5">
       <div role="tablist" className="mb-4 flex flex-wrap gap-2">
@@ -61,13 +63,13 @@ export function MarginTabs({ tabs, activeTab, onTabChange }: Props) {
         </div>
       )}
       {activeTab === 'seg' && (
-        <div role="tabpanel" id="tabpanel-seg" aria-labelledby="tab-seg" className="text-sm text-[var(--muted)]">
-          Segment pivot — Task 6
+        <div role="tabpanel" id="tabpanel-seg" aria-labelledby="tab-seg">
+          <SegmentPane pane={tabs.seg} activeSegTab={activeSegTab} onSegTabChange={onSegTabChange} />
         </div>
       )}
       {activeTab === 'erode' && (
-        <div role="tabpanel" id="tabpanel-erode" aria-labelledby="tab-erode" className="text-sm text-[var(--muted)]">
-          List-price erosion — Task 6
+        <div role="tabpanel" id="tabpanel-erode" aria-labelledby="tab-erode">
+          <ErosionPane pane={tabs.erode} />
         </div>
       )}
       {activeTab === 'cust' && (
