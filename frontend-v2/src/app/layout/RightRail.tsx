@@ -21,12 +21,12 @@ export function RightRail() {
         <Menu size={16} />
       </button>
 
-      <div className="pz-rail-card">
+      <div className="pz-rail-card notif-card">
         {data.notifications.map((n) => (
           <button type="button" key={n.id} className={`pz-notif${n.unread ? ' unread' : ''}`}>
             <span className={`pz-notif-ic ${n.tone}`}><ToneIcon tone={n.tone} /></span>
-            <span style={{ flex: 1, textAlign: 'left' }}>
-              <span className="pz-notif-title">{n.title}</span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span className="pz-notif-title" style={{ display: 'block' }}>{n.title}</span>
               <span className="pz-notif-sub" style={{ display: 'block' }}>{n.sub}</span>
             </span>
             <span className="pz-notif-arr" aria-hidden>
@@ -34,13 +34,10 @@ export function RightRail() {
             </span>
           </button>
         ))}
-        <div className="pz-notif-foot" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <button type="button" className="see">See all notifications →</button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--ink-2)] hover:bg-[var(--surface-soft)]"
-          >
-            <NotebookPen size={12} /> Notes
+        <div className="pz-notif-foot">
+          <button type="button" className="see">See all notifications <ArrowUpRight size={13} /></button>
+          <button type="button" className="notes">
+            <NotebookPen size={13} /> Notes
           </button>
         </div>
       </div>
