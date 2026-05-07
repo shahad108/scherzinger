@@ -7,7 +7,6 @@ interface Props {
 }
 
 export function CostVsPriceCard({ data }: Props) {
-  const seriesData = useMemo(() => data.series, [data.series]);
   const sparkData = useMemo(
     () => data.recovery.spark.map((v, i) => ({ i, v })),
     [data.recovery.spark],
@@ -28,7 +27,7 @@ export function CostVsPriceCard({ data }: Props) {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <div className="h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={seriesData} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+            <LineChart data={data.series} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
               <CartesianGrid stroke="var(--hairline)" vertical={false} />
               <XAxis dataKey="month" stroke="var(--muted)" tick={{ fontSize: 11 }} />
               <YAxis stroke="var(--muted)" tick={{ fontSize: 11 }} domain={['auto', 'auto']} />
@@ -55,7 +54,7 @@ export function CostVsPriceCard({ data }: Props) {
             <div className="text-[12px] font-semibold uppercase tracking-wider text-[var(--muted)]">{data.recovery.label}</div>
             <div className="mt-1 font-display text-[28px] font-bold" style={{ color: 'var(--green)' }}>{data.recovery.value}</div>
             <div className="mt-1 text-[12px] text-[var(--ink-2)]" dangerouslySetInnerHTML={{ __html: data.recovery.sub }} />
-            <div className="mt-2 h-[80px]">
+            <div className="mt-2 h-[80px]" aria-hidden="true">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={sparkData}>
                   <Area type="monotone" dataKey="v" stroke="var(--rose)" fill="var(--rose-bg)" strokeWidth={2} />

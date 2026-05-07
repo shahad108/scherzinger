@@ -284,7 +284,9 @@ export interface LostQuoteDifferentialData {
   subtitle: string;
   significance: string;                   // "p = 0.006 · statistically significant"
   tiles: { id: 'won' | 'lost' | 'diff'; label: string; value: string; sub: string }[];
+  /** HTML allowed: <b>, <span>; rendered via dangerouslySetInnerHTML. */
   interpretationHtml: string;
+  /** HTML allowed: <b>, <span>; rendered via dangerouslySetInnerHTML. */
   sourceHtml: string;
 }
 
@@ -298,12 +300,15 @@ export interface CostVsPriceData {
     label: string;
     value: string;                        // "61%"
     pct: number;                          // 61
+    /** HTML allowed: <b>, <span>; rendered via dangerouslySetInnerHTML. */
     sub: string;
+    /** HTML allowed: <b>, <span>; rendered via dangerouslySetInnerHTML. */
     breakdownHtml: string;
   };
   recovery: {
     label: string;
     value: string;                        // "€147K"
+    /** HTML allowed: <b>, <span>; rendered via dangerouslySetInnerHTML. */
     sub: string;
     spark: number[];                      // 12 monthly cumulative points
   };
