@@ -83,11 +83,19 @@ function SelectPill({ children }: { children: React.ReactNode }) {
 function FactRow({ fact }: { fact: DecisionFact }) {
   const valueColor = fact.tone === 'negative' ? 'var(--red)' : fact.tone === 'positive' ? 'var(--green)' : 'var(--ink-2)';
   return (
-    <div className="grid grid-cols-[140px_minmax(0,1fr)] items-baseline gap-3 border-t border-[var(--hairline)] py-2.5 first:border-t-0 first:pt-0 last:pb-0">
-      <div className="text-[11.5px] font-semibold text-[var(--muted)]">{fact.label}</div>
-      <div>
-        <div className="text-[13px] font-bold tabular-nums" style={{ color: valueColor }}>{fact.value}</div>
-        <div className="mt-0.5 text-[11.5px] text-[var(--muted)]">{fact.detail}</div>
+    <div
+      className="grid grid-cols-[130px_minmax(0,1fr)] items-baseline gap-3.5 first:border-t-0 first:pt-0 last:pb-0"
+      style={{ padding: '9px 0', borderTop: '1px solid rgba(0,0,0,0.05)' }}
+    >
+      <div className="text-[10.5px] font-semibold uppercase tracking-[0.06em] leading-[1.4] text-[var(--muted)]">{fact.label}</div>
+      <div className="min-w-0">
+        <div
+          className="text-[13.5px] font-bold leading-[1.35] tracking-[-0.005em] tabular-nums"
+          style={{ color: valueColor }}
+        >
+          {fact.value}
+        </div>
+        <div className="mt-0.5 text-[11.5px] leading-[1.4] text-[var(--muted)]">{fact.detail}</div>
       </div>
     </div>
   );
@@ -199,33 +207,76 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden rounded-2xl border border-[var(--hairline)] bg-white shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-pop)]"
+            className="rounded-[14px] border border-[var(--border)] bg-white shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-pop)]"
           >
             {/* Top section: rank + title + tools, then chips */}
-            <div className="px-5 pt-4 pb-4">
+            <div style={{ padding: '18px 22px' }}>
               <div className="flex items-center gap-3.5">
                 <div
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-lg font-display text-[13px] font-bold text-white"
-                  style={{ background: 'var(--ink)' }}
+                  className="grid shrink-0 place-items-center font-display text-[13px] font-bold"
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 10,
+                    background: 'var(--surface-sunken)',
+                    color: 'var(--ink-2)',
+                  }}
                 >
                   {d.rank}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[15px] font-bold leading-tight tracking-[-0.012em] text-[var(--ink)]">
+                  <div className="text-[15.5px] font-bold leading-[1.3] tracking-[-0.012em] text-[var(--ink)]">
                     {d.headline ?? d.title}
                   </div>
                   <div className="mt-1 text-[12px] text-[var(--muted)]">
                     {[d.tag, d.daysOpenLabel, d.authorityLabel].filter(Boolean).join(' · ')}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-[var(--muted-2)]">
-                  <button type="button" aria-label="Snooze" className="grid h-8 w-8 place-items-center rounded-md hover:bg-[var(--surface-soft)] hover:text-[var(--ink-3)]">
-                    <Clock size={14} />
+                <div className="flex items-center" style={{ gap: 6 }}>
+                  <button
+                    type="button"
+                    aria-label="Snooze"
+                    className="grid place-items-center"
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 9,
+                      background: 'var(--surface-sunken)',
+                      color: 'var(--ink-2)',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Clock size={13} />
                   </button>
-                  <button type="button" aria-label="More" className="grid h-8 w-8 place-items-center rounded-md hover:bg-[var(--surface-soft)] hover:text-[var(--ink-3)]">
-                    <MoreHorizontal size={14} />
+                  <button
+                    type="button"
+                    aria-label="More"
+                    className="grid place-items-center"
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 9,
+                      background: 'var(--surface-sunken)',
+                      color: 'var(--ink-2)',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <MoreHorizontal size={13} />
                   </button>
-                  <span aria-hidden className="grid h-8 w-5 place-items-center text-[var(--muted-2)]">
+                  <span
+                    aria-hidden
+                    className="grid place-items-center"
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 9,
+                      background: 'var(--surface-sunken)',
+                      color: 'var(--muted)',
+                      cursor: 'grab',
+                    }}
+                  >
                     <GripVertical size={14} />
                   </span>
                 </div>
@@ -242,7 +293,7 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
             </div>
 
             {/* Middle section: meta-grid + signal + trend */}
-            <div className="border-t border-[var(--hairline)] px-5 py-4">
+            <div style={{ padding: '18px 22px', borderTop: '1px solid var(--hairline)' }}>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wider text-[var(--muted)]">
@@ -274,22 +325,36 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
               </div>
 
               {(d.facts || d.trend) && (
-                <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
-                  <div className="rounded-xl border border-[var(--hairline)] bg-[var(--surface-soft)] px-4 py-3">
-                    <div className="mb-2 text-[12px]">
-                      <b className="font-bold text-[var(--ink)]">Why now</b>
-                      <span className="ml-1 text-[var(--muted)]">— top signals driving this recommendation</span>
+                <div
+                  className="mt-4 grid grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,1fr)_200px]"
+                  style={{
+                    background: 'var(--surface-soft)',
+                    border: '1px solid var(--hairline)',
+                    borderRadius: 11,
+                  }}
+                >
+                  <div style={{ padding: '14px 18px' }}>
+                    <div className="mb-3 flex flex-wrap items-baseline gap-2 text-[12.5px] font-bold leading-tight tracking-[-0.005em] text-[var(--ink)]">
+                      <b>Why now</b>
+                      <span className="text-[11.5px] font-medium text-[var(--muted)]">— top signals driving this recommendation</span>
                     </div>
                     <div className="flex flex-col">
                       {(d.facts ?? []).map((f, j) => <FactRow key={j} fact={f} />)}
                     </div>
                   </div>
                   {d.trend && (
-                    <div className="rounded-xl border border-[var(--hairline)] bg-white px-4 py-3">
-                      <div className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--muted)]">{d.trend.label}</div>
-                      <div className="mt-1 font-display text-[26px] font-bold leading-none tabular-nums text-[var(--ink)]">
+                    <div
+                      className="flex flex-col justify-between gap-2"
+                      style={{
+                        padding: '14px 16px',
+                        borderLeft: '1px solid var(--hairline)',
+                        background: 'rgba(0,0,0,0.012)',
+                      }}
+                    >
+                      <div className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">{d.trend.label}</div>
+                      <div className="font-display text-[32px] font-bold leading-[1.05] tracking-[-0.025em] tabular-nums text-[var(--ink)]">
                         {d.trend.value}
-                        <span className="ml-2 text-[12px] font-semibold" style={{ color: 'var(--red)' }}>{d.trend.delta}</span>
+                        <span className="ml-1.5 text-[12px] font-semibold" style={{ color: 'var(--red)' }}>{d.trend.delta}</span>
                       </div>
                       <MiniSpark trend={d.trend} />
                     </div>
