@@ -6,7 +6,8 @@
     "quotes": "Quotes",
     "forecasting": "Forecasting",
     "pricing": "Pricing Studio",
-    "ai": "AI Briefing"
+    "ai": "AI Briefing",
+    "settings": "Settings"
   },
   "common": { "search": "Search", "filter": "Filter", "save": "Save", "cancel": "Cancel" }
 }

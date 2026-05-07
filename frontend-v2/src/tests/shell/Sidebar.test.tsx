@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, beforeAll } from 'vitest';
+import { describe, expect, it, beforeAll, afterAll } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import i18n from '@/i18n';
 import { Sidebar } from '@/app/layout/Sidebar';
@@ -7,6 +7,10 @@ import { Sidebar } from '@/app/layout/Sidebar';
 describe('Sidebar', () => {
   beforeAll(async () => {
     await i18n.changeLanguage('en');
+  });
+
+  afterAll(() => {
+    i18n.changeLanguage('de');
   });
 
   it('renders Workspace label, six nav items, Departments, Data fresh, and user card', () => {

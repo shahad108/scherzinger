@@ -6,7 +6,8 @@
     "quotes": "Angebote",
     "forecasting": "Forecast",
     "pricing": "Preisstudio",
-    "ai": "KI-Briefing"
+    "ai": "KI-Briefing",
+    "settings": "Einstellungen"
   },
   "common": { "search": "Suchen", "filter": "Filter", "save": "Speichern", "cancel": "Abbrechen" }
 }

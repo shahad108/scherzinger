@@ -17,11 +17,18 @@ const items = [
 
 export function Sidebar() {
   const { t } = useTranslation();
+  const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
   const toggle = useUiStore((s) => s.toggleSidebar);
 
   return (
     <aside className="pz-aside">
-      <button type="button" className="pz-shell-toggle" aria-label="Toggle sidebar" onClick={toggle}>
+      <button
+        type="button"
+        className="pz-shell-toggle"
+        aria-label="Toggle sidebar"
+        aria-expanded={!sidebarCollapsed}
+        onClick={toggle}
+      >
         <Menu size={16} />
       </button>
       <div>
@@ -38,7 +45,7 @@ export function Sidebar() {
         ))}
         <NavLink to="/settings" className={({ isActive }) => (isActive ? 'pz-nav-item active' : 'pz-nav-item')}>
           <Settings className="ico" size={16} />
-          <span className="label">Settings</span>
+          <span className="label">{t('nav.settings')}</span>
         </NavLink>
       </div>
       <div className="pz-nav-divider" />
