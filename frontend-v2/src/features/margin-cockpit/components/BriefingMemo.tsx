@@ -36,12 +36,19 @@ export function BriefingMemo({ data, open, onClose }: Props) {
           <X size={14} />
         </button>
       </div>
-      <div className="space-y-3 text-[13.5px] leading-relaxed text-[var(--ink-2)]" contentEditable suppressContentEditableWarning>
-        {data.paragraphs.map((p, i) => (
-          <p key={i} dangerouslySetInnerHTML={{ __html: p.html }} />
+      <div
+        role="textbox"
+        aria-multiline="true"
+        aria-label="Editable margin briefing memo"
+        className="space-y-3 text-[13.5px] leading-relaxed text-[var(--ink-2)]"
+        contentEditable
+        suppressContentEditableWarning
+      >
+        {data.paragraphs.map((p) => (
+          <p key={p.html.slice(0, 40)} dangerouslySetInnerHTML={{ __html: p.html }} />
         ))}
         <p className="text-[12px] text-[var(--muted)]">
-          {data.signature.replace('— Frank', '')}
+          {data.signature}
           <span> · audit hash <code className="rounded bg-[var(--surface-soft)] px-1 py-0.5 text-[11px]">{data.auditHash}</code></span>
         </p>
       </div>
