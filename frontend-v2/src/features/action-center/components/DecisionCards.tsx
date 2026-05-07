@@ -94,17 +94,26 @@ function FactRow({ fact }: { fact: DecisionFact }) {
 }
 
 function FeedbackRow({ id }: { id: string }) {
-  const [act, setAct] = useState<ActState>(null);
+  const [act, setAct] = useState<ActState>('acc');
   const [open, setOpen] = useState(false);
 
   const accSelected = act === 'acc' || act === 'nim' || act === 'par';
   const accText = accSelected && act ? accLabel[act as 'acc' | 'nim' | 'par'] : 'Accept & implement';
 
-  const fbtnBase = 'inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-3.5 py-2 text-[12.5px] font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--surface-soft)]';
+  // Accept is GREEN by default (selected on mount); Reject is white-with-red-text default; A/B is white-with-violet-text default.
+  const baseFbtn = 'inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-[12.5px] font-semibold transition-colors';
 
-  const acceptStyles = accSelected ? { background: 'var(--green)', borderColor: 'transparent', color: '#fff' } : undefined;
-  const rejStyles = act === 'rej' ? { background: 'var(--red)', borderColor: 'transparent', color: '#fff' } : undefined;
-  const abStyles = act === 'ab' ? { background: 'var(--violet)', borderColor: 'transparent', color: '#fff' } : undefined;
+  const accStyle: React.CSSProperties = accSelected
+    ? { background: 'var(--green)', borderColor: 'transparent', color: '#fff' }
+    : { background: '#fff', borderColor: 'var(--green-border)', color: 'var(--green)' };
+
+  const rejStyle: React.CSSProperties = act === 'rej'
+    ? { background: 'var(--red)', borderColor: 'transparent', color: '#fff' }
+    : { background: '#fff', borderColor: 'var(--red-border)', color: 'var(--red)' };
+
+  const abStyle: React.CSSProperties = act === 'ab'
+    ? { background: 'var(--violet)', borderColor: 'transparent', color: '#fff' }
+    : { background: '#fff', borderColor: 'var(--hairline)', color: 'var(--violet)' };
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -112,8 +121,8 @@ function FeedbackRow({ id }: { id: string }) {
         <button
           type="button"
           onClick={() => { setAct('acc'); setOpen(false); }}
-          className={`${fbtnBase} rounded-r-none pr-2.5`}
-          style={acceptStyles}
+          className={`${baseFbtn} rounded-r-none pr-2.5`}
+          style={accStyle}
         >
           <span aria-hidden>✓</span>{accText}
         </button>
@@ -121,8 +130,8 @@ function FeedbackRow({ id }: { id: string }) {
           type="button"
           aria-label="Accept variant menu"
           onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
-          className={`${fbtnBase} rounded-l-none border-l-0 px-2`}
-          style={acceptStyles}
+          className={`${baseFbtn} rounded-l-none border-l-0 px-2`}
+          style={accStyle}
         >
           <ChevronDown size={12} />
         </button>
@@ -150,10 +159,10 @@ function FeedbackRow({ id }: { id: string }) {
           </div>
         )}
       </div>
-      <button type="button" onClick={() => setAct('rej')} className={fbtnBase} style={rejStyles}>
+      <button type="button" onClick={() => setAct('rej')} className={baseFbtn} style={rejStyle}>
         <span aria-hidden>✗</span> Reject
       </button>
-      <button type="button" onClick={() => setAct('ab')} className={fbtnBase} style={abStyles}>
+      <button type="button" onClick={() => setAct('ab')} className={baseFbtn} style={abStyle}>
         <span aria-hidden>🧪</span> Slice as A/B
       </button>
       <span className="sr-only">Action {id}</span>
@@ -289,25 +298,31 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
               )}
             </div>
 
-            {/* Bottom section: feedback + cta-row */}
+            {/* Bottom section: feedback row */}
             <div className="border-t border-[var(--hairline)] px-5 py-4">
               <FeedbackRow id={d.rank} />
-              <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+            </div>
+            {/* CTA row: secondary on left, big primary rose on the right */}
+            <div className="grid grid-cols-1 gap-0 border-t border-[var(--hairline)] sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+              <div className="flex items-center px-5 py-3">
                 {d.secondaryCta && (
-                  <button type="button" className="rounded-xl border border-[var(--border)] bg-white px-3.5 py-2 text-[12.5px] font-semibold text-[var(--ink-2)] hover:bg-[var(--surface-soft)]">
+                  <button
+                    type="button"
+                    className="rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-[12.5px] font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--surface-soft)]"
+                  >
                     {d.secondaryCta}
                   </button>
                 )}
-                <button
-                  type="button"
-                  className="rounded-xl px-4 py-2 text-[12.5px] font-semibold text-white shadow-sm transition-colors"
-                  style={{ background: 'var(--rose)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--rose-deep)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--rose)')}
-                >
-                  {d.primaryCta ?? d.cta}
-                </button>
               </div>
+              <button
+                type="button"
+                className="flex w-full items-center justify-center gap-2 rounded-bl-2xl rounded-br-2xl px-5 py-4 text-[14px] font-semibold text-white transition-colors sm:rounded-bl-none"
+                style={{ background: 'var(--rose)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--rose-deep)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--rose)')}
+              >
+                {d.primaryCta ?? d.cta}
+              </button>
             </div>
           </motion.div>
         ))}

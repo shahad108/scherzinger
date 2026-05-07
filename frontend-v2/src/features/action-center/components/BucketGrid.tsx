@@ -43,7 +43,13 @@ export function BucketGrid({ buckets }: { buckets: BucketCard[] }) {
                 </div>
               ))}
             </div>
-            <button className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--rose)] transition-colors hover:text-[var(--rose-deep)]">
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[12.5px] font-semibold text-white transition-colors"
+              style={{ background: 'var(--ink)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = '#000')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ink)')}
+            >
               {b.cta}
               <ArrowRight size={12} />
             </button>
