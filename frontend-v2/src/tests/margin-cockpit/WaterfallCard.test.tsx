@@ -37,7 +37,7 @@ const data: WaterfallCardData = {
 };
 
 describe('WaterfallCard', () => {
-  it('renders bucket rows and fires onTabJump for tab-kind jumps', () => {
+  it('renders bucket rows and does not fire onTabJump for route-kind jumps', () => {
     const onTabJump = vi.fn();
     render(
       <MemoryRouter>
@@ -52,5 +52,24 @@ describe('WaterfallCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /Discounting/ }));
     // jumpTo for Discounting is route → no tab jump expected
     expect(onTabJump).not.toHaveBeenCalled();
+  });
+
+  it('fires onTabJump when a tab-kind bucket is clicked', () => {
+    const tabData = { ...data, buckets: [
+      ...data.buckets,
+      {
+        id: 'mix', name: 'Customer mix', pct: '−0.6pp', eur: '€64K',
+        jumpLabel: '→ Tier pivot',
+        jumpTo: { kind: 'tab' as const, tab: 'seg', segTab: 'tier' },
+      },
+    ]};
+    const onTabJump = vi.fn();
+    render(
+      <MemoryRouter>
+        <WaterfallCard data={tabData} onTabJump={onTabJump} />
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Customer mix/ }));
+    expect(onTabJump).toHaveBeenCalledWith('seg', 'tier');
   });
 });

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bar,
@@ -35,11 +36,15 @@ export function WaterfallCard({ data, onTabJump }: Props) {
 
   // Recharts data: stacked-floating bar — invisible base + visible delta on top.
   // Loss bars sit between cumulative_after and cumulative_before; endpoints rise from 0.
-  const chartData: ChartDatum[] = data.chart.map((p, i, arr) => {
-    if (p.kind === 'endpoint') return { label: p.label, base: 0, value: p.cumulative, kind: p.kind };
-    const prev = arr[i - 1].cumulative;
-    return { label: p.label, base: p.cumulative, value: prev - p.cumulative, kind: p.kind };
-  });
+  const chartData: ChartDatum[] = useMemo(
+    () =>
+      data.chart.map((p, i, arr) => {
+        if (p.kind === 'endpoint') return { label: p.label, base: 0, value: p.cumulative, kind: p.kind };
+        const prev = i > 0 ? arr[i - 1].cumulative : p.cumulative;
+        return { label: p.label, base: p.cumulative, value: prev - p.cumulative, kind: p.kind };
+      }),
+    [data.chart],
+  );
 
   return (
     <div className="mb-4 rounded-2xl border border-[var(--hairline)] bg-white p-5">
@@ -61,7 +66,7 @@ export function WaterfallCard({ data, onTabJump }: Props) {
             <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
               <CartesianGrid stroke="var(--hairline)" vertical={false} />
               <XAxis dataKey="label" stroke="var(--muted)" tick={{ fontSize: 11 }} />
-              <YAxis stroke="var(--muted)" tick={{ fontSize: 11 }} domain={[0, 30]} />
+              <YAxis stroke="var(--muted)" tick={{ fontSize: 11 }} domain={[0, 'auto']} />
               <Tooltip />
               <Bar dataKey="base" stackId="wf" fill="transparent" />
               <Bar dataKey="value" stackId="wf" fill="var(--rose)">
