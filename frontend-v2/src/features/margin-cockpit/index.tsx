@@ -5,6 +5,7 @@ import { BriefingMemo } from './components/BriefingMemo';
 import { MarginHealthStrip } from './components/MarginHealthStrip';
 import { ClusterMiniRow } from './components/ClusterMiniRow';
 import { ShiftedStrip } from './components/ShiftedStrip';
+import { WaterfallCard } from './components/WaterfallCard';
 
 export function MarginCockpitPage() {
   const { data, isLoading, error } = useMarginCockpit();
@@ -40,7 +41,8 @@ export function MarginCockpitPage() {
       <MarginHealthStrip cells={data.health} />
       <ClusterMiniRow clusters={data.clusters} />
       <ShiftedStrip title={data.shifted.title} rows={data.shifted.rows} netLine={data.shifted.netLine} onTabJump={handleTabJump} />
-      {/* Tasks 3–7 add: Waterfall, LostQuote, CostVsPrice, Tabs, CrossLinks */}
+      <WaterfallCard data={data.waterfall} onTabJump={handleTabJump} />
+      {/* Tasks 4–7 add: LostQuote, CostVsPrice, Tabs, CrossLinks */}
     </div>
   );
 }
