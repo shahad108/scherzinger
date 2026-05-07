@@ -1,0 +1,24 @@
+{
+  "notifications": [
+    { "id": "pro",     "tone": "ok",   "title": "PRO mode activated",        "sub": "All premium features unlocked · just now",        "unread": true },
+    { "id": "sku",     "tone": "info", "title": "New SKU recommendation",    "sub": "Article 205418-A entered A/B · 2h ago",            "unread": true },
+    { "id": "phase",   "tone": "warn", "title": "Phase deadline soon",       "sub": "Initial review ends in 2 days",                     "unread": false }
+  ],
+  "reviewers": {
+    "panelLabel": "Cross-functional pricing panel",
+    "people": [
+      { "id": "hm", "initials": "HM", "bg": "#cdb6f0" },
+      { "id": "th", "initials": "TH", "bg": "#f4cdb1" },
+      { "id": "fk", "initials": "FK", "bg": "#dcd1c4" },
+      { "id": "nb", "initials": "NB", "bg": "#bdd9c5" }
+    ],
+    "extraCount": 5
+  },
+  "sections": [
+    { "id": "sec-movable",   "title": "Movable revenue",     "sub": "~62% · €3.88M",       "href": "#sec-movable" },
+    { "id": "sec-decisions", "title": "Today's decisions",   "sub": "3 ranked actions",     "href": "#sec-decisions" },
+    { "id": "sec-trust",     "title": "Model trust",         "sub": "4 KPIs",               "href": "#sec-trust" },
+    { "id": "sec-lost",      "title": "Lost-quote analysis", "sub": "+1.8pp differential",  "href": "#sec-lost" },
+    { "id": "sec-sku",       "title": "SKU pricing engine",  "sub": "1,015 SKUs",           "href": "#sec-sku" }
+  ]
+}
