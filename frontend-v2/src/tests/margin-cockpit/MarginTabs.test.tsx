@@ -18,7 +18,7 @@ const tabs: MarginTabsType = {
 };
 
 describe('MarginTabs', () => {
-  it('switches active pane on tab click', () => {
+  it('renders the active pane on initial mount', () => {
     render(
       <MemoryRouter>
         <MarginTabs tabs={tabs} activeTab="cross" onTabChange={() => {}} activeSegTab="family" onSegTabChange={() => {}} />
@@ -35,7 +35,7 @@ describe('MarginTabs', () => {
         <MarginTabs tabs={tabs} activeTab={active} onTabChange={onTabChange} activeSegTab="family" onSegTabChange={() => {}} />
       </MemoryRouter>
     );
-    fireEvent.click(screen.getByRole('button', { name: /SKU Margin Leakage/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /SKU Margin Leakage/i }));
     expect(active).toBe('leak');
   });
 });

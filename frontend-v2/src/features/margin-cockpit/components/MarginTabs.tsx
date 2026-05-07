@@ -22,13 +22,17 @@ const TAB_DEFS: { id: keyof MarginTabsType; label: string; badge?: string }[] = 
 export function MarginTabs({ tabs, activeTab, onTabChange }: Props) {
   return (
     <div id="marginTabsBlock" className="mb-4 rounded-2xl border border-[var(--hairline)] bg-white p-5">
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div role="tablist" className="mb-4 flex flex-wrap gap-2">
         {TAB_DEFS.map((d) => {
           const active = d.id === activeTab;
           return (
             <button
               key={d.id}
               type="button"
+              role="tab"
+              aria-selected={active}
+              id={`tab-${d.id}`}
+              aria-controls={`tabpanel-${d.id}`}
               onClick={() => onTabChange(d.id)}
               className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors ${
                 active ? 'text-white' : 'border border-[var(--hairline)] bg-white text-[var(--ink-2)]'
@@ -46,11 +50,31 @@ export function MarginTabs({ tabs, activeTab, onTabChange }: Props) {
         })}
       </div>
 
-      {activeTab === 'cross' && <CrossCustomerPane pane={tabs.cross} />}
-      {activeTab === 'leak'  && <SkuLeakagePane pane={tabs.leak} />}
-      {activeTab === 'seg'   && <div className="text-sm text-[var(--muted)]">Segment pivot — Task 6</div>}
-      {activeTab === 'erode' && <div className="text-sm text-[var(--muted)]">List-price erosion — Task 6</div>}
-      {activeTab === 'cust'  && <div className="text-sm text-[var(--muted)]">Customer trend — Task 7</div>}
+      {activeTab === 'cross' && (
+        <div role="tabpanel" id="tabpanel-cross" aria-labelledby="tab-cross">
+          <CrossCustomerPane pane={tabs.cross} />
+        </div>
+      )}
+      {activeTab === 'leak' && (
+        <div role="tabpanel" id="tabpanel-leak" aria-labelledby="tab-leak">
+          <SkuLeakagePane pane={tabs.leak} />
+        </div>
+      )}
+      {activeTab === 'seg' && (
+        <div role="tabpanel" id="tabpanel-seg" aria-labelledby="tab-seg" className="text-sm text-[var(--muted)]">
+          Segment pivot — Task 6
+        </div>
+      )}
+      {activeTab === 'erode' && (
+        <div role="tabpanel" id="tabpanel-erode" aria-labelledby="tab-erode" className="text-sm text-[var(--muted)]">
+          List-price erosion — Task 6
+        </div>
+      )}
+      {activeTab === 'cust' && (
+        <div role="tabpanel" id="tabpanel-cust" aria-labelledby="tab-cust" className="text-sm text-[var(--muted)]">
+          Customer trend — Task 7
+        </div>
+      )}
     </div>
   );
 }
