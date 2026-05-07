@@ -6,6 +6,8 @@ import { MarginHealthStrip } from './components/MarginHealthStrip';
 import { ClusterMiniRow } from './components/ClusterMiniRow';
 import { ShiftedStrip } from './components/ShiftedStrip';
 import { WaterfallCard } from './components/WaterfallCard';
+import { LostQuoteDifferential } from './components/LostQuoteDifferential';
+import { CostVsPriceCard } from './components/CostVsPriceCard';
 
 export function MarginCockpitPage() {
   const { data, isLoading, error } = useMarginCockpit();
@@ -42,7 +44,9 @@ export function MarginCockpitPage() {
       <ClusterMiniRow clusters={data.clusters} />
       <ShiftedStrip title={data.shifted.title} rows={data.shifted.rows} netLine={data.shifted.netLine} onTabJump={handleTabJump} />
       <WaterfallCard data={data.waterfall} onTabJump={handleTabJump} />
-      {/* Tasks 4–7 add: LostQuote, CostVsPrice, Tabs, CrossLinks */}
+      <LostQuoteDifferential data={data.lostQuote} />
+      <CostVsPriceCard data={data.costVsPrice} />
+      {/* Tasks 5–7 add: Tabs, CrossLinks */}
     </div>
   );
 }
