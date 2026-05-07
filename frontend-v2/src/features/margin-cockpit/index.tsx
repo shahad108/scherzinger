@@ -8,6 +8,7 @@ import { ShiftedStrip } from './components/ShiftedStrip';
 import { WaterfallCard } from './components/WaterfallCard';
 import { LostQuoteDifferential } from './components/LostQuoteDifferential';
 import { CostVsPriceCard } from './components/CostVsPriceCard';
+import { MarginTabs } from './components/MarginTabs';
 
 export function MarginCockpitPage() {
   const { data, isLoading, error } = useMarginCockpit();
@@ -32,10 +33,6 @@ export function MarginCockpitPage() {
     document.getElementById('marginTabsBlock')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // activeTab/activeSegTab consumed in Task 5 (MarginTabs); referenced here so noUnusedLocals is satisfied.
-  void activeTab;
-  void activeSegTab;
-
   return (
     <div className="mx-auto max-w-[1400px] px-8 py-6">
       <MarginPageHead header={data.header} onGenerateBriefing={() => setBriefingOpen((v) => !v)} />
@@ -46,7 +43,14 @@ export function MarginCockpitPage() {
       <WaterfallCard data={data.waterfall} onTabJump={handleTabJump} />
       <LostQuoteDifferential data={data.lostQuote} />
       <CostVsPriceCard data={data.costVsPrice} />
-      {/* Tasks 5–7 add: Tabs, CrossLinks */}
+      <MarginTabs
+        tabs={data.tabs}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        activeSegTab={activeSegTab}
+        onSegTabChange={setActiveSegTab}
+      />
+      {/* Tasks 6–7 add: remaining panes, CrossLinks */}
     </div>
   );
 }
