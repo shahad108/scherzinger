@@ -186,3 +186,229 @@ export interface ActionCenterData {
   audit: AuditRow[];
   abTests: AbTestCard[];
 }
+
+/* Margin Cockpit page payload */
+
+export interface MarginPageHeader {
+  crumbTrail: string[];                   // ["Cockpit","Pricing Analyst · Frank","Margin Intelligence"]
+  title: string;                          // "Margin Intelligence"
+  subPills: string[];                     // ["Predictive Portfolio Pricing","Diagnostics"]
+  subStats: { label: string; value: string }[]; // {label:"refreshed today",value:"LTM"}
+  auditTag: string;                       // "Audit-ready · hash-signed"
+  filters: { label: string; value: string }[]; // Cluster/Family/Tier
+}
+
+export interface BriefingParagraph {
+  /** HTML allowed: <b>, <code>, color spans. Already styled in mock; rendered via dangerouslySetInnerHTML. */
+  html: string;
+}
+
+export interface BriefingMemoData {
+  title: string;                          // "Margin briefing · auto-drafted, editable · audit-ready"
+  paragraphs: BriefingParagraph[];
+  signature: string;                      // "— Frank, Pricing Analyst..."
+  auditHash: string;                      // "m4r9bx"
+}
+
+export interface MarginHealthCell {
+  id: 'score' | 'actual' | 'belowPlan' | 'closable';
+  label: string;
+  value: string;
+  trend?: string;                         // e.g. "↓ −1.9pp"
+  trendTone?: 'up' | 'down' | 'flat';
+  sub?: string;
+  benchmark?: string;
+  scoreRing?: number;                     // only for id==='score'
+  scoreVerdict?: string;                  // "Watch"
+  scoreTone?: 'green' | 'amber' | 'red';
+  authSplit?: { yours: string; needsMd: string };
+  jumpTo?: string;                        // route, e.g. "/action-center"
+}
+
+export interface ClusterChip {
+  code: string;                           // "BKAES"
+  margin: string;                         // "25%"
+  target: string;                         // "target 28%"
+  conf: string;                           // "82%"
+  tone: 'green' | 'amber' | 'red';
+  warning?: string;                       // "⚠ low-n" badge text
+  filterToast: string;
+}
+
+export interface ShiftedRow {
+  dotTone: 'red' | 'green' | 'amber' | 'muted';
+  text: string;                           // HTML allowed (delta chips, ab-test note)
+  delta: { value: string; tone: 'up' | 'down' | 'flat' };
+  jumpLabel: string;                      // "→ Cost trajectory"
+  jumpTo: { kind: 'route'; to: string } | { kind: 'tab'; tab: string; segTab?: string };
+}
+
+export interface WaterfallBucket {
+  id: string;                             // "target","mix","discount","cost","rebate","erosion","actual"
+  name: string;
+  endpoint?: 'green-start' | 'green-end'; // for non-clickable target/actual rows
+  pct: string;                            // "−1.4pp" or "28.0%"
+  eur: string;                            // "€150K" or "plan"
+  source?: string;                        // small line under name
+  delta?: { label: string; tone: 'up' | 'down' | 'flat' };
+  jumpLabel?: string;                     // "→ Cost trajectory"
+  jumpTo?: ShiftedRow['jumpTo'];
+}
+
+export interface WaterfallChartPoint {
+  label: string;                          // matches bucket name
+  cumulative: number;                     // running margin % after this bucket
+  delta: number;                          // negative for losses, positive endpoints
+  kind: 'endpoint' | 'loss';
+}
+
+export interface MovableLockedSplit {
+  totalLeakage: string;                   // "€417K"
+  movable: { label: string; pct: number; }; // "Movable €260K (62%)" → label includes amount
+  locked: { label: string; pct: number; };
+  source: string;                         // "Pilot estimate · derived from price_governance.price_rules + frame-contract dates"
+}
+
+export interface WaterfallCardData {
+  title: string;
+  subtitle: string;
+  totalChip: string;                      // "€417K total leakage"
+  infoPanel: string[];                    // info paragraphs
+  buckets: WaterfallBucket[];
+  chart: WaterfallChartPoint[];
+  movableLocked: MovableLockedSplit;
+}
+
+export interface LostQuoteDifferentialData {
+  title: string;
+  subtitle: string;
+  significance: string;                   // "p = 0.006 · statistically significant"
+  tiles: { id: 'won' | 'lost' | 'diff'; label: string; value: string; sub: string }[];
+  interpretationHtml: string;
+  sourceHtml: string;
+}
+
+export interface CostVsPriceData {
+  title: string;
+  subtitle: string;
+  indexedTag: string;                     // "Indexed Apr 2024 = 100"
+  infoPanel: string[];
+  series: { month: string; cost: number; price: number }[]; // 24 points, base=100
+  passThrough: {
+    label: string;
+    value: string;                        // "61%"
+    pct: number;                          // 61
+    sub: string;
+    breakdownHtml: string;
+  };
+  recovery: {
+    label: string;
+    value: string;                        // "€147K"
+    sub: string;
+    spark: number[];                      // 12 monthly cumulative points
+  };
+}
+
+export interface CrossCustomerRow {
+  article: string;
+  cluster: { code: string; conf: string; tone: 'green' | 'amber' | 'red' };
+  customerA: string;
+  priceA: string;
+  customerB: string;
+  priceB: string;
+  tier: string;
+  spreadPct: string;                      // "66%"
+  highlight?: boolean;
+  studioLabel: string;                    // "Open in Studio →"
+}
+
+export interface SkuLeakageRow {
+  article: string;
+  description: string;
+  volume: string;
+  quotedMargin: string;
+  actualMargin: string;
+  gapPp: string;                          // "−17pp"
+  opportunityEur: string;
+  abStatus: string;                       // "—" or "🧪 running 3/14"
+  auditHash: string;
+  primary?: boolean;
+}
+
+export interface SegmentRow {
+  label: string;                          // first column
+  tier?: 'A' | 'B' | 'C' | 'D';           // for tier sub-pane
+  cells: string[];                        // remaining columns
+  trendTone?: 'up' | 'down' | 'flat';
+  notes?: string;
+  storyHtml?: string;                     // injected as last row's story (handled by pane)
+}
+
+export interface SegmentSubPane {
+  id: 'family' | 'tier' | 'size' | 'region';
+  label: string;
+  headers: string[];
+  rows: SegmentRow[];
+  storyHtml: string;
+  caveatHtml?: string;                    // BKAGG region warning
+}
+
+export interface ErosionRow {
+  article: string;
+  cluster: { code: string; conf: string; tone: 'green' | 'amber' | 'red' };
+  lastUpdateMonths: number;               // for the age bar width %
+  lastUpdateLabel: string;                // "14 mo"
+  costChange: string;
+  listChange: string;
+  effectiveErosion: string;
+  marginCompression: string;
+  authorHash: string;                     // "Frank · a3f9c1"
+  actionLabel: string;                    // "Open in Studio →" or "healthy · no action"
+  isAction: boolean;
+  primary?: boolean;
+}
+
+export interface CustomerTrendRow {
+  customer: string;
+  ytdRevenue: string;
+  ytdMargin: string;
+  trend: string;                          // "↓ −6pp"
+  trendTone: 'up' | 'down' | 'flat';
+  status: 'action' | 'watch' | 'healthy';
+  statusLabel: string;
+  primaryAction?: { label: string; jumpTo: string };
+  drillLabel: string;                     // "Drill →"
+}
+
+export interface MarginTabs {
+  cross: { description: string; infoPanel: string[]; rows: CrossCustomerRow[]; footerNote: string; tabFooterText: string };
+  leak: { description: string; infoPanel: string[]; rows: SkuLeakageRow[]; tabFooterText: string };
+  seg: { description: string; infoPanel: string[]; subPanes: SegmentSubPane[]; tabFooterText: string };
+  erode: {
+    description: string;
+    infoPanel: string[];
+    rows: ErosionRow[];
+    cycleNote: string;
+    cycleButtonLabel: string;
+    tabFooterText: string;
+  };
+  cust: { description: string; infoPanel: string[]; rows: CustomerTrendRow[]; tabFooterText: string };
+}
+
+export interface CrossLink {
+  label: string;
+  jumpTo: string;                         // route
+}
+
+export interface MarginCockpitData {
+  header: MarginPageHeader;
+  briefing: BriefingMemoData;
+  health: MarginHealthCell[];             // 4 cells
+  clusters: ClusterChip[];
+  shifted: { title: string; rows: ShiftedRow[]; netLine: string }; // "Net month-over-month..."
+  waterfall: WaterfallCardData;
+  lostQuote: LostQuoteDifferentialData;
+  costVsPrice: CostVsPriceData;
+  tabs: MarginTabs;
+  crossLinks: CrossLink[];
+}
