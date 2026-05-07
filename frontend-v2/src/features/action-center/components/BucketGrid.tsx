@@ -1,13 +1,5 @@
 import { ArrowRight } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
-import type { BucketCard, Tone } from '@/types';
-
-const avatarColors = ['bg-stone-300', 'bg-purple-200', 'bg-orange-200', 'bg-amber-200'];
-
-function toneToBadge(t: Tone): React.ComponentProps<typeof Badge>['tone'] {
-  if (t === 'rose') return 'rose';
-  return t;
-}
+import type { BucketCard } from '@/types';
 
 export function BucketGrid({ buckets }: { buckets: BucketCard[] }) {
   return (
@@ -15,45 +7,80 @@ export function BucketGrid({ buckets }: { buckets: BucketCard[] }) {
       {buckets.map((b) => (
         <div
           key={b.id}
-          className="rounded-2xl border border-[var(--hairline)] bg-white p-5 shadow-[var(--shadow)] transition-shadow hover:shadow-[var(--shadow-md)]"
+          className="flex flex-col gap-3 rounded-[14px] border border-[var(--border)] bg-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-pop)]"
+          style={{ padding: '18px 20px 16px' }}
         >
-          <div className="mb-3">
-            <h3 className="font-display text-[15px] font-bold tracking-tight text-[var(--ink)]">
+          <div>
+            <h3 className="font-display text-[19px] font-bold leading-tight tracking-[-0.014em] text-[var(--ink)]">
               {b.title}
             </h3>
-            <div className="mt-1 text-xs text-[var(--muted)]">{b.subtitle}</div>
+            <div className="mt-1 text-[12.5px] text-[var(--muted)]">{b.subtitle}</div>
           </div>
-          <div className="mb-4 flex flex-wrap gap-1.5">
-            {b.tags.map((t) => (
-              <Badge key={t.label} tone={toneToBadge(t.tone)}>
-                {t.label}
-              </Badge>
-            ))}
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex -space-x-2">
-              {b.avatars.map((a, i) => (
-                <div
-                  key={a + i}
-                  className={`flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-[10px] font-bold ${
-                    a.startsWith('+')
-                      ? 'bg-[var(--rose-deep)] text-white'
-                      : `${avatarColors[i % avatarColors.length]} text-[var(--ink-2)]`
-                  }`}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {b.tags.map((t) => {
+              const isStatus = t.tone === 'info' || t.tone === 'warning';
+              const dotColor =
+                t.tone === 'warning' ? 'var(--amber)' :
+                t.tone === 'info'    ? 'var(--green)' :
+                null;
+              return (
+                <span
+                  key={t.label}
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-[7px] text-[11.5px] font-medium text-[var(--ink-2)]"
+                  style={{ background: 'var(--surface-sunken)', padding: '5px 9px' }}
                 >
-                  {a}
-                </div>
-              ))}
+                  {isStatus && dotColor && (
+                    <span
+                      aria-hidden
+                      className="inline-block h-1.5 w-1.5 rounded-full"
+                      style={{ background: dotColor }}
+                    />
+                  )}
+                  {t.label}
+                </span>
+              );
+            })}
+          </div>
+          <div className="mt-auto flex items-center justify-between">
+            <div className="flex items-center">
+              {b.avatars.map((a, i) => {
+                const isExtra = a.startsWith('+');
+                return (
+                  <div
+                    key={a + i}
+                    className="grid h-[30px] w-[30px] place-items-center rounded-full text-[11px]"
+                    style={{
+                      background: isExtra ? 'var(--rose)' : 'var(--surface-sunken)',
+                      color: isExtra ? '#fff' : 'var(--ink-2)',
+                      border: '2.5px solid #fff',
+                      marginLeft: i === 0 ? 0 : '-9px',
+                      fontWeight: isExtra ? 700 : 600,
+                      zIndex: isExtra ? 2 : 1,
+                      boxShadow: '0 1px 0 rgba(0,0,0,0.04)',
+                    }}
+                  >
+                    {a}
+                  </div>
+                );
+              })}
             </div>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[12.5px] font-semibold text-white transition-colors"
-              style={{ background: 'var(--ink)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = '#000')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ink)')}
+              className="inline-flex items-center text-[12.5px] font-medium text-white transition-colors"
+              style={{
+                background: '#101418',
+                height: 36,
+                padding: '0 16px',
+                borderRadius: 11,
+                gap: 12,
+                boxShadow: '0 1px 0 rgba(0,0,0,0.06)',
+                border: 'none',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = '#252a33')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = '#101418')}
             >
               {b.cta}
-              <ArrowRight size={12} />
+              <ArrowRight size={14} />
             </button>
           </div>
         </div>
