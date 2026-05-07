@@ -3,7 +3,7 @@ import { CrossCustomerPane } from './panes/CrossCustomerPane';
 import { SkuLeakagePane } from './panes/SkuLeakagePane';
 import { SegmentPane } from './panes/SegmentPane';
 import { ErosionPane } from './panes/ErosionPane';
-// CustomerTrendPane added in Task 7
+import { CustomerTrendPane } from './panes/CustomerTrendPane';
 
 interface Props {
   tabs: MarginTabsType;
@@ -73,8 +73,8 @@ export function MarginTabs({ tabs, activeTab, onTabChange, activeSegTab, onSegTa
         </div>
       )}
       {activeTab === 'cust' && (
-        <div role="tabpanel" id="tabpanel-cust" aria-labelledby="tab-cust" className="text-sm text-[var(--muted)]">
-          Customer trend — Task 7
+        <div role="tabpanel" id="tabpanel-cust" aria-labelledby="tab-cust">
+          <CustomerTrendPane pane={tabs.cust} />
         </div>
       )}
     </div>

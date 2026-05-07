@@ -9,6 +9,7 @@ import { WaterfallCard } from './components/WaterfallCard';
 import { LostQuoteDifferential } from './components/LostQuoteDifferential';
 import { CostVsPriceCard } from './components/CostVsPriceCard';
 import { MarginTabs } from './components/MarginTabs';
+import { CrossLinks } from './components/CrossLinks';
 
 export function MarginCockpitPage() {
   const { data, isLoading, error } = useMarginCockpit();
@@ -50,7 +51,7 @@ export function MarginCockpitPage() {
         activeSegTab={activeSegTab}
         onSegTabChange={setActiveSegTab}
       />
-      {/* Tasks 6–7 add: remaining panes, CrossLinks */}
+      <CrossLinks links={data.crossLinks} />
     </div>
   );
 }
