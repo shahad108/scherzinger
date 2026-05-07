@@ -486,16 +486,36 @@
     gap: 8px;
   }
   body.pryzm-2026 .pz-rail-h h3 {
-    font-size: 13px;
+    font-size: 15.5px;
     font-weight: 700;
     color: var(--ink);
+    letter-spacing: -0.012em;
+    line-height: 1.2;
     margin: 0;
   }
   body.pryzm-2026 .pz-rail-h .sub {
     font-size: 11.5px;
     color: var(--muted);
-    margin-top: 2px;
+    margin-top: 3px;
+    line-height: 1.4;
   }
+  body.pryzm-2026 .pz-add-section {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface-sunken);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 11.5px;
+    color: var(--ink-2);
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+    flex: none;
+  }
+  body.pryzm-2026 .pz-add-section:hover { background: #d4d8de; }
+  body.pryzm-2026 .pz-add-section svg { width: 11px; height: 11px; }
 
   body.pryzm-2026 .pz-notif {
     display: flex;
@@ -546,20 +566,28 @@
   body.pryzm-2026 .pz-avatars .a:first-child { margin-left: 0; }
   body.pryzm-2026 .pz-avatars .a.r { background: var(--surface-sunken); color: var(--ink-3); }
 
-  body.pryzm-2026 .pz-sec-list { display: flex; flex-direction: column; gap: 2px; }
+  body.pryzm-2026 .pz-sec-list { display: flex; flex-direction: column; gap: 8px; }
   body.pryzm-2026 .pz-sec-row {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 10px;
-    border-radius: 8px;
+    gap: 10px;
+    padding: 11px 12px;
+    border-radius: 11px;
     text-decoration: none;
     color: var(--ink-2);
+    background: var(--surface-soft);
     cursor: pointer;
     transition: background 0.15s;
   }
-  body.pryzm-2026 .pz-sec-row:hover { background: var(--surface-soft); }
-  body.pryzm-2026 .pz-sec-row .t { font-size: 12.5px; font-weight: 700; color: var(--ink); }
-  body.pryzm-2026 .pz-sec-row .s { font-size: 11px; color: var(--muted); margin-top: 1px; }
-  body.pryzm-2026 .pz-sec-row .pz-sec-arr { color: var(--muted-2); font-size: 14px; }
+  body.pryzm-2026 .pz-sec-row:hover { background: #e8e6e0; }
+  body.pryzm-2026 .pz-sec-row.active { background: #e9dfd1; }
+  body.pryzm-2026 .pz-sec-row .t { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.25; }
+  body.pryzm-2026 .pz-sec-row .s { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  body.pryzm-2026 .pz-sec-row .pz-sec-arr {
+    color: var(--muted-2);
+    font-size: 13px;
+    transition: transform 0.15s, color 0.15s;
+  }
+  body.pryzm-2026 .pz-sec-row:hover .pz-sec-arr { transform: translateX(2px); color: var(--ink-2); }
 
   body.pryzm-2026 .pz-shell.right-collapsed .pz-rail .pz-rail-card { display: none; }
 }

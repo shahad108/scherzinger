@@ -66,7 +66,7 @@ export function RightRail() {
       <div className="pz-rail-card pad">
         <div className="pz-rail-h">
           <h3>Sections</h3>
-          <button type="button" aria-label="Add section" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--muted)', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600 }}>
+          <button type="button" aria-label="Add section" className="pz-add-section">
             <Plus size={11} /> Add
           </button>
         </div>
@@ -74,21 +74,12 @@ export function RightRail() {
           {data.sections.map((s, i) => {
             const active = i === 0;
             return (
-              <a
-                key={s.id}
-                className="pz-sec-row"
-                href={s.href}
-                style={
-                  active
-                    ? { background: '#e9dfd1', color: 'var(--ink)' }
-                    : undefined
-                }
-              >
-                <div>
+              <a key={s.id} className={active ? 'pz-sec-row active' : 'pz-sec-row'} href={s.href}>
+                <div className="min-w-0 flex-1">
                   <div className="t">{s.title}</div>
                   <div className="s">{s.sub}</div>
                 </div>
-                <span className="pz-sec-arr" aria-hidden style={active ? { color: 'var(--ink)' } : undefined}>→</span>
+                <span className="pz-sec-arr" aria-hidden>→</span>
               </a>
             );
           })}
