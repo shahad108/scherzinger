@@ -9,7 +9,7 @@ export function SidebarDeptList() {
     <>
       <div className="pz-nav-sub-title">
         <span>Departments</span>
-        <button type="button" aria-label="Add department" style={{ background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}>+</button>
+        <button type="button" aria-label="Add department" className="pz-nav-add">+</button>
       </div>
       {departments.map((d) => (
         <div key={d.name} className="pz-dept-item">
