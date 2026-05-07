@@ -21,7 +21,10 @@
     --rose: #e11d48;
     --rose-deep: #be123c;
     --rose-soft: #fff1f2;
+    --rose-bg: #fff1f2;
     --rose-border: #fecdd3;
+    --violet: #6d4ec5;
+    --violet-bg: #ece4f6;
     --primary: #0284c7;
     --primary-deep: #075985;
 
@@ -53,6 +56,7 @@
     --shadow-2: var(--shadow-md);
     --shadow-3: var(--shadow-lg);
     --shadow-4: 0 24px 48px rgba(15, 23, 42, 0.16);
+    --shadow-pop: 0 14px 32px -14px rgba(15, 20, 28, 0.20), 0 3px 8px rgba(15, 20, 28, 0.07);
     --surface-overlay: rgba(15, 23, 42, 0.4);
     --border-subtle: var(--hairline);
     --text-primary: var(--ink);
