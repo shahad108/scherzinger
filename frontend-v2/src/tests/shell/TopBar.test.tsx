@@ -15,6 +15,7 @@ describe('TopBar', () => {
     expect(screen.getByRole('tab', { name: 'Frank' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Till' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Heiko' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Notifications/)).toBeInTheDocument();
     expect(screen.getByLabelText('Language')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Create/ })).toBeInTheDocument();
   });

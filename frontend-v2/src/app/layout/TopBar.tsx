@@ -27,7 +27,7 @@ export function TopBar() {
         <UserPlus size={14} /> Add person
       </button>
 
-      <button type="button" className="pz-pill has-dot" aria-label="Notifications">
+      <button type="button" className="pz-pill has-dot" aria-label="Notifications, unread items">
         <Bell size={14} /> Notifications
       </button>
 
