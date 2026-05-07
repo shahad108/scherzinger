@@ -260,3 +260,141 @@
   }
   body.pryzm-2026 .pz-cta:hover { background: #252a33; }
 }
+
+@layer base {
+  body.pryzm-2026 .pz-nav-title,
+  body.pryzm-2026 .pz-nav-sub-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted-2);
+    padding: 14px 12px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  body.pryzm-2026 .pz-nav-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 10px 8px;
+  }
+
+  body.pryzm-2026 .pz-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--ink-2);
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  body.pryzm-2026 .pz-nav-item:hover { background: rgba(255, 255, 255, 0.55); color: var(--ink); }
+  body.pryzm-2026 .pz-nav-item.active {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow-card);
+  }
+  body.pryzm-2026 .pz-nav-item .ico { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
+  body.pryzm-2026 .pz-nav-item.active .ico { color: var(--rose-deep); }
+
+  body.pryzm-2026 .pz-dept-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: var(--ink-3);
+    cursor: pointer;
+  }
+  body.pryzm-2026 .pz-dept-item:hover { background: rgba(255, 255, 255, 0.45); color: var(--ink-2); }
+  body.pryzm-2026 .pz-dept-swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+
+  body.pryzm-2026 .pz-promo {
+    margin: 14px 8px 0;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  body.pryzm-2026 .pz-promo .ds-row { display: flex; align-items: center; gap: 10px; }
+  body.pryzm-2026 .pz-promo .ds-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 3px rgba(47, 125, 91, 0.18);
+    flex: none;
+  }
+  body.pryzm-2026 .pz-promo .ds-t { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+  body.pryzm-2026 .pz-promo .ds-s { font-size: 11.5px; color: var(--muted); }
+  body.pryzm-2026 .pz-promo .ds-divider { height: 1px; background: var(--hairline); }
+  body.pryzm-2026 .pz-promo-cta {
+    height: 30px;
+    border-radius: 8px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+  }
+
+  body.pryzm-2026 .pz-user-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 8px 4px;
+    margin-top: auto;
+    border-top: 1px solid var(--border);
+  }
+  body.pryzm-2026 .pz-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--rose-tint);
+    color: var(--rose-deep);
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex: none;
+  }
+  body.pryzm-2026 .pz-user-name { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+  body.pryzm-2026 .pz-user-mail { font-size: 11px; color: var(--muted); }
+
+  body.pryzm-2026 .pz-shell-toggle {
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    color: var(--muted-2);
+    cursor: pointer;
+    border-radius: 7px;
+    display: inline-grid;
+    place-items: center;
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    z-index: 5;
+  }
+  body.pryzm-2026 .pz-shell-toggle:hover { color: var(--ink-2); background: rgba(0, 0, 0, 0.04); }
+
+  body.pryzm-2026 .pz-shell.left-collapsed .pz-aside .pz-nav-item .label,
+  body.pryzm-2026 .pz-shell.left-collapsed .pz-aside .pz-nav-title,
+  body.pryzm-2026 .pz-shell.left-collapsed .pz-aside .pz-nav-sub-title,
+  body.pryzm-2026 .pz-shell.left-collapsed .pz-aside .pz-dept-item,
+  body.pryzm-2026 .pz-shell.left-collapsed .pz-aside .pz-promo,
+  body.pryzm-2026 .pz-shell.left-collapsed .pz-aside .pz-user-name,
+  body.pryzm-2026 .pz-shell.left-collapsed .pz-aside .pz-user-mail { display: none !important; }
+  body.pryzm-2026 .pz-shell.left-collapsed .pz-aside .pz-nav-item { justify-content: center; padding: 11px 0; }
+}
