@@ -19,8 +19,10 @@ export function ErosionPane({ pane }: Props) {
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <p className="text-[12.5px] text-[var(--muted)]">{pane.description}</p>
+        {/* Phase 7 will wire toast: "Triggering price-book cycle (24 SKUs)..." */}
         <button
           type="button"
+          onClick={() => { /* no-op — Phase 7 wires real action */ }}
           className="rounded-full px-3 py-1.5 text-[12px] font-semibold text-white"
           style={{ background: 'var(--rose)' }}
         >
@@ -55,9 +57,17 @@ export function ErosionPane({ pane }: Props) {
                     </span>
                     <span>{r.lastUpdateLabel}</span>
                   </td>
-                  <td className="border-t border-[var(--hairline)] px-3 py-2 text-right" style={{ color: r.costChange.startsWith('+') ? 'var(--red)' : undefined }}>{r.costChange}</td>
+                  <td className="border-t border-[var(--hairline)] px-3 py-2 text-right" style={{ color:
+                    r.costChange.startsWith('+') ? 'var(--red)' :
+                    r.costChange.startsWith('-') || r.costChange.startsWith('−') ? 'var(--green)' :
+                    undefined
+                  }}>{r.costChange}</td>
                   <td className="border-t border-[var(--hairline)] px-3 py-2 text-right">{r.listChange}</td>
-                  <td className="border-t border-[var(--hairline)] px-3 py-2 text-right" style={{ color: r.effectiveErosion.startsWith('-') || r.effectiveErosion.startsWith('−') ? 'var(--red)' : 'var(--green)' }}>{r.effectiveErosion}</td>
+                  <td className="border-t border-[var(--hairline)] px-3 py-2 text-right" style={{ color:
+                    r.effectiveErosion.startsWith('-') || r.effectiveErosion.startsWith('−') ? 'var(--red)' :
+                    r.effectiveErosion.startsWith('+') ? 'var(--green)' :
+                    undefined
+                  }}>{r.effectiveErosion}</td>
                   <td className="border-t border-[var(--hairline)] px-3 py-2 text-right" style={{ color: r.marginCompression === '0pp' ? undefined : r.marginCompression.startsWith('+') ? 'var(--green)' : 'var(--red)' }}>{r.marginCompression}</td>
                   <td className="border-t border-[var(--hairline)] px-3 py-2 text-[11px] text-[var(--ink-3)]">{r.authorHash}</td>
                   <td className="border-t border-[var(--hairline)] px-3 py-2">
