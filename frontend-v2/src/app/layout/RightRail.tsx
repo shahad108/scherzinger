@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, ArrowUpRight, CheckCircle2, Menu, Plus } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowUpRight, CheckCircle2, Menu, NotebookPen, Plus } from 'lucide-react';
 import { useUiStore } from '@/stores/uiStore';
 import { useShell } from '@/data/api/useShell';
 import type { NotifTone } from '@/types/shell';
@@ -29,11 +29,19 @@ export function RightRail() {
               <span className="pz-notif-title">{n.title}</span>
               <span className="pz-notif-sub" style={{ display: 'block' }}>{n.sub}</span>
             </span>
-            <span className="pz-notif-arr" aria-hidden>↗</span>
+            <span className="pz-notif-arr" aria-hidden>
+              <ArrowUpRight size={13} />
+            </span>
           </button>
         ))}
-        <div className="pz-notif-foot">
+        <div className="pz-notif-foot" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <button type="button" className="see">See all notifications →</button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--ink-2)] hover:bg-[var(--surface-soft)]"
+          >
+            <NotebookPen size={12} /> Notes
+          </button>
         </div>
       </div>
 
@@ -63,15 +71,27 @@ export function RightRail() {
           </button>
         </div>
         <div className="pz-sec-list">
-          {data.sections.map((s) => (
-            <a key={s.id} className="pz-sec-row" href={s.href}>
-              <div>
-                <div className="t">{s.title}</div>
-                <div className="s">{s.sub}</div>
-              </div>
-              <span className="pz-sec-arr" aria-hidden>→</span>
-            </a>
-          ))}
+          {data.sections.map((s, i) => {
+            const active = i === 0;
+            return (
+              <a
+                key={s.id}
+                className="pz-sec-row"
+                href={s.href}
+                style={
+                  active
+                    ? { background: '#e9dfd1', color: 'var(--ink)' }
+                    : undefined
+                }
+              >
+                <div>
+                  <div className="t">{s.title}</div>
+                  <div className="s">{s.sub}</div>
+                </div>
+                <span className="pz-sec-arr" aria-hidden style={active ? { color: 'var(--ink)' } : undefined}>→</span>
+              </a>
+            );
+          })}
         </div>
       </div>
     </aside>

@@ -35,8 +35,10 @@ export function BucketGrid({ buckets }: { buckets: BucketCard[] }) {
               {b.avatars.map((a, i) => (
                 <div
                   key={a + i}
-                  className={`flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-[10px] font-bold text-[var(--ink-2)] ${
-                    a.startsWith('+') ? 'bg-stone-100 text-[var(--muted)]' : avatarColors[i % avatarColors.length]
+                  className={`flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-[10px] font-bold ${
+                    a.startsWith('+')
+                      ? 'bg-[var(--rose-deep)] text-white'
+                      : `${avatarColors[i % avatarColors.length]} text-[var(--ink-2)]`
                   }`}
                 >
                   {a}
