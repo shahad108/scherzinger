@@ -22,6 +22,7 @@ export function ClusterMiniRow({ clusters }: Props) {
           <button
             key={c.code}
             type="button"
+            aria-label={c.filterToast}
             className="rounded-full px-3 py-1 text-[12px] font-semibold"
             style={{ background: t.bg, color: t.color }}
           >

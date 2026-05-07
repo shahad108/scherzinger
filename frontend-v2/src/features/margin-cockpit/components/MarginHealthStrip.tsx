@@ -11,6 +11,12 @@ const verdictColor: Record<NonNullable<MarginHealthCell['scoreTone']>, string> =
   red: 'var(--red)',
 };
 
+const trendColor: Record<NonNullable<MarginHealthCell['trendTone']>, string> = {
+  up: 'var(--red)',
+  down: 'var(--green)',
+  flat: 'var(--ink-3)',
+};
+
 export function MarginHealthStrip({ cells }: Props) {
   return (
     <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -43,7 +49,7 @@ export function MarginHealthStrip({ cells }: Props) {
                 >
                   {cell.value}
                   {cell.trend && (
-                    <span className="ml-2 text-[12px] font-bold" style={{ color: cell.trendTone === 'up' ? 'var(--red)' : 'var(--green)' }}>
+                    <span className="ml-2 text-[12px] font-bold" style={{ color: trendColor[cell.trendTone ?? 'flat'] }}>
                       {cell.trend}
                     </span>
                   )}

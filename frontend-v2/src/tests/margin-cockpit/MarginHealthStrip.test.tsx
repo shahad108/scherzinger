@@ -22,4 +22,24 @@ describe('MarginHealthStrip', () => {
     expect(screen.getByText('€180K your authority')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Closable gap/i })).toHaveAttribute('href', '/action-center');
   });
+
+  it('renders a plain wrapper (not a Link) when jumpTo is absent', () => {
+    const noJump: MarginHealthCell[] = [{
+      id: 'actual', label: 'YTD Actual margin', value: '24.1%',
+      trend: '↓ −1.9pp', trendTone: 'down', sub: 'vs 26.0% plan',
+    }];
+    render(<MemoryRouter><MarginHealthStrip cells={noJump} /></MemoryRouter>);
+    expect(screen.queryByRole('link')).toBeNull();
+    expect(screen.getByText('24.1%')).toBeInTheDocument();
+  });
+
+  it('uses ink-3 (not green) for trendTone=flat', () => {
+    const flatCell: MarginHealthCell[] = [{
+      id: 'actual', label: 'YTD', value: '24.1%',
+      trend: '→ flat', trendTone: 'flat',
+    }];
+    render(<MemoryRouter><MarginHealthStrip cells={flatCell} /></MemoryRouter>);
+    const trend = screen.getByText('→ flat');
+    expect(trend.getAttribute('style') ?? '').toContain('var(--ink-3)');
+  });
 });
