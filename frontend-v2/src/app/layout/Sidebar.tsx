@@ -39,12 +39,12 @@ export function Sidebar() {
             to={to}
             className={({ isActive }) => (isActive ? 'pz-nav-item active' : 'pz-nav-item')}
           >
-            <Icon className="ico" size={16} />
+            <Icon className="ico" size={18} />
             <span className="label">{t(`nav.${key}`)}</span>
           </NavLink>
         ))}
         <NavLink to="/settings" className={({ isActive }) => (isActive ? 'pz-nav-item active' : 'pz-nav-item')}>
-          <Settings className="ico" size={16} />
+          <Settings className="ico" size={18} />
           <span className="label">{t('nav.settings')}</span>
         </NavLink>
       </div>

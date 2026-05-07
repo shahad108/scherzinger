@@ -262,46 +262,64 @@
 }
 
 @layer base {
-  body.pryzm-2026 .pz-nav-title,
+  body.pryzm-2026 .pz-nav-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    text-transform: none;
+    padding: 6px 14px 14px;
+    background: transparent;
+  }
   body.pryzm-2026 .pz-nav-sub-title {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted-2);
-    padding: 14px 12px 8px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    font-size: 12.5px;
+    color: var(--muted);
+    font-weight: 500;
+    padding: 6px 14px 8px;
+    text-transform: none;
+    letter-spacing: 0;
   }
 
   body.pryzm-2026 .pz-nav-divider {
     height: 1px;
     background: var(--border);
-    margin: 10px 8px;
+    margin: 14px 8px;
   }
 
   body.pryzm-2026 .pz-nav-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
-    border-radius: 10px;
-    font-size: 13px;
+    gap: 12px;
+    padding: 11px 14px;
+    border-radius: 12px;
+    font-size: 13.5px;
     color: var(--ink-2);
     font-weight: 500;
     text-decoration: none;
     cursor: pointer;
+    border: none;
+    background: transparent;
     transition: background 0.15s ease, color 0.15s ease;
   }
-  body.pryzm-2026 .pz-nav-item:hover { background: rgba(255, 255, 255, 0.55); color: var(--ink); }
+  body.pryzm-2026 .pz-nav-item:hover { background: rgba(0, 0, 0, 0.035); }
+  body.pryzm-2026 .pz-nav-item:hover .ico { color: var(--ink-2); }
   body.pryzm-2026 .pz-nav-item.active {
-    background: var(--surface);
-    color: var(--ink);
-    box-shadow: var(--shadow-card);
+    background: var(--rose);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 6px 16px -8px rgba(90, 125, 163, 0.55), 0 1px 0 rgba(0, 0, 0, 0.04);
   }
-  body.pryzm-2026 .pz-nav-item .ico { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
-  body.pryzm-2026 .pz-nav-item.active .ico { color: var(--rose-deep); }
+  body.pryzm-2026 .pz-nav-item .ico {
+    width: 18px;
+    height: 18px;
+    flex: none;
+    color: var(--muted);
+    transition: color 0.15s;
+  }
+  body.pryzm-2026 .pz-nav-item.active .ico { color: #fff; }
 
   body.pryzm-2026 .pz-dept-item {
     display: flex;
