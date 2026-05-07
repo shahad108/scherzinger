@@ -1,5 +1,6 @@
 import { ArrowUpRight } from 'lucide-react';
 import { motion } from 'motion/react';
+import { chart } from '@/lib/chartColors';
 import type { MovableHero as Hero } from '@/types';
 
 interface Props {
@@ -7,6 +8,10 @@ interface Props {
 }
 
 export function MovableHero({ hero }: Props) {
+  // Resolve token colors once (Recharts/SVG cannot consume CSS vars in <stop>).
+  const stroke = chart.roseSoft();
+  const dot = chart.rose();
+
   // Build sparkline path
   const w = 320;
   const h = 80;
@@ -101,7 +106,10 @@ export function MovableHero({ hero }: Props) {
             <span className="text-[11.5px] italic text-white/50">
               Movable share refined per cluster — see Heterogeneous Portfolio.
             </span>
-            <button className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-rose-600 hover:shadow-lg">
+            <button
+              className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
+              style={{ background: 'var(--rose)' }}
+            >
               Open repricing queue
               <ArrowUpRight size={14} />
             </button>
@@ -121,8 +129,8 @@ export function MovableHero({ hero }: Props) {
             >
               <defs>
                 <linearGradient id="sparkFill" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#34d399" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
+                  <stop offset="0%" stopColor={stroke} stopOpacity="0.4" />
+                  <stop offset="100%" stopColor={stroke} stopOpacity="0" />
                 </linearGradient>
               </defs>
               <motion.path
@@ -135,7 +143,7 @@ export function MovableHero({ hero }: Props) {
               <motion.path
                 d={path}
                 fill="none"
-                stroke="#34d399"
+                stroke={stroke}
                 strokeWidth={2}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -147,14 +155,16 @@ export function MovableHero({ hero }: Props) {
                 cx={w}
                 cy={h - ((hero.spark[hero.spark.length - 1] - min) / range) * h * 0.85 - 8}
                 r={4}
-                fill="#fb7185"
+                fill={dot}
               />
             </svg>
           </div>
           <div className="mt-2 flex justify-between text-[10.5px] text-white/50">
             <span>Wk 6</span>
             <span>Wk 12</span>
-            <span className="font-semibold text-rose-300">Wk 18 · {hero.value}</span>
+            <span className="font-semibold" style={{ color: 'var(--rose-soft)' }}>
+              Wk 18 · {hero.value}
+            </span>
           </div>
         </div>
       </div>
