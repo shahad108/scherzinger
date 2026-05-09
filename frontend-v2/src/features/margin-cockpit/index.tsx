@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMarginCockpit } from '@/data/api/useMarginCockpit';
 import { MarginPageHead } from './components/MarginPageHead';
 import { BriefingMemo } from './components/BriefingMemo';
@@ -17,12 +17,19 @@ export function MarginCockpitPage() {
   const [activeTab, setActiveTab] = useState<string>('cross');
   const [activeSegTab, setActiveSegTab] = useState<string>('family');
 
+  useEffect(() => {
+    document.body.classList.add('pz-fullbleed');
+    return () => {
+      document.body.classList.remove('pz-fullbleed');
+    };
+  }, []);
+
   if (isLoading) {
-    return <div className="mx-auto max-w-[1400px] p-8 text-sm text-[var(--muted)]">Lade…</div>;
+    return <div className="w-full px-6 py-8 text-sm text-[var(--muted)]">Lade…</div>;
   }
   if (error || !data) {
     return (
-      <div className="mx-auto max-w-[1400px] p-8 text-sm text-[var(--red)]">
+      <div className="w-full px-6 py-8 text-sm text-[var(--red)]">
         Fehler: {(error as Error)?.message ?? 'unbekannt'}
       </div>
     );
@@ -35,7 +42,7 @@ export function MarginCockpitPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1400px] px-8 py-6">
+    <div id="screen-margin" className="w-full px-6 py-6">
       <MarginPageHead header={data.header} onGenerateBriefing={() => setBriefingOpen((v) => !v)} />
       <BriefingMemo data={data.briefing} open={briefingOpen} onClose={() => setBriefingOpen(false)} />
       <MarginHealthStrip cells={data.health} />

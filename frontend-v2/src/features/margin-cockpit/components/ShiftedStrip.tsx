@@ -24,8 +24,8 @@ const deltaColor: Record<ShiftedRow['delta']['tone'], string> = {
 export function ShiftedStrip({ title, rows, netLine, onTabJump }: Props) {
   const nav = useNavigate();
   return (
-    <div className="mb-4 rounded-2xl border border-[var(--hairline)] bg-white p-4">
-      <h5 className="mb-2 text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">{title}</h5>
+    <div className="mb-4 rounded-[14px] border border-[var(--border)] bg-white p-[18px_20px] shadow-[var(--shadow-card)]">
+      <h5 className="mb-3 font-display text-[14px] font-bold leading-tight tracking-[-0.005em] text-[var(--ink)]">{title}</h5>
       <div className="flex flex-col">
         {rows.map((r, i) => (
           <button
@@ -45,7 +45,7 @@ export function ShiftedStrip({ title, rows, netLine, onTabJump }: Props) {
           </button>
         ))}
       </div>
-      <div className="mt-2 text-[12px] text-[var(--ink-3)]" dangerouslySetInnerHTML={{ __html: netLine }} />
+      <div className="mt-3 border-t border-[var(--hairline)] pt-3 text-[12px] text-[var(--muted)]" dangerouslySetInnerHTML={{ __html: netLine }} />
     </div>
   );
 }

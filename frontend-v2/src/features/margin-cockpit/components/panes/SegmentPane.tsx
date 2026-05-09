@@ -8,15 +8,17 @@ interface Props {
 
 const tierBadge = (t: SegmentRow['tier']) => {
   if (!t) return null;
-  const palette: Record<NonNullable<SegmentRow['tier']>, { bg: string; color: string }> = {
-    A: { bg: 'var(--green-bg)', color: 'var(--green)' },
-    B: { bg: 'var(--surface-soft)', color: 'var(--ink-2)' },
-    C: { bg: 'var(--amber-bg)', color: 'var(--amber)' },
-    D: { bg: 'var(--rose-bg)', color: 'var(--rose-deep)' },
+  const palette: Record<NonNullable<SegmentRow['tier']>, string> = {
+    A: 'var(--rose)',
+    B: 'var(--ink-3)',
+    C: 'var(--amber)',
+    D: 'var(--red)',
   };
-  const p = palette[t];
   return (
-    <span className="mr-1 inline-flex h-5 w-5 items-center justify-center rounded-md text-[11px] font-bold" style={{ background: p.bg, color: p.color }}>
+    <span
+      className="mr-1.5 inline-flex h-[18px] w-[18px] items-center justify-center rounded-[5px] text-[10px] font-bold text-white"
+      style={{ background: palette[t] }}
+    >
       {t}
     </span>
   );
@@ -26,8 +28,8 @@ export function SegmentPane({ pane, activeSegTab, onSegTabChange }: Props) {
   const active = pane.subPanes.find((p) => p.id === activeSegTab) ?? pane.subPanes[0];
   return (
     <div>
-      <p className="mb-3 text-[12.5px] text-[var(--muted)]">{pane.description}</p>
-      <div role="tablist" className="mb-4 flex flex-wrap gap-2">
+      <p className="mb-3 text-[12px] text-[var(--muted)]">{pane.description}</p>
+      <div role="tablist" className="mb-3 inline-flex flex-wrap gap-0.5 rounded-[9px] bg-[var(--surface-sunken)] p-[3px]">
         {pane.subPanes.map((sp) => {
           const isActive = sp.id === active.id;
           return (
@@ -39,10 +41,11 @@ export function SegmentPane({ pane, activeSegTab, onSegTabChange }: Props) {
               id={`segtab-${sp.id}`}
               aria-controls={`segtabpanel-${sp.id}`}
               onClick={() => onSegTabChange(sp.id)}
-              className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${
-                isActive ? 'text-white' : 'border border-[var(--hairline)] bg-white text-[var(--ink-2)]'
+              className={`rounded-[7px] px-2.5 py-1.5 text-[12px] transition-all ${
+                isActive
+                  ? 'bg-white font-semibold text-[var(--ink)] shadow-[var(--shadow-card)]'
+                  : 'font-medium text-[var(--ink-3)] hover:text-[var(--ink-2)]'
               }`}
-              style={isActive ? { background: 'var(--ink-2)' } : undefined}
             >
               {sp.label}
             </button>
@@ -51,7 +54,7 @@ export function SegmentPane({ pane, activeSegTab, onSegTabChange }: Props) {
       </div>
 
       <div role="tabpanel" id={`segtabpanel-${active.id}`} aria-labelledby={`segtab-${active.id}`}>
-        <div className="overflow-hidden rounded-xl border border-[var(--hairline)]">
+        <div className="overflow-hidden rounded-[11px] border border-[var(--border)]">
           <table className="w-full text-[12.5px]">
             <thead>
               <tr className="bg-[var(--surface-soft)] text-left text-[11px] uppercase tracking-wider text-[var(--muted)]">
@@ -80,15 +83,15 @@ export function SegmentPane({ pane, activeSegTab, onSegTabChange }: Props) {
         )}
         {active.caveatHtml && (
           <p
-            className="mt-2 rounded-xl px-3 py-2 text-[12px]"
+            className="mt-2 rounded-[7px] px-3 py-2.5 text-[12px] [&_b]:font-semibold [&_i]:italic"
             style={{ background: 'var(--violet-bg)', color: 'var(--violet)', borderLeft: '3px solid var(--violet)' }}
             dangerouslySetInnerHTML={{ __html: active.caveatHtml }}
           />
         )}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-[var(--surface-soft)] px-3 py-2 text-[12px] text-[var(--ink-2)]">
-        <span>⚡</span><span dangerouslySetInnerHTML={{ __html: pane.tabFooterText }} />
+      <div className="mt-3 flex flex-wrap items-center gap-2.5 rounded-[8px] border border-[var(--hairline)] bg-[var(--surface-soft)] px-3.5 py-2.5 text-[12px] text-[var(--ink-3)] [&_b]:font-semibold [&_b]:text-[var(--ink)]">
+        <span className="text-[14px]">⚡</span><span className="flex-1" dangerouslySetInnerHTML={{ __html: pane.tabFooterText }} />
       </div>
     </div>
   );

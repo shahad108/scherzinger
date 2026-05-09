@@ -47,21 +47,21 @@ export function WaterfallCard({ data, onTabJump }: Props) {
   );
 
   return (
-    <div className="mb-4 rounded-2xl border border-[var(--hairline)] bg-white p-5">
+    <div className="mb-4 rounded-[14px] border border-[var(--border)] bg-white p-[18px_20px] shadow-[var(--shadow-card)]">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-[18px] font-bold leading-tight text-[var(--ink)]">
+          <h2 className="font-display text-[18px] font-bold leading-tight tracking-[-0.018em] text-[var(--ink)]">
             {data.title}
           </h2>
-          <div className="mt-1 text-[12.5px] text-[var(--muted)]">{data.subtitle}</div>
+          <div className="mt-1 max-w-[60ch] text-[12px] leading-[1.5] text-[var(--muted)]">{data.subtitle}</div>
         </div>
-        <span className="rounded-full border border-[var(--hairline)] bg-[var(--surface-soft)] px-3 py-1 text-[11.5px] font-semibold text-[var(--ink-2)]">
+        <span className="rounded-[7px] bg-[var(--surface-sunken)] px-2.5 py-[3px] text-[11px] font-semibold text-[var(--ink-2)]">
           {data.totalChip}
         </span>
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-        <div className="h-[280px]">
+        <div className="h-[280px] rounded-[11px] border border-[var(--hairline)] bg-[var(--surface-soft)] p-3.5">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
               <CartesianGrid stroke="var(--hairline)" vertical={false} />
@@ -82,7 +82,7 @@ export function WaterfallCard({ data, onTabJump }: Props) {
         </div>
 
         <div>
-          <h5 className="mb-2 text-[12px] font-bold uppercase tracking-wider text-[var(--muted)]">
+          <h5 className="mb-2.5 font-display text-[13px] font-bold text-[var(--ink)]">
             Bucket breakdown · click any bucket to drill
           </h5>
           <div className="flex flex-col">
@@ -104,8 +104,11 @@ export function WaterfallCard({ data, onTabJump }: Props) {
                       {b.name}
                       {b.delta && (
                         <span
-                          className="ml-2 inline-block rounded-full px-1.5 py-0.5 text-[10.5px] font-bold"
-                          style={{ background: 'var(--surface-soft)', color: deltaColor(b.delta.tone) }}
+                          className="ml-2 inline-block rounded-[5px] px-1.5 py-[1px] text-[10px] font-bold"
+                          style={{
+                            background: b.delta.tone === 'up' ? 'var(--red-bg)' : b.delta.tone === 'down' ? 'var(--green-bg)' : 'var(--surface-sunken)',
+                            color: deltaColor(b.delta.tone),
+                          }}
                         >
                           {b.delta.label}
                         </span>

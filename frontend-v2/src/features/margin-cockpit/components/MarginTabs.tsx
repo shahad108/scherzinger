@@ -23,8 +23,8 @@ const TAB_DEFS: { id: keyof MarginTabsType; label: string; badge?: string }[] = 
 
 export function MarginTabs({ tabs, activeTab, onTabChange, activeSegTab, onSegTabChange }: Props) {
   return (
-    <div id="marginTabsBlock" className="mb-4 rounded-2xl border border-[var(--hairline)] bg-white p-5">
-      <div role="tablist" className="mb-4 flex flex-wrap gap-2">
+    <div id="marginTabsBlock" className="mb-4 rounded-[14px] border border-[var(--border)] bg-white p-[18px_20px] shadow-[var(--shadow-card)]">
+      <div role="tablist" className="mb-3.5 inline-flex flex-wrap gap-0.5 rounded-[10px] bg-[var(--surface-sunken)] p-[3px]">
         {TAB_DEFS.map((d) => {
           const active = d.id === activeTab;
           return (
@@ -36,14 +36,15 @@ export function MarginTabs({ tabs, activeTab, onTabChange, activeSegTab, onSegTa
               id={`tab-${d.id}`}
               aria-controls={`tabpanel-${d.id}`}
               onClick={() => onTabChange(d.id)}
-              className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors ${
-                active ? 'text-white' : 'border border-[var(--hairline)] bg-white text-[var(--ink-2)]'
+              className={`flex items-center gap-1.5 rounded-[8px] px-3 py-[7px] text-[12.5px] transition-all ${
+                active
+                  ? 'bg-white font-semibold text-[var(--ink)] shadow-[var(--shadow-card)]'
+                  : 'font-medium text-[var(--ink-3)] hover:text-[var(--ink-2)]'
               }`}
-              style={active ? { background: 'var(--ink)' } : undefined}
             >
               <span>{d.label}</span>
               {d.badge && (
-                <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ background: 'var(--violet-bg)', color: 'var(--violet)' }}>
+                <span className="rounded-[5px] px-1.5 py-[1px] text-[10px] font-bold" style={{ background: 'var(--violet-bg)', color: 'var(--violet)' }}>
                   {d.badge}
                 </span>
               )}

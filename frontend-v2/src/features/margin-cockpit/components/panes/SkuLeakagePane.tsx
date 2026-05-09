@@ -9,8 +9,8 @@ export function SkuLeakagePane({ pane }: Props) {
   const nav = useNavigate();
   return (
     <div>
-      <p className="mb-3 text-[12.5px] text-[var(--muted)]">{pane.description}</p>
-      <div className="overflow-hidden rounded-xl border border-[var(--hairline)]">
+      <p className="mb-3 text-[12px] text-[var(--muted)]">{pane.description}</p>
+      <div className="overflow-hidden rounded-[11px] border border-[var(--border)]">
         <table className="w-full text-[12.5px]">
           <thead>
             <tr className="bg-[var(--surface-soft)] text-left text-[11px] uppercase tracking-wider text-[var(--muted)]">
@@ -39,8 +39,7 @@ export function SkuLeakagePane({ pane }: Props) {
                   <button
                     type="button"
                     onClick={() => nav('/pricing')}
-                    className={`rounded-full px-3 py-1 text-[11.5px] font-semibold ${r.primary ? 'text-white' : 'border border-[var(--hairline)] text-[var(--ink-2)]'}`}
-                    style={r.primary ? { background: 'var(--rose)' } : undefined}
+                    className={`rounded-[8px] px-2.5 py-1.5 text-[11.5px] font-medium ${r.primary ? 'border border-[var(--ink)] bg-[var(--ink)] text-white' : 'border border-[var(--border)] bg-white text-[var(--ink-2)] hover:bg-[#f7f9fb]'}`}
                   >
                     Open in Studio →
                   </button>
@@ -50,8 +49,8 @@ export function SkuLeakagePane({ pane }: Props) {
           </tbody>
         </table>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-[var(--surface-soft)] px-3 py-2 text-[12px] text-[var(--ink-2)]">
-        <span>⚡</span><span dangerouslySetInnerHTML={{ __html: pane.tabFooterText }} />
+      <div className="mt-3 flex flex-wrap items-center gap-2.5 rounded-[8px] border border-[var(--hairline)] bg-[var(--surface-soft)] px-3.5 py-2.5 text-[12px] text-[var(--ink-3)] [&_b]:font-semibold [&_b]:text-[var(--ink)]">
+        <span className="text-[14px]">⚡</span><span className="flex-1" dangerouslySetInnerHTML={{ __html: pane.tabFooterText }} />
       </div>
     </div>
   );

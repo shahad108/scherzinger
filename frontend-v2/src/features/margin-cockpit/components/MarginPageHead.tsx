@@ -34,7 +34,7 @@ export function MarginPageHead({ header, onGenerateBriefing }: Props) {
             {header.subPills.map((p) => (
               <span
                 key={p}
-                className="rounded-full border border-[var(--hairline)] bg-white px-2.5 py-1 font-semibold text-[var(--ink-2)]"
+                className="rounded-[7px] border border-[var(--hairline)] bg-white px-2.5 py-[5px] text-[11.5px] font-semibold text-[var(--ink-2)]"
               >
                 {p}
               </span>
@@ -45,7 +45,7 @@ export function MarginPageHead({ header, onGenerateBriefing }: Props) {
               </span>
             ))}
             <span
-              className="rounded-full px-2.5 py-1 text-xs font-semibold"
+              className="rounded-[7px] px-2.5 py-[5px] text-[11.5px] font-semibold"
               style={{ background: 'var(--violet-bg)', color: 'var(--violet)' }}
             >
               {header.auditTag}
@@ -57,7 +57,7 @@ export function MarginPageHead({ header, onGenerateBriefing }: Props) {
             <button
               key={f.label}
               type="button"
-              className="flex items-center gap-1.5 rounded-full border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--grey-bg)]"
+              className="flex h-9 items-center gap-1.5 rounded-[11px] border border-[var(--hairline)] bg-white px-3.5 text-[12.5px] font-semibold text-[var(--ink-2)] transition-colors hover:bg-[#f7f9fb]"
             >
               <ChevronDown size={12} /> {f.label} · {f.value}
             </button>
@@ -65,20 +65,20 @@ export function MarginPageHead({ header, onGenerateBriefing }: Props) {
           <button
             type="button"
             onClick={onGenerateBriefing}
-            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white"
+            className="flex h-9 items-center gap-1.5 rounded-[12px] px-4 text-[13px] font-semibold text-white shadow-[0_6px_16px_-8px_rgba(90,125,163,0.55)] transition-colors hover:bg-[var(--rose-deep)]"
             style={{ background: 'var(--rose)' }}
           >
             <Wand2 size={12} /> Generate margin briefing →
           </button>
           <button
             type="button"
-            className="flex items-center gap-1.5 rounded-full border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)]"
+            className="flex h-9 items-center gap-1.5 rounded-[11px] border border-[var(--hairline)] bg-white px-3.5 text-[12.5px] font-semibold text-[var(--ink-2)] hover:bg-[#f7f9fb]"
           >
             <FileText size={12} /> Branded PDF
           </button>
           <button
             type="button"
-            className="flex items-center gap-1.5 rounded-full border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)]"
+            className="flex h-9 items-center gap-1.5 rounded-[11px] border border-[var(--hairline)] bg-white px-3.5 text-[12.5px] font-semibold text-[var(--ink-2)] hover:bg-[#f7f9fb]"
           >
             Export to deck
           </button>
