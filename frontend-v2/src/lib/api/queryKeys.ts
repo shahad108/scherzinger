@@ -1,8 +1,68 @@
+// Typed query-key factory.
+//
+// Every screen / cross-cutting hook MUST use this factory so cache keys are
+// uniform and invalidations stay predictable. Each entry exposes:
+//   - a base key (no params) for invalidation roots
+//   - an optional callable that mixes in params for fine-grained keys
+//
+// Param objects are intentionally narrow: only fields the BFF reads as query
+// strings. Adding a new param requires updating the factory AND the hook AND
+// the OpenAPI param list.
+
+import type { Persona } from '@/types';
+
+export type ShellParams = { persona?: Persona; lang?: 'de' | 'en' };
+
+export type ActionCenterParams = ShellParams & {
+  week?: string;
+  cluster?: string;
+};
+
+export type MarginCockpitParams = ShellParams & {
+  period?: string;
+  cluster?: string;
+};
+
+export type QuotesParams = ShellParams & { period?: string };
+
+export type ForecastParams = ShellParams & {
+  cluster?: string;
+  family?: string;
+  tier?: 'A' | 'B' | 'C';
+};
+
+export type StudioParams = ShellParams & { aid?: string };
+
+export type AiParams = ShellParams;
+
+export type ActionCardsParams = ShellParams;
+
 export const qk = {
-  actionCards: ['action-cards'] as const,
-  margin: (period: string) => ['margin', period] as const,
-  quotes: (filters: Record<string, unknown>) => ['quotes', filters] as const,
-  forecast: (horizon: string) => ['forecast', horizon] as const,
-  pricing: ['pricing'] as const,
-  ai: ['ai-briefing'] as const,
+  shell: (params?: ShellParams) =>
+    params ? (['shell', params] as const) : (['shell'] as const),
+
+  actionCenter: (params?: ActionCenterParams) =>
+    params ? (['action-center', params] as const) : (['action-center'] as const),
+
+  marginCockpit: (params?: MarginCockpitParams) =>
+    params ? (['margin-cockpit', params] as const) : (['margin-cockpit'] as const),
+
+  quotes: (params?: QuotesParams) =>
+    params ? (['quotes', params] as const) : (['quotes'] as const),
+
+  forecast: (params?: ForecastParams) =>
+    params ? (['forecast', params] as const) : (['forecast'] as const),
+
+  studio: (params?: StudioParams) =>
+    params ? (['studio', params] as const) : (['studio'] as const),
+
+  ai: (params?: AiParams) => (params ? (['ai', params] as const) : (['ai'] as const)),
+
+  actionCards: (params?: ActionCardsParams) =>
+    params ? (['action-cards', params] as const) : (['action-cards'] as const),
+
+  // Cross-cutting.
+  me: ['me'] as const,
+  version: ['screens-version'] as const,
+  auditTrail: (since: string) => ['audit-trail', since] as const,
 } as const;

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/client';
+import { qk, type StudioParams } from '@/lib/api/queryKeys';
 import type { SkuListEntry, StudioShell } from '@/types/studio';
 import { buildWorkbench } from './studio-workbench';
 
@@ -16,11 +17,11 @@ function enrichSkus(data: StudioShell): StudioShell {
   };
 }
 
-export function useStudio() {
+export function useStudio(params?: StudioParams) {
   return useQuery({
-    queryKey: ['studio'] as const,
+    queryKey: qk.studio(params),
     queryFn: async () => {
-      const raw = await apiFetch<StudioShell>('/studio');
+      const raw = await apiFetch<StudioShell>('/studio', { params });
       return enrichSkus(raw);
     },
     staleTime: 60_000,

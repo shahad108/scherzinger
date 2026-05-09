@@ -28,6 +28,19 @@ function mockKey(path: string): string {
   return path.replace(/^\//, '').replace(/\//g, '-');
 }
 
+export type QueryParams = Record<string, string | number | boolean | undefined | null>;
+
+function buildQuery(params?: QueryParams): string {
+  if (!params) return '';
+  const usp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === null || v === '') continue;
+    usp.append(k, String(v));
+  }
+  const qs = usp.toString();
+  return qs ? `?${qs}` : '';
+}
+
 function readMock<T>(path: string): T {
   const key = mockKey(path);
   const entry = Object.entries(mocks).find(([file]) => file.includes(`/${key}.json`));
@@ -37,14 +50,19 @@ function readMock<T>(path: string): T {
 
 const FALLBACK_STATUSES = new Set([404, 503]);
 
-export async function apiFetch<T>(path: string): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  options?: { params?: QueryParams },
+): Promise<T> {
   if (USE_MOCKS) {
+    // Mocks ignore params: every shape is fully covered by the bundled JSON.
     return readMock<T>(path);
   }
 
+  const url = `${BASE}${path}${buildQuery(options?.params)}`;
   let res: Response;
   try {
-    res = await fetch(`${BASE}${path}`, { credentials: 'include' });
+    res = await fetch(url, { credentials: 'include' });
   } catch (err) {
     // Network error / DNS / CORS preflight failure / etc.
     if (ALLOW_FALLBACK) {
@@ -55,7 +73,18 @@ export async function apiFetch<T>(path: string): Promise<T> {
   }
 
   if (res.ok) {
-    return (await res.json()) as T;
+    const ct = res.headers.get('content-type') ?? '';
+    if (!ct.toLowerCase().includes('application/json')) {
+      throw new Error(`API ${path} → expected JSON, got "${ct || 'no content-type'}"`);
+    }
+    let text = await res.text();
+    // Strip UTF-8 BOM if present (some servers/proxies emit it).
+    if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+    try {
+      return JSON.parse(text) as T;
+    } catch (err) {
+      throw new Error(`API ${path} → invalid JSON: ${(err as Error).message}`);
+    }
   }
 
   if (ALLOW_FALLBACK && FALLBACK_STATUSES.has(res.status)) {

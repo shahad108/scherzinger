@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/client';
+import { qk, type ForecastParams } from '@/lib/api/queryKeys';
 import type { ForecastShell } from '@/types/forecast';
 
-export function useForecast() {
+export function useForecast(params?: ForecastParams) {
   return useQuery({
-    queryKey: ['forecast'] as const,
-    queryFn: () => apiFetch<ForecastShell>('/forecast'),
+    queryKey: qk.forecast(params),
+    queryFn: () => apiFetch<ForecastShell>('/forecast', { params }),
     staleTime: 60_000,
   });
 }

@@ -82,6 +82,49 @@ describe('apiFetch', () => {
       const { apiFetch } = await importClient();
       await expect(apiFetch('/shell')).rejects.toThrow(/network down/);
     });
+
+    it('throws on non-JSON content-type', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          new Response('<!DOCTYPE html>', {
+            status: 200,
+            headers: { 'content-type': 'text/html' },
+          }),
+        ),
+      );
+      const { apiFetch } = await importClient();
+      await expect(apiFetch('/shell')).rejects.toThrow(/expected JSON/);
+    });
+
+    it('strips UTF-8 BOM before parsing', async () => {
+      const bomBody = '﻿' + JSON.stringify({ ok: true });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          new Response(bomBody, {
+            status: 200,
+            headers: { 'content-type': 'application/json; charset=utf-8' },
+          }),
+        ),
+      );
+      const { apiFetch } = await importClient();
+      await expect(apiFetch<{ ok: boolean }>('/shell')).resolves.toEqual({ ok: true });
+    });
+
+    it('throws on malformed JSON body', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          new Response('{not json', {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        ),
+      );
+      const { apiFetch } = await importClient();
+      await expect(apiFetch('/shell')).rejects.toThrow(/invalid JSON/);
+    });
   });
 
   describe('hybrid mode (mock fallback enabled)', () => {
