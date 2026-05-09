@@ -49,23 +49,24 @@ export function PriceFloor({ rows, footnote }: Props) {
           <table className="frank-table">
             <thead>
               <tr>
-                <th>Customer</th>
+                <th>Customer · cluster</th>
                 <th>Article</th>
                 <th>Current price</th>
                 <th>Forecast-informed floor</th>
                 <th>Headroom for discount</th>
                 <th>Movable share</th>
-                <th>Cluster confidence</th>
-                <th>Next quote / contract</th>
-                <th>Action</th>
+                <th>Action · next quote</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r, i) => (
                 <tr key={`${r.customerId}-${r.article}-${i}`} className={r.belowFloor ? 'hl' : undefined}>
                   <td>
-                    <span className={`tier-chip ${r.tier}`}>{r.tier}</span>
-                    <b>{r.customerId}</b>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <span className={`tier-chip ${r.tier}`}>{r.tier}</span>
+                      <b>{r.customerId}</b>
+                      <ClusterChip label={r.cluster.label} conf={r.cluster.conf} />
+                    </div>
                   </td>
                   <td>{r.article}</td>
                   <td className={`num-cell${r.locked ? ' muted' : ''}`}>{r.currentPrice}</td>
@@ -73,45 +74,44 @@ export function PriceFloor({ rows, footnote }: Props) {
                   <td className={`num-cell ${r.headroomTone}`}>{r.headroom}</td>
                   <td className={`num-cell ${r.movableTone}`}>{r.movableShare}</td>
                   <td>
-                    <ClusterChip label={r.cluster.label} conf={r.cluster.conf} />
-                  </td>
-                  <td>
-                    {r.nextLink ? (
-                      <>
-                        {r.next.split(' · ')[0]} ·{' '}
-                        <a
-                          href="#"
-                          style={{
-                            color: 'var(--rose-deep)',
-                            fontWeight: 600,
-                            textDecoration: 'none',
-                          }}
-                        >
-                          {r.next.split(' · ')[1]}
-                        </a>
-                      </>
-                    ) : (
-                      r.next
-                    )}
-                  </td>
-                  <td>
-                    <div className="row-actions">
-                      {r.renewalNote ? (
-                        <button type="button" className="row-action">
-                          Renewal note →
-                        </button>
-                      ) : (
-                        <>
-                          <button type="button" className={`row-action${r.primary ? ' primary' : ''}`}>
-                            Open in Studio →
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                      <div className="row-actions">
+                        {r.renewalNote ? (
+                          <button type="button" className="row-action">
+                            Renewal note →
                           </button>
-                          {r.queue && (
-                            <button type="button" className="row-action queue">
-                              + Queue
+                        ) : (
+                          <>
+                            <button type="button" className={`row-action${r.primary ? ' primary' : ''}`}>
+                              Open in Studio →
                             </button>
-                          )}
-                        </>
-                      )}
+                            {r.queue && (
+                              <button type="button" className="row-action queue">
+                                + Queue
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 10.5, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                        {r.nextLink ? (
+                          <>
+                            {r.next.split(' · ')[0]} ·{' '}
+                            <a
+                              href="#"
+                              style={{
+                                color: 'var(--rose-deep)',
+                                fontWeight: 600,
+                                textDecoration: 'none',
+                              }}
+                            >
+                              {r.next.split(' · ')[1]}
+                            </a>
+                          </>
+                        ) : (
+                          r.next
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>

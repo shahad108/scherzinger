@@ -1079,5 +1079,118 @@
   body.pryzm-2026 #screen-forecast .lq-stats {
     display: flex; gap: 30px; margin: 0 0 14px; flex-wrap: wrap; align-items: flex-end;
   }
+
+  /* ---- Forecast tables: compact + sticky context columns ----
+     Forecast tables (Pareto SKU, Price floor) have 8-9 columns and overflow at
+     typical content widths. We tighten cell sizing and pin the first column
+     (Customer/Article) + last column (Action) so horizontal scroll never hides
+     the identifier or the actionable button. */
+  body.pryzm-2026 #screen-forecast .sku-card .table-wrap {
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+  body.pryzm-2026 #screen-forecast table.frank-table {
+    font-size: 12.5px;
+  }
+  body.pryzm-2026 #screen-forecast table.frank-table th {
+    padding: 9px 10px;
+    font-size: 10px;
+  }
+  body.pryzm-2026 #screen-forecast table.frank-table td {
+    padding: 9px 10px;
+  }
+  body.pryzm-2026 #screen-forecast .conf-chip {
+    padding: 2px 7px;
+    font-size: 10.5px;
+  }
+  body.pryzm-2026 #screen-forecast .cluster-chip {
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+  body.pryzm-2026 #screen-forecast .booked-bar { gap: 6px; margin-top: 3px; }
+  body.pryzm-2026 #screen-forecast .booked-track { max-width: 60px; }
+  body.pryzm-2026 #screen-forecast .booked-text { font-size: 10px; }
+  body.pryzm-2026 #screen-forecast .row-action {
+    padding: 5px 9px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  body.pryzm-2026 #screen-forecast .row-actions {
+    flex-wrap: nowrap;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  /* Prevent narrow columns from squeezing identifiers/customer lists into
+     a vertical stack of single chars. */
+  body.pryzm-2026 #screen-forecast table.frank-table td,
+  body.pryzm-2026 #screen-forecast table.frank-table th {
+    white-space: nowrap;
+  }
+  body.pryzm-2026 #screen-forecast table.frank-table td b {
+    white-space: nowrap;
+  }
+  /* Allow wrap only in the band sub-text, customer-list, and trend split */
+  body.pryzm-2026 #screen-forecast table.frank-table .band,
+  body.pryzm-2026 #screen-forecast table.frank-table .vp-split {
+    white-space: nowrap;
+  }
+  body.pryzm-2026 #screen-forecast .vp-split { font-size: 10px; }
+  body.pryzm-2026 #screen-forecast .trend-arrow { font-size: 11.5px; }
+
+  /* Pin first column (identifier) and last column (action) so horizontal
+     scroll always keeps context + CTA visible. Each sticky cell carries the
+     surface background so other columns don't bleed through; .hl rows and
+     hover state get their own backgrounds via more-specific selectors. */
+  body.pryzm-2026 #screen-forecast table.frank-table th:first-child,
+  body.pryzm-2026 #screen-forecast table.frank-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--surface);
+  }
+  body.pryzm-2026 #screen-forecast table.frank-table thead th:first-child {
+    background: var(--surface-soft);
+    z-index: 2;
+  }
+  body.pryzm-2026 #screen-forecast table.frank-table tbody tr:hover td:first-child {
+    background: var(--surface-soft);
+  }
+  body.pryzm-2026 #screen-forecast table.frank-table tr.hl td:first-child {
+    background: var(--rose-bg);
+  }
+  body.pryzm-2026 #screen-forecast table.frank-table th:last-child,
+  body.pryzm-2026 #screen-forecast table.frank-table td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: var(--surface);
+    /* Soft shadow on the inside edge so the sticky column visually separates
+       from scrolled content. */
+    box-shadow: -8px 0 12px -10px rgba(15, 20, 28, 0.18);
+    min-width: 110px;
+  }
+  /* The Pareto price-floor row keeps two stacked buttons (primary + queue);
+     give that column more room. */
+  body.pryzm-2026 #screen-forecast table.frank-table td:last-child .row-actions {
+    display: inline-flex;
+  }
+  body.pryzm-2026 #screen-forecast table.frank-table thead th:last-child {
+    background: var(--surface-soft);
+    z-index: 2;
+  }
+  body.pryzm-2026 #screen-forecast table.frank-table tbody tr:hover td:last-child {
+    background: var(--surface-soft);
+  }
+  body.pryzm-2026 #screen-forecast table.frank-table tr.hl td:last-child {
+    background: var(--rose-bg);
+  }
+  /* Drill-detail rows use a single full-width cell (colSpan) — the sticky
+     rules above would pin that cell wrong, so reset them. */
+  body.pryzm-2026 #screen-forecast table.frank-table td[colspan] {
+    position: static;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
 }
 
