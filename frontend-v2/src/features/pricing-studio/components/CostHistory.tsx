@@ -68,18 +68,27 @@ export function CostHistory({ cost, history }: Props) {
       <h4 className="row2">
         Repricing history <span className="ws-pane-sub">this SKU only · audit-hash signed</span>
       </h4>
-      <div className="ws-history">
-        {history.map((h) => (
-          <div className="ws-hist-row" key={`${h.date}-${h.hash}`}>
-            <span className="ws-hist-date">{h.date}</span>
-            <span className="ws-hist-move">{h.move}</span>
-            <span className={`ws-hist-vol ${h.volTone}`}>{h.vol}</span>
-            <span className="ws-hist-by">
-              {h.by} · <code>{h.hash}</code>
-            </span>
-          </div>
-        ))}
-      </div>
+      {history.length > 0 ? (
+        <div className="ws-history">
+          {history.map((h) => (
+            <div className="ws-hist-row" key={`${h.date}-${h.hash}`}>
+              <span className="ws-hist-date">{h.date}</span>
+              <span className="ws-hist-move">{h.move}</span>
+              <span className={`ws-hist-vol ${h.volTone}`}>{h.vol}</span>
+              <span className="ws-hist-by">
+                {h.by} · <code>{h.hash}</code>
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="cluster-note" style={{ marginTop: 4 }}>
+          <i style={{ fontStyle: 'normal', color: 'var(--ink-2)', fontWeight: 600 }}>
+            No prior repricings.
+          </i>{' '}
+          New SKU — see the <b>Comparable-cluster pricing</b> panel below for the suggested band.
+        </p>
+      )}
     </div>
   );
 }

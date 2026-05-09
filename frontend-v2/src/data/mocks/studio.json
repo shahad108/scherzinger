@@ -65,6 +65,34 @@
         "currentMargin": "33.0% margin",
         "currentMarginTone": "bad",
         "targetText": "Target ≥ 38%"
+      },
+      "workbenchPatch": {
+        "unitCost": 104.5,
+        "currentPrice": 156,
+        "targetMarginPct": 38,
+        "annualUnits": 280,
+        "customerCount": 4,
+        "customerCluster": "bkagg",
+        "clusterN": 247,
+        "cost": {
+          "material": 38,
+          "labor": 24,
+          "outsourcing": 30,
+          "overhead": 8,
+          "note": "Outsourcing 30% (flange-machining) — supplier-sensitive cluster, +12% in 4yrs."
+        },
+        "trajectory": {
+          "delta": "Outsourcing +12.0% '22→'25",
+          "yearStart": "2022",
+          "yearEnd": "2025",
+          "legend": "gap = pass-through deficit (3.4pp on this SKU)"
+        },
+        "history": [
+          { "date": "2024-Q1", "move": "€148 → €156 (+5.4%)", "vol": "vol +1%", "volTone": "up", "by": "Frank", "hash": "b21f0c" },
+          { "date": "2022-Q3", "move": "€140 → €148 (+5.7%)", "vol": "vol +2%", "volTone": "up", "by": "Frank", "hash": "44eba2" },
+          { "date": "2020-Q4", "move": "€132 → €140 (+6.1%)", "vol": "vol flat", "volTone": "flat", "by": "F. Bauer", "hash": "8f2c19" },
+          { "date": "2019-Q1", "move": "€124 → €132 (+6.5%)", "vol": "vol +3%", "volTone": "up", "by": "F. Bauer", "hash": "1ad7e0" }
+        ]
       }
     },
     {
@@ -91,6 +119,34 @@
         "currentMargin": "42.0% margin",
         "currentMarginTone": "bad",
         "targetText": "Target ≥ 48%"
+      },
+      "workbenchPatch": {
+        "unitCost": 165,
+        "currentPrice": 284,
+        "targetMarginPct": 48,
+        "annualUnits": 1180,
+        "customerCount": 6,
+        "customerCluster": "bkaiz",
+        "clusterN": 142,
+        "cost": {
+          "material": 44,
+          "labor": 38,
+          "outsourcing": 10,
+          "overhead": 8,
+          "note": "Labor 38% (precision-assembly) — wage drift +9.2% over 4 years."
+        },
+        "trajectory": {
+          "delta": "Labor +9.2% '22→'25",
+          "yearStart": "2022",
+          "yearEnd": "2025",
+          "legend": "gap = pass-through deficit (3.8pp on this SKU)"
+        },
+        "history": [
+          { "date": "2023-Q4", "move": "€268 → €284 (+6.0%)", "vol": "vol −2%", "volTone": "down", "by": "Frank", "hash": "92cb3d" },
+          { "date": "2022-Q1", "move": "€252 → €268 (+6.3%)", "vol": "vol +1%", "volTone": "up", "by": "Frank", "hash": "f4a071" },
+          { "date": "2020-Q3", "move": "€238 → €252 (+5.9%)", "vol": "vol +3%", "volTone": "up", "by": "F. Bauer", "hash": "2e8104" },
+          { "date": "2018-Q4", "move": "€224 → €238 (+6.3%)", "vol": "vol +2%", "volTone": "up", "by": "F. Bauer", "hash": "bb6e2c" }
+        ]
       }
     },
     {
@@ -117,6 +173,33 @@
         "currentMargin": "39.7% margin",
         "currentMarginTone": "bad",
         "targetText": "Target ≥ 46%"
+      },
+      "workbenchPatch": {
+        "unitCost": 477,
+        "currentPrice": 791,
+        "targetMarginPct": 46,
+        "annualUnits": 642,
+        "customerCount": 8,
+        "customerCluster": "bkaes",
+        "clusterN": 627,
+        "cost": {
+          "material": 60,
+          "labor": 22,
+          "outsourcing": 12,
+          "overhead": 6,
+          "note": "Material 60% (electric-motor + steel) — high commodity exposure, +21.3% over 4 years."
+        },
+        "trajectory": {
+          "delta": "Material +21.3% '22→'25",
+          "yearStart": "2022",
+          "yearEnd": "2025",
+          "legend": "gap = pass-through deficit (6.2pp on this SKU — stale)"
+        },
+        "history": [
+          { "date": "2022-Q3", "move": "€745 → €791 (+6.2%)", "vol": "vol −1%", "volTone": "flat", "by": "Frank", "hash": "ce4f81" },
+          { "date": "2020-Q1", "move": "€698 → €745 (+6.7%)", "vol": "vol +2%", "volTone": "up", "by": "Frank", "hash": "0a1b39" },
+          { "date": "2017-Q4", "move": "€652 → €698 (+7.1%)", "vol": "vol +4%", "volTone": "up", "by": "F. Bauer", "hash": "73d0f2" }
+        ]
       }
     },
     {
@@ -143,6 +226,34 @@
         "currentMargin": "44.2% margin",
         "currentMarginTone": "bad",
         "targetText": "Target ≥ 48%"
+      },
+      "workbenchPatch": {
+        "unitCost": 348,
+        "currentPrice": 624,
+        "targetMarginPct": 48,
+        "annualUnits": 880,
+        "customerCount": 5,
+        "customerCluster": "bkaes",
+        "clusterN": 627,
+        "cost": {
+          "material": 56,
+          "labor": 28,
+          "outsourcing": 10,
+          "overhead": 6,
+          "note": "Material 56% (steel-dominant MV-series) — +13.8% over 4 years, only 1.8% passed through."
+        },
+        "trajectory": {
+          "delta": "Material +13.8% '22→'25",
+          "yearStart": "2022",
+          "yearEnd": "2025",
+          "legend": "gap = pass-through deficit (3.6pp on this SKU)"
+        },
+        "history": [
+          { "date": "2024-Q2", "move": "€598 → €624 (+4.3%)", "vol": "vol −2%", "volTone": "down", "by": "Frank", "hash": "55c81a" },
+          { "date": "2022-Q4", "move": "€572 → €598 (+4.5%)", "vol": "vol +1%", "volTone": "up", "by": "Frank", "hash": "12fb37" },
+          { "date": "2021-Q1", "move": "€548 → €572 (+4.4%)", "vol": "vol +3%", "volTone": "up", "by": "F. Bauer", "hash": "9a23c8" },
+          { "date": "2019-Q3", "move": "€520 → €548 (+5.4%)", "vol": "vol flat", "volTone": "flat", "by": "F. Bauer", "hash": "ed5021" }
+        ]
       }
     },
     {
@@ -169,6 +280,33 @@
         "currentMargin": "42.8% margin",
         "currentMarginTone": "bad",
         "targetText": "Target ≥ 48%"
+      },
+      "workbenchPatch": {
+        "unitCost": 710,
+        "currentPrice": 1240,
+        "targetMarginPct": 48,
+        "annualUnits": 412,
+        "customerCount": 3,
+        "customerCluster": "bkagg",
+        "clusterN": 247,
+        "cost": {
+          "material": 35,
+          "labor": 22,
+          "outsourcing": 38,
+          "overhead": 5,
+          "note": "Outsourcing 38% (precision-casting) — supplier renegotiation in Q3 lifted cluster cost +18.6%."
+        },
+        "trajectory": {
+          "delta": "Outsourcing +18.6% '22→'25",
+          "yearStart": "2022",
+          "yearEnd": "2025",
+          "legend": "gap = pass-through deficit (5.2pp on this SKU)"
+        },
+        "history": [
+          { "date": "2024-Q1", "move": "€1,180 → €1,240 (+5.1%)", "vol": "vol −3%", "volTone": "down", "by": "Frank", "hash": "7d4f60" },
+          { "date": "2022-Q2", "move": "€1,120 → €1,180 (+5.4%)", "vol": "vol +2%", "volTone": "up", "by": "Frank", "hash": "3a90b5" },
+          { "date": "2020-Q1", "move": "€1,060 → €1,120 (+5.7%)", "vol": "vol flat", "volTone": "flat", "by": "F. Bauer", "hash": "c2186e" }
+        ]
       }
     },
     {
@@ -195,6 +333,33 @@
         "currentMargin": "46.1% margin",
         "currentMarginTone": "good",
         "targetText": "Target ≥ 48%"
+      },
+      "workbenchPatch": {
+        "unitCost": 330,
+        "currentPrice": 612,
+        "targetMarginPct": 48,
+        "annualUnits": 720,
+        "customerCount": 4,
+        "customerCluster": "bkaes",
+        "clusterN": 627,
+        "cost": {
+          "material": 54,
+          "labor": 30,
+          "outsourcing": 10,
+          "overhead": 6,
+          "note": "Material 54% — within target margin band but creeping +9.8% in 4 years."
+        },
+        "trajectory": {
+          "delta": "Material +9.8% '22→'25",
+          "yearStart": "2022",
+          "yearEnd": "2025",
+          "legend": "gap = pass-through deficit (1.9pp — minor reprice opportunity)"
+        },
+        "history": [
+          { "date": "2024-Q3", "move": "€590 → €612 (+3.7%)", "vol": "vol +1%", "volTone": "up", "by": "Frank", "hash": "44a0eb" },
+          { "date": "2023-Q1", "move": "€568 → €590 (+3.9%)", "vol": "vol +2%", "volTone": "up", "by": "Frank", "hash": "6f2810" },
+          { "date": "2021-Q3", "move": "€548 → €568 (+3.6%)", "vol": "vol flat", "volTone": "flat", "by": "F. Bauer", "hash": "9b3c41" }
+        ]
       }
     },
     {
@@ -221,6 +386,34 @@
         "currentMargin": "46.5% margin",
         "currentMarginTone": "good",
         "targetText": "Target ≥ 48%"
+      },
+      "workbenchPatch": {
+        "unitCost": 208,
+        "currentPrice": 389,
+        "targetMarginPct": 48,
+        "annualUnits": 1420,
+        "customerCount": 7,
+        "customerCluster": "bkaes",
+        "clusterN": 627,
+        "cost": {
+          "material": 50,
+          "labor": 30,
+          "outsourcing": 14,
+          "overhead": 6,
+          "note": "Material 50% — minor cost-shift +8.4% over 4 years; balanced cost mix."
+        },
+        "trajectory": {
+          "delta": "Material +8.4% '22→'25",
+          "yearStart": "2022",
+          "yearEnd": "2025",
+          "legend": "gap = pass-through deficit (1.4pp — high-volume SKU, small lift = big €)"
+        },
+        "history": [
+          { "date": "2024-Q1", "move": "€376 → €389 (+3.5%)", "vol": "vol +2%", "volTone": "up", "by": "Frank", "hash": "0bc931" },
+          { "date": "2022-Q3", "move": "€362 → €376 (+3.9%)", "vol": "vol +3%", "volTone": "up", "by": "Frank", "hash": "ad5a02" },
+          { "date": "2020-Q4", "move": "€348 → €362 (+4.0%)", "vol": "vol +5%", "volTone": "up", "by": "F. Bauer", "hash": "4ec71f" },
+          { "date": "2018-Q4", "move": "€332 → €348 (+4.8%)", "vol": "vol +1%", "volTone": "up", "by": "F. Bauer", "hash": "82f0d4" }
+        ]
       }
     },
     {
@@ -247,6 +440,35 @@
         "currentMargin": "47.0% margin",
         "currentMarginTone": "good",
         "targetText": "Target ≥ 48%"
+      },
+      "workbenchPatch": {
+        "unitCost": 264,
+        "currentPrice": 498,
+        "targetMarginPct": 48,
+        "annualUnits": 920,
+        "customerCount": 4,
+        "customerCluster": "bkaes",
+        "clusterN": 627,
+        "variant": "frame-locked",
+        "riskLine": "Locked until July renewal — proposal queued, not pushed",
+        "cost": {
+          "material": 52,
+          "labor": 28,
+          "outsourcing": 14,
+          "overhead": 6,
+          "note": "Material 52% — frame contract caps reprice until July; advisory floor only."
+        },
+        "trajectory": {
+          "delta": "Material +11.2% '22→'25",
+          "yearStart": "2022",
+          "yearEnd": "2025",
+          "legend": "gap = pass-through deficit (2.1pp — captured at renewal)"
+        },
+        "history": [
+          { "date": "2023-Q3", "move": "€482 → €498 (+3.3%)", "vol": "vol flat", "volTone": "flat", "by": "Frank", "hash": "f1c904" },
+          { "date": "2021-Q3", "move": "€464 → €482 (+3.9%)", "vol": "vol +2%", "volTone": "up", "by": "Frank", "hash": "85b2e7" },
+          { "date": "2019-Q3", "move": "€444 → €464 (+4.5%)", "vol": "vol +1%", "volTone": "up", "by": "F. Bauer", "hash": "d3408b" }
+        ]
       }
     },
     {
@@ -273,6 +495,34 @@
         "currentMargin": "47.5% margin",
         "currentMarginTone": "good",
         "targetText": "Target ≥ 48%"
+      },
+      "workbenchPatch": {
+        "unitCost": 216,
+        "currentPrice": 412,
+        "targetMarginPct": 48,
+        "annualUnits": 184,
+        "customerCount": 2,
+        "customerCluster": "sopu",
+        "clusterN": 6,
+        "variant": "frame-locked",
+        "riskLine": "Low-n SOPU + frame-lock — manual review by Heiko before any move",
+        "cost": {
+          "material": 40,
+          "labor": 32,
+          "outsourcing": 22,
+          "overhead": 6,
+          "note": "SOPU low-n cluster (n=6) — outsourcing volatile +14.4%; treat as advisory."
+        },
+        "trajectory": {
+          "delta": "Outsourcing +14.4% '22→'25 (low-conf)",
+          "yearStart": "2022",
+          "yearEnd": "2025",
+          "legend": "gap = pass-through deficit · low cluster confidence — flag manual"
+        },
+        "history": [
+          { "date": "2023-Q1", "move": "€398 → €412 (+3.5%)", "vol": "vol flat", "volTone": "flat", "by": "Frank", "hash": "7228a5" },
+          { "date": "2020-Q4", "move": "€376 → €398 (+5.9%)", "vol": "vol −2%", "volTone": "down", "by": "F. Bauer", "hash": "a90611" }
+        ]
       }
     },
     {
@@ -299,6 +549,31 @@
         "currentMargin": "no history",
         "currentMarginTone": "bad",
         "targetText": "Target band €42–€58"
+      },
+      "workbenchPatch": {
+        "unitCost": 26,
+        "currentPrice": 49,
+        "targetMarginPct": 48,
+        "annualUnits": 60,
+        "customerCount": 4,
+        "customerCluster": "bkaes",
+        "clusterN": 627,
+        "variant": "new-sku",
+        "riskLine": "No history — A/B at €49 strongly recommended before broad rollout",
+        "cost": {
+          "material": 50,
+          "labor": 30,
+          "outsourcing": 14,
+          "overhead": 6,
+          "note": "Cluster-derived cost mix (BKAES median) — sleeve variant of MV-series."
+        },
+        "trajectory": {
+          "delta": "Cluster benchmark · n=627",
+          "yearStart": "2022",
+          "yearEnd": "2025",
+          "legend": "gap = N/A (no SKU history) — cluster proxy"
+        },
+        "history": []
       }
     },
     {
@@ -325,6 +600,31 @@
         "currentMargin": "no history",
         "currentMarginTone": "bad",
         "targetText": "Target band €18–€26"
+      },
+      "workbenchPatch": {
+        "unitCost": 13,
+        "currentPrice": 22,
+        "targetMarginPct": 38,
+        "annualUnits": 80,
+        "customerCount": 3,
+        "customerCluster": "bkagg",
+        "clusterN": 247,
+        "variant": "new-sku",
+        "riskLine": "No history — bearing housing variant priced from BKAGG cluster median",
+        "cost": {
+          "material": 38,
+          "labor": 24,
+          "outsourcing": 30,
+          "overhead": 8,
+          "note": "Cluster-derived cost mix (BKAGG median) — outsourcing-heavy housing family."
+        },
+        "trajectory": {
+          "delta": "Cluster benchmark · n=247",
+          "yearStart": "2022",
+          "yearEnd": "2025",
+          "legend": "gap = N/A (no SKU history) — cluster proxy"
+        },
+        "history": []
       }
     },
     {
@@ -351,6 +651,31 @@
         "currentMargin": "no history",
         "currentMarginTone": "bad",
         "targetText": "Manual review (n<10)"
+      },
+      "workbenchPatch": {
+        "unitCost": 220,
+        "currentPrice": 380,
+        "targetMarginPct": 42,
+        "annualUnits": 24,
+        "customerCount": 2,
+        "customerCluster": "sopu",
+        "clusterN": 6,
+        "variant": "new-sku",
+        "riskLine": "Low-n SOPU + new SKU — model recommends Heiko + Frank manual review only",
+        "cost": {
+          "material": 40,
+          "labor": 32,
+          "outsourcing": 22,
+          "overhead": 6,
+          "note": "SOPU low-n + new SKU — cluster median is advisory, escalate to manual."
+        },
+        "trajectory": {
+          "delta": "Cluster benchmark · n=6 (low-conf)",
+          "yearStart": "2022",
+          "yearEnd": "2025",
+          "legend": "gap = N/A (no SKU history, low cluster confidence)"
+        },
+        "history": []
       }
     }
   ],

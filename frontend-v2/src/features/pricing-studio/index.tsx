@@ -81,7 +81,7 @@ export default function PricingStudioPage() {
   }
 
   const showComparable = selectedSku?.isNew ?? false;
-  const wb = data.workbench;
+  const wb = selectedSku?.workbench ?? data.workbench;
   const fanPrice = activeOption?.price ?? wb.fanout.fanPrice;
 
   return (

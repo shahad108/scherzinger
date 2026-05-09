@@ -19,6 +19,41 @@ export interface SkuListEntry {
   locked: boolean;
   isNew: boolean;
   shortHero?: SkuShortHero;
+  workbenchPatch?: WorkbenchPatch;
+  /** Computed (added by `useStudio` enrichment); not in raw mock JSON. */
+  workbench?: WorkbenchData;
+}
+
+export type WorkbenchVariant = 'standard' | 'frame-locked' | 'new-sku';
+
+export interface WorkbenchPatch {
+  unitCost: number;
+  currentPrice: number;
+  targetMarginPct: number;
+  annualUnits: number;
+  customerCount: number;
+  customerCluster: 'bkagg' | 'bkaes' | 'bkaiz' | 'sopu';
+  clusterN?: number;
+  variant?: WorkbenchVariant;
+  cost: {
+    material: number;
+    labor: number;
+    outsourcing: number;
+    overhead: number;
+    note: string;
+  };
+  trajectory: {
+    delta: string;
+    yearStart: string;
+    yearEnd: string;
+    materialPoints?: string;
+    quotedPoints?: string;
+    legend: string;
+  };
+  history: HistoryRow[];
+  chipsOverride?: HeroChipData[];
+  memoOverride?: MemoSection[];
+  riskLine?: string;
 }
 
 export interface SkuShortHero {
