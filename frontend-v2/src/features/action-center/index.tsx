@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useActionCenter } from '@/data/api/useActionCenter';
 import { PageHead } from './components/PageHead';
 import { MovableHero } from './components/MovableHero';
@@ -12,14 +13,16 @@ import { AbTestList } from './components/AbTestList';
 import { RejectionList } from './components/RejectionList';
 import { AuditTrail } from './components/AuditTrail';
 import { ReportCard } from './components/ReportCard';
+import { ActionCenterSkeleton } from './components/ActionCenterSkeleton';
 
 export function ActionCenterPage() {
-  const { data, isLoading, error } = useActionCenter();
+  const [hideLocked, setHideLocked] = useState(false);
+  const { data, isLoading, error } = useActionCenter({ hide_locked: hideLocked });
 
-  if (isLoading) {
-    return <div className="mx-auto max-w-[1400px] p-8 text-sm text-[var(--muted)]">Lade…</div>;
+  if (isLoading || !data) {
+    return <ActionCenterSkeleton />;
   }
-  if (error || !data) {
+  if (error) {
     return (
       <div className="mx-auto max-w-[1400px] p-8 text-sm text-[var(--red)]">
         Fehler: {(error as Error)?.message ?? 'unbekannt'}
@@ -29,7 +32,7 @@ export function ActionCenterPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] px-8 py-6">
-      <PageHead header={data.header} />
+      <PageHead header={data.header} hideLocked={hideLocked} onToggleHideLocked={setHideLocked} />
       <MovableHero hero={data.movableHero} />
       <BucketGrid buckets={data.buckets} />
       <DecisionCards decisions={data.decisions} />

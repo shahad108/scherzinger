@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { ChevronDown, MoreHorizontal, Plus, Clock, GripVertical } from 'lucide-react';
 import { chart } from '@/lib/chartColors';
 import type { DecisionCard, DecisionFact, DecisionTrend } from '@/types';
+import { EmptyBlock } from './EmptyBlock';
 
 type ActState = 'acc' | 'nim' | 'par' | 'rej' | 'ab' | null;
 
@@ -186,6 +187,14 @@ function FeedbackRow({ id }: { id: string }) {
 }
 
 export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
+  if (!decisions || decisions.length === 0) {
+    return (
+      <EmptyBlock
+        title="Today's analyst decisions"
+        hint="No decisions for the active filter. Decisions are ranked by impact and refresh on Monday morning."
+      />
+    );
+  }
   return (
     <>
       <div id="sec-decisions" className="mb-3 flex items-end justify-between">

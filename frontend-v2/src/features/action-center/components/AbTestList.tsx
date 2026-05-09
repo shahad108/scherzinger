@@ -2,6 +2,7 @@ import { Plus } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Badge } from '@/components/ui/Badge';
 import type { AbTestCard, Tone } from '@/types';
+import { EmptyBlock } from './EmptyBlock';
 
 function toneToBadge(t: Tone): React.ComponentProps<typeof Badge>['tone'] {
   if (t === 'rose') return 'rose';
@@ -18,6 +19,14 @@ const liftClass: Record<Tone, string> = {
 };
 
 export function AbTestList({ tests }: { tests: AbTestCard[] }) {
+  if (!tests || tests.length === 0) {
+    return (
+      <EmptyBlock
+        title="A/B Test Tracker"
+        hint="No live tests right now. Decisions slice into A/B tests on demand."
+      />
+    );
+  }
   return (
     <>
       <div className="mb-3 flex items-end justify-between">

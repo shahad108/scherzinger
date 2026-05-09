@@ -3,9 +3,11 @@ import type { ActionCenterHeader } from '@/types';
 
 interface Props {
   header: ActionCenterHeader;
+  hideLocked?: boolean;
+  onToggleHideLocked?: (next: boolean) => void;
 }
 
-export function PageHead({ header }: Props) {
+export function PageHead({ header, hideLocked = false, onToggleHideLocked }: Props) {
   return (
     <>
       <div className="mb-3 text-xs text-[var(--muted)]">
@@ -50,10 +52,29 @@ export function PageHead({ header }: Props) {
           </div>
         </div>
         <div className="flex flex-none flex-wrap items-center gap-2">
+          {onToggleHideLocked && (
+            <button
+              type="button"
+              onClick={() => onToggleHideLocked(!hideLocked)}
+              aria-pressed={hideLocked}
+              className="inline-flex items-center gap-2 text-[12.5px] font-medium transition-colors hover:bg-[#f7f9fb]"
+              style={{
+                height: 36,
+                padding: '0 14px',
+                borderRadius: 11,
+                background: hideLocked ? 'var(--surface-soft)' : 'var(--surface)',
+                border: hideLocked ? '1px solid var(--ink-3)' : '1px solid var(--border)',
+                color: 'var(--ink-2)',
+                cursor: 'pointer',
+              }}
+            >
+              <Filter size={13} className="text-[var(--ink-3)]" />
+              {hideLocked ? 'Locked hidden' : 'Hide locked'}
+            </button>
+          )}
           {[
             { icon: ChevronDown, label: 'All Departments' },
             { icon: Download,    label: 'Export' },
-            { icon: Filter,      label: 'Filter' },
           ].map(({ icon: Icon, label }) => (
             <button
               key={label}

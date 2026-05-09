@@ -1,7 +1,11 @@
 import { ArrowRight } from 'lucide-react';
 import type { BucketCard } from '@/types';
+import { EmptyBlock } from './EmptyBlock';
 
 export function BucketGrid({ buckets }: { buckets: BucketCard[] }) {
+  if (!buckets || buckets.length === 0) {
+    return <EmptyBlock title="Buckets" hint="No buckets to show for the active filter." />;
+  }
   return (
     <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
       {buckets.map((b) => (

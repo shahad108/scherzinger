@@ -1,6 +1,10 @@
 import type { AuditRow } from '@/types';
+import { EmptyBlock } from './EmptyBlock';
 
 export function AuditTrail({ rows }: { rows: AuditRow[] }) {
+  if (!rows || rows.length === 0) {
+    return <EmptyBlock title="Audit trail" hint="No changes in the last 30 days." />;
+  }
   return (
     <>
       <div className="mb-3">

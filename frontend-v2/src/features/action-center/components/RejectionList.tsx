@@ -1,6 +1,10 @@
 import type { RejectionRow } from '@/types';
+import { EmptyBlock } from './EmptyBlock';
 
 export function RejectionList({ rows }: { rows: RejectionRow[] }) {
+  if (!rows || rows.length === 0) {
+    return <EmptyBlock title="Why we lose" hint="No rejection codes recorded for the period." />;
+  }
   return (
     <>
       <div className="mb-3">

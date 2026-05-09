@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { SkuRow, Tone } from '@/types';
+import { EmptyBlock } from './EmptyBlock';
 
 const marginToneClass: Record<Tone, string> = {
   positive: 'text-[var(--green)]',
@@ -27,6 +28,15 @@ const confChip: Record<SkuRow['clusterTone'], string> = {
 export function SkuTable({ rows }: { rows: SkuRow[] }) {
   const [hideLocked, setHideLocked] = useState(false);
   const visible = hideLocked ? rows.filter((r) => r.status !== 'locked') : rows;
+
+  if (!rows || rows.length === 0) {
+    return (
+      <EmptyBlock
+        title="SKU pricing engine"
+        hint="No SKUs in scope for the active filter. Toggle Hide locked off to widen the view."
+      />
+    );
+  }
 
   return (
     <>

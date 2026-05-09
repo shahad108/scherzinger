@@ -16,6 +16,7 @@ export type ShellParams = { persona?: Persona; lang?: 'de' | 'en' };
 export type ActionCenterParams = ShellParams & {
   week?: string;
   cluster?: string;
+  hide_locked?: boolean;
 };
 
 export type MarginCockpitParams = ShellParams & {
