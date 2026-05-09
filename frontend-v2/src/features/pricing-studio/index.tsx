@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useStudio } from '@/data/api/useStudio';
 import { PageHead } from './components/PageHead';
 import { SkuPicker } from './components/SkuPicker';
@@ -15,6 +15,13 @@ export default function PricingStudioPage() {
   const { data, isLoading } = useStudio();
   const [selectedAid, setSelectedAid] = useState<string | null>(null);
   const [activeOption, setActiveOption] = useState<ActiveOptionView | null>(null);
+
+  useEffect(() => {
+    document.body.classList.add('pz-fullbleed');
+    return () => {
+      document.body.classList.remove('pz-fullbleed');
+    };
+  }, []);
 
   const effectiveAid = selectedAid ?? data?.defaultAid ?? '';
   const selectedSku = useMemo(
@@ -78,7 +85,7 @@ export default function PricingStudioPage() {
   const fanPrice = activeOption?.price ?? wb.fanout.fanPrice;
 
   return (
-    <section id="screen-studio" className="mx-auto max-w-[1400px] px-8 py-6">
+    <section id="screen-studio" className="w-full px-6 py-6">
       <PageHead header={data.header} />
 
       <div className="ws-grid">
@@ -96,7 +103,6 @@ export default function PricingStudioPage() {
           <PriceOptions
             options={wb.options}
             optionsSub={wb.optionsSub}
-            clusterMeta="cluster-confidence"
             onActiveChange={setActiveOption}
           />
 

@@ -12,11 +12,10 @@ export interface ActiveOptionView {
 interface Props {
   options: PriceOptionsBundle;
   optionsSub: string;
-  clusterMeta: string;
   onActiveChange?: (view: ActiveOptionView) => void;
 }
 
-export function PriceOptions({ options, optionsSub, clusterMeta, onActiveChange }: Props) {
+export function PriceOptions({ options, optionsSub, onActiveChange }: Props) {
   const [active, setActive] = useState<ActiveOpt>('floor');
   const [customPrice, setCustomPrice] = useState('');
 
@@ -47,7 +46,7 @@ export function PriceOptions({ options, optionsSub, clusterMeta, onActiveChange 
       <div className="ws-options-head">
         <h4>Pick a target price</h4>
         <span className="ws-opts-sub">
-          {optionsSub} ({clusterMeta}) ·{' '}
+          {optionsSub} ·{' '}
           <button type="button" className="link-btn">
             🔍 Why this price?
           </button>
