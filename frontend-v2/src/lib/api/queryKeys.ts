@@ -22,6 +22,9 @@ export type ActionCenterParams = ShellParams & {
 export type MarginCockpitParams = ShellParams & {
   period?: string;
   cluster?: string;
+  family?: string;
+  tier?: string;
+  customer_id?: string;
 };
 
 export type QuotesParams = ShellParams & { period?: string };

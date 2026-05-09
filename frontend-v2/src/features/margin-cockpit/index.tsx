@@ -10,6 +10,7 @@ import { LostQuoteDifferential } from './components/LostQuoteDifferential';
 import { CostVsPriceCard } from './components/CostVsPriceCard';
 import { MarginTabs } from './components/MarginTabs';
 import { CrossLinks } from './components/CrossLinks';
+import { MarginCockpitSkeleton } from './components/MarginCockpitSkeleton';
 
 export function MarginCockpitPage() {
   const { data, isLoading, error } = useMarginCockpit();
@@ -25,7 +26,7 @@ export function MarginCockpitPage() {
   }, []);
 
   if (isLoading) {
-    return <div className="w-full px-6 py-8 text-sm text-[var(--muted)]">Lade…</div>;
+    return <MarginCockpitSkeleton />;
   }
   if (error || !data) {
     return (
