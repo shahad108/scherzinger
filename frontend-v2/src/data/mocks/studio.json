@@ -1,0 +1,633 @@
+{
+  "header": {
+    "crumbs": ["Cockpit", "Pricing Analyst · Frank", "Pricing Studio"],
+    "title": "Pricing Studio",
+    "subPills": ["SKU pricing workbench", "Predictive Portfolio Pricing"],
+    "subStats": [
+      { "value": "10", "label": "SKUs flagged" },
+      { "value": "BKAES", "label": "leads" }
+    ],
+    "headPills": [
+      { "label": "Action queue →", "target": "action" },
+      { "label": "Cluster forecast →", "target": "forecast" },
+      { "label": "Approvals →", "target": "quotes" }
+    ]
+  },
+  "filters": [
+    { "id": "all", "label": "All" },
+    { "id": "floor", "label": "Floor breached" },
+    { "id": "cost", "label": "Cost-shifted" },
+    { "id": "stale", "label": "Stale > 12mo" },
+    { "id": "frame", "label": "Frame contract due" }
+  ],
+  "toggles": [
+    { "id": "hide-locked", "label": "🔒 Hide locked", "defaultActive": false },
+    { "id": "new-skus", "label": "🆕 New SKUs", "defaultActive": false }
+  ],
+  "defaultAid": "200832-E",
+  "skus": [
+    {
+      "aid": "200832-E",
+      "margin": "−1.3%",
+      "marginTone": "lo",
+      "productLine": "Zahnradpumpe",
+      "cluster": "BKAGG",
+      "meta": "BKAGG · €4.20 · 9 customers",
+      "clusterChip": "BKAGG 74%",
+      "clusterTone": "mid",
+      "flag": "floor",
+      "tag": "Floor",
+      "tagTone": "floor",
+      "locked": false,
+      "isNew": false
+    },
+    {
+      "aid": "201438-B",
+      "margin": "33.0%",
+      "marginTone": "lo",
+      "productLine": "Zahnrad-Flanschpumpe",
+      "cluster": "BKAGG",
+      "meta": "BKAGG · €156",
+      "clusterChip": "BKAGG 74%",
+      "clusterTone": "mid",
+      "flag": "floor",
+      "tag": "Floor",
+      "tagTone": "floor",
+      "locked": false,
+      "isNew": false,
+      "shortHero": {
+        "title": "Article 201438-B · Zahnrad-Flanschpumpe",
+        "sub": "Group **BKAGG** · 4 customers · 280 units/yr · €43.7K annual revenue",
+        "chipCluster": "Cluster: BKAGG · confidence 74%",
+        "chipApproval": "Approval: Frank → Till (board)",
+        "meta": "Floor breached on flange variant since steel +5.8% in 2025",
+        "currentPrice": "€156",
+        "currentMargin": "33.0% margin",
+        "currentMarginTone": "bad",
+        "targetText": "Target ≥ 38%"
+      }
+    },
+    {
+      "aid": "205345-A",
+      "margin": "42.0%",
+      "marginTone": "mid",
+      "productLine": "Zahnradpumpe",
+      "cluster": "BKAIZ",
+      "meta": "BKAIZ · €284",
+      "clusterChip": "BKAIZ 64%",
+      "clusterTone": "mid",
+      "flag": "floor",
+      "tag": "Floor",
+      "tagTone": "floor",
+      "locked": false,
+      "isNew": false,
+      "shortHero": {
+        "title": "Article 205345-A · Zahnradpumpe (BKAIZ variant)",
+        "sub": "Group **BKAIZ** · 6 customers · 1,180 units/yr · €335K annual revenue",
+        "chipCluster": "Cluster: BKAIZ · confidence 64%",
+        "chipApproval": "Approval: Frank → Till (board)",
+        "meta": "Margin slipped under guardrail; cluster MAPE 6.2%",
+        "currentPrice": "€284",
+        "currentMargin": "42.0% margin",
+        "currentMarginTone": "bad",
+        "targetText": "Target ≥ 48%"
+      }
+    },
+    {
+      "aid": "201827",
+      "margin": "39.7%",
+      "marginTone": "mid",
+      "productLine": "Elektro-Zahnradpumpe",
+      "cluster": "BKAES",
+      "meta": "BKAES · €791 · last reprice 2022-Q3",
+      "clusterChip": "BKAES 82%",
+      "clusterTone": "hi",
+      "flag": "stale",
+      "tag": "Stale",
+      "tagTone": "stale",
+      "locked": false,
+      "isNew": false,
+      "shortHero": {
+        "title": "Article 201827 · Elektro-Zahnradpumpe",
+        "sub": "Group **BKAES** · 8 customers · 642 units/yr · €508K annual revenue",
+        "chipCluster": "Cluster: BKAES · confidence 82%",
+        "chipApproval": "Approval: Frank → Till (board)",
+        "meta": "Last repriced 2022-Q3 — 18 months ago, cluster median moved +6.4%",
+        "currentPrice": "€791",
+        "currentMargin": "39.7% margin",
+        "currentMarginTone": "bad",
+        "targetText": "Target ≥ 46%"
+      }
+    },
+    {
+      "aid": "205178",
+      "margin": "44.2%",
+      "marginTone": "mid",
+      "productLine": "Zahnradpumpe MV0665",
+      "cluster": "BKAES",
+      "meta": "BKAES · €624",
+      "clusterChip": "BKAES 82%",
+      "clusterTone": "hi",
+      "flag": "cost",
+      "tag": "Cost ↑",
+      "tagTone": "cost",
+      "locked": false,
+      "isNew": false,
+      "shortHero": {
+        "title": "Article 205178 · Zahnradpumpe MV0665",
+        "sub": "Group **BKAES** · 5 customers · 880 units/yr · €549K annual revenue",
+        "chipCluster": "Cluster: BKAES · confidence 82%",
+        "chipApproval": "Approval: Frank → Till (board)",
+        "meta": "Material cost up 5.4% YoY — pass-through 1.8%",
+        "currentPrice": "€624",
+        "currentMargin": "44.2% margin",
+        "currentMarginTone": "bad",
+        "targetText": "Target ≥ 48%"
+      }
+    },
+    {
+      "aid": "300143",
+      "margin": "42.8%",
+      "marginTone": "mid",
+      "productLine": "Innenzahnringpumpe",
+      "cluster": "BKAGG",
+      "meta": "BKAGG · €1,240",
+      "clusterChip": "BKAGG 74%",
+      "clusterTone": "mid",
+      "flag": "cost",
+      "tag": "Cost ↑",
+      "tagTone": "cost",
+      "locked": false,
+      "isNew": false,
+      "shortHero": {
+        "title": "Article 300143 · Innenzahnringpumpe",
+        "sub": "Group **BKAGG** · 3 customers · 412 units/yr · €511K annual revenue",
+        "chipCluster": "Cluster: BKAGG · confidence 74%",
+        "chipApproval": "Approval: Frank → Till (board)",
+        "meta": "Cost shift driven by precision casting outsource +9.1%",
+        "currentPrice": "€1,240",
+        "currentMargin": "42.8% margin",
+        "currentMarginTone": "bad",
+        "targetText": "Target ≥ 48%"
+      }
+    },
+    {
+      "aid": "205165",
+      "margin": "46.1%",
+      "marginTone": "hi",
+      "productLine": "Zahnradpumpe MV0669",
+      "cluster": "BKAES",
+      "meta": "BKAES · €612",
+      "clusterChip": "BKAES 82%",
+      "clusterTone": "hi",
+      "flag": "cost",
+      "tag": "Cost ↑",
+      "tagTone": "cost",
+      "locked": false,
+      "isNew": false,
+      "shortHero": {
+        "title": "Article 205165 · Zahnradpumpe MV0669",
+        "sub": "Group **BKAES** · 4 customers · 720 units/yr · €441K annual revenue",
+        "chipCluster": "Cluster: BKAES · confidence 82%",
+        "chipApproval": "Approval: Frank → Till (board)",
+        "meta": "Cost watch — within target band but trending up",
+        "currentPrice": "€612",
+        "currentMargin": "46.1% margin",
+        "currentMarginTone": "good",
+        "targetText": "Target ≥ 48%"
+      }
+    },
+    {
+      "aid": "200834-B",
+      "margin": "46.5%",
+      "marginTone": "hi",
+      "productLine": "Zahnradpumpe",
+      "cluster": "BKAES",
+      "meta": "BKAES · €389",
+      "clusterChip": "BKAES 82%",
+      "clusterTone": "hi",
+      "flag": "cost",
+      "tag": "Cost ↑",
+      "tagTone": "cost",
+      "locked": false,
+      "isNew": false,
+      "shortHero": {
+        "title": "Article 200834-B · Zahnradpumpe (B variant)",
+        "sub": "Group **BKAES** · 7 customers · 1,420 units/yr · €552K annual revenue",
+        "chipCluster": "Cluster: BKAES · confidence 82%",
+        "chipApproval": "Approval: Frank → Till (board)",
+        "meta": "Cost component up 4.2% — minor reprice opportunity",
+        "currentPrice": "€389",
+        "currentMargin": "46.5% margin",
+        "currentMarginTone": "good",
+        "targetText": "Target ≥ 48%"
+      }
+    },
+    {
+      "aid": "205180",
+      "margin": "47.0%",
+      "marginTone": "hi",
+      "productLine": "Zahnradpumpe MV0666",
+      "cluster": "BKAES",
+      "meta": "BKAES · €498 · frame due Jul",
+      "clusterChip": "BKAES 82%",
+      "clusterTone": "hi",
+      "flag": "frame",
+      "tag": "Frame",
+      "tagTone": "frame",
+      "locked": true,
+      "isNew": false,
+      "shortHero": {
+        "title": "Article 205180 · Zahnradpumpe MV0666 (frame-due)",
+        "sub": "Group **BKAES** · 4 customers · 920 units/yr · €458K annual revenue",
+        "chipCluster": "Cluster: BKAES · confidence 82%",
+        "chipApproval": "Approval: Frank → Till (board)",
+        "meta": "Frame contract due July — locked until renewal window",
+        "currentPrice": "€498",
+        "currentMargin": "47.0% margin",
+        "currentMarginTone": "good",
+        "targetText": "Target ≥ 48%"
+      }
+    },
+    {
+      "aid": "120584",
+      "margin": "47.5%",
+      "marginTone": "hi",
+      "productLine": "Zahnradflanschpumpe",
+      "cluster": "SOPU",
+      "meta": "SOPU · €412 · frame due Aug",
+      "clusterChip": "SOPU 38% ⚠",
+      "clusterTone": "lo",
+      "flag": "frame",
+      "tag": "Frame",
+      "tagTone": "frame",
+      "locked": true,
+      "isNew": false,
+      "shortHero": {
+        "title": "Article 120584 · Zahnradflanschpumpe (SOPU)",
+        "sub": "Group **SOPU** · 2 customers · 184 units/yr · €76K annual revenue",
+        "chipCluster": "Cluster: SOPU · confidence 38% ⚠ low-n",
+        "chipApproval": "Approval: Frank → Till (board)",
+        "meta": "Frame contract due August — manual review required, low-n cluster",
+        "currentPrice": "€412",
+        "currentMargin": "47.5% margin",
+        "currentMarginTone": "good",
+        "targetText": "Target ≥ 48%"
+      }
+    },
+    {
+      "aid": "218812-K",
+      "margin": "—",
+      "marginTone": "mid",
+      "productLine": "Sleeve variant",
+      "cluster": "BKAES",
+      "meta": "BKAES · no price yet · comparable-cluster",
+      "clusterChip": "BKAES 76%",
+      "clusterTone": "hi",
+      "flag": "all",
+      "tag": "New",
+      "tagTone": "stale",
+      "locked": false,
+      "isNew": true,
+      "shortHero": {
+        "title": "Article 218812-K · Sleeve variant (new)",
+        "sub": "Group **BKAES** · no history · cluster benchmark only",
+        "chipCluster": "Cluster: BKAES · confidence 76%",
+        "chipApproval": "Approval: Frank → Till (board)",
+        "meta": "No prior repricings — comparable-cluster pricing applies",
+        "currentPrice": "—",
+        "currentMargin": "no history",
+        "currentMarginTone": "bad",
+        "targetText": "Target band €42–€58"
+      }
+    },
+    {
+      "aid": "220114-A",
+      "margin": "—",
+      "marginTone": "mid",
+      "productLine": "Bearing housing variant",
+      "cluster": "BKAGG",
+      "meta": "BKAGG · no price yet",
+      "clusterChip": "BKAGG 68%",
+      "clusterTone": "mid",
+      "flag": "all",
+      "tag": "New",
+      "tagTone": "stale",
+      "locked": false,
+      "isNew": true,
+      "shortHero": {
+        "title": "Article 220114-A · Bearing housing variant (new)",
+        "sub": "Group **BKAGG** · no history · cluster benchmark only",
+        "chipCluster": "Cluster: BKAGG · confidence 68%",
+        "chipApproval": "Approval: Frank → Till (board)",
+        "meta": "No prior repricings — comparable-cluster pricing applies",
+        "currentPrice": "—",
+        "currentMargin": "no history",
+        "currentMarginTone": "bad",
+        "targetText": "Target band €18–€26"
+      }
+    },
+    {
+      "aid": "221305",
+      "margin": "—",
+      "marginTone": "mid",
+      "productLine": "Custom pump",
+      "cluster": "SOPU",
+      "meta": "SOPU · low-n cluster",
+      "clusterChip": "SOPU 38% ⚠",
+      "clusterTone": "lo",
+      "flag": "all",
+      "tag": "New",
+      "tagTone": "stale",
+      "locked": false,
+      "isNew": true,
+      "shortHero": {
+        "title": "Article 221305 · Custom pump (new, SOPU)",
+        "sub": "Group **SOPU** · no history · low-n cluster (n=6)",
+        "chipCluster": "Cluster: SOPU · confidence 38% ⚠ low-n",
+        "chipApproval": "Approval: Frank → Till (board)",
+        "meta": "No prior repricings — manual review required (low-n)",
+        "currentPrice": "—",
+        "currentMargin": "no history",
+        "currentMarginTone": "bad",
+        "targetText": "Manual review (n<10)"
+      }
+    }
+  ],
+  "workbench": {
+    "hero": {
+      "eyebrow": "Selected SKU · workbench",
+      "title": "Article 200832-E · Zahnradpumpe (Precision shaft)",
+      "sub": "Group **BKAGG** · 9 customers · 4,200 units/yr · €18.6K annual revenue",
+      "chipCluster": "Cluster: BKAGG · confidence 74%",
+      "chipApproval": "Approval: Frank → Till (board)",
+      "annualRevenue": "€18.6K",
+      "meta": "Last repriced 2024-Q1 (€3.80→€4.20) by **Frank** · 23 months ago · floor breached since steel +5.8% in 2025",
+      "currentPrice": "€4.20",
+      "currentMargin": "−1.3% margin",
+      "currentMarginTone": "bad",
+      "targetText": "Target ≥ 25%",
+      "chips": [
+        { "label": "Cluster: BKAGG · confidence 74%" },
+        { "label": "Movable", "variant": "movable" },
+        { "label": "A/B status: not yet tested", "variant": "dashed" },
+        { "label": "Approval: Frank → Till (board)" }
+      ]
+    },
+    "optionsSub": "Each option pre-modelled · €recovery, churn risk, win-rate band shown with cluster-confidence (BKAGG 74%, n=247)",
+    "options": {
+      "hold": {
+        "price": "€4.20",
+        "delta": "no change",
+        "impact": "−€31K/yr leakage continues",
+        "impactTone": "neg",
+        "risk": "0 churn · margin keeps falling · ±0pp"
+      },
+      "floor": {
+        "price": "€5.10",
+        "delta": "+€0.90 · +21.4%",
+        "impact": "+€18.6K/yr recovery",
+        "impactTone": "pos",
+        "risk": "1 of 9 churn · win-rate −15pp · ±5pp at 74% conf"
+      },
+      "market": {
+        "price": "€5.85",
+        "delta": "+€1.65 · +39.3%",
+        "impact": "+€34.7K/yr recovery",
+        "impactTone": "pos",
+        "risk": "3 of 9 churn · win-rate −31pp · ±8pp at 74% conf"
+      },
+      "abtest": {
+        "slice": "12% slice",
+        "meta": "21-day test · €5.10 vs hold",
+        "takeaway": "Confirm lift before broad rollout",
+        "criterion": "Success criterion: margin pre→post, p<0.05 · matches Action Center A/B tracker"
+      },
+      "customPlaceholder": "4.65"
+    },
+    "fanout": {
+      "paneSub": "if priced at **€5.10** (cost-floor)",
+      "fanPrice": "€5.10",
+      "clusterNote": "Cluster **BKAGG**, n=247 historical repricings, confidence **74%** — fan-out predictions reliable. (For SOPU SKUs, fan-out flagged low-n.)",
+      "rows": [
+        {
+          "tier": "A",
+          "customer": "101580",
+          "customerSub": "38% of SKU vol · €487K ARR · last raise 2021-Q2",
+          "amount": "+€1,440",
+          "amountSub": "on 1,600 units",
+          "churnPct": "62%",
+          "churnTone": "r",
+          "recommendation": "Counter-propose €4.65 (Phase 1)",
+          "rowTone": "alert"
+        },
+        {
+          "tier": "A",
+          "customer": "102330",
+          "customerSub": "22% · €312K ARR · already pays €6.80",
+          "amount": "+€832",
+          "amountSub": "on 924 units",
+          "churnPct": "8%",
+          "churnTone": "g",
+          "recommendation": "Apply at next renewal",
+          "rowTone": "warn"
+        },
+        {
+          "tier": "B",
+          "customer": "103044",
+          "customerSub": "18% · €198K ARR · stable repeat",
+          "amount": "+€680",
+          "amountSub": "on 756 units",
+          "churnPct": "14%",
+          "churnTone": "g",
+          "recommendation": "Standard tier · proceed",
+          "rowTone": "warn"
+        },
+        {
+          "tier": "B",
+          "customer": "102801",
+          "customerSub": "9% · €142K ARR · growing",
+          "amount": "+€340",
+          "amountSub": "on 378 units",
+          "churnPct": "11%",
+          "churnTone": "g",
+          "recommendation": "Proceed",
+          "rowTone": "plain"
+        },
+        {
+          "tier": "D",
+          "customer": "101900",
+          "customerSub": "7% · €164K ARR · problematic",
+          "customerSubExtra": "→ surfaced in Heiko's Deal Empowerment",
+          "amount": "+€264",
+          "amountSub": "on 294 units",
+          "churnPct": "71%",
+          "churnTone": "r",
+          "recommendation": "Attrition acceptable · Heiko can flag",
+          "rowTone": "alert"
+        },
+        {
+          "tier": "C",
+          "customer": "101582",
+          "customerSub": "4% · €176K ARR · volume tier",
+          "amount": "+€151",
+          "amountSub": "on 168 units",
+          "churnPct": "6%",
+          "churnTone": "g",
+          "recommendation": "Proceed",
+          "rowTone": "plain"
+        }
+      ],
+      "footNote": "Top 6 of 9 customers shown · churn modelled on 24-month survival curve across 247 SKUs"
+    },
+    "cost": {
+      "paneSub": "€**3.83**/unit · floor €**5.10** at 25% target",
+      "unitCost": "3.83",
+      "floorCalc": "5.10",
+      "components": [
+        { "key": "material", "name": "Material", "pct": 52 },
+        { "key": "labor", "name": "Labor", "pct": 28 },
+        { "key": "outsourcing", "name": "Outsourcing", "pct": 12 },
+        { "key": "overhead", "name": "Overhead", "pct": 8 }
+      ],
+      "note": "Material 52% (above 40% threshold) → supplier-sensitive. Steel-dominant precision shaft.",
+      "trajectory": {
+        "title": "4-yr cluster cost trajectory · BKAGG",
+        "delta": "Material +18.4% '22→'25",
+        "yearStart": "2022",
+        "yearEnd": "2025",
+        "materialPoints": "4,30 84,24 164,16 236,8",
+        "quotedPoints": "4,28 84,25 164,18 236,12",
+        "legend": "gap = pass-through deficit (4.6pp on this SKU)"
+      }
+    },
+    "history": [
+      {
+        "date": "2024-Q1",
+        "move": "€3.80 → €4.20 (+10.5%)",
+        "vol": "vol −3%",
+        "volTone": "down",
+        "by": "Frank",
+        "hash": "a3f9c1"
+      },
+      {
+        "date": "2022-Q3",
+        "move": "€3.60 → €3.80 (+5.6%)",
+        "vol": "vol +1%",
+        "volTone": "up",
+        "by": "Frank",
+        "hash": "7e21bd"
+      },
+      {
+        "date": "2020-Q4",
+        "move": "€3.40 → €3.60 (+5.9%)",
+        "vol": "vol +4%",
+        "volTone": "up",
+        "by": "F. Bauer",
+        "hash": "19f4a8"
+      },
+      {
+        "date": "2019-Q1",
+        "move": "€3.20 → €3.40 (+6.3%)",
+        "vol": "vol flat",
+        "volTone": "flat",
+        "by": "F. Bauer",
+        "hash": "c882e0"
+      }
+    ],
+    "decision": {
+      "summary": {
+        "proposedPrice": "€5.10",
+        "aid": "200832-E",
+        "margin": "25%",
+        "recovery": "+€18,600/yr",
+        "riskLine": "1 customer at meaningful churn risk"
+      },
+      "effectiveDate": "2026-06-01",
+      "notifyDefaults": {
+        "sales": true,
+        "customers": false,
+        "escalate": false,
+        "abTest": false
+      },
+      "notifyLabels": {
+        "sales": "Notify **Heiko** (Sales)",
+        "customers": "Notify customers (1 affected)",
+        "escalate": "Escalate to **Till** (MD) for board-level approval",
+        "abTest": "🧪 Open A/B test (slice 12%, 21 days) before broad rollout"
+      }
+    },
+    "memo": {
+      "title": "Rationale memo · auto-drafted, editable · audit-ready",
+      "paragraphs": [
+        {
+          "body": "**Subject:** Price proposal — Article 200832-E (Zahnradpumpe, Precision shaft)"
+        },
+        {
+          "body": "Article 200832-E sits in cluster **BKAGG** (confidence **74%**, n=247 historical repricings, MAPE 4.7%). Contract status: **movable** — no frame contract blocks repricing."
+        },
+        {
+          "body": "The article currently sells at **€4.20** for an effective margin of **−1.3%** — 26pp below our 25% guardrail. Material cost rose **5.8%** in 2025 while we passed through only 1.2%, leaving a **4.6pp pass-through gap** on this SKU alone (4-yr trend confirms 18.4% material rise vs 3.1% quoted rise on this cluster)."
+        },
+        {
+          "body": "**Proposal:** raise to **€5.10** (cost-floor at 25% target margin), effective **2026-06-01**."
+        },
+        {
+          "body": "**Plan:** open a 21-day A/B at 12% slice (Action Center A/B tracker). If margin lift confirms (p<0.05) we proceed to broad rollout 2026-07-01; if not, revert to hold and re-train cluster model. *Never ship a price change blind.*"
+        },
+        {
+          "body": "Customer impact: of 9 customers on this SKU, 1 (Tier-D 101900) sits at meaningful churn risk and is flagged in Heiko's Deal Empowerment view; six are below 15%. Tier-A 102330 already pays **€6.80**/unit on the same volume tier — the proposed floor is conservative, not aggressive. For Tier-A 101580 I will counter-propose €4.65 in Phase 1 to manage relationship risk."
+        },
+        {
+          "body": "Net annual recovery: **+€13,800** (€18,600 raised − €4,800 lost to projected churn). Cumulative leakage stopped: **~€34,800** across the 24 months this floor was breached."
+        },
+        {
+          "body": "**Evidence:** cross-customer same-volume price spread (102330 €6.80 vs 101580 €4.10) · 4-year cost trend (price_history_with_margin) · cluster retention curve modelled on 247 historical BKAGG repricings · top driver: material cost trend (24.5% feature importance, forecast_model)."
+        },
+        {
+          "body": "— **Frank**, Pricing Analyst / Head of Controlling · drafted by Pryzm · audit hash `a3f9c1` · please review before forwarding to Till.",
+          "isSig": true
+        }
+      ]
+    }
+  },
+  "comparable": {
+    "title": "Comparable-cluster pricing · for SKUs without history",
+    "subtitle": "When a SKU has no history, we price by its cluster's behavior — not by averages of unrelated SKUs.",
+    "tiles": [
+      {
+        "variant": "plain",
+        "lab": "Target SKU",
+        "big": "218812-K",
+        "cap": "Sleeve variant · cluster **BKAES**",
+        "capExtra": "No price history · 0 prior repricings"
+      },
+      {
+        "variant": "bench",
+        "lab": "Cluster benchmark",
+        "big": "BKAES · n=627",
+        "cap": "Mean margin **68.0%** · Win-rate **52.7%**",
+        "conf": "Confidence 76% · MAPE 4.7%"
+      },
+      {
+        "variant": "suggest",
+        "lab": "Suggested price band",
+        "big": "€42 – €58",
+        "cap": "Centered on €49 (cluster median margin × cost)",
+        "conf": "Recommend A/B at €49 before broad launch"
+      }
+    ],
+    "others": [
+      { "text": "220114-A · BKAGG · band €18–€26" },
+      { "text": "221305 · SOPU n=6 ⚠ low-n · manual review required", "warn": true }
+    ],
+    "source": "Source · `products_detail.commodity_scorecard` + `forecasting.json` · cross-link to ",
+    "jumpLink": { "text": "Forecast → New product card", "label": "forecast" }
+  },
+  "crossLinks": [
+    { "label": "Action queue · Action Center", "target": "action" },
+    { "label": "Cluster forecast · Forecast", "target": "forecast" },
+    { "label": "Approval flow · Quotes & Guardrails", "target": "quotes" },
+    { "label": "Margin trajectory · Margin Intelligence", "target": "margin" }
+  ]
+}
