@@ -1,18 +1,18 @@
-import { useTranslation } from 'react-i18next';
-import { MessageStrip } from '@/components/fiori/MessageStrip';
+import { useForecast } from '@/data/api/useForecast';
+import { PageHead } from './components/PageHead';
+import { HeroForecast } from './components/HeroForecast';
 
-function PlaceholderPage() {
-  const { t } = useTranslation();
+export default function ForecastingPage() {
+  const { data, isLoading } = useForecast();
+
+  if (isLoading || !data) {
+    return <section id="screen-forecast" aria-busy="true" />;
+  }
+
   return (
-    <div className="mx-auto max-w-7xl p-6">
-      <h1 className="mb-4 font-display text-2xl font-semibold tracking-tight">
-        {t('nav.forecasting')}
-      </h1>
-      <MessageStrip severity="info">
-        Phase 0 placeholder — feature ships in a later phase.
-      </MessageStrip>
-    </div>
+    <section id="screen-forecast" className="mx-auto max-w-[1400px] px-8 py-6">
+      <PageHead header={data.header} />
+      <HeroForecast hero={data.hero} />
+    </section>
   );
 }
-
-export default PlaceholderPage;
