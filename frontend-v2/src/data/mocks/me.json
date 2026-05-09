@@ -1,0 +1,18 @@
+{
+  "id": "frank-mock",
+  "email": "frank@scherzinger.de",
+  "name": "Frank Klein",
+  "ui_persona": "frank",
+  "roles": ["analyst"],
+  "permissions": [
+    "view.action_center",
+    "view.margin",
+    "view.quotes",
+    "view.forecast",
+    "view.studio",
+    "view.ai",
+    "edit.studio",
+    "create.action",
+    "approve.guardrails"
+  ]
+}
