@@ -1,0 +1,456 @@
+{
+  "header": {
+    "crumbTrail": ["Cockpit", "Pricing Analyst · Frank", "Quotes & Guardrails"],
+    "title": "Quotes & Guardrails",
+    "subPills": ["Re-evaluates every 2 min"],
+    "subStats": [
+      { "label": "Routed Mon 06:00", "value": "Routed" },
+      { "label": "active quotes", "value": "47" },
+      { "label": "need approval today", "value": "4" }
+    ],
+    "filters": [
+      { "label": "Period", "value": "Week 18" },
+      { "label": "Reps", "value": "All sales reps" }
+    ],
+    "briefingButtonLabel": "Generate quote-decision briefing →",
+    "exportLabel": "Export"
+  },
+  "briefing": {
+    "title": "Quote-decision briefing · auto-drafted, editable",
+    "paragraphs": [
+      { "html": "<b>Subject:</b> Pricing decisions · Week 18 · Apr 27 – May 3" },
+      { "html": "This week: <b>4 escalations</b> awaiting decision (€33K combined deal value · €3,050 margin leakage if rubber-stamped). <b>33 green quotes</b> auto-approved. <b>9 amber</b> pending justification." },
+      { "html": "<b>Concentration signal:</b> all 4 escalations sit with <b>3 reps</b> (N. Bauer × 2, F. Werner, T. Hoffmann). N. Bauer accounts for <b>41% of total breach leakage</b> YTD — coaching review suggested before next quarter." },
+      { "html": "<b>Guardrail activity:</b> Precision-shafts and Sleeves thresholds raised to 25% / 24% on Apr 14 (was 22%) — €12K margin uplift attributable. Couplings and Bearings stable since Mar 30." },
+      { "html": "<b>SKU-level signal:</b> Article 200832-E remains the structural problem (22 breaches, discounting actually wins more). 205415-B and 211094-C can be tightened by 1–2pp without hurting win rate." }
+    ],
+    "signature": "— M. Weber, Pricing · drafted by Pryzm · please review before forwarding."
+  },
+  "pipeline": [
+    {
+      "id": "active",
+      "label": "Active quotes",
+      "value": "47",
+      "miniCounters": [
+        { "label": "5 Red", "tone": "r" },
+        { "label": "9 Amber", "tone": "a" },
+        { "label": "33 Green", "tone": "g" }
+      ]
+    },
+    {
+      "id": "pipeline-value",
+      "label": "Pipeline value",
+      "value": "€1.84M",
+      "sub": "21 days avg from quote to decision"
+    },
+    {
+      "id": "margin-at-risk",
+      "label": "Margin at risk if all approved",
+      "value": "€74,000",
+      "valueTone": "amber",
+      "sub": "If guardrails held → 26.5% blended · vs 22.0% if rubber-stamped",
+      "containerTone": "warn"
+    },
+    {
+      "id": "approval-today",
+      "label": "Need your approval today",
+      "value": "4",
+      "sub": "Red quotes blocked pending Pricing sign-off",
+      "containerTone": "alert",
+      "live": true
+    }
+  ],
+  "changed": {
+    "title": "What changed since Monday",
+    "rows": [
+      { "num": "5", "text": "new red escalations · all routed", "tone": "red" },
+      { "num": "2", "text": "escalations resolved · <b>€7,400</b> margin recovered", "tone": "green" },
+      { "num": "11", "text": "green quotes auto-approved · <b>€186K</b> sent to sales", "tone": "green" },
+      { "num": "1", "text": "self-correction · Quote #12715 rolled back", "tone": "amber" }
+    ]
+  },
+  "escalations": {
+    "title": "4 quotes need your eyes",
+    "subtitle": "All Red-flagged quotes are blocked from sending until you decide. 60-second decision per quote.",
+    "reRankedChip": "Re-ranked by impact",
+    "infoPanelHtml": "All Red-flagged quotes are blocked from sending until you decide. Each card carries cross-customer evidence, the forecast-informed price floor, and the exact margin impact — designed for a <b>60-second decision per quote</b>.",
+    "concentrationHtml": "All <b>4 escalations</b> sit with <b>3 reps</b> · <b>N. Bauer × 2</b>, F. Werner, T. Hoffmann · N. Bauer accounts for 41% of YTD breach leakage",
+    "bulkRecommendationHtml": "<b>Pryzm recommends</b> Counter-at-floor on #12848, Decline #12831, Counter at €2.55 on #12822, Approve #12815 — total leakage avoided <b>€2,710</b>.",
+    "bulkAcceptLabel": "Accept all (4)",
+    "bulkAcceptToast": "Pryzm recommendations applied to all 4 escalations · routed to sales",
+    "cards": [
+      {
+        "rank": 1,
+        "quoteId": "12848",
+        "tier": "A",
+        "customer": "101580",
+        "article": "200832-E",
+        "articleDescription": "Precision shaft",
+        "authority": "md",
+        "studioJumpToast": "Opening 200832-E in Pricing Studio",
+        "detailHtml": "<b>Quoted €4.20/unit · 1,200 units · margin 8%</b> — 17pp below guardrail (25%). Total deal value: €5,040 · margin gap vs guardrail: <b style='color:var(--red)'>€1,030 leakage</b> if approved. Rep: <b>N. Bauer</b> · requested 5 days ago, customer pressuring for response.",
+        "evidenceHtml": "<b>Evidence:</b> Same article sold to Customer 102330 at <b>€6.80 (25% margin)</b> last month, identical volume tier. Forecast-informed floor: <b>€5.10</b>. 539 governance violations on this SKU in Q1 already — pattern continues.",
+        "metaLine": "Strategic tier · do not lose customer · counter-propose at floor and document Strategic exception",
+        "actions": [
+          { "id": "floor", "label": "Approve at €5.10 (floor)", "variant": "floor", "toast": "Approved at floor €5.10 · counter-proposal sent to N. Bauer" },
+          { "id": "counter", "label": "Counter-propose €4.50", "variant": "counter", "toast": "Strategic exception documented · approved at €4.50" },
+          { "id": "approve", "label": "Approve at quoted", "variant": "approve", "toast": "Approved at €4.20 · Strategic exception logged" },
+          { "id": "decline", "label": "Decline", "variant": "decline", "toast": "Declined · escalation note sent" }
+        ]
+      },
+      {
+        "rank": 2,
+        "quoteId": "12831",
+        "tier": "D",
+        "customer": "101900",
+        "article": "211094-C",
+        "articleDescription": "Bearing housing",
+        "authority": "you",
+        "studioJumpToast": "Opening 211094-C in Pricing Studio",
+        "detailHtml": "<b>Quoted €13.80/unit · 480 units · margin 14%</b> — 8pp below guardrail (22%). Total deal value: €6,624 · margin gap: <b style='color:var(--red)'>€530 leakage</b>. Rep: <b>F. Werner</b> · 3 days open. Customer claims competitor offered €13.20.",
+        "evidenceHtml": "<b>Evidence:</b> Forecast-informed floor: <b>€14.40</b>. Customer 101900 is tier-D (problematic) — already 22% volume drop after last price raise. Peer Customer 103044 paid €15.40 same volume tier. Win-rate at guardrail for this SKU: 71% (we don't usually need to discount).",
+        "metaLine": "Problematic tier · attrition acceptable · let walk if push back",
+        "actions": [
+          { "id": "floor", "label": "Counter at €14.40", "variant": "counter", "toast": "Counter at €14.40 floor sent · F. Werner notified" },
+          { "id": "decline", "label": "Decline", "variant": "decline", "toast": "Declined · customer attrition acceptable per tier policy" }
+        ]
+      },
+      {
+        "rank": 3,
+        "quoteId": "12822",
+        "tier": "B",
+        "customer": "102801",
+        "article": "218750-D",
+        "articleDescription": "Sleeve",
+        "authority": "you",
+        "studioJumpToast": "Opening 218750-D in Pricing Studio",
+        "detailHtml": "<b>Quoted €2.40/unit · 6,800 units · margin 17%</b> — 7pp below guardrail (24%). Total deal value: €16,320 · margin gap: <b style='color:var(--red)'>€1,150 leakage</b>. Rep: <b>T. Hoffmann</b> · large volume — annual rebate accrual already at Tier 2.",
+        "evidenceHtml": "<b>Evidence:</b> If they hit 8,000-unit Tier 3 by Dec, retroactive rebate of <b>€2,400</b> kicks in — net realized margin would be 13%. Forecast-informed floor: <b>€2.45</b>. Recommend: counter at €2.55 to preserve net margin after rebate.",
+        "metaLine": "Volume tier discipline · protect against rebate stack · counter at €2.55 net",
+        "actions": [
+          { "id": "counter", "label": "Counter at €2.55", "variant": "counter", "toast": "Counter-proposal €2.55 sent · rebate-aware" },
+          { "id": "floor", "label": "Approve at €2.45", "variant": "floor", "toast": "Approved at €2.45 floor · rebate flag activated" },
+          { "id": "decline", "label": "Decline", "variant": "decline", "toast": "Declined · revise" }
+        ]
+      },
+      {
+        "rank": 4,
+        "quoteId": "12815",
+        "tier": "B",
+        "customer": "104210",
+        "article": "205415-B",
+        "articleDescription": "Coupling A",
+        "authority": "you",
+        "studioJumpToast": "Opening 205415-B in Pricing Studio",
+        "detailHtml": "<b>Quoted €4.50/unit · 1,200 units · margin 17%</b> — 5pp below guardrail (22%). Total deal value: €5,400 · margin gap: <b style='color:var(--red)'>€340 leakage</b>. Rep: <b>N. Bauer</b> · seasonal customer · maintenance cycle pricing.",
+        "evidenceHtml": "<b>Evidence:</b> Aug peak imminent (web-enriched seasonality flag) — customer historically restocks heavy in Aug. Floor: €4.40. Recommend approve — small leakage justified by upcoming volume.",
+        "actions": [
+          { "id": "approve", "label": "Approve at quoted", "variant": "approve", "toast": "Approved at €4.50 · seasonality justification logged" },
+          { "id": "counter", "label": "Counter at €4.65", "variant": "counter", "toast": "Counter at €4.65 sent" },
+          { "id": "decline", "label": "Decline", "variant": "decline", "toast": "Declined" }
+        ]
+      }
+    ]
+  },
+  "funnel": {
+    "title": "Where quotes get stuck",
+    "subtitle": "Long-aging quotes lose. Velocity from Quoted → Pending → Won/Lost. Stale 30+ day quotes auto-flag for re-quote.",
+    "rangeChip": "Last 30 days",
+    "infoPanelHtml": "Long-aging quotes lose. Track velocity from <i>Quoted</i> through <i>Pending review</i> to <i>Won/Lost</i>, and watch the buckets where deals overstay their welcome. Stale 30+ day quotes auto-flag for re-quote.",
+    "funnel": [
+      { "id": "quoted",  "count": 63, "label": "Quoted",            "detail": "€2.61M total" },
+      { "id": "pending", "count": 47, "label": "Active / Pending",  "detail": "€1.84M · 75% conversion" },
+      { "id": "won",     "count": 12, "label": "Won",               "detail": "€538K · avg 23% margin", "tone": "won" },
+      { "id": "lost",    "count":  4, "label": "Lost",              "detail": "€231K · 2 to competitor", "tone": "lost" }
+    ],
+    "aging": [
+      { "count": 15, "label": "< 7 days fresh", "detail": "Healthy velocity · no action", "tone": "normal" },
+      { "count": 12, "label": "7–14 days",      "detail": "Normal — most decisions land here", "tone": "normal" },
+      { "count": 15, "label": "14–30 days",     "detail": "Follow-up needed · sales should re-engage", "tone": "warn" },
+      { "count":  5, "label": "30+ days stale", "detail": "€187K parked · auto-flag for re-quote", "tone": "alert" }
+    ]
+  },
+  "guardrails": {
+    "title": "Guardrail thresholds",
+    "subtitle": "These thresholds drive Red/Amber/Green on every active quote. Sales sees the result; changes propagate in 2 min.",
+    "historyChipHtml": "↗ <b>12 changes</b> in last 90d · <b>3 raised</b> · <b>1 lowered</b> · attributable margin uplift <b>+€12K</b>",
+    "infoPanelHtml": "These thresholds drive the Red/Amber/Green signal on every active quote. Sales sees the result, not the inputs. Changes propagate within 2 minutes.",
+    "historyButtonLabel": "History",
+    "historyButtonToast": "Threshold history opened · last 12 changes",
+    "editButtonLabel": "Edit thresholds →",
+    "editButtonToast": "Guardrail editor opened · changes propagate in 2 min",
+    "cards": [
+      {
+        "id": "shafts",
+        "category": "Precision shafts",
+        "threshold": "25%",
+        "meta": "Active · 12 SKUs · last raised Apr 14 (was 22%)",
+        "editToast": "Edit Precision shafts threshold"
+      },
+      {
+        "id": "couplings",
+        "category": "Couplings",
+        "threshold": "22%",
+        "meta": "Active · 24 SKUs · stable since Mar 30",
+        "editToast": "Edit Couplings threshold"
+      },
+      {
+        "id": "bearings",
+        "category": "Bearing housings",
+        "threshold": "22%",
+        "meta": "Active · 8 SKUs · stable since Mar 30",
+        "editToast": "Edit Bearing housings threshold"
+      },
+      {
+        "id": "sleeves",
+        "category": "Sleeves",
+        "threshold": "24%",
+        "meta": "Active · 18 SKUs · last raised Apr 14 (was 22%)",
+        "editToast": "Edit Sleeves threshold"
+      }
+    ]
+  },
+  "active": {
+    "title": "All 47 active quotes",
+    "subtitle": "RAG status drives Red/Amber/Green badge. Click any row to drill into full quote detail.",
+    "ragFilters": [
+      { "id": "all", "label": "All",   "count": 47 },
+      { "id": "r",   "label": "Red",   "count":  5 },
+      { "id": "a",   "label": "Amber", "count":  9 },
+      { "id": "g",   "label": "Green", "count": 33 }
+    ],
+    "bulkInfoHtml": "<b>33 Green</b> ready to send · <b>9 Amber</b> need justification · <b>5 Red</b> in escalation queue above",
+    "bulkActions": [
+      { "id": "approve-green", "label": "Approve all green (33)", "toast": "33 green quotes auto-approved · sent to sales for delivery" },
+      { "id": "review-amber",  "label": "Review amber (9)",       "toast": "Amber justification batch opened" }
+    ],
+    "rows": [
+      {
+        "id": "12848",
+        "rag": "r",
+        "tier": "A",
+        "customer": "101580",
+        "article": "200832-E",
+        "quotedPrice": "€4.20",
+        "margin": "8%",
+        "marginTone": "neg",
+        "floorReference": "↓ floor €5.10 (−€0.90)",
+        "floorTone": "below",
+        "age": "5d",
+        "ageTone": "stale",
+        "guardrailLabel": "Below",
+        "rowActionLabel": "Escalation →",
+        "rowActionPrimary": true,
+        "rowActionTarget": "escalation",
+        "studioToast": "Opening 200832-E in Pricing Studio",
+        "evidenceHtml": "<b>1,200 units · €5,040 deal value · €1,030 leakage if approved.</b> Rep <b>N. Bauer</b> · customer pressuring after 5 days. Same article sold to <b>Customer 102330 at €6.80 (25% margin)</b> last month, identical volume tier. Forecast-informed floor: <b>€5.10</b>. 539 governance violations on this SKU in Q1.",
+        "metaLine": "Strategic tier · do not lose customer · counter-propose at floor and document Strategic exception.",
+        "detailActions": [
+          { "id": "floor",   "label": "Approve at €5.10 (floor)", "variant": "floor",   "toast": "Approved at €5.10 floor · counter sent to N. Bauer" },
+          { "id": "counter", "label": "Counter at €4.50",         "variant": "counter", "toast": "Counter-proposal €4.50 sent · Strategic exception logged" },
+          { "id": "approve", "label": "Approve at quoted",        "variant": "approve", "toast": "Approved at €4.20 · Strategic exception logged" },
+          { "id": "decline", "label": "Decline",                  "variant": "decline", "toast": "Declined · escalation note sent" }
+        ]
+      },
+      {
+        "id": "12831",
+        "rag": "r",
+        "tier": "D",
+        "customer": "101900",
+        "article": "211094-C",
+        "quotedPrice": "€13.80",
+        "margin": "14%",
+        "marginTone": "neg",
+        "floorReference": "↓ floor €14.40 (−€0.60)",
+        "floorTone": "below",
+        "age": "3d",
+        "ageTone": "warm",
+        "guardrailLabel": "Below",
+        "rowActionLabel": "Escalation →",
+        "rowActionPrimary": true,
+        "rowActionTarget": "escalation",
+        "studioToast": "Opening 211094-C in Pricing Studio",
+        "evidenceHtml": "<b>480 units · €6,624 deal value · €530 leakage.</b> Rep <b>F. Werner</b> · 3 days open. Customer claims competitor offered €13.20. Forecast floor <b>€14.40</b>. Customer 101900 is Tier-D — already 22% volume drop after last raise. Peer Customer 103044 paid <b>€15.40</b> same volume tier. Win-rate at guardrail: 71%.",
+        "metaLine": "Problematic tier · attrition acceptable · let walk if push back.",
+        "detailActions": [
+          { "id": "floor",   "label": "Counter at €14.40", "variant": "counter", "toast": "Counter at €14.40 floor sent · F. Werner notified" },
+          { "id": "decline", "label": "Decline",            "variant": "decline", "toast": "Declined · attrition acceptable per tier policy" }
+        ]
+      },
+      {
+        "id": "12850",
+        "rag": "a",
+        "tier": "D",
+        "customer": "101900",
+        "article": "211094-C",
+        "quotedPrice": "€13.80",
+        "margin": "19%",
+        "marginTone": "neutral",
+        "floorReference": "→ floor €14.40",
+        "floorTone": "at",
+        "age": "1d",
+        "ageTone": "fresh",
+        "guardrailLabel": "Marginal",
+        "rowActionLabel": "Open in Studio →",
+        "rowActionPrimary": false,
+        "rowActionTarget": "studio",
+        "studioToast": "Opening 211094-C in Pricing Studio",
+        "evidenceHtml": "<b>320 units · €4,416 deal value.</b> Just below floor (€14.40 vs €13.80). Same rep + customer pattern as #12831. Marginal margin at 19% — borderline. New (1 day open).",
+        "metaLine": "Marginal · likely safe to approve given short age, but watch the rep concentration on this SKU.",
+        "detailActions": [
+          { "id": "approve", "label": "Approve at quoted",  "variant": "approve", "toast": "Approved at €13.80 · marginal exception logged" },
+          { "id": "counter", "label": "Counter at €14.40",  "variant": "counter", "toast": "Counter at €14.40 sent" },
+          { "id": "decline", "label": "Decline",            "variant": "decline", "toast": "Declined" }
+        ]
+      },
+      {
+        "id": "12847",
+        "rag": "g",
+        "tier": "A",
+        "customer": "102330",
+        "article": "201104-G",
+        "quotedPrice": "€18.40",
+        "margin": "34%",
+        "marginTone": "pos",
+        "floorReference": "→ floor €16.20 (+€2.20)",
+        "floorTone": "above",
+        "age": "2d",
+        "ageTone": "fresh",
+        "guardrailLabel": "Above",
+        "rowActionLabel": "Open in Studio →",
+        "rowActionPrimary": false,
+        "rowActionTarget": "studio",
+        "studioToast": "Opening 201104-G in Pricing Studio",
+        "evidenceHtml": "<b>540 units · €9,936 deal value.</b> €2.20 above floor (12% headroom). Strategic tier-A 102330 paying healthy 34% margin. Rep <b>M. Schmidt</b> · on-policy. Auto-approval candidate.",
+        "metaLine": "Healthy · proceed without review · routine green-path approval.",
+        "detailActions": [
+          { "id": "approve", "label": "Proceed (approve)", "variant": "approve", "toast": "Approved at €18.40 · sent to sales" },
+          { "id": "hold",    "label": "Hold for review",   "variant": "hold",    "toast": "Held for review · added to your queue" }
+        ]
+      },
+      {
+        "id": "12849",
+        "rag": "g",
+        "tier": "B",
+        "customer": "103044",
+        "article": "205415-B",
+        "quotedPrice": "€5.10",
+        "margin": "28%",
+        "marginTone": "pos",
+        "floorReference": "→ floor €4.40 (+€0.70)",
+        "floorTone": "above",
+        "age": "2d",
+        "ageTone": "fresh",
+        "guardrailLabel": "Above",
+        "rowActionLabel": "Open in Studio →",
+        "rowActionPrimary": false,
+        "rowActionTarget": "studio",
+        "studioToast": "Opening 205415-B in Pricing Studio",
+        "evidenceHtml": "<b>1,800 units · €9,180 deal value.</b> €0.70 above floor (14% headroom). Customer 103044 has asked 0% discount in 6 quotes — strong candidate for list-price increase on next renewal. Rep on-policy.",
+        "metaLine": "Healthy · proceed · note for next renewal pricing review.",
+        "detailActions": [
+          { "id": "approve", "label": "Proceed (approve)", "variant": "approve", "toast": "Approved at €5.10 · sent to sales" },
+          { "id": "hold",    "label": "Hold for review",   "variant": "hold",    "toast": "Held for review" }
+        ]
+      },
+      {
+        "id": "12851",
+        "rag": "a",
+        "tier": "B",
+        "customer": "102801",
+        "article": "218750-D",
+        "quotedPrice": "€2.60",
+        "margin": "21%",
+        "marginTone": "neutral",
+        "floorReference": "→ floor €2.45 (+€0.15)",
+        "floorTone": "above",
+        "age": "1d",
+        "ageTone": "fresh",
+        "guardrailLabel": "Marginal",
+        "rowActionLabel": "Open in Studio →",
+        "rowActionPrimary": false,
+        "rowActionTarget": "studio",
+        "studioToast": "Opening 218750-D in Pricing Studio",
+        "evidenceHtml": "<b>6,800 units · €17,680 deal value.</b> Just €0.15 above floor (6% headroom). <b>Rebate stack risk:</b> if 102801 hits 8,000-unit Tier 3 by Dec, retroactive rebate of €2,400 kicks in — net realized margin would be 13%. Recommend counter at <b>€2.55</b> to preserve net margin after rebate.",
+        "metaLine": "Volume tier discipline · protect against rebate stack · counter at €2.55 net.",
+        "detailActions": [
+          { "id": "floor",   "label": "Counter at €2.55",  "variant": "floor",   "toast": "Counter at €2.55 sent · rebate-aware pricing" },
+          { "id": "approve", "label": "Approve at quoted", "variant": "approve", "toast": "Approved at €2.60 · rebate flag activated" },
+          { "id": "decline", "label": "Decline",           "variant": "decline", "toast": "Declined" }
+        ]
+      }
+    ],
+    "footerNoteHtml": "6 of 47 · <a href='#'>show all 47</a> · floors pulled live from <a href='#' data-jump='forecast'>Forecast</a>"
+  },
+  "analysis": {
+    "rep": {
+      "description": "Repeat offender = 3+ breaches in 30d AND breach rate > portfolio avg.",
+      "infoPanelHtml": "Coaching flag = 1–2 breaches with willingness to revise. On-policy = consistently within guardrail. Click <b>Coaching review</b> on any row to open a 1:1 prep memo with rep-specific stats and recommended talking points.",
+      "tabFooterText": "<b>N. Bauer = 41% of total leakage</b> · pattern worsening · coaching action triggered",
+      "jumpLink": { "label": "Action Center →", "to": "/action-center" },
+      "rows": [
+        { "rep": "N. Bauer",   "ltmQuotes": 42, "breaches": 14, "breachBarPct": 80, "breachRate": "33%", "breachRateTone": "neg", "leakageEur": "€48,200", "leakageTone": "neg", "trend": "↑ worsening", "trendTone": "neg", "status": "repeat", "statusLabel": "Repeat offender", "isAction": true,  "actionLabel": "Coaching review →", "actionPrimary": true,  "actionToast": "1:1 prep memo opened · N. Bauer · pattern, top SKUs, recommended script" },
+        { "rep": "F. Werner",  "ltmQuotes": 28, "breaches":  7, "breachBarPct": 50, "breachRate": "25%", "breachRateTone": "neg", "leakageEur": "€18,400", "leakageTone": "neg", "trend": "→ flat",      "trendTone": "flat","status": "coach",  "statusLabel": "Coaching",         "isAction": true,  "actionLabel": "Coaching review →", "actionPrimary": false, "actionToast": "1:1 prep memo opened · F. Werner" },
+        { "rep": "T. Hoffmann","ltmQuotes": 62, "breaches":  9, "breachBarPct": 35, "breachRate": "15%", "breachRateTone": "neutral", "leakageEur": "€32,100", "leakageTone": "neg", "trend": "↓ improving","trendTone": "pos", "status": "coach",  "statusLabel": "Coaching",         "isAction": true,  "actionLabel": "Coaching review →", "actionPrimary": false, "actionToast": "1:1 prep memo opened · T. Hoffmann" },
+        { "rep": "M. Schmidt", "ltmQuotes": 38, "breaches":  2, "breachBarPct": 15, "breachRate": "5%",  "breachRateTone": "neutral", "leakageEur": "€8,400",  "leakageTone": "neg", "trend": "↓ improving","trendTone": "pos", "status": "ok",     "statusLabel": "On policy",        "isAction": false },
+        { "rep": "K. Lang",    "ltmQuotes": 31, "breaches":  1, "breachBarPct":  5, "breachRate": "3%",  "breachRateTone": "neutral", "leakageEur": "€2,800",  "leakageTone": "neg", "trend": "↓ improving","trendTone": "pos", "status": "ok",     "statusLabel": "On policy",        "isAction": false },
+        { "rep": "R. Fischer", "ltmQuotes": 22, "breaches":  0, "breachBarPct":  0, "breachRate": "0%",  "breachRateTone": "neutral", "leakageEur": "€0",      "leakageTone": "neutral", "trend": "→ flat",  "trendTone": "pos", "status": "ok",     "statusLabel": "On policy",        "isAction": false }
+      ]
+    },
+    "sku": {
+      "description": "Where does discount pressure concentrate? Win-rate at-guardrail vs below tells you what to tighten.",
+      "infoPanelHtml": "Where can we tighten or loosen the guardrail without losing deals? When win-rate below guardrail ≈ win-rate at guardrail, discounting isn't actually winning — tighten. When the gap is large, the floor may need a strategic review.",
+      "tabFooterText": "<b>3 guardrail adjustments suggested</b> · 200832-E needs strategic review",
+      "jumpLink": { "label": "Margin Intelligence · Cross-Customer →", "to": "/margin" },
+      "rows": [
+        { "article": "200832-E", "family": "Precision shafts",  "ltmQuotes": 38, "breaches": 22, "breachesTone": "neg", "avgDiscount": "−14%", "avgDiscountTone": "neg", "winAtGuardrail": "68%", "winBelowGuardrail": "82%", "insightHtml": "Discounting wins +14pp · review", "highlight": true,
+          "actions": [
+            { "id": "studio",      "label": "Studio →",  "primary": true,  "toast": "Opening 200832-E in Pricing Studio" },
+            { "id": "recalibrate", "label": "Recalibrate","primary": false, "toast": "Guardrail recalibration proposed for 200832-E" }
+          ] },
+        { "article": "205415-B", "family": "Couplings",         "ltmQuotes": 29, "breaches": 11, "breachesTone": "neg", "avgDiscount": "−7%",  "avgDiscountTone": "neg", "winAtGuardrail": "76%", "winBelowGuardrail": "79%", "insightHtml": "<b>tighten +1pp</b>",
+          "actions": [
+            { "id": "studio",      "label": "Studio →",  "primary": false, "toast": "Opening 205415-B in Pricing Studio" },
+            { "id": "recalibrate", "label": "Recalibrate","primary": true,  "toast": "Guardrail tightened by 1pp on 205415-B · propagates in 2 min" }
+          ] },
+        { "article": "211094-C", "family": "Bearing housings",  "ltmQuotes": 18, "breaches":  7, "breachesTone": "neg", "avgDiscount": "−9%",  "avgDiscountTone": "neg", "winAtGuardrail": "71%", "winBelowGuardrail": "73%", "insightHtml": "<b>tighten +2pp</b>",
+          "actions": [
+            { "id": "studio",      "label": "Studio →",  "primary": false, "toast": "Opening 211094-C in Pricing Studio" },
+            { "id": "recalibrate", "label": "Recalibrate","primary": true,  "toast": "Guardrail tightened by 2pp on 211094-C · propagates in 2 min" }
+          ] },
+        { "article": "218750-D", "family": "Sleeves",           "ltmQuotes": 31, "breaches":  3, "breachesTone": "neutral", "avgDiscount": "−3%", "avgDiscountTone": "neutral", "winAtGuardrail": "88%", "winBelowGuardrail": "90%", "insightHtml": "healthy",
+          "actions": [
+            { "id": "studio", "label": "Studio →", "primary": false, "toast": "Opening 218750-D in Pricing Studio" }
+          ] },
+        { "article": "205418-A", "family": "Couplings",         "ltmQuotes": 24, "breaches":  2, "breachesTone": "neutral", "avgDiscount": "−2%", "avgDiscountTone": "neutral", "winAtGuardrail": "82%", "winBelowGuardrail": "85%", "insightHtml": "recent raise · adopting",
+          "actions": [
+            { "id": "studio", "label": "Studio →", "primary": false, "toast": "Opening 205418-A in Pricing Studio" }
+          ] },
+        { "article": "201104-G", "family": "Couplings",         "ltmQuotes": 12, "breaches":  0, "breachesTone": "neutral", "avgDiscount": "0%", "avgDiscountTone": "pos", "winAtGuardrail": "92%", "winBelowGuardrail": "—", "insightHtml": "room to raise",
+          "actions": [
+            { "id": "studio", "label": "Studio →", "primary": true, "toast": "Opening 201104-G in Pricing Studio" }
+          ] }
+      ]
+    },
+    "cust": {
+      "description": "Which customers pressure on price the most?",
+      "infoPanelHtml": "High discount-asked + high tier = strategic exception (negotiate hard but retain). High discount-asked + low tier = walk away. Low discount-asked + healthy win rate = candidate for list-price increase on next renewal.",
+      "tabFooterText": "<b>101900</b> asking 14% discount + 22% volume drop · reprice · <b>103044</b> 0% asks · raise candidate",
+      "jumpLink": { "label": "Margin Intelligence →", "to": "/margin" },
+      "rows": [
+        { "tier": "A", "customer": "101580", "ltmQuotes": 14, "avgDiscount": "−12%", "avgDiscountTone": "neg",     "concession": "−9%",  "concessionTone": "neg",     "winRate": "86%",  "winRateTone": "neutral", "recommendation": "Strategic · negotiate hard but retain" },
+        { "tier": "D", "customer": "101900", "ltmQuotes":  8, "avgDiscount": "−14%", "avgDiscountTone": "neg",     "concession": "−11%", "concessionTone": "neg",     "winRate": "75%",  "winRateTone": "neutral", "recommendation": "Problematic · reprice or accept attrition" },
+        { "tier": "A", "customer": "102330", "ltmQuotes":  9, "avgDiscount": "−4%",  "avgDiscountTone": "neutral", "concession": "−3%",  "concessionTone": "neutral", "winRate": "100%", "winRateTone": "pos",     "recommendation": "Strategic + healthy · maintain" },
+        { "tier": "B", "customer": "102801", "ltmQuotes":  7, "avgDiscount": "−8%",  "avgDiscountTone": "neg",     "concession": "−5%",  "concessionTone": "neutral", "winRate": "86%",  "winRateTone": "pos",     "recommendation": "Watch rebate stack · counter at floor" },
+        { "tier": "C", "customer": "101582", "ltmQuotes":  5, "avgDiscount": "−2%",  "avgDiscountTone": "neutral", "concession": "−1%",  "concessionTone": "neutral", "winRate": "100%", "winRateTone": "pos",     "recommendation": "Volume tier · capacity-fill · maintain" },
+        { "tier": "B", "customer": "103044", "ltmQuotes":  6, "avgDiscount": "0%",   "avgDiscountTone": "neutral", "concession": "0%",   "concessionTone": "neutral", "winRate": "100%", "winRateTone": "pos",     "recommendation": "Healthy · raise on next renewal" }
+      ]
+    }
+  },
+  "crossLinks": [
+    { "label": "Action queue · Action Center", "jumpTo": "/action-center" },
+    { "label": "Forecast · Cluster cost",      "jumpTo": "/forecasting" },
+    { "label": "SKU drill · Pricing Studio",   "jumpTo": "/pricing" },
+    { "label": "Margin trajectory · Margin Intelligence", "jumpTo": "/margin" }
+  ]
+}
