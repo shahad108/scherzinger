@@ -94,3 +94,55 @@ export async function apiFetch<T>(
 
   throw new Error(`API ${path} → ${res.status}`);
 }
+
+/**
+ * POST a JSON body. Used by mutating endpoints (auth, actions). In mock mode
+ * the call is a no-op that resolves to {} unless a custom `mockResolve`
+ * is provided — mutating flows are exercised in vitest with mocked fetch.
+ *
+ * Honours the Phase 2 CSRF double-submit by forwarding the `pryzm_csrf`
+ * cookie value as the `x-csrf` request header.
+ */
+export async function postJson<T>(
+  path: string,
+  body?: unknown,
+  options?: { params?: QueryParams; mockResolve?: () => T },
+): Promise<T> {
+  if (USE_MOCKS) {
+    return (options?.mockResolve ? options.mockResolve() : ({} as T));
+  }
+  const url = `${BASE}${path}${buildQuery(options?.params)}`;
+
+  const csrf = readCookie('pryzm_csrf');
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  if (csrf) headers['x-csrf'] = csrf;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    credentials: 'include',
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
+  if (res.ok) {
+    const ct = res.headers.get('content-type') ?? '';
+    if (!ct.toLowerCase().includes('application/json')) {
+      // 200 with empty body is acceptable for fire-and-forget POSTs.
+      return {} as T;
+    }
+    return (await res.json()) as T;
+  }
+
+  const detail = await res.text();
+  throw new Error(`API POST ${path} → ${res.status}: ${detail}`);
+}
+
+function readCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const prefix = `${name}=`;
+  for (const part of document.cookie.split(';')) {
+    const trimmed = part.trim();
+    if (trimmed.startsWith(prefix)) return decodeURIComponent(trimmed.slice(prefix.length));
+  }
+  return null;
+}
