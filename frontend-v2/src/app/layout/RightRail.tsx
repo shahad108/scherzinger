@@ -1,6 +1,7 @@
 import { Activity, AlertTriangle, ArrowUpRight, CheckCircle2, Menu, NotebookPen, Plus } from 'lucide-react';
 import { useUiStore } from '@/stores/uiStore';
 import { useShell } from '@/data/api/useShell';
+import { useMarkNotificationRead } from '@/data/api/useShellMutations';
 import type { NotifTone } from '@/types/shell';
 
 const ToneIcon = ({ tone }: { tone: NotifTone }) => {
@@ -12,6 +13,7 @@ const ToneIcon = ({ tone }: { tone: NotifTone }) => {
 export function RightRail() {
   const toggle = useUiStore((s) => s.toggleRightRail);
   const { data, isLoading } = useShell();
+  const markRead = useMarkNotificationRead();
 
   if (isLoading || !data) return <aside className="pz-rail" aria-busy="true" />;
 
@@ -23,7 +25,14 @@ export function RightRail() {
 
       <div className="pz-rail-card notif-card">
         {data.notifications.map((n) => (
-          <button type="button" key={n.id} className={`pz-notif${n.unread ? ' unread' : ''}`}>
+          <button
+            type="button"
+            key={n.id}
+            className={`pz-notif${n.unread ? ' unread' : ''}`}
+            onClick={() => {
+              if (n.unread) markRead.mutate(n.id);
+            }}
+          >
             <span className={`pz-notif-ic ${n.tone}`}><ToneIcon tone={n.tone} /></span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span className="pz-notif-title" style={{ display: 'block' }}>{n.title}</span>
