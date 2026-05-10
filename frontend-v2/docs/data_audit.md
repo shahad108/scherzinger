@@ -18,7 +18,7 @@ what it should read from, and what's still pending.
 | Today's analyst decisions | 🟡 | Ranking engine across **margin erosion** (invoice db2_margin YoY drop ≥ 5pp) + **cost risers** (product_cost_trends ≥ 10%) + **churn risk** (customer_risk_scores ≥ 0.7). Top-N by impact, paginated by `?limit=`. Falls back to seed | Commit 4 ✅ |
 | Lost-quote differential | 🟡 | `quote_service.get_price_sensitivity`; falls back to seed | Commit 1 ✅ |
 | SKU pricing engine table | 🟡 | Single SQL pass joining `invoices` (YoY margin) × `products` × `product_cost_trends` (latest cost) × `ab_tests` (running). Sorts by margin drop, paginated by `?limit=`. Falls back to seed | Commit 5 ✅ |
-| Long-tail coverage | ⛔ | `seed["longTail"]` | Wraps `margin_service.get_margin_by_product` + Pareto bin (Commit 7). |
+| Long-tail coverage | 🟡 | Pareto bin over per-article revenue (A=top10%, B=mid40%, C=bottom50%) + 4 KPI tiles (top-10 concentration, SKUs below DB-II target, new products, C-tier price-frozen). Falls back to seed | Commit 7 ✅ |
 | Negotiation cockpit | 🟡 | `cost_service.get_cost_risers` aggregated by commodity_group; discount-gap headline + summary text remain seed | Commit 1 ✅ |
 | Rejection codes ("Why we lose") | 🟡 | `quote_service.get_rejection_codes` paginated by `?limit=` | Commit 1 ✅ |
 | Audit feed | ✅ | `audit_service.recent` for the calling user; falls back to seed when empty | Phase 12 |
@@ -55,3 +55,4 @@ limit cache on every audit-write so a wider view stays fresh.
 | Commit 4 | 2026-05-10 | decision ranking engine (margin erosion + cost risers + churn risk) |
 | Commit 5 | 2026-05-10 | SKU pricing engine table (live join over invoices × products × cost trends × ab_tests) |
 | Commit 6 | 2026-05-10 | movable hero + buckets (CTE-based movable/locked classification) |
+| Commit 7 | 2026-05-10 | long-tail coverage (Pareto bin + 4 KPI tiles) |
