@@ -662,11 +662,24 @@ export function DecisionCards({
                 <button
                   type="button"
                   onClick={() => {
+                    // Phase 1 contract: prefer the backend-attached secondary
+                    // action intent (typically a Pricing Studio deep link with
+                    // recommendation context). For locked rows whose primary
+                    // is queue_renewal, dispatch that form drawer. Only fall
+                    // back to label parsing when no intent is provided.
+                    if (d.secondaryAction) {
+                      onAction?.(d.secondaryAction);
+                      return;
+                    }
+                    if (d.primaryAction?.kind === 'queue_renewal' || d.primaryAction?.drawer?.formKind === 'queue_renewal') {
+                      onAction?.(d.primaryAction);
+                      return;
+                    }
                     const label = d.primaryCta ?? d.cta;
                     if (label.includes('Studio')) {
                       onAction?.({
                         route: '/pricing',
-                        query: { decision: d.rank },
+                        query: { decision: d.rank, source: 'action-center' },
                         toast: `Opening Pricing Studio for "${d.headline ?? d.title}".`,
                       });
                     } else if (label.includes('Queue renewal')) {
@@ -674,13 +687,13 @@ export function DecisionCards({
                         drawer: {
                           title: `Queue renewal: ${d.headline ?? d.title}`,
                           description: 'Renewal actions are staged for the next contract window so locked revenue is not repriced blindly.',
-                          items: [
-                            { label: 'Decision', value: d.rank },
-                            { label: 'Authority', value: d.authorityLabel ?? 'MD review' },
-                            { label: 'Next owner', value: 'Till renegotiation queue' },
-                          ],
+                          formKind: 'queue_renewal',
+                          context: {
+                            recommendationId: d.recommendationId,
+                            articleId: d.primaryAction?.articleId,
+                            headline: d.headline ?? d.title,
+                          },
                         },
-                        toast: `Renewal queued for "${d.headline ?? d.title}".`,
                       });
                     } else {
                       handleAccept(d);

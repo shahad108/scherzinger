@@ -84,6 +84,46 @@ function defaultIdempotencyKey(kind: ActionKind, body: ActionBody): string {
   return `${kind}:${target}`;
 }
 
+/**
+ * Mock-mode parity for the live FastAPI dispatcher: when accept_recommendation
+ * or partial_accept lands, the backend ALSO writes a draft pricing proposal
+ * + flips the recommendation status. We mirror that into the synthetic store
+ * so demos see the same Studio panel + Action Center filtering they would
+ * with a real server.
+ */
+function syncSynthProposalForMock(kind: ActionKind, body: ActionBody): void {
+  if (typeof window === 'undefined') return;
+  if (kind !== 'accept_recommendation' && kind !== 'partial_accept') return;
+  const recId = (body.recommendation_id as string | undefined) ?? (body.target_id as string | undefined);
+  if (!recId) return;
+  const articleId =
+    (body.article_id as string | undefined) ?? (body.aid as string | undefined) ?? recId.split(':').pop() ?? recId;
+  const after = (body.after as Record<string, unknown> | undefined) ?? {};
+  const synthKey = 'pryzm_v2_synth_proposals';
+  let rows: Record<string, unknown>[] = [];
+  try {
+    rows = JSON.parse(window.sessionStorage.getItem(synthKey) ?? '[]');
+  } catch {
+    rows = [];
+  }
+  // Idempotent: if a proposal already exists for this rec_id, skip.
+  if (rows.some((r) => r.recommendation_id === recId)) return;
+  const row = {
+    id: `mock-${kind}-${Date.now()}`,
+    recommendation_id: recId,
+    article_id: articleId,
+    current_price: (body.current_price as number | undefined) ?? null,
+    proposed_price: (body.proposed_price as number | undefined) ?? null,
+    delta_pp: (body.delta_pp as number | undefined) ?? null,
+    status: 'draft' as const,
+    approval_required: kind === 'partial_accept',
+    payload: { variant: kind === 'partial_accept' ? 'par' : 'acc', ...after },
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  window.sessionStorage.setItem(synthKey, JSON.stringify([row, ...rows]));
+}
+
 export async function runAction(
   kind: ActionKind,
   body: ActionBody = {},
@@ -92,22 +132,25 @@ export async function runAction(
   const key = options?.idempotencyKey ?? defaultIdempotencyKey(kind, body);
   return postJson<ActionResponse>(`/actions/${kind}`, body, {
     headers: { 'x-pryzm-idempotency-key': key },
-    mockResolve: () => ({
-      replay: false,
-      audit: {
-        id: 'mock-' + key,
-        actor: 'mock-user',
-        actor_persona: 'frank',
-        kind,
-        target_type: body.target_type ?? null,
-        target_id: body.target_id ?? body.aid ?? null,
-        before: null,
-        after: null,
-        delta_pp: body.delta_pp ?? null,
-        audit_hash: 'mockhash',
-        created_at: new Date().toISOString(),
-      },
-    }),
+    mockResolve: () => {
+      syncSynthProposalForMock(kind, body);
+      return {
+        replay: false,
+        audit: {
+          id: 'mock-' + key,
+          actor: 'mock-user',
+          actor_persona: 'frank',
+          kind,
+          target_type: body.target_type ?? null,
+          target_id: body.target_id ?? body.aid ?? null,
+          before: null,
+          after: null,
+          delta_pp: body.delta_pp ?? null,
+          audit_hash: 'mockhash',
+          created_at: new Date().toISOString(),
+        },
+      };
+    },
   });
 }
 
