@@ -44,7 +44,11 @@ export type ForecastParams = ShellParams & {
   horizon?: number;
 };
 
-export type StudioParams = ShellParams & { aid?: string };
+export type StudioParams = ShellParams & {
+  aid?: string;
+  filter?: string;
+  hide_locked?: boolean;
+};
 
 export type AiParams = ShellParams;
 
@@ -68,6 +72,8 @@ export const qk = {
 
   studio: (params?: StudioParams) =>
     params ? (['studio', params] as const) : (['studio'] as const),
+  studioWorkbench: (aid: string) => ['studio-workbench', aid] as const,
+  studioComparable: (aid: string) => ['studio-comparable', aid] as const,
 
   ai: (params?: AiParams) => (params ? (['ai', params] as const) : (['ai'] as const)),
 

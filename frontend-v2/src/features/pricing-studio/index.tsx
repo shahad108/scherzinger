@@ -10,6 +10,7 @@ import { ComparablePanel } from './components/ComparablePanel';
 import { DecisionFooter } from './components/DecisionFooter';
 import { RationaleMemo } from './components/RationaleMemo';
 import { CrossLinks } from './components/CrossLinks';
+import { StudioSkeleton } from './components/StudioSkeleton';
 
 export default function PricingStudioPage() {
   const { data, isLoading } = useStudio();
@@ -77,7 +78,7 @@ export default function PricingStudioPage() {
   }, [data, effectiveAid, selectedSku]);
 
   if (isLoading || !data || !heroView) {
-    return <section id="screen-studio" aria-busy="true" />;
+    return <StudioSkeleton />;
   }
 
   const showComparable = selectedSku?.isNew ?? false;
