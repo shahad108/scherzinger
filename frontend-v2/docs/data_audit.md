@@ -17,7 +17,7 @@ what it should read from, and what's still pending.
 | Trust strip (4 tiles) | 🟡 | `forecast_service.get_forecast_accuracy` + `quality_service.get_quality_summary/get_quality_issues`; falls back to seed | Commit 1 ✅ |
 | Today's analyst decisions | 🟡 | Ranking engine across **margin erosion** (invoice db2_margin YoY drop ≥ 5pp) + **cost risers** (product_cost_trends ≥ 10%) + **churn risk** (customer_risk_scores ≥ 0.7). Top-N by impact, paginated by `?limit=`. Falls back to seed | Commit 4 ✅ |
 | Lost-quote differential | 🟡 | `quote_service.get_price_sensitivity`; falls back to seed | Commit 1 ✅ |
-| SKU pricing engine table | ⛔ | `seed["skuTable"]` (top 50) | Needs `v_sku_pricing_engine` (Commit 5). |
+| SKU pricing engine table | 🟡 | Single SQL pass joining `invoices` (YoY margin) × `products` × `product_cost_trends` (latest cost) × `ab_tests` (running). Sorts by margin drop, paginated by `?limit=`. Falls back to seed | Commit 5 ✅ |
 | Long-tail coverage | ⛔ | `seed["longTail"]` | Wraps `margin_service.get_margin_by_product` + Pareto bin (Commit 7). |
 | Negotiation cockpit | 🟡 | `cost_service.get_cost_risers` aggregated by commodity_group; discount-gap headline + summary text remain seed | Commit 1 ✅ |
 | Rejection codes ("Why we lose") | 🟡 | `quote_service.get_rejection_codes` paginated by `?limit=` | Commit 1 ✅ |
@@ -53,3 +53,4 @@ limit cache on every audit-write so a wider view stays fresh.
 | Commit 2 | 2026-05-10 | abtests tracker (live from ab_tests table) |
 | Commit 3 | 2026-05-10 | header KPIs (records / SKUs / commodity groups) + real ISO week |
 | Commit 4 | 2026-05-10 | decision ranking engine (margin erosion + cost risers + churn risk) |
+| Commit 5 | 2026-05-10 | SKU pricing engine table (live join over invoices × products × cost trends × ab_tests) |
