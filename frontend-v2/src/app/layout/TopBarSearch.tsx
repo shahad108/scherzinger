@@ -11,23 +11,21 @@ const KIND_LABEL: Record<SearchHit['kind'], string> = {
 
 export function TopBarSearch() {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
+  const [focused, setFocused] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   const { data, isFetching } = useGlobalSearch(query);
   const hits = data?.results ?? [];
+  const showDropdown = focused && query.trim().length > 0;
 
-  // Open: focus the input. Close on outside click + Esc.
   useEffect(() => {
-    if (!open) return;
-    inputRef.current?.focus();
+    if (!focused) return;
     const onClick = (e: MouseEvent) => {
-      if (!popoverRef.current?.contains(e.target as Node)) setOpen(false);
+      if (!wrapRef.current?.contains(e.target as Node)) setFocused(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') setFocused(false);
     };
     document.addEventListener('mousedown', onClick);
     document.addEventListener('keydown', onKey);
@@ -35,7 +33,7 @@ export function TopBarSearch() {
       document.removeEventListener('mousedown', onClick);
       document.removeEventListener('keydown', onKey);
     };
-  }, [open]);
+  }, [focused]);
 
   function handlePick(hit: SearchHit) {
     const usp = new URLSearchParams();
@@ -44,50 +42,59 @@ export function TopBarSearch() {
       usp.set(k, String(v));
     }
     navigate(`${hit.route}${usp.toString() ? `?${usp}` : ''}`);
-    setOpen(false);
+    setFocused(false);
     setQuery('');
   }
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter' && hits.length > 0) {
+      e.preventDefault();
+      handlePick(hits[0]);
+    }
+  }
+
   return (
-    <div className="relative" ref={popoverRef}>
-      <button
-        type="button"
-        className="pz-pill pz-search"
-        aria-label="Search SKUs, customers, clusters"
-        onClick={() => setOpen((v) => !v)}
+    <div className="relative" ref={wrapRef}>
+      <label
+        className="pz-pill pz-search inline-flex items-center gap-2"
+        htmlFor="topbar-search-input"
       >
         <Search size={14} />
-        <span>Search SKUs, customers, clusters…</span>
-      </button>
+        <input
+          id="topbar-search-input"
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onKeyDown={handleKeyDown}
+          placeholder="Search SKUs, customers, clusters…"
+          aria-label="Search SKUs, customers, clusters"
+          autoComplete="off"
+          className="flex-1 border-0 bg-transparent text-[13px] text-[var(--ink-2)] placeholder:text-[var(--muted-2)] focus:outline-none"
+          style={{ minWidth: 220 }}
+        />
+        {query && (
+          <button
+            type="button"
+            aria-label="Clear"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              setQuery('');
+              document.getElementById('topbar-search-input')?.focus();
+            }}
+            className="rounded p-0.5 text-[var(--muted)] hover:bg-black/5 hover:text-[var(--ink-2)]"
+          >
+            <X size={12} />
+          </button>
+        )}
+      </label>
 
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-[420px] max-w-[calc(100vw-2rem)] rounded-xl border border-[var(--hairline)] bg-white p-3 shadow-[var(--shadow-pop)]">
-          <div className="flex items-center gap-2 rounded-lg border border-[var(--hairline)] bg-[var(--surface-soft)] px-3 py-2">
-            <Search size={14} className="text-[var(--muted)]" />
-            <input
-              ref={inputRef}
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Article, customer id, recommendation…"
-              className="flex-1 bg-transparent text-sm focus:outline-none"
-            />
-            {query && (
-              <button
-                type="button"
-                aria-label="Clear"
-                onClick={() => setQuery('')}
-                className="rounded p-1 text-[var(--muted)] hover:bg-white hover:text-[var(--ink-2)]"
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
-
-          <div className="mt-2 max-h-[320px] overflow-y-auto">
+      {showDropdown && (
+        <div className="absolute left-0 top-full z-50 mt-2 w-[420px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[var(--hairline)] bg-white shadow-[var(--shadow-pop)]">
+          <div className="max-h-[320px] overflow-y-auto p-2">
             {query.trim().length < 2 ? (
               <div className="px-2 py-3 text-[12px] text-[var(--muted)]">
-                Type at least 2 characters to search across SKUs, customers, and recommendations.
+                Keep typing — at least 2 characters to search SKUs, customers, and recommendations.
               </div>
             ) : isFetching ? (
               <div className="px-2 py-3 text-[12px] text-[var(--muted)]">Searching…</div>
@@ -101,6 +108,7 @@ export function TopBarSearch() {
                   <li key={`${hit.kind}-${hit.id}`}>
                     <button
                       type="button"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handlePick(hit)}
                       className="flex w-full items-start gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-[var(--surface-soft)]"
                     >
@@ -124,6 +132,11 @@ export function TopBarSearch() {
               </ul>
             )}
           </div>
+          {hits.length > 0 && (
+            <div className="border-t border-[var(--hairline)] bg-[var(--surface-soft)] px-3 py-1.5 text-[10.5px] text-[var(--muted)]">
+              ↵ Enter to open · Esc to close
+            </div>
+          )}
         </div>
       )}
     </div>
