@@ -11,7 +11,7 @@ what it should read from, and what's still pending.
 
 | Block | Status | Source today | Notes |
 |---|---|---|---|
-| Header KPIs | ⛔ | `seed["header"]` | Wire to `margin_service.get_margin_summary` (Commit 3). |
+| Header KPIs | 🟡 | `margin_service.get_margin_summary` for record count + DISTINCT SKUs / commodity groups; ISO week computed from server clock; falls back to seed | Commit 3 ✅ |
 | Movable hero | ⛔ | `seed["movableHero"]` | Needs new `v_movable_revenue` view (Commit 6). |
 | Buckets (Movable / Locked) | ⛔ | `seed["buckets"]` | Aggregations of the same view (Commit 6). |
 | Trust strip (4 tiles) | 🟡 | `forecast_service.get_forecast_accuracy` + `quality_service.get_quality_summary/get_quality_issues`; falls back to seed | Commit 1 ✅ |
@@ -51,3 +51,4 @@ limit cache on every audit-write so a wider view stays fresh.
 | Phase 12 | 2026-05-10 | audit feed |
 | Commit 1 | 2026-05-10 | trust + lost_quote + rejections + negotiation |
 | Commit 2 | 2026-05-10 | abtests tracker (live from ab_tests table) |
+| Commit 3 | 2026-05-10 | header KPIs (records / SKUs / commodity groups) + real ISO week |
