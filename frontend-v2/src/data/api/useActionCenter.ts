@@ -8,5 +8,11 @@ export function useActionCenter(params?: ActionCenterParams) {
     queryKey: qk.actionCenter(params),
     queryFn: () => apiFetch<ActionCenterData>('/action-center', { params }),
     staleTime: 60_000,
+    // Phase 14 follow-up — auto-refresh once a minute so newly-arrived
+    // decisions / lost quotes / audit events surface without a manual
+    // refresh. The composer's 60s server cache means the worst-case
+    // freshness is ~120s; close enough to "live" for analyst workflows.
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   });
 }

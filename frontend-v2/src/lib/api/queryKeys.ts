@@ -17,6 +17,12 @@ export type ActionCenterParams = ShellParams & {
   week?: string;
   cluster?: string;
   hide_locked?: boolean;
+  /**
+   * Max row count for the paginated list blocks (rejections; extended to
+   * decisions/sku_table in follow-up phases). Default 5 / max 200 — the
+   * "Show all" pill bumps it to 200 on demand.
+   */
+  limit?: number;
 };
 
 export type MarginCockpitParams = ShellParams & {
