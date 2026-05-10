@@ -27,7 +27,14 @@ export type MarginCockpitParams = ShellParams & {
   customer_id?: string;
 };
 
-export type QuotesParams = ShellParams & { period?: string };
+export type QuotesParams = ShellParams & {
+  period?: string;
+  week?: string;
+  rep?: string;
+  customer_id?: string;
+  family?: string;
+  tier?: string;
+};
 
 export type ForecastParams = ShellParams & {
   cluster?: string;

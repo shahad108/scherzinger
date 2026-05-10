@@ -10,6 +10,7 @@ import { GuardrailsSection } from './components/GuardrailsSection';
 import { ActiveQuotesTable } from './components/ActiveQuotesTable';
 import { AnalysisSection } from './components/AnalysisSection';
 import { CrossLinks } from './components/CrossLinks';
+import { QuotesSkeleton } from './components/QuotesSkeleton';
 
 export default function QuotesPage() {
   const { data, isLoading, error } = useQuotes();
@@ -28,7 +29,7 @@ export default function QuotesPage() {
   };
 
   if (isLoading) {
-    return <div className="w-full px-6 py-8 text-sm text-[var(--muted)]">Lade…</div>;
+    return <QuotesSkeleton />;
   }
   if (error || !data) {
     return (
