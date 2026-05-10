@@ -12,8 +12,8 @@ what it should read from, and what's still pending.
 | Block | Status | Source today | Notes |
 |---|---|---|---|
 | Header KPIs | 🟡 | `margin_service.get_margin_summary` for record count + DISTINCT SKUs / commodity groups; ISO week computed from server clock; falls back to seed | Commit 3 ✅ |
-| Movable hero | ⛔ | `seed["movableHero"]` | Needs new `v_movable_revenue` view (Commit 6). |
-| Buckets (Movable / Locked) | ⛔ | `seed["buckets"]` | Aggregations of the same view (Commit 6). |
+| Movable hero | 🟡 | Live SQL CTE: movable = articles with recent cost movement OR running A/B test. Hero KPIs aggregate revenue / SKU counts; sparkline is per-month movable revenue (€M). Falls back to seed | Commit 6 ✅ |
+| Buckets (Movable / Locked) | 🟡 | Same classification CTE; bucket cards report €M open + SKU count + commodity-group count + lead group. Falls back to seed | Commit 6 ✅ |
 | Trust strip (4 tiles) | 🟡 | `forecast_service.get_forecast_accuracy` + `quality_service.get_quality_summary/get_quality_issues`; falls back to seed | Commit 1 ✅ |
 | Today's analyst decisions | 🟡 | Ranking engine across **margin erosion** (invoice db2_margin YoY drop ≥ 5pp) + **cost risers** (product_cost_trends ≥ 10%) + **churn risk** (customer_risk_scores ≥ 0.7). Top-N by impact, paginated by `?limit=`. Falls back to seed | Commit 4 ✅ |
 | Lost-quote differential | 🟡 | `quote_service.get_price_sensitivity`; falls back to seed | Commit 1 ✅ |
@@ -54,3 +54,4 @@ limit cache on every audit-write so a wider view stays fresh.
 | Commit 3 | 2026-05-10 | header KPIs (records / SKUs / commodity groups) + real ISO week |
 | Commit 4 | 2026-05-10 | decision ranking engine (margin erosion + cost risers + churn risk) |
 | Commit 5 | 2026-05-10 | SKU pricing engine table (live join over invoices × products × cost trends × ab_tests) |
+| Commit 6 | 2026-05-10 | movable hero + buckets (CTE-based movable/locked classification) |
