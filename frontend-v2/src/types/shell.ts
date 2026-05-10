@@ -23,6 +23,12 @@ export interface ShellSection {
 
 export interface ShellRailData {
   notifications: ShellNotification[];
-  reviewers: { panelLabel: string; people: ShellReviewer[]; extraCount: number };
+  reviewers: {
+    panelLabel: string;
+    /** Backend Panel UUID — required for reviewer add/remove. */
+    panelId?: string;
+    people: ShellReviewer[];
+    extraCount: number;
+  };
   sections: ShellSection[];
 }

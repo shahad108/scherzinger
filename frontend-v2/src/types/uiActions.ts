@@ -18,7 +18,11 @@ export type FormDrawerKind =
   | 'ab_hold'
   | 'ab_promote'
   | 'decision_detail'
-  | 'trust_explain';
+  | 'trust_explain'
+  // Phase 7 — admin & shell forms.
+  | 'add_section'
+  | 'saved_view_save'
+  | 'add_reviewer';
 
 export interface ActionDrawerContext {
   recommendationId?: string;
@@ -34,6 +38,12 @@ export interface ActionDrawerContext {
   currentPrice?: number;
   /** Used by partial_accept to pre-fill the target. */
   targetPrice?: number;
+  /** Phase 7 — saved-view payloads. */
+  screen?: string;
+  filters?: Record<string, unknown>;
+  /** Phase 7 — reviewer panel target. */
+  panelId?: string;
+  panelLabel?: string;
 }
 
 export interface ActionDrawerIntent {

@@ -71,24 +71,28 @@ export function RightRail() {
           </div>
           <button
             type="button"
-            aria-label="Open reviewers panel"
+            aria-label="Add reviewer"
             onClick={() =>
               runAction({
                 drawer: {
-                  title: t('rail.reviewers'),
-                  description: data.reviewers.panelLabel,
-                  items: data.reviewers.people.map((p) => ({
-                    label: p.initials,
-                    value: p.id.toUpperCase(),
-                  })),
+                  title: 'Add reviewer',
+                  description: `Append a reviewer to "${data.reviewers.panelLabel}".`,
+                  formKind: 'add_reviewer',
+                  context: {
+                    panelId: data.reviewers.panelId,
+                    panelLabel: data.reviewers.panelLabel,
+                  },
                 },
-                toast: 'Reviewers panel opened',
-                toastSeverity: 'info',
               })
             }
             style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--muted-2)' }}
+            title={
+              data.reviewers.panelId
+                ? 'Add reviewer to this panel'
+                : 'Reviewer panel not configured yet'
+            }
           >
-            <ArrowUpRight size={14} />
+            {data.reviewers.panelId ? <Plus size={14} /> : <ArrowUpRight size={14} />}
           </button>
         </div>
         <div className="pz-avatars">
@@ -110,14 +114,10 @@ export function RightRail() {
               runAction({
                 drawer: {
                   title: t('rail.addSection'),
-                  description: 'Sections are saved to the shell once the user confirms a title, destination, and ordering.',
-                  items: [
-                    { label: 'Suggested', value: 'Current Action Center anchor' },
-                    { label: 'Backend', value: 'Existing /sections mutation hooks are available for a full form.' },
-                  ],
+                  description: 'Pin a quick-access shortcut to the right rail.',
+                  formKind: 'add_section',
+                  context: {},
                 },
-                toast: 'Section composer opened',
-                toastSeverity: 'info',
               })
             }
           >

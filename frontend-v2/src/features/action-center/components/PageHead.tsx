@@ -1,4 +1,4 @@
-import { ChevronDown, Download, Filter, Layers } from 'lucide-react';
+import { Bookmark, ChevronDown, Download, Filter, Layers } from 'lucide-react';
 import type { ActionCenterHeader } from '@/types';
 import type { ActionIntent } from '@/types/uiActions';
 
@@ -104,6 +104,37 @@ export function PageHead({
               {showAll ? 'Showing all' : 'Show all'}
             </button>
           )}
+          {/* Phase 7 — Save current view to /saved-views. */}
+          <button
+            type="button"
+            onClick={() =>
+              onAction?.({
+                drawer: {
+                  title: 'Save current view',
+                  description: 'Persist the active filters so you can return to this lens later.',
+                  formKind: 'saved_view_save',
+                  context: {
+                    screen: 'action-center',
+                    filters: {
+                      hide_locked: hideLocked,
+                      show_all: showAll,
+                    },
+                  },
+                },
+              })
+            }
+            className="inline-flex items-center gap-2 text-[12.5px] font-medium text-[var(--ink-2)] transition-colors hover:bg-[#f7f9fb]"
+            style={{
+              height: 36,
+              padding: '0 14px',
+              borderRadius: 11,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              cursor: 'pointer',
+            }}
+          >
+            <Bookmark size={13} className="text-[var(--ink-3)]" /> Save view
+          </button>
           {[
             {
               icon: ChevronDown,

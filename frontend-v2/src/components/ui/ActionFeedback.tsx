@@ -8,6 +8,9 @@ import { SnoozeForm } from '@/components/forms/SnoozeForm';
 import { QueueRenewalForm } from '@/components/forms/QueueRenewalForm';
 import { AbSetupForm } from '@/components/forms/AbSetupForm';
 import { AbHoldPromoteForm } from '@/components/forms/AbHoldPromoteForm';
+import { AddSectionForm } from '@/components/forms/AddSectionForm';
+import { SavedViewSaveForm } from '@/components/forms/SavedViewSaveForm';
+import { AddReviewerForm } from '@/components/forms/AddReviewerForm';
 
 export function ActionFeedback() {
   const toasts = useActionFeedbackStore((s) => s.toasts);
@@ -68,6 +71,15 @@ export function ActionFeedback() {
         )}
         {drawer && formKind === 'ab_promote' && (
           <AbHoldPromoteForm context={ctx} onClose={closeDrawer} onToast={pushToast} mode="promote" />
+        )}
+        {drawer && formKind === 'add_section' && (
+          <AddSectionForm context={ctx} onClose={closeDrawer} onToast={pushToast} />
+        )}
+        {drawer && formKind === 'saved_view_save' && (
+          <SavedViewSaveForm context={ctx} onClose={closeDrawer} onToast={pushToast} />
+        )}
+        {drawer && formKind === 'add_reviewer' && (
+          <AddReviewerForm context={ctx} onClose={closeDrawer} onToast={pushToast} />
         )}
         {drawer && !formKind && (
           <div className="flex h-full flex-col p-6 pt-14">
