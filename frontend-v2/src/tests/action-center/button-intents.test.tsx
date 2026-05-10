@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TrustStrip } from '@/features/action-center/components/TrustStrip';
 import { SkuTable } from '@/features/action-center/components/SkuTable';
 import { ReportCard } from '@/features/action-center/components/ReportCard';
@@ -40,15 +41,22 @@ describe('Action Center button wiring', () => {
     expect(onAction).toHaveBeenCalledWith(rows[0]);
   });
 
-  it('keeps report actions backend-required', () => {
+  it('Send to Till is disabled until a report has been generated', () => {
     const onAction = vi.fn();
-    render(<ReportCard onAction={onAction} />);
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <ReportCard onAction={onAction} />
+      </QueryClientProvider>,
+    );
 
-    fireEvent.click(screen.getByRole('button', { name: /Generate PDF/i }));
+    const sendBtn = screen.getByRole('button', { name: /Send to Till/i });
+    expect(sendBtn).toBeDisabled();
+    expect(sendBtn).toHaveAttribute('title', expect.stringMatching(/Generate the report first/i));
 
-    expect(onAction).toHaveBeenCalledWith({
-      disabledReason: 'Backend endpoint required before branded reports can be generated or sent.',
-    });
+    // Generate button is enabled and labelled "Generate report" before any
+    // job exists.
+    expect(screen.getByRole('button', { name: /Generate report/i })).not.toBeDisabled();
   });
 
   // Phase 4 — `All Departments` is preview until saved-views ships in
