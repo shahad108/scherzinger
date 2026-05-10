@@ -13,6 +13,7 @@ import { RationaleMemo } from './components/RationaleMemo';
 import { CrossLinks } from './components/CrossLinks';
 import { StudioSkeleton } from './components/StudioSkeleton';
 import { DeepLinkBanner } from './components/DeepLinkBanner';
+import { ProposalContextPanel } from './components/ProposalContextPanel';
 
 export default function PricingStudioPage() {
   const { data, isLoading } = useStudio();
@@ -133,7 +134,16 @@ export default function PricingStudioPage() {
 
           {showComparable && <ComparablePanel data={data.comparable} />}
 
-          <DecisionFooter data={wb.decision} activeOption={activeOption} />
+          <ProposalContextPanel
+            articleId={effectiveAid}
+            recommendationId={params.get('recommendation')}
+          />
+
+          <DecisionFooter
+            data={wb.decision}
+            activeOption={activeOption}
+            currentPriceLabel={heroView.currentPrice}
+          />
 
           <RationaleMemo data={wb.memo} />
         </div>
