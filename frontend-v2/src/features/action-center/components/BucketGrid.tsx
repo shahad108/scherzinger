@@ -2,7 +2,13 @@ import { ArrowRight } from 'lucide-react';
 import type { BucketCard } from '@/types';
 import { EmptyBlock } from './EmptyBlock';
 
-export function BucketGrid({ buckets }: { buckets: BucketCard[] }) {
+export function BucketGrid({
+  buckets,
+  onAction,
+}: {
+  buckets: BucketCard[];
+  onAction?: (bucket: BucketCard) => void;
+}) {
   if (!buckets || buckets.length === 0) {
     return <EmptyBlock title="Buckets" hint="No buckets to show for the active filter." />;
   }
@@ -70,6 +76,7 @@ export function BucketGrid({ buckets }: { buckets: BucketCard[] }) {
             </div>
             <button
               type="button"
+              onClick={() => onAction?.(b)}
               className="inline-flex items-center text-[12.5px] font-medium text-white transition-colors"
               style={{
                 background: '#101418',

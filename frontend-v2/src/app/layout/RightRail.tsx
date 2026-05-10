@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useUiStore } from '@/stores/uiStore';
 import { useShell } from '@/data/api/useShell';
 import { useMarkNotificationRead } from '@/data/api/useShellMutations';
+import { useUiAction } from '@/hooks/useUiAction';
 import type { NotifTone } from '@/types/shell';
 
 const ToneIcon = ({ tone }: { tone: NotifTone }) => {
@@ -16,6 +17,7 @@ export function RightRail() {
   const toggle = useUiStore((s) => s.toggleRightRail);
   const { data, isLoading } = useShell();
   const markRead = useMarkNotificationRead();
+  const runAction = useUiAction();
   const { t } = useTranslation();
 
   if (isLoading || !data) return <aside className="pz-rail" aria-busy="true" />;
@@ -34,6 +36,11 @@ export function RightRail() {
             className={`pz-notif${n.unread ? ' unread' : ''}`}
             onClick={() => {
               if (n.unread) markRead.mutate(n.id);
+              runAction({
+                route: '/notifications',
+                query: { notification: n.id },
+                toast: n.unread ? `${n.title} marked read.` : `Opening ${n.title}.`,
+              });
             }}
           >
             <span className={`pz-notif-ic ${n.tone}`}><ToneIcon tone={n.tone} /></span>
@@ -62,7 +69,25 @@ export function RightRail() {
             <h3>{t('rail.reviewers')}</h3>
             <div className="sub">{data.reviewers.panelLabel}</div>
           </div>
-          <button type="button" aria-label="Open reviewers panel" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--muted-2)' }}>
+          <button
+            type="button"
+            aria-label="Open reviewers panel"
+            onClick={() =>
+              runAction({
+                drawer: {
+                  title: t('rail.reviewers'),
+                  description: data.reviewers.panelLabel,
+                  items: data.reviewers.people.map((p) => ({
+                    label: p.initials,
+                    value: p.id.toUpperCase(),
+                  })),
+                },
+                toast: 'Reviewers panel opened',
+                toastSeverity: 'info',
+              })
+            }
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--muted-2)' }}
+          >
             <ArrowUpRight size={14} />
           </button>
         </div>
@@ -77,7 +102,25 @@ export function RightRail() {
       <div className="pz-rail-card pad">
         <div className="pz-rail-h">
           <h3>{t('rail.sections')}</h3>
-          <button type="button" aria-label={t('rail.addSection')} className="pz-add-section">
+          <button
+            type="button"
+            aria-label={t('rail.addSection')}
+            className="pz-add-section"
+            onClick={() =>
+              runAction({
+                drawer: {
+                  title: t('rail.addSection'),
+                  description: 'Sections are saved to the shell once the user confirms a title, destination, and ordering.',
+                  items: [
+                    { label: 'Suggested', value: 'Current Action Center anchor' },
+                    { label: 'Backend', value: 'Existing /sections mutation hooks are available for a full form.' },
+                  ],
+                },
+                toast: 'Section composer opened',
+                toastSeverity: 'info',
+              })
+            }
+          >
             <Plus size={11} /> {t('rail.add')}
           </button>
         </div>

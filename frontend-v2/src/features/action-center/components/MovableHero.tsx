@@ -1,12 +1,14 @@
 import { motion } from 'motion/react';
+import { Link } from 'react-router-dom';
 import { chart } from '@/lib/chartColors';
 import type { MovableHero as Hero } from '@/types';
 
 interface Props {
   hero: Hero;
+  onAction?: () => void;
 }
 
-export function MovableHero({ hero }: Props) {
+export function MovableHero({ hero, onAction }: Props) {
   const stroke = chart.rose();
   const fillStop = chart.roseSoft();
   const dot = chart.roseDeep();
@@ -36,7 +38,7 @@ export function MovableHero({ hero }: Props) {
       style={{ padding: '24px 28px 22px' }}
       id="sec-movable"
     >
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-stretch">
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-stretch">
         <div>
           <div className="mb-3 flex items-center gap-2">
             <span className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--muted)]">
@@ -128,8 +130,9 @@ export function MovableHero({ hero }: Props) {
             <span className="text-[11.5px] italic text-[var(--muted)]">
               Movable share refined per cluster — see Heterogeneous Portfolio.
             </span>
-            <button
-              type="button"
+            <Link
+              to="/pricing#queue"
+              onClick={() => onAction?.()}
               className="inline-flex items-center gap-1.5 rounded-lg text-[12.5px] font-semibold text-white shadow-sm transition-colors"
               style={{ background: 'var(--ink)', padding: '9px 14px' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = '#000')}
@@ -145,7 +148,7 @@ export function MovableHero({ hero }: Props) {
                   strokeLinejoin="round"
                 />
               </svg>
-            </button>
+            </Link>
           </div>
         </div>
 

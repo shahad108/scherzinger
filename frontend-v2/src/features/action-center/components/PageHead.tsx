@@ -1,5 +1,6 @@
 import { ChevronDown, Download, Filter, Layers } from 'lucide-react';
 import type { ActionCenterHeader } from '@/types';
+import type { ActionIntent } from '@/types/uiActions';
 
 interface Props {
   header: ActionCenterHeader;
@@ -7,6 +8,7 @@ interface Props {
   onToggleHideLocked?: (next: boolean) => void;
   showAll?: boolean;
   onToggleShowAll?: (next: boolean) => void;
+  onAction?: (intent: ActionIntent) => void;
 }
 
 export function PageHead({
@@ -15,6 +17,7 @@ export function PageHead({
   onToggleHideLocked,
   showAll = false,
   onToggleShowAll,
+  onAction,
 }: Props) {
   return (
     <>
@@ -102,12 +105,35 @@ export function PageHead({
             </button>
           )}
           {[
-            { icon: ChevronDown, label: 'All Departments' },
-            { icon: Download,    label: 'Export' },
-          ].map(({ icon: Icon, label }) => (
+            {
+              icon: ChevronDown,
+              label: 'All Departments',
+              action: {
+                drawer: {
+                  title: 'Department filter',
+                  description: "Choose a commercial lens for this Action Center view. The live BFF will persist this as a saved view filter; for now the current page remains in Frank's default pricing workspace.",
+                  items: [
+                    { label: 'Active', value: 'Pricing & Analytics' },
+                    { label: 'Available', value: 'Sales, Operations' },
+                    { label: 'Next step', value: 'Saved-view persistence is already available in Settings.' },
+                  ],
+                },
+                toast: 'Department filter opened',
+                toastSeverity: 'info',
+              } satisfies ActionIntent,
+            },
+            {
+              icon: Download,
+              label: 'Export',
+              action: {
+                disabledReason: 'Backend endpoint required before Action Center exports can be generated.',
+              } satisfies ActionIntent,
+            },
+          ].map(({ icon: Icon, label, action }) => (
             <button
               key={label}
               type="button"
+              onClick={() => onAction?.(action)}
               className="inline-flex items-center gap-2 text-[12.5px] font-medium text-[var(--ink-2)] transition-colors hover:bg-[#f7f9fb]"
               style={{
                 height: 36,

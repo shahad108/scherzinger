@@ -2,6 +2,7 @@ import { Plus } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Badge } from '@/components/ui/Badge';
 import type { AbTestCard, Tone } from '@/types';
+import type { ActionIntent } from '@/types/uiActions';
 import { EmptyBlock } from './EmptyBlock';
 
 function toneToBadge(t: Tone): React.ComponentProps<typeof Badge>['tone'] {
@@ -18,7 +19,13 @@ const liftClass: Record<Tone, string> = {
   neutral: 'text-[var(--ink)]',
 };
 
-export function AbTestList({ tests }: { tests: AbTestCard[] }) {
+export function AbTestList({
+  tests,
+  onAction,
+}: {
+  tests: AbTestCard[];
+  onAction?: (intent: ActionIntent) => void;
+}) {
   if (!tests || tests.length === 0) {
     return (
       <EmptyBlock
@@ -38,7 +45,24 @@ export function AbTestList({ tests }: { tests: AbTestCard[] }) {
             Test before broad rollout. Frank's first-class workflow.
           </p>
         </div>
-        <button className="inline-flex items-center gap-1.5 rounded-full border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--grey-bg)]">
+        <button
+          type="button"
+          onClick={() =>
+            onAction?.({
+              drawer: {
+                title: 'Start new A/B test',
+                description: 'Select a recommendation or SKU first, then slice it into a measured test. This keeps the A/B test tied to an auditable pricing decision.',
+                items: [
+                  { label: 'Recommended', value: 'Use Slice as A/B from a decision card.' },
+                  { label: 'Fallback', value: 'Open Pricing Studio and choose an article.' },
+                ],
+              },
+              toast: 'A/B setup guidance opened',
+              toastSeverity: 'info',
+            })
+          }
+          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--grey-bg)]"
+        >
           <Plus size={12} />
           Start new A/B test
         </button>
@@ -101,13 +125,56 @@ export function AbTestList({ tests }: { tests: AbTestCard[] }) {
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              <button className="rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--grey-bg)]">
+              <button
+                type="button"
+                onClick={() =>
+                  onAction?.(
+                    t.actions?.hold ?? {
+                      kind: 'hold_ab_test',
+                      targetType: 'ab_test',
+                      targetId: t.id,
+                      body: { test_id: t.id, aid: t.title },
+                      toast: `A/B test ${t.title} put on hold.`,
+                    },
+                  )
+                }
+                className="rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--grey-bg)]"
+              >
                 Hold
               </button>
-              <button className="rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--grey-bg)]">
+              <button
+                type="button"
+                onClick={() =>
+                  onAction?.(
+                    t.actions?.stop ?? {
+                      kind: 'stop_ab_test',
+                      targetType: 'ab_test',
+                      targetId: t.id,
+                      body: { test_id: t.id, aid: t.title },
+                      toast: `${t.id} stopped.`,
+                      toastSeverity: 'warning',
+                    },
+                  )
+                }
+                className="rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--grey-bg)]"
+              >
                 Stop test
               </button>
-              <button className="ml-auto rounded-md bg-[var(--rose)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--rose-deep)]">
+              <button
+                type="button"
+                onClick={() =>
+                  onAction?.(
+                    t.actions?.promote ?? {
+                      kind: 'promote_ab_test',
+                      targetType: 'ab_test',
+                      targetId: t.id,
+                      body: { test_id: t.id, aid: t.title },
+                      toast: `${t.id} promoted to rollout.`,
+                    },
+                  )
+                }
+                className="ml-auto rounded-md bg-[var(--rose)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--rose-deep)]"
+              >
                 Promote to full rollout →
               </button>
             </div>

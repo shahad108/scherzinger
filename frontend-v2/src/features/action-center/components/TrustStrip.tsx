@@ -1,6 +1,12 @@
 import type { TrustTile } from '@/types';
 
-export function TrustStrip({ tiles }: { tiles: TrustTile[] }) {
+export function TrustStrip({
+  tiles,
+  onTile,
+}: {
+  tiles: TrustTile[];
+  onTile?: (tile: TrustTile) => void;
+}) {
   return (
     <>
       <div className="mb-3">
@@ -15,6 +21,8 @@ export function TrustStrip({ tiles }: { tiles: TrustTile[] }) {
         {tiles.map((t) => (
           <button
             key={t.label}
+            type="button"
+            onClick={() => onTile?.(t)}
             className="rounded-xl border border-[var(--hairline)] bg-white p-4 text-left shadow-[var(--shadow)] transition-all hover:-translate-y-0.5 hover:border-[var(--ink-2)] hover:shadow-[var(--shadow-md)]"
           >
             <div className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--muted)]">

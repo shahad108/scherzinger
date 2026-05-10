@@ -1,7 +1,7 @@
 import { ArrowRight } from 'lucide-react';
 import type { LostQuoteData } from '@/types';
 
-export function LostQuoteCard({ data }: { data: LostQuoteData }) {
+export function LostQuoteCard({ data, onOpen }: { data: LostQuoteData; onOpen?: () => void }) {
   return (
     <>
       <div className="mb-3">
@@ -91,7 +91,11 @@ export function LostQuoteCard({ data }: { data: LostQuoteData }) {
                 Shared with <b className="text-[var(--ink-2)]">Heiko</b> ·{' '}
                 <b className="text-[var(--ink-2)]">Till</b>
               </span>
-              <button className="inline-flex items-center gap-1 rounded-md bg-[var(--rose)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--rose-deep)]">
+              <button
+                type="button"
+                onClick={onOpen}
+                className="inline-flex items-center gap-1 rounded-md bg-[var(--rose)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--rose-deep)]"
+              >
                 Open analysis
                 <ArrowRight size={12} />
               </button>

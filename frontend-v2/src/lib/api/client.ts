@@ -12,8 +12,8 @@
 //                           that path. Used while the BFF is partial.
 //
 // The mock-key convention strips the leading slash and replaces the rest with
-// hyphens. So /action-center -> action-center.json and /margin-cockpit ->
-// margin-cockpit.json.
+// hyphens. Screen endpoints also strip /screens, so /screens/action-center ->
+// action-center.json and /screens/margin-cockpit -> margin-cockpit.json.
 
 import { newTraceId } from '@/lib/observability';
 
@@ -27,7 +27,7 @@ const mocks = import.meta.glob('../../data/mocks/*.json', { eager: true }) as Re
 >;
 
 function mockKey(path: string): string {
-  return path.replace(/^\//, '').replace(/\//g, '-');
+  return path.replace(/^\/screens\//, '/').replace(/^\//, '').replace(/\//g, '-');
 }
 
 export type QueryParams = Record<string, string | number | boolean | undefined | null>;

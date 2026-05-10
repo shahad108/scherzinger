@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ChevronDown, MoreHorizontal, Plus, Clock, GripVertical } from 'lucide-react';
 import { chart } from '@/lib/chartColors';
-import { useAcceptDecision, useDeclineDecision, useStartAbTest } from '@/data/api/useActions';
+import { useAcceptDecision, useDeclineDecision, usePartialAccept, useStartAbTest } from '@/data/api/useActions';
 import { MessageStrip } from '@/components/fiori/MessageStrip';
 import type { DecisionCard, DecisionFact, DecisionTrend } from '@/types';
+import type { ActionIntent } from '@/types/uiActions';
 import { EmptyBlock } from './EmptyBlock';
 
 type ActState = 'acc' | 'nim' | 'par' | 'rej' | 'ab' | null;
@@ -218,13 +219,20 @@ function FeedbackRow({
   );
 }
 
-export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
+export function DecisionCards({
+  decisions,
+  onAction,
+}: {
+  decisions: DecisionCard[];
+  onAction?: (intent: ActionIntent) => void;
+}) {
   // Phase 12 — optimistic accept. Cards added to `accepted` are hidden
   // immediately; on POST /actions failure they re-appear with a MessageStrip.
   const [accepted, setAccepted] = useState<Set<string>>(new Set());
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const acceptMutation = useAcceptDecision();
   const declineMutation = useDeclineDecision();
+  const partialMutation = usePartialAccept();
   const sliceMutation = useStartAbTest();
 
   const handleAccept = (d: DecisionCard, variant: 'acc' | 'nim' | 'par' = 'acc') => {
@@ -235,13 +243,28 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
       next.add(id);
       return next;
     });
-    acceptMutation.mutate(
+    const mutation = variant === 'acc' ? acceptMutation : partialMutation;
+    // Prefer the backend-attached intent so target_id is the stable
+    // recommendation ref and the row created here is the same one the
+    // composer will look up on the next refresh.
+    const intent = d.primaryAction;
+    const recId = d.recommendationId ?? intent?.targetId ?? id;
+    mutation.mutate(
       {
-        target_type: 'recommendation',
-        target_id: id,
+        ...(intent?.body ?? {}),
+        target_type: intent?.targetType ?? 'recommendation',
+        target_id: recId,
+        recommendation_id: recId,
         after: { headline: d.headline ?? d.title, variant },
       },
       {
+        onSuccess: () =>
+          onAction?.({
+            toast:
+              variant === 'acc'
+                ? `Accepted "${d.headline ?? d.title}".`
+                : `Queued partial acceptance for "${d.headline ?? d.title}".`,
+          }),
         onError: (err) => {
           setAccepted((prev) => {
             const next = new Set(prev);
@@ -262,9 +285,19 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
       next.add(id);
       return next;
     });
+    const recId = d.recommendationId ?? d.primaryAction?.targetId ?? id;
     declineMutation.mutate(
-      { target_type: 'recommendation', target_id: id, after: { headline: d.headline ?? d.title } },
       {
+        target_type: 'recommendation',
+        target_id: recId,
+        recommendation_id: recId,
+        article_id: d.primaryAction?.articleId,
+        customer_id: d.primaryAction?.customerId,
+        cluster: d.primaryAction?.cluster,
+        after: { headline: d.headline ?? d.title },
+      },
+      {
+        onSuccess: () => onAction?.({ toast: `Rejected "${d.headline ?? d.title}".` }),
         onError: (err) => {
           setAccepted((prev) => {
             const next = new Set(prev);
@@ -279,15 +312,19 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
 
   const handleSliceAb = (d: DecisionCard) => {
     setErrorMsg(null);
+    const recId = d.recommendationId ?? d.primaryAction?.targetId ?? d.rank;
+    const aid = d.primaryAction?.articleId ?? (d as { aid?: string }).aid ?? d.rank;
     sliceMutation.mutate(
       {
         target_type: 'recommendation',
-        target_id: d.rank,
-        aid: (d as { aid?: string }).aid ?? d.rank,
+        target_id: recId,
+        recommendation_id: recId,
+        aid,
         slice_pct: 0.1,
         after: { headline: d.headline ?? d.title, slice: '10%' },
       },
       {
+        onSuccess: () => onAction?.({ toast: `A/B test started for "${d.headline ?? d.title}".` }),
         onError: (err) =>
           setErrorMsg(`Could not start A/B for "${d.headline ?? d.title}": ${(err as Error).message}`),
       },
@@ -321,10 +358,46 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
           </p>
         </div>
         <div className="flex items-center gap-1.5">
-          <button type="button" aria-label="Add" className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--hairline)] bg-white text-[var(--muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--ink-2)]">
+          <button
+            type="button"
+            aria-label="Add"
+            onClick={() =>
+              onAction?.({
+                drawer: {
+                  title: 'Create manual action',
+                  description: 'Manual action creation is staged here so the queue can later persist it through the BFF.',
+                  items: [
+                    { label: 'Default owner', value: 'Frank' },
+                    { label: 'Destination', value: 'Action Center decision queue' },
+                  ],
+                },
+                toast: 'Manual action composer opened',
+                toastSeverity: 'info',
+              })
+            }
+            className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--hairline)] bg-white text-[var(--muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--ink-2)]"
+          >
             <Plus size={14} />
           </button>
-          <button type="button" aria-label="More" className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--hairline)] bg-white text-[var(--muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--ink-2)]">
+          <button
+            type="button"
+            aria-label="More"
+            onClick={() =>
+              onAction?.({
+                drawer: {
+                  title: 'Decision queue options',
+                  description: 'Bulk decision actions will live here once the BFF supports grouped action writes.',
+                  items: [
+                    { label: 'Available now', value: 'Sort, inspect, and act on each recommendation.' },
+                    { label: 'Backend gap', value: 'Bulk accept / snooze action kinds.' },
+                  ],
+                },
+                toast: 'Decision queue options opened',
+                toastSeverity: 'info',
+              })
+            }
+            className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--hairline)] bg-white text-[var(--muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--ink-2)]"
+          >
             <MoreHorizontal size={14} />
           </button>
         </div>
@@ -366,6 +439,21 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
                   <button
                     type="button"
                     aria-label="Snooze"
+                    onClick={() =>
+                      onAction?.({
+                        drawer: {
+                          title: `Snooze ${d.headline ?? d.title}`,
+                          description: 'Snooze needs a durable backend action so the decision returns at the right time. This preview records the intended deferral.',
+                          items: [
+                            { label: 'Decision', value: d.rank },
+                            { label: 'Suggested', value: 'Tomorrow 08:00' },
+                            { label: 'Backend gap', value: 'snooze_recommendation action kind' },
+                          ],
+                        },
+                        toast: `Snooze preview opened for "${d.headline ?? d.title}".`,
+                        toastSeverity: 'info',
+                      })
+                    }
                     className="grid place-items-center"
                     style={{
                       width: 32,
@@ -382,6 +470,21 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
                   <button
                     type="button"
                     aria-label="More"
+                    onClick={() =>
+                      onAction?.({
+                        drawer: {
+                          title: `More actions: ${d.headline ?? d.title}`,
+                          description: 'Inspect ownership, evidence, and next workflow options for this decision.',
+                          items: [
+                            { label: 'Rank', value: d.rank },
+                            { label: 'Recommendation', value: d.recommendation ?? d.cta },
+                            { label: 'Confidence', value: d.confLabel ?? 'High' },
+                          ],
+                        },
+                        toast: 'Decision details opened',
+                        toastSeverity: 'info',
+                      })
+                    }
                     className="grid place-items-center"
                     style={{
                       width: 32,
@@ -509,6 +612,20 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
                 {d.secondaryCta && (
                   <button
                     type="button"
+                    onClick={() =>
+                      onAction?.({
+                        drawer: {
+                          title: d.secondaryCta ?? 'Library action',
+                          description: 'Reusable playbooks and proposal snippets will be inserted from the sales library. This preview shows what will be attached.',
+                          items: [
+                            { label: 'Decision', value: d.headline ?? d.title },
+                            { label: 'Template', value: d.recommendation ?? d.cta },
+                          ],
+                        },
+                        toast: `${d.secondaryCta} opened`,
+                        toastSeverity: 'info',
+                      })
+                    }
                     className="inline-flex flex-1 items-center justify-center gap-2 text-[13px] font-medium text-[var(--ink)] transition-colors hover:bg-[var(--surface-soft)]"
                     style={{
                       background: 'var(--surface)',
@@ -523,7 +640,31 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
                 )}
                 <button
                   type="button"
-                  onClick={() => handleAccept(d)}
+                  onClick={() => {
+                    const label = d.primaryCta ?? d.cta;
+                    if (label.includes('Studio')) {
+                      onAction?.({
+                        route: '/pricing',
+                        query: { decision: d.rank },
+                        toast: `Opening Pricing Studio for "${d.headline ?? d.title}".`,
+                      });
+                    } else if (label.includes('Queue renewal')) {
+                      onAction?.({
+                        drawer: {
+                          title: `Queue renewal: ${d.headline ?? d.title}`,
+                          description: 'Renewal actions are staged for the next contract window so locked revenue is not repriced blindly.',
+                          items: [
+                            { label: 'Decision', value: d.rank },
+                            { label: 'Authority', value: d.authorityLabel ?? 'MD review' },
+                            { label: 'Next owner', value: 'Till renegotiation queue' },
+                          ],
+                        },
+                        toast: `Renewal queued for "${d.headline ?? d.title}".`,
+                      });
+                    } else {
+                      handleAccept(d);
+                    }
+                  }}
                   disabled={acceptMutation.isPending}
                   className="inline-flex flex-1 items-center justify-center gap-2 text-[13px] font-semibold text-white transition-colors disabled:opacity-60"
                   style={{

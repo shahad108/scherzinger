@@ -26,7 +26,13 @@ const confChip: Record<SkuRow['clusterTone'], string> = {
   low: 'bg-[var(--red-bg)] text-[var(--red)] border-[var(--red-border)]',
 };
 
-export function SkuTable({ rows }: { rows: SkuRow[] }) {
+export function SkuTable({
+  rows,
+  onAction,
+}: {
+  rows: SkuRow[];
+  onAction?: (row: SkuRow) => void;
+}) {
   const [hideLocked, setHideLocked] = useState(false);
   const visible = hideLocked ? rows.filter((r) => r.status !== 'locked') : rows;
 
@@ -110,7 +116,11 @@ export function SkuTable({ rows }: { rows: SkuRow[] }) {
                   </span>
                 </td>
                 <td className="px-3 py-2.5">
-                  <button className="inline-flex items-center gap-1 rounded-md border border-[var(--hairline)] bg-white px-2.5 py-1 text-[11px] font-semibold text-[var(--ink-2)] transition-all hover:border-[var(--ink-2)] hover:bg-[var(--grey-bg)]">
+                  <button
+                    type="button"
+                    onClick={() => onAction?.(r)}
+                    className="inline-flex items-center gap-1 rounded-md border border-[var(--hairline)] bg-white px-2.5 py-1 text-[11px] font-semibold text-[var(--ink-2)] transition-all hover:border-[var(--ink-2)] hover:bg-[var(--grey-bg)]"
+                  >
                     {r.actionLabel}
                     <ArrowRight size={11} />
                   </button>

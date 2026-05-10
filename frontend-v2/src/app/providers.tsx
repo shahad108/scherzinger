@@ -1,5 +1,6 @@
 import { QueryCache, MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/Tooltip';
+import { ActionFeedback } from '@/components/ui/ActionFeedback';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useDensity } from '@/hooks/useDensity';
 import { reportError } from '@/lib/observability';
@@ -42,7 +43,10 @@ export function Providers({ children }: { children: ReactNode }) {
   }, []);
   return (
     <QueryClientProvider client={client}>
-      <TooltipProvider delayDuration={250}>{children}</TooltipProvider>
+      <TooltipProvider delayDuration={250}>
+        {children}
+        <ActionFeedback />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }

@@ -22,6 +22,18 @@ vi.mock('@/data/api/useActions', async () => {
           throw new Error('API POST /actions/accept_recommendation → 500: boom');
         },
       }),
+    useDeclineDecision: () =>
+      useMutation({
+        mutationFn: async () => ({ replay: false, audit: {} }),
+      }),
+    usePartialAccept: () =>
+      useMutation({
+        mutationFn: async () => ({ replay: false, audit: {} }),
+      }),
+    useStartAbTest: () =>
+      useMutation({
+        mutationFn: async () => ({ replay: false, audit: {} }),
+      }),
   };
 });
 

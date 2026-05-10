@@ -1,7 +1,10 @@
 import { ArrowRight, FileText, Mail } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
+import type { ActionIntent } from '@/types/uiActions';
 
-export function ReportCard() {
+export function ReportCard({ onAction }: { onAction?: (intent: ActionIntent) => void }) {
+  const backendRequired = 'Backend endpoint required before branded reports can be generated or sent.';
+
   return (
     <div className="mb-6 rounded-xl border border-[var(--hairline)] bg-white p-5 shadow-[var(--shadow)]">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-[var(--hairline)] pb-4">
@@ -30,7 +33,13 @@ export function ReportCard() {
               <Badge>PDF</Badge>
               <Badge tone="info">Audit-ready</Badge>
             </div>
-            <button className="inline-flex items-center gap-1 rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] transition-all hover:border-[var(--ink-2)] hover:bg-[var(--grey-bg)]">
+            <button
+              type="button"
+              aria-disabled="true"
+              title={backendRequired}
+              onClick={() => onAction?.({ disabledReason: backendRequired })}
+              className="inline-flex items-center gap-1 rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--muted)] transition-all hover:bg-[var(--grey-bg)]"
+            >
               Generate PDF
               <ArrowRight size={12} />
             </button>
@@ -49,7 +58,13 @@ export function ReportCard() {
               <Badge>Board pack</Badge>
               <Badge tone="positive">Forwardable</Badge>
             </div>
-            <button className="inline-flex items-center gap-1 rounded-md bg-[var(--rose)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--rose-deep)]">
+            <button
+              type="button"
+              aria-disabled="true"
+              title={backendRequired}
+              onClick={() => onAction?.({ disabledReason: backendRequired })}
+              className="inline-flex items-center gap-1 rounded-md bg-[var(--rose)]/70 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--rose)]/80"
+            >
               Send to Till
               <ArrowRight size={12} />
             </button>

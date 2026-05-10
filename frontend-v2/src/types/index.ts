@@ -1,3 +1,5 @@
+import type { ActionIntent } from './uiActions';
+
 export type Persona = 'frank' | 'till' | 'heiko';
 
 export type Density = 'cozy' | 'compact';
@@ -48,6 +50,7 @@ export interface MovableHero {
   lockedValue: string;
   lockedPct: number;
   spark: number[];
+  action?: ActionIntent;
 }
 
 export interface BucketCard {
@@ -57,6 +60,7 @@ export interface BucketCard {
   tags: Tag[];
   avatars: string[];
   cta: string;
+  action?: ActionIntent;
 }
 
 export interface DecisionMeta {
@@ -106,12 +110,26 @@ export interface DecisionCard {
   trend?: DecisionTrend;
   primaryCta?: string;
   secondaryCta?: string;
+  primaryAction?: ActionIntent;
+  secondaryAction?: ActionIntent;
+  recommendationId?: string;
+  status?:
+    | 'open'
+    | 'accepted_as_proposal'
+    | 'partial_proposed'
+    | 'rejected'
+    | 'snoozed'
+    | 'queued_for_renewal'
+    | 'in_ab_test'
+    | 'implemented'
+    | 'cancelled';
 }
 
 export interface TrustTile {
   label: string;
   value: string;
   caption: string;
+  action?: ActionIntent;
 }
 
 export interface LostQuoteData {
@@ -121,6 +139,7 @@ export interface LostQuoteData {
   pValue: number;
   implication: string;
   linkedRecords?: number;
+  action?: ActionIntent;
 }
 
 export interface AbTestCard {
@@ -135,6 +154,11 @@ export interface AbTestCard {
   lift: string;
   liftTone: Tone;
   status: string;
+  actions?: {
+    hold?: ActionIntent;
+    stop?: ActionIntent;
+    promote?: ActionIntent;
+  };
 }
 
 export interface SkuRow {
@@ -148,6 +172,7 @@ export interface SkuRow {
   status: 'movable' | 'locked' | 'abtest' | 'outlier';
   statusLabel: string;
   actionLabel: string;
+  action?: ActionIntent;
 }
 
 export interface LongTailMixSegment {
