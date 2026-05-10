@@ -149,6 +149,21 @@
             "headline": "Article 200832-E margin erosion 30.6% → 6.4%"
           }
         }
+      },
+      "sliceAbAction": {
+        "drawer": {
+          "title": "Start A/B test",
+          "description": "Slice a measured price test for 200832-E.",
+          "formKind": "ab_setup",
+          "context": {
+            "articleId": "200832-E",
+            "cluster": "BKAES",
+            "sourceKind": "margin_erosion",
+            "headline": "A/B 200832-E",
+            "currentPrice": 4.10,
+            "targetPrice": 4.38
+          }
+        }
       }
     },
     {
@@ -235,6 +250,21 @@
             "headline": "Article 204604 margin erosion 32.7% → 11.8%"
           }
         }
+      },
+      "sliceAbAction": {
+        "drawer": {
+          "title": "Start A/B test",
+          "description": "Slice a measured price test for 204604.",
+          "formKind": "ab_setup",
+          "context": {
+            "articleId": "204604",
+            "cluster": "BKAGG",
+            "sourceKind": "margin_erosion",
+            "headline": "A/B 204604",
+            "currentPrice": 5.20,
+            "targetPrice": 5.55
+          }
+        }
       }
     },
     {
@@ -319,6 +349,21 @@
             "cluster": "BKAGG",
             "sourceKind": "margin_erosion",
             "headline": "Article 205169 — locked, queue for Q3 renewal"
+          }
+        }
+      },
+      "sliceAbAction": {
+        "drawer": {
+          "title": "Start A/B test",
+          "description": "Slice a measured price test for 205169.",
+          "formKind": "ab_setup",
+          "context": {
+            "articleId": "205169",
+            "cluster": "BKAGG",
+            "sourceKind": "margin_erosion",
+            "headline": "A/B 205169",
+            "currentPrice": 8.40,
+            "targetPrice": 9.10
           }
         }
       }

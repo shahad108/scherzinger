@@ -114,6 +114,7 @@ export interface DecisionCard {
   secondaryAction?: ActionIntent;
   partialAction?: ActionIntent;
   snoozeAction?: ActionIntent;
+  sliceAbAction?: ActionIntent;
   recommendationId?: string;
   status?:
     | 'open'

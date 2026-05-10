@@ -110,15 +110,16 @@ export function PageHead({
               label: 'All Departments',
               action: {
                 drawer: {
-                  title: 'Department filter',
-                  description: "Choose a commercial lens for this Action Center view. The live BFF will persist this as a saved view filter; for now the current page remains in Frank's default pricing workspace.",
+                  title: 'Department filter — preview',
+                  description: "Department-scoped filtering ships with saved-view persistence in Phase 7. Today the Action Center stays in Frank's default pricing workspace.",
                   items: [
+                    { label: 'Status', value: 'Preview — read-only' },
                     { label: 'Active', value: 'Pricing & Analytics' },
                     { label: 'Available', value: 'Sales, Operations' },
-                    { label: 'Next step', value: 'Saved-view persistence is already available in Settings.' },
+                    { label: 'Lands in', value: 'Phase 7 (saved views)' },
                   ],
                 },
-                toast: 'Department filter opened',
+                toast: 'Department filter is preview-only until Phase 7.',
                 toastSeverity: 'info',
               } satisfies ActionIntent,
             },

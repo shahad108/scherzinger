@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ChevronDown, MoreHorizontal, Plus, Clock, GripVertical } from 'lucide-react';
 import { chart } from '@/lib/chartColors';
-import { useAcceptDecision, useDeclineDecision, useStartAbTest } from '@/data/api/useActions';
+import { useAcceptDecision, useDeclineDecision } from '@/data/api/useActions';
 import { MessageStrip } from '@/components/fiori/MessageStrip';
 import type { DecisionCard, DecisionFact, DecisionTrend } from '@/types';
 import type { ActionIntent } from '@/types/uiActions';
@@ -232,7 +232,6 @@ export function DecisionCards({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const acceptMutation = useAcceptDecision();
   const declineMutation = useDeclineDecision();
-  const sliceMutation = useStartAbTest();
 
   const handleAccept = (d: DecisionCard, variant: 'acc' | 'nim' | 'par' = 'acc') => {
     setErrorMsg(null);
@@ -335,23 +334,22 @@ export function DecisionCards({
 
   const handleSliceAb = (d: DecisionCard) => {
     setErrorMsg(null);
-    const recId = d.recommendationId ?? d.primaryAction?.targetId ?? d.rank;
-    const aid = d.primaryAction?.articleId ?? (d as { aid?: string }).aid ?? d.rank;
-    sliceMutation.mutate(
-      {
-        target_type: 'recommendation',
-        target_id: recId,
-        recommendation_id: recId,
-        aid,
-        slice_pct: 0.1,
-        after: { headline: d.headline ?? d.title, slice: '10%' },
+    // Phase 4 — open the ab_setup form drawer so the analyst chooses
+    // control/treatment/slice/duration before starting the test.
+    const intent = d.sliceAbAction ?? {
+      drawer: {
+        title: 'Start A/B test',
+        description: `Slice a measured price test for ${d.primaryAction?.articleId ?? d.recommendationId ?? d.title}.`,
+        formKind: 'ab_setup',
+        context: {
+          recommendationId: d.recommendationId ?? d.primaryAction?.targetId,
+          articleId: d.primaryAction?.articleId,
+          cluster: d.primaryAction?.cluster,
+          headline: d.headline ?? d.title,
+        },
       },
-      {
-        onSuccess: () => onAction?.({ toast: `A/B test started for "${d.headline ?? d.title}".` }),
-        onError: (err) =>
-          setErrorMsg(`Could not start A/B for "${d.headline ?? d.title}": ${(err as Error).message}`),
-      },
-    );
+    };
+    onAction?.(intent);
   };
 
   const visible = (decisions ?? []).filter((d) => !accepted.has(d.rank));

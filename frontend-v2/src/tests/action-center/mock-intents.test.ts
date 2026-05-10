@@ -58,12 +58,15 @@ describe('action-center mock — Phase 1 intents', () => {
     }
   });
 
-  it('every decision carries partialAction + snoozeAction form drawers', () => {
+  it('every decision carries partialAction + snoozeAction + sliceAbAction form drawers', () => {
     for (const d of mock.decisions) {
       expect(d.partialAction?.drawer?.formKind).toBe('partial_accept');
       expect(d.partialAction?.drawer?.context?.recommendationId).toBe(d.recommendationId);
       expect(d.snoozeAction?.drawer?.formKind).toBe('snooze');
       expect(d.snoozeAction?.drawer?.context?.recommendationId).toBe(d.recommendationId);
+      expect(d.sliceAbAction?.drawer?.formKind).toBe('ab_setup');
+      // ab_setup uses articleId (not recommendationId) since the test is keyed by the SKU.
+      expect(d.sliceAbAction?.drawer?.context?.articleId).toBeTruthy();
     }
   });
 
