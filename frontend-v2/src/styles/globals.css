@@ -2330,3 +2330,16 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
+
+/* Phase 2 deep-link focus pulse — applied via [data-focus-pulse="1"]
+   to the wrapping <div id="block-…"> when the page mounts with a
+   ?focus= query param. Two-second highlight then fades back. */
+[data-focus-pulse="1"] {
+  animation: pz-focus-pulse 2.2s ease-out 1;
+  border-radius: 14px;
+}
+@keyframes pz-focus-pulse {
+  0%   { box-shadow: 0 0 0 0 var(--rose, #d4357a); outline: 2px solid var(--rose, #d4357a); outline-offset: 2px; }
+  60%  { box-shadow: 0 0 0 14px transparent; outline-color: var(--rose, #d4357a); }
+  100% { box-shadow: 0 0 0 0 transparent; outline: 2px solid transparent; outline-offset: 2px; }
+}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useStudio } from '@/data/api/useStudio';
 import { PageHead } from './components/PageHead';
 import { SkuPicker } from './components/SkuPicker';
@@ -11,10 +12,16 @@ import { DecisionFooter } from './components/DecisionFooter';
 import { RationaleMemo } from './components/RationaleMemo';
 import { CrossLinks } from './components/CrossLinks';
 import { StudioSkeleton } from './components/StudioSkeleton';
+import { DeepLinkBanner } from './components/DeepLinkBanner';
 
 export default function PricingStudioPage() {
   const { data, isLoading } = useStudio();
-  const [selectedAid, setSelectedAid] = useState<string | null>(null);
+  const [params] = useSearchParams();
+  // Phase 2 — `aid` from the URL drives initial selection so deep links
+  // from Action Center / Margin / Forecasting land on the exact SKU.
+  // Local state then overrides if the user picks a different SKU.
+  const urlAid = params.get('aid');
+  const [selectedAid, setSelectedAid] = useState<string | null>(urlAid);
   const [activeOption, setActiveOption] = useState<ActiveOptionView | null>(null);
 
   useEffect(() => {
@@ -24,10 +31,21 @@ export default function PricingStudioPage() {
     };
   }, []);
 
+  // If the URL aid changes (e.g. user navigates from another deep-link
+  // CTA), re-select. Local picks win until the URL aid changes again.
+  useEffect(() => {
+    if (urlAid) setSelectedAid(urlAid);
+  }, [urlAid]);
+
   const effectiveAid = selectedAid ?? data?.defaultAid ?? '';
   const selectedSku = useMemo(
     () => data?.skus.find((s) => s.aid === effectiveAid) ?? null,
     [data, effectiveAid],
+  );
+  // Phase 2 acceptance: when ?aid= points at an unknown SKU we must NOT
+  // navigate away — render an explicit "SKU not found" banner instead.
+  const requestedSkuMissing = Boolean(
+    urlAid && data && !data.skus.some((s) => s.aid === urlAid),
   );
 
   const heroView: HeroView | null = useMemo(() => {
@@ -88,6 +106,7 @@ export default function PricingStudioPage() {
   return (
     <section id="screen-studio" className="w-full px-6 py-6">
       <PageHead header={data.header} />
+      <DeepLinkBanner effectiveAid={effectiveAid} skuFound={!requestedSkuMissing} />
 
       <div className="ws-grid">
         <SkuPicker

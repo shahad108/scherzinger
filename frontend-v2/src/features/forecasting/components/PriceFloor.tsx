@@ -3,6 +3,8 @@ import type { FloorRow } from '@/types/forecast';
 interface Props {
   rows: FloorRow[];
   footnote: string;
+  /** Phase 2 deep link — highlight the row whose `article` matches. */
+  highlightArticle?: string | null;
 }
 
 function ClusterChip({ label, conf }: { label: string; conf: 'green' | 'amber' | 'red' }) {
@@ -26,7 +28,7 @@ function renderBoldFootnote(text: string) {
   );
 }
 
-export function PriceFloor({ rows, footnote }: Props) {
+export function PriceFloor({ rows, footnote, highlightArticle }: Props) {
   return (
     <>
       <div className="section-row">
@@ -59,8 +61,17 @@ export function PriceFloor({ rows, footnote }: Props) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => (
-                <tr key={`${r.customerId}-${r.article}-${i}`} className={r.belowFloor ? 'hl' : undefined}>
+              {rows.map((r, i) => {
+                const isFocused = highlightArticle && r.article === highlightArticle;
+                return (
+                <tr
+                  key={`${r.customerId}-${r.article}-${i}`}
+                  className={r.belowFloor ? 'hl' : undefined}
+                  data-focus-pulse={isFocused ? '1' : undefined}
+                  ref={(node) => {
+                    if (isFocused && node) node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                >
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                       <span className={`tier-chip ${r.tier}`}>{r.tier}</span>
@@ -115,7 +126,8 @@ export function PriceFloor({ rows, footnote }: Props) {
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

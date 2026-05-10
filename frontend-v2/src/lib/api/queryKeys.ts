@@ -85,4 +85,7 @@ export const qk = {
   me: ['me'] as const,
   version: ['screens-version'] as const,
   auditTrail: (since: string) => ['audit-trail', since] as const,
+
+  // Phase 2 — recommendation lookup for deep-link banners.
+  recommendation: (ref: string) => ['recommendation', ref] as const,
 } as const;

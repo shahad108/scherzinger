@@ -60,10 +60,13 @@ const FALLBACK_STATUSES = new Set([404, 503]);
 
 export async function apiFetch<T>(
   path: string,
-  options?: { params?: QueryParams },
+  options?: { params?: QueryParams; mockResolve?: () => T },
 ): Promise<T> {
   if (USE_MOCKS) {
-    // Mocks ignore params: every shape is fully covered by the bundled JSON.
+    // Path-specific synthesizer wins (used by Phase 2 deep-link surfaces
+    // where the resource is identified by an opaque ref instead of a
+    // bundled JSON fixture). Otherwise fall back to the static mock.
+    if (options?.mockResolve) return options.mockResolve();
     return readMock<T>(path);
   }
 
