@@ -127,6 +127,46 @@ describe('apiFetch', () => {
     });
   });
 
+  describe('lang routing (P13.T3)', () => {
+    beforeEach(() => {
+      import.meta.env.VITE_SCHERZINGER_API = 'https://api.test/api/v1/screens';
+      delete (import.meta.env as Record<string, unknown>).VITE_ALLOW_MOCK_FALLBACK;
+      // Set the pryzm_lang cookie that i18n/index.ts writes on languageChanged.
+      document.cookie = 'pryzm_lang=en; path=/';
+    });
+
+    it('appends ?lang=en from the pryzm_lang cookie', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const { apiFetch } = await importClient();
+      await apiFetch('/shell');
+      const url = fetchMock.mock.calls[0][0] as string;
+      expect(url).toContain('lang=en');
+    });
+
+    it('does NOT override an explicit lang param', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const { apiFetch } = await importClient();
+      await apiFetch('/shell', { params: { lang: 'de' } });
+      const url = fetchMock.mock.calls[0][0] as string;
+      expect(url).toContain('lang=de');
+      expect(url).not.toContain('lang=en');
+    });
+  });
+
   describe('hybrid mode (mock fallback enabled)', () => {
     beforeEach(() => {
       import.meta.env.VITE_SCHERZINGER_API = 'https://api.test/api/v1/screens';

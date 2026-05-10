@@ -1,8 +1,15 @@
 import { Bell, Calendar, ChevronDown, MoreHorizontal, UserPlus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { TopBarSearch } from './TopBarSearch';
 import { PersonaSwitcher } from './PersonaSwitcher';
 
 export function TopBar() {
+  const { i18n, t } = useTranslation();
+  const lang = (i18n.language ?? 'de').slice(0, 2).toLowerCase();
+  const toggleLang = () => {
+    void i18n.changeLanguage(lang === 'de' ? 'en' : 'de');
+  };
+
   return (
     <header className="pz-topbar" aria-label="Top utility bar">
       <div className="pz-logo" aria-label="Pryzm">
@@ -23,15 +30,15 @@ export function TopBar() {
 
       <TopBarSearch />
 
-      <button type="button" className="pz-pill" aria-label="Add person">
-        <UserPlus size={14} /> Add person
+      <button type="button" className="pz-pill" aria-label={t('topbar.addPerson')}>
+        <UserPlus size={14} /> {t('topbar.addPerson')}
       </button>
 
-      <button type="button" className="pz-pill has-dot" aria-label="Notifications, unread items">
-        <Bell size={14} /> Notifications
+      <button type="button" className="pz-pill has-dot" aria-label={t('topbar.notifications')}>
+        <Bell size={14} /> {t('topbar.notifications')}
       </button>
 
-      <button type="button" className="pz-pill-icon" aria-label="More">
+      <button type="button" className="pz-pill-icon" aria-label={t('common.more')}>
         <MoreHorizontal size={14} />
       </button>
 
@@ -39,19 +46,29 @@ export function TopBar() {
 
       <PersonaSwitcher />
 
-      <button type="button" className="pz-lang" aria-label="Language">
-        En <ChevronDown size={9} />
+      <button
+        type="button"
+        className="pz-lang"
+        aria-label="Language"
+        onClick={toggleLang}
+        title={lang === 'de' ? 'Switch to English' : 'Auf Deutsch umschalten'}
+      >
+        {lang === 'de' ? 'De' : 'En'} <ChevronDown size={9} />
       </button>
 
       <div className="pz-date">
         <Calendar size={14} />
         <span>
-          {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          {new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })}
         </span>
       </div>
 
       <button type="button" className="pz-cta">
-        Create <span aria-hidden>→</span>
+        {t('topbar.create')} <span aria-hidden>→</span>
       </button>
     </header>
   );

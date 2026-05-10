@@ -1,9 +1,15 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import i18n from '@/i18n';
 import { TopBar } from '@/app/layout/TopBar';
 
 describe('TopBar', () => {
+  beforeAll(async () => {
+    // Test against English so the labels match the assertions verbatim.
+    await i18n.changeLanguage('en');
+  });
+
   it('renders logo, search, persona, language, date, and Create CTA', () => {
     render(
       <MemoryRouter>

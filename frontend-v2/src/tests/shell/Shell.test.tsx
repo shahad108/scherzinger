@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import i18n from '@/i18n';
 import { Shell } from '@/app/layout/Shell';
 
 function withProviders(ui: React.ReactNode) {
@@ -20,6 +21,10 @@ function withProviders(ui: React.ReactNode) {
 }
 
 describe('Shell', () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage('en');
+  });
+
   it('mounts TopBar, Sidebar, Outlet, and RightRail together', async () => {
     render(withProviders(<Shell />));
     await waitFor(() => expect(screen.getByText('PRO mode activated')).toBeInTheDocument());

@@ -31,9 +31,15 @@ function mockKey(path: string): string {
 export type QueryParams = Record<string, string | number | boolean | undefined | null>;
 
 function buildQuery(params?: QueryParams): string {
-  if (!params) return '';
+  // P13.T3: every BFF request gets ?lang= from the pryzm_lang cookie unless
+  // the caller already supplied one. The cookie is written by i18n/index.ts
+  // on every languageChanged event.
+  const cookieLang = readCookie('pryzm_lang');
+  const merged: QueryParams = { ...(params ?? {}) };
+  if (cookieLang && merged.lang === undefined) merged.lang = cookieLang;
+
   const usp = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) {
+  for (const [k, v] of Object.entries(merged)) {
     if (v === undefined || v === null || v === '') continue;
     usp.append(k, String(v));
   }
