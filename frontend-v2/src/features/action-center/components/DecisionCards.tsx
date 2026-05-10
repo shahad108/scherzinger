@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ChevronDown, MoreHorizontal, Plus, Clock, GripVertical } from 'lucide-react';
 import { chart } from '@/lib/chartColors';
-import { useAcceptDecision, useDeclineDecision, usePartialAccept, useStartAbTest } from '@/data/api/useActions';
+import { useAcceptDecision, useDeclineDecision, useStartAbTest } from '@/data/api/useActions';
 import { MessageStrip } from '@/components/fiori/MessageStrip';
 import type { DecisionCard, DecisionFact, DecisionTrend } from '@/types';
 import type { ActionIntent } from '@/types/uiActions';
@@ -232,18 +232,41 @@ export function DecisionCards({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const acceptMutation = useAcceptDecision();
   const declineMutation = useDeclineDecision();
-  const partialMutation = usePartialAccept();
   const sliceMutation = useStartAbTest();
 
   const handleAccept = (d: DecisionCard, variant: 'acc' | 'nim' | 'par' = 'acc') => {
-    const id = d.rank;
     setErrorMsg(null);
+
+    // Phase 3 — "par" (Apply with custom amount) opens the partial_accept
+    // form drawer instead of dispatching directly. The form submits to
+    // the same backend kind but captures price + reason for the audit row.
+    if (variant === 'par') {
+      const intent = d.partialAction ?? {
+        drawer: {
+          title: 'Partial acceptance',
+          description: `Soft proposal for ${d.primaryAction?.articleId ?? d.recommendationId ?? d.title}.`,
+          formKind: 'partial_accept',
+          context: {
+            recommendationId: d.recommendationId ?? d.primaryAction?.targetId,
+            articleId: d.primaryAction?.articleId,
+            customerId: d.primaryAction?.customerId,
+            cluster: d.primaryAction?.cluster,
+            sourceKind: d.primaryAction?.sourceScreen,
+            headline: d.headline ?? d.title,
+          },
+        },
+      };
+      onAction?.(intent);
+      return;
+    }
+
+    const id = d.rank;
     setAccepted((prev) => {
       const next = new Set(prev);
       next.add(id);
       return next;
     });
-    const mutation = variant === 'acc' ? acceptMutation : partialMutation;
+    const mutation = acceptMutation;
     // Prefer the backend-attached intent so target_id is the stable
     // recommendation ref and the row created here is the same one the
     // composer will look up on the next refresh.
@@ -263,7 +286,7 @@ export function DecisionCards({
             toast:
               variant === 'acc'
                 ? `Accepted "${d.headline ?? d.title}".`
-                : `Queued partial acceptance for "${d.headline ?? d.title}".`,
+                : `Queued "${d.headline ?? d.title}" for the next cycle.`,
           }),
         onError: (err) => {
           setAccepted((prev) => {

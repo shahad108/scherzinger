@@ -50,15 +50,11 @@ export function AbTestList({
           onClick={() =>
             onAction?.({
               drawer: {
-                title: 'Start new A/B test',
-                description: 'Select a recommendation or SKU first, then slice it into a measured test. This keeps the A/B test tied to an auditable pricing decision.',
-                items: [
-                  { label: 'Recommended', value: 'Use Slice as A/B from a decision card.' },
-                  { label: 'Fallback', value: 'Open Pricing Studio and choose an article.' },
-                ],
+                title: 'Start A/B test',
+                description: 'Slice a measured price test against an article. Pre-fill the article id from a SKU row if you have one in mind.',
+                formKind: 'ab_setup',
+                context: { sourceScreen: 'action-center' },
               },
-              toast: 'A/B setup guidance opened',
-              toastSeverity: 'info',
             })
           }
           className="inline-flex items-center gap-1.5 rounded-full border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--grey-bg)]"
@@ -130,11 +126,12 @@ export function AbTestList({
                 onClick={() =>
                   onAction?.(
                     t.actions?.hold ?? {
-                      kind: 'hold_ab_test',
-                      targetType: 'ab_test',
-                      targetId: t.id,
-                      body: { test_id: t.id, aid: t.title },
-                      toast: `A/B test ${t.title} put on hold.`,
+                      drawer: {
+                        title: `Hold A/B test · ${t.title}`,
+                        description: 'Pause the experiment without ending it.',
+                        formKind: 'ab_hold',
+                        context: { abTestId: t.id, articleId: t.title, headline: `A/B test ${t.title}` },
+                      },
                     },
                   )
                 }
@@ -165,11 +162,12 @@ export function AbTestList({
                 onClick={() =>
                   onAction?.(
                     t.actions?.promote ?? {
-                      kind: 'promote_ab_test',
-                      targetType: 'ab_test',
-                      targetId: t.id,
-                      body: { test_id: t.id, aid: t.title },
-                      toast: `${t.id} promoted to rollout.`,
+                      drawer: {
+                        title: `Promote A/B test · ${t.title}`,
+                        description: 'Promote the treatment to a rollout proposal.',
+                        formKind: 'ab_promote',
+                        context: { abTestId: t.id, articleId: t.title, headline: `A/B test ${t.title}` },
+                      },
                     },
                   )
                 }

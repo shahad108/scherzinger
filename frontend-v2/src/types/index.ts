@@ -112,6 +112,8 @@ export interface DecisionCard {
   secondaryCta?: string;
   primaryAction?: ActionIntent;
   secondaryAction?: ActionIntent;
+  partialAction?: ActionIntent;
+  snoozeAction?: ActionIntent;
   recommendationId?: string;
   status?:
     | 'open'

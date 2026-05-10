@@ -50,9 +50,29 @@ describe('action-center mock — Phase 1 intents', () => {
 
   it('every A/B test carries hold + stop + promote intents', () => {
     for (const t of mock.abTests) {
-      expect(t.actions?.hold?.kind).toBe('hold_ab_test');
+      // Phase 3 — Hold + Promote open form drawers (no direct kind);
+      // Stop stays a direct mutation.
+      expect(t.actions?.hold?.drawer?.formKind).toBe('ab_hold');
+      expect(t.actions?.promote?.drawer?.formKind).toBe('ab_promote');
       expect(t.actions?.stop?.kind).toBe('stop_ab_test');
-      expect(t.actions?.promote?.kind).toBe('promote_ab_test');
+    }
+  });
+
+  it('every decision carries partialAction + snoozeAction form drawers', () => {
+    for (const d of mock.decisions) {
+      expect(d.partialAction?.drawer?.formKind).toBe('partial_accept');
+      expect(d.partialAction?.drawer?.context?.recommendationId).toBe(d.recommendationId);
+      expect(d.snoozeAction?.drawer?.formKind).toBe('snooze');
+      expect(d.snoozeAction?.drawer?.context?.recommendationId).toBe(d.recommendationId);
+    }
+  });
+
+  it('locked SKU rows open the queue_renewal form drawer', () => {
+    const locked = mock.skuTable.filter((r) => r.status === 'locked');
+    expect(locked.length).toBeGreaterThan(0);
+    for (const r of locked) {
+      expect(r.action.drawer?.formKind).toBe('queue_renewal');
+      expect(r.action.drawer?.context?.articleId).toBe(r.article);
     }
   });
 });

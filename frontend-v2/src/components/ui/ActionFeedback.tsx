@@ -3,12 +3,24 @@ import { X } from 'lucide-react';
 import { Drawer } from '@/components/ui/Drawer';
 import { MessageStrip } from '@/components/fiori/MessageStrip';
 import { useActionFeedbackStore } from '@/stores/actionFeedbackStore';
+import { PartialAcceptForm } from '@/components/forms/PartialAcceptForm';
+import { SnoozeForm } from '@/components/forms/SnoozeForm';
+import { QueueRenewalForm } from '@/components/forms/QueueRenewalForm';
+import { AbSetupForm } from '@/components/forms/AbSetupForm';
+import { AbHoldPromoteForm } from '@/components/forms/AbHoldPromoteForm';
 
 export function ActionFeedback() {
   const toasts = useActionFeedbackStore((s) => s.toasts);
   const dismissToast = useActionFeedbackStore((s) => s.dismissToast);
   const drawer = useActionFeedbackStore((s) => s.drawer);
   const closeDrawer = useActionFeedbackStore((s) => s.closeDrawer);
+  const pushToast = useActionFeedbackStore((s) => s.pushToast);
+
+  // Phase 3 — when the intent carries a `formKind`, render the matching
+  // typed form. Otherwise fall back to the legacy read-only items panel
+  // (kept for `decision_detail` / `trust_explain` style explanations).
+  const formKind = drawer?.formKind;
+  const ctx = drawer?.context ?? {};
 
   return (
     <>
@@ -34,8 +46,30 @@ export function ActionFeedback() {
         ))}
       </div>
 
-      <Drawer open={!!drawer} onOpenChange={(open) => !open && closeDrawer()} width={460}>
-        {drawer && (
+      <Drawer
+        open={!!drawer}
+        onOpenChange={(open) => !open && closeDrawer()}
+        width={formKind ? 520 : 460}
+      >
+        {drawer && formKind === 'partial_accept' && (
+          <PartialAcceptForm context={ctx} onClose={closeDrawer} onToast={pushToast} />
+        )}
+        {drawer && formKind === 'snooze' && (
+          <SnoozeForm context={ctx} onClose={closeDrawer} onToast={pushToast} />
+        )}
+        {drawer && formKind === 'queue_renewal' && (
+          <QueueRenewalForm context={ctx} onClose={closeDrawer} onToast={pushToast} />
+        )}
+        {drawer && formKind === 'ab_setup' && (
+          <AbSetupForm context={ctx} onClose={closeDrawer} onToast={pushToast} />
+        )}
+        {drawer && formKind === 'ab_hold' && (
+          <AbHoldPromoteForm context={ctx} onClose={closeDrawer} onToast={pushToast} mode="hold" />
+        )}
+        {drawer && formKind === 'ab_promote' && (
+          <AbHoldPromoteForm context={ctx} onClose={closeDrawer} onToast={pushToast} mode="promote" />
+        )}
+        {drawer && !formKind && (
           <div className="flex h-full flex-col p-6 pt-14">
             <RadixDialog.Title className="font-display text-xl font-bold tracking-tight text-[var(--ink)]">
               {drawer.title}

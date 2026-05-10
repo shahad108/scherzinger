@@ -119,6 +119,36 @@
         "route": "/pricing",
         "query": { "aid": "200832-E", "recommendation": "margin_erosion:200832-E", "source": "action-center" },
         "toast": "Opening 200832-E in Pricing Studio."
+      },
+      "partialAction": {
+        "drawer": {
+          "title": "Partial acceptance",
+          "description": "Soft proposal for 200832-E.",
+          "formKind": "partial_accept",
+          "context": {
+            "recommendationId": "margin_erosion:200832-E",
+            "articleId": "200832-E",
+            "cluster": "BKAES",
+            "sourceKind": "margin_erosion",
+            "headline": "Article 200832-E margin erosion 30.6% → 6.4%",
+            "currentPrice": 4.10,
+            "targetPrice": 4.38
+          }
+        }
+      },
+      "snoozeAction": {
+        "drawer": {
+          "title": "Snooze recommendation",
+          "description": "Hide until a future review window.",
+          "formKind": "snooze",
+          "context": {
+            "recommendationId": "margin_erosion:200832-E",
+            "articleId": "200832-E",
+            "cluster": "BKAES",
+            "sourceKind": "margin_erosion",
+            "headline": "Article 200832-E margin erosion 30.6% → 6.4%"
+          }
+        }
       }
     },
     {
@@ -175,6 +205,36 @@
         "route": "/pricing",
         "query": { "aid": "204604", "recommendation": "margin_erosion:204604", "source": "action-center" },
         "toast": "Opening 204604 in Pricing Studio."
+      },
+      "partialAction": {
+        "drawer": {
+          "title": "Partial acceptance",
+          "description": "Soft proposal for 204604.",
+          "formKind": "partial_accept",
+          "context": {
+            "recommendationId": "margin_erosion:204604",
+            "articleId": "204604",
+            "cluster": "BKAGG",
+            "sourceKind": "margin_erosion",
+            "headline": "Article 204604 margin erosion 32.7% → 11.8%",
+            "currentPrice": 5.20,
+            "targetPrice": 5.55
+          }
+        }
+      },
+      "snoozeAction": {
+        "drawer": {
+          "title": "Snooze recommendation",
+          "description": "Hide until a future review window.",
+          "formKind": "snooze",
+          "context": {
+            "recommendationId": "margin_erosion:204604",
+            "articleId": "204604",
+            "cluster": "BKAGG",
+            "sourceKind": "margin_erosion",
+            "headline": "Article 204604 margin erosion 32.7% → 11.8%"
+          }
+        }
       }
     },
     {
@@ -231,6 +291,36 @@
         "route": "/forecasting",
         "query": { "queue": "renewals", "article": "205169" },
         "toast": "Opening renewal queue for 205169."
+      },
+      "partialAction": {
+        "drawer": {
+          "title": "Partial acceptance",
+          "description": "Soft proposal for 205169.",
+          "formKind": "partial_accept",
+          "context": {
+            "recommendationId": "margin_erosion:205169",
+            "articleId": "205169",
+            "cluster": "BKAGG",
+            "sourceKind": "margin_erosion",
+            "headline": "Article 205169 — locked, queue for Q3 renewal",
+            "currentPrice": 8.40,
+            "targetPrice": 9.10
+          }
+        }
+      },
+      "snoozeAction": {
+        "drawer": {
+          "title": "Snooze recommendation",
+          "description": "Hide until a future review window.",
+          "formKind": "snooze",
+          "context": {
+            "recommendationId": "margin_erosion:205169",
+            "articleId": "205169",
+            "cluster": "BKAGG",
+            "sourceKind": "margin_erosion",
+            "headline": "Article 205169 — locked, queue for Q3 renewal"
+          }
+        }
       }
     }
   ],
@@ -379,15 +469,14 @@
         "articleId": "205169",
         "sourceScreen": "action-center",
         "drawer": {
-          "title": "Renewal queued: 205169",
-          "description": "This item is contract locked. The renewal queue records the next pricing review window.",
-          "items": [
-            { "label": "Article", "value": "205169" },
-            { "label": "Status", "value": "Locked" },
-            { "label": "Next owner", "value": "Till renegotiation queue" }
-          ]
-        },
-        "toast": "205169 added to the renewal queue."
+          "title": "Queue renewal · 205169",
+          "description": "Schedule the contract renewal review for this SKU.",
+          "formKind": "queue_renewal",
+          "context": {
+            "articleId": "205169",
+            "headline": "Renewal queue · 205169"
+          }
+        }
       }
     },
     {
@@ -424,15 +513,14 @@
         "articleId": "201773",
         "sourceScreen": "action-center",
         "drawer": {
-          "title": "Renewal queued: 201773",
-          "description": "This item is contract locked. The renewal queue records the next pricing review window.",
-          "items": [
-            { "label": "Article", "value": "201773" },
-            { "label": "Status", "value": "Locked" },
-            { "label": "Next owner", "value": "Till renegotiation queue" }
-          ]
-        },
-        "toast": "201773 added to the renewal queue."
+          "title": "Queue renewal · 201773",
+          "description": "Schedule the contract renewal review for this SKU.",
+          "formKind": "queue_renewal",
+          "context": {
+            "articleId": "201773",
+            "headline": "Renewal queue · 201773"
+          }
+        }
       }
     },
     {
@@ -567,14 +655,15 @@
       "status": "Day 9 / 21",
       "actions": {
         "hold": {
-          "kind": "hold_ab_test",
-          "targetType": "ab_test",
-          "targetId": "ab-1",
           "abTestId": "ab-1",
           "articleId": "205418-A",
           "sourceScreen": "action-center",
-          "body": { "test_id": "ab-1", "aid": "205418-A" },
-          "toast": "A/B test 205418-A put on hold."
+          "drawer": {
+            "title": "Hold A/B test · 205418-A",
+            "description": "Pause the experiment without ending it.",
+            "formKind": "ab_hold",
+            "context": { "abTestId": "ab-1", "articleId": "205418-A", "headline": "A/B test 205418-A" }
+          }
         },
         "stop": {
           "kind": "stop_ab_test",
@@ -588,14 +677,15 @@
           "toastSeverity": "warning"
         },
         "promote": {
-          "kind": "promote_ab_test",
-          "targetType": "ab_test",
-          "targetId": "ab-1",
           "abTestId": "ab-1",
           "articleId": "205418-A",
           "sourceScreen": "action-center",
-          "body": { "test_id": "ab-1", "aid": "205418-A" },
-          "toast": "ab-1 promoted to rollout."
+          "drawer": {
+            "title": "Promote A/B test · 205418-A",
+            "description": "Promote the treatment to a rollout proposal.",
+            "formKind": "ab_promote",
+            "context": { "abTestId": "ab-1", "articleId": "205418-A", "headline": "A/B test 205418-A" }
+          }
         }
       }
     },
@@ -613,14 +703,15 @@
       "status": "Day 3 / 14",
       "actions": {
         "hold": {
-          "kind": "hold_ab_test",
-          "targetType": "ab_test",
-          "targetId": "ab-2",
           "abTestId": "ab-2",
           "articleId": "211094-C",
           "sourceScreen": "action-center",
-          "body": { "test_id": "ab-2", "aid": "211094-C" },
-          "toast": "A/B test 211094-C put on hold."
+          "drawer": {
+            "title": "Hold A/B test · 211094-C",
+            "description": "Pause the experiment without ending it.",
+            "formKind": "ab_hold",
+            "context": { "abTestId": "ab-2", "articleId": "211094-C", "headline": "A/B test 211094-C" }
+          }
         },
         "stop": {
           "kind": "stop_ab_test",
@@ -634,14 +725,15 @@
           "toastSeverity": "warning"
         },
         "promote": {
-          "kind": "promote_ab_test",
-          "targetType": "ab_test",
-          "targetId": "ab-2",
           "abTestId": "ab-2",
           "articleId": "211094-C",
           "sourceScreen": "action-center",
-          "body": { "test_id": "ab-2", "aid": "211094-C" },
-          "toast": "ab-2 promoted to rollout."
+          "drawer": {
+            "title": "Promote A/B test · 211094-C",
+            "description": "Promote the treatment to a rollout proposal.",
+            "formKind": "ab_promote",
+            "context": { "abTestId": "ab-2", "articleId": "211094-C", "headline": "A/B test 211094-C" }
+          }
         }
       }
     }
