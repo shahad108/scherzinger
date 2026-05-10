@@ -106,7 +106,11 @@ export async function apiFetch<T>(
 export async function postJson<T>(
   path: string,
   body?: unknown,
-  options?: { params?: QueryParams; mockResolve?: () => T },
+  options?: {
+    params?: QueryParams;
+    mockResolve?: () => T;
+    headers?: Record<string, string>;
+  },
 ): Promise<T> {
   if (USE_MOCKS) {
     return (options?.mockResolve ? options.mockResolve() : ({} as T));
@@ -114,7 +118,10 @@ export async function postJson<T>(
   const url = `${BASE}${path}${buildQuery(options?.params)}`;
 
   const csrf = readCookie('pryzm_csrf');
-  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    ...(options?.headers ?? {}),
+  };
   if (csrf) headers['x-csrf'] = csrf;
 
   const res = await fetch(url, {

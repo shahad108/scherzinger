@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ChevronDown, MoreHorizontal, Plus, Clock, GripVertical } from 'lucide-react';
 import { chart } from '@/lib/chartColors';
+import { useAcceptDecision } from '@/data/api/useActions';
+import { MessageStrip } from '@/components/fiori/MessageStrip';
 import type { DecisionCard, DecisionFact, DecisionTrend } from '@/types';
 import { EmptyBlock } from './EmptyBlock';
 
@@ -187,6 +189,37 @@ function FeedbackRow({ id }: { id: string }) {
 }
 
 export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
+  // Phase 12 — optimistic accept. Cards added to `accepted` are hidden
+  // immediately; on POST /actions failure they re-appear with a MessageStrip.
+  const [accepted, setAccepted] = useState<Set<string>>(new Set());
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const acceptMutation = useAcceptDecision();
+
+  const handleAccept = (d: DecisionCard) => {
+    const id = d.rank;
+    setErrorMsg(null);
+    setAccepted((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+    acceptMutation.mutate(
+      { target_type: 'recommendation', target_id: id, after: { headline: d.headline ?? d.title } },
+      {
+        onError: (err) => {
+          setAccepted((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
+          setErrorMsg(`Could not accept "${d.headline ?? d.title}": ${(err as Error).message}`);
+        },
+      },
+    );
+  };
+
+  const visible = (decisions ?? []).filter((d) => !accepted.has(d.rank));
+
   if (!decisions || decisions.length === 0) {
     return (
       <EmptyBlock
@@ -197,6 +230,11 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
   }
   return (
     <>
+      {errorMsg && (
+        <div className="mb-3">
+          <MessageStrip severity="error" closable>{errorMsg}</MessageStrip>
+        </div>
+      )}
       <div id="sec-decisions" className="mb-3 flex items-end justify-between">
         <div>
           <h2 className="font-display text-[18px] font-bold tracking-tight text-[var(--ink)]">
@@ -217,7 +255,7 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
       </div>
 
       <div className="mb-6 flex flex-col gap-3.5">
-        {decisions.map((d, i) => (
+        {visible.map((d, i) => (
           <motion.div
             key={d.rank + d.title}
             initial={{ opacity: 0, y: 8 }}
@@ -403,7 +441,9 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
                 )}
                 <button
                   type="button"
-                  className="inline-flex flex-1 items-center justify-center gap-2 text-[13px] font-semibold text-white transition-colors"
+                  onClick={() => handleAccept(d)}
+                  disabled={acceptMutation.isPending}
+                  className="inline-flex flex-1 items-center justify-center gap-2 text-[13px] font-semibold text-white transition-colors disabled:opacity-60"
                   style={{
                     background: 'var(--rose)',
                     border: '1px solid var(--rose)',

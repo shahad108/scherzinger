@@ -28,20 +28,6 @@ export interface KpiData {
   spark?: number[];
 }
 
-export interface ActionCard {
-  id: string;
-  type: 'churn' | 'margin' | 'opportunity' | 'risk' | 'forecast' | 'pricing';
-  severity: Severity;
-  title: string;
-  subtitle: string;
-  customer?: string;
-  sku?: string;
-  amount?: number;
-  confidence?: number;
-  createdAt: string;
-  recommendedAction?: string;
-}
-
 /* Action Center page payload */
 
 export interface ActionCenterHeader {

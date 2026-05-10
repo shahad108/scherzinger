@@ -52,8 +52,6 @@ export type StudioParams = ShellParams & {
 
 export type AiParams = ShellParams;
 
-export type ActionCardsParams = ShellParams;
-
 export const qk = {
   shell: (params?: ShellParams) =>
     params ? (['shell', params] as const) : (['shell'] as const),
@@ -76,9 +74,6 @@ export const qk = {
   studioComparable: (aid: string) => ['studio-comparable', aid] as const,
 
   ai: (params?: AiParams) => (params ? (['ai', params] as const) : (['ai'] as const)),
-
-  actionCards: (params?: ActionCardsParams) =>
-    params ? (['action-cards', params] as const) : (['action-cards'] as const),
 
   // Cross-cutting.
   me: ['me'] as const,
