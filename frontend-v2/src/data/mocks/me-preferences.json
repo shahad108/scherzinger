@@ -1,0 +1,10 @@
+{
+  "language": "en",
+  "density": "comfortable",
+  "default_persona": "frank",
+  "briefing_email_cadence": "weekly",
+  "notify_quotes": true,
+  "notify_margin": true,
+  "notify_pro": true,
+  "updated_at": "2026-05-10T08:00:00Z"
+}

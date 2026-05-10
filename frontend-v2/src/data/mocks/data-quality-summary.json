@@ -1,0 +1,20 @@
+{
+  "health": "ok",
+  "last_load_at": "2026-05-10T07:52:00Z",
+  "invoice_count": 5565,
+  "quote_count": 4605,
+  "customer_count": 827,
+  "product_count": 1015,
+  "issues": [
+    {
+      "code": "missing_cost",
+      "severity": "warn",
+      "detail": "12 SKUs lack a current commodity cost benchmark for May."
+    },
+    {
+      "code": "stale_forecast",
+      "severity": "info",
+      "detail": "Forecast last refreshed 3 days ago — auto-refresh on Monday."
+    }
+  ]
+}
