@@ -40,6 +40,8 @@ export type ForecastParams = ShellParams & {
   cluster?: string;
   family?: string;
   tier?: 'A' | 'B' | 'C';
+  mode?: 'revenue' | 'margin' | 'volume';
+  horizon?: number;
 };
 
 export type StudioParams = ShellParams & { aid?: string };

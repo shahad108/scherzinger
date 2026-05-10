@@ -8,12 +8,13 @@ import { ParetoLayer } from './components/ParetoLayer';
 import { PriceFloor } from './components/PriceFloor';
 import { NewProductForecast } from './components/NewProductForecast';
 import { CrossLinkStrip } from './components/CrossLinkStrip';
+import { ForecastSkeleton } from './components/ForecastSkeleton';
 
 export default function ForecastingPage() {
   const { data, isLoading } = useForecast();
 
   if (isLoading || !data) {
-    return <section id="screen-forecast" aria-busy="true" />;
+    return <ForecastSkeleton />;
   }
 
   return (
