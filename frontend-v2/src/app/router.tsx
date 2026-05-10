@@ -1,20 +1,47 @@
+/* eslint-disable react-refresh/only-export-components -- router file
+   intentionally co-locates lazy component definitions and the (non-component)
+   `router` + `personaRoutes` exports. */
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Shell } from './layout/Shell';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 import LoginPage from '@/features/auth/Login';
-import ActionCenterPage from '@/features/action-center';
-import MarginPage from '@/features/margin-cockpit';
-import QuotesPage from '@/features/quotes';
-import ForecastingPage from '@/features/forecasting';
-import PricingPage from '@/features/pricing-studio';
-import AiPage from '@/features/ai-briefing';
-import SettingsLayout from '@/features/settings/SettingsLayout';
-import ProfilePage from '@/features/settings/ProfilePage';
-import PreferencesPage from '@/features/settings/PreferencesPage';
-import SavedViewsPage from '@/features/settings/SavedViewsPage';
-import DataQualityPage from '@/features/settings/DataQualityPage';
-import NotificationsPage from '@/features/settings/NotificationsPage';
-import NotesPage from '@/features/settings/NotesPage';
+
+/**
+ * P15.T2 — bundle splitting. Each route's screen lives in its own chunk
+ * loaded on demand; this drops the shipped initial bundle far below the
+ * Action Center 220 KB gz budget.
+ *
+ * Login + the Shell layout stay in the main bundle so the first paint
+ * after auth has no Suspense flicker.
+ */
+const ActionCenterPage = lazy(() => import('@/features/action-center'));
+const MarginPage = lazy(() => import('@/features/margin-cockpit'));
+const QuotesPage = lazy(() => import('@/features/quotes'));
+const ForecastingPage = lazy(() => import('@/features/forecasting'));
+const PricingPage = lazy(() => import('@/features/pricing-studio'));
+const AiPage = lazy(() => import('@/features/ai-briefing'));
+const SettingsLayout = lazy(() => import('@/features/settings/SettingsLayout'));
+const ProfilePage = lazy(() => import('@/features/settings/ProfilePage'));
+const PreferencesPage = lazy(() => import('@/features/settings/PreferencesPage'));
+const SavedViewsPage = lazy(() => import('@/features/settings/SavedViewsPage'));
+const DataQualityPage = lazy(() => import('@/features/settings/DataQualityPage'));
+const NotificationsPage = lazy(() => import('@/features/settings/NotificationsPage'));
+const NotesPage = lazy(() => import('@/features/settings/NotesPage'));
+
+function RouteFallback() {
+  return (
+    <div className="w-full px-6 py-6 text-[13px] text-[var(--muted)]" aria-busy="true">
+      …
+    </div>
+  );
+}
+
+const lazyRoute = (Component: React.ComponentType) => (
+  <Suspense fallback={<RouteFallback />}>
+    <Component />
+  </Suspense>
+);
 
 /**
  * Per-persona default landing (Phase 2 P2.T9).
@@ -41,27 +68,27 @@ export const router = createBrowserRouter(
       ),
       children: [
         { index: true, element: <Navigate to="/action-center" replace /> },
-        { path: 'action-center', element: <ActionCenterPage /> },
-        { path: 'margin', element: <MarginPage /> },
-        { path: 'quotes', element: <QuotesPage /> },
-        { path: 'forecasting', element: <ForecastingPage /> },
-        { path: 'pricing', element: <PricingPage /> },
-        { path: 'ai', element: <AiPage /> },
+        { path: 'action-center', element: lazyRoute(ActionCenterPage) },
+        { path: 'margin', element: lazyRoute(MarginPage) },
+        { path: 'quotes', element: lazyRoute(QuotesPage) },
+        { path: 'forecasting', element: lazyRoute(ForecastingPage) },
+        { path: 'pricing', element: lazyRoute(PricingPage) },
+        { path: 'ai', element: lazyRoute(AiPage) },
 
         // Phase 14 — Settings + adjacent routes.
         {
           path: 'settings',
-          element: <SettingsLayout />,
+          element: lazyRoute(SettingsLayout),
           children: [
             { index: true, element: <Navigate to="/settings/profile" replace /> },
-            { path: 'profile', element: <ProfilePage /> },
-            { path: 'preferences', element: <PreferencesPage /> },
-            { path: 'saved-views', element: <SavedViewsPage /> },
-            { path: 'data-quality', element: <DataQualityPage /> },
+            { path: 'profile', element: lazyRoute(ProfilePage) },
+            { path: 'preferences', element: lazyRoute(PreferencesPage) },
+            { path: 'saved-views', element: lazyRoute(SavedViewsPage) },
+            { path: 'data-quality', element: lazyRoute(DataQualityPage) },
           ],
         },
-        { path: 'notifications', element: <NotificationsPage /> },
-        { path: 'notes', element: <NotesPage /> },
+        { path: 'notifications', element: lazyRoute(NotificationsPage) },
+        { path: 'notes', element: lazyRoute(NotesPage) },
 
         // Phase 10 / 11 placeholders. Till + Heiko screens proper land later;
         // for now redirect into Frank's space so a misclick doesn't 404.

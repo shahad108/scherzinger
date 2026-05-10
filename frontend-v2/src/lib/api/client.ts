@@ -15,6 +15,8 @@
 // hyphens. So /action-center -> action-center.json and /margin-cockpit ->
 // margin-cockpit.json.
 
+import { newTraceId } from '@/lib/observability';
+
 const BASE = import.meta.env.VITE_SCHERZINGER_API as string | undefined;
 const ALLOW_FALLBACK = import.meta.env.VITE_ALLOW_MOCK_FALLBACK === '1';
 const USE_MOCKS = !BASE;
@@ -68,7 +70,10 @@ export async function apiFetch<T>(
   const url = `${BASE}${path}${buildQuery(options?.params)}`;
   let res: Response;
   try {
-    res = await fetch(url, { credentials: 'include' });
+    res = await fetch(url, {
+      credentials: 'include',
+      headers: { 'x-pryzm-trace-id': newTraceId() },
+    });
   } catch (err) {
     // Network error / DNS / CORS preflight failure / etc.
     if (ALLOW_FALLBACK) {
@@ -126,6 +131,7 @@ export async function postJson<T>(
   const csrf = readCookie('pryzm_csrf');
   const headers: Record<string, string> = {
     'content-type': 'application/json',
+    'x-pryzm-trace-id': newTraceId(),
     ...(options?.headers ?? {}),
   };
   if (csrf) headers['x-csrf'] = csrf;
