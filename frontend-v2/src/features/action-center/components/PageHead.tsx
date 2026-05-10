@@ -1,13 +1,21 @@
-import { ChevronDown, Download, Filter } from 'lucide-react';
+import { ChevronDown, Download, Filter, Layers } from 'lucide-react';
 import type { ActionCenterHeader } from '@/types';
 
 interface Props {
   header: ActionCenterHeader;
   hideLocked?: boolean;
   onToggleHideLocked?: (next: boolean) => void;
+  showAll?: boolean;
+  onToggleShowAll?: (next: boolean) => void;
 }
 
-export function PageHead({ header, hideLocked = false, onToggleHideLocked }: Props) {
+export function PageHead({
+  header,
+  hideLocked = false,
+  onToggleHideLocked,
+  showAll = false,
+  onToggleShowAll,
+}: Props) {
   return (
     <>
       <div className="mb-3 text-xs text-[var(--muted)]">
@@ -70,6 +78,27 @@ export function PageHead({ header, hideLocked = false, onToggleHideLocked }: Pro
             >
               <Filter size={13} className="text-[var(--ink-3)]" />
               {hideLocked ? 'Locked hidden' : 'Hide locked'}
+            </button>
+          )}
+          {onToggleShowAll && (
+            <button
+              type="button"
+              onClick={() => onToggleShowAll(!showAll)}
+              aria-pressed={showAll}
+              title="Expand every list block (decisions, SKU table, rejections, …) to show all rows"
+              className="inline-flex items-center gap-2 text-[12.5px] font-medium transition-colors hover:bg-[#f7f9fb]"
+              style={{
+                height: 36,
+                padding: '0 14px',
+                borderRadius: 11,
+                background: showAll ? 'var(--rose)' : 'var(--surface)',
+                border: showAll ? '1px solid var(--rose)' : '1px solid var(--border)',
+                color: showAll ? '#fff' : 'var(--ink-2)',
+                cursor: 'pointer',
+              }}
+            >
+              <Layers size={13} className={showAll ? 'text-white' : 'text-[var(--ink-3)]'} />
+              {showAll ? 'Showing all' : 'Show all'}
             </button>
           )}
           {[

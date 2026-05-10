@@ -26,13 +26,17 @@ what it should read from, and what's still pending.
 
 ## Pagination contract
 
-The endpoint accepts `?limit=` (default 5, max 200). Today only the
-rejections block honours it. Commits 4 + 5 extend it to decisions and
-sku_table.
+The endpoint accepts `?limit=` (default 5, max 200). Honoured by:
+**rejections** (Commit 1), **decisions** (Commit 4, floored at 3),
+**sku_table** (Commit 5, floored at 50).
 
-The frontend exposes a "Show all N" pill at the bottom of each list
-card which bumps the param. Cache invalidation already drops the per-
-limit cache on every audit-write so a wider view stays fresh.
+The frontend exposes a single page-level **"Show all"** pill in
+`PageHead` (Commit 8) that flips `?limit=5` → `?limit=200`. Per-block
+expanders are an optional follow-up — the global toggle covers the
+"show me everything" use case for now.
+
+Cache invalidation already drops the per-limit cache on every audit-
+write so a wider view stays fresh.
 
 ## Auto-update contract
 
@@ -56,3 +60,4 @@ limit cache on every audit-write so a wider view stays fresh.
 | Commit 5 | 2026-05-10 | SKU pricing engine table (live join over invoices × products × cost trends × ab_tests) |
 | Commit 6 | 2026-05-10 | movable hero + buckets (CTE-based movable/locked classification) |
 | Commit 7 | 2026-05-10 | long-tail coverage (Pareto bin + 4 KPI tiles) |
+| Commit 8 | 2026-05-10 | frontend "Show all" toggle in PageHead — bumps ?limit= for every list block |
