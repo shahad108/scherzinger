@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FileText, Forward, Send } from 'lucide-react';
 import { useAi } from '@/data/api/useAi';
 import type { AiSideCard } from '@/types/ai';
+import { AiBriefingSkeleton } from './components/AiBriefingSkeleton';
 
 const tagPalette: Record<NonNullable<AiSideCard['tag']>['tone'], { bg: string; color: string }> = {
   amber:  { bg: 'var(--amber-bg)',  color: 'var(--amber)' },
@@ -28,7 +29,7 @@ export default function AiBriefingPage() {
   }, []);
 
   if (isLoading) {
-    return <div className="w-full px-6 py-8 text-sm text-[var(--muted)]">Lade…</div>;
+    return <AiBriefingSkeleton />;
   }
   if (error || !data) {
     return (
