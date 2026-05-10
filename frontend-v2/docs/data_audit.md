@@ -22,7 +22,7 @@ what it should read from, and what's still pending.
 | Negotiation cockpit | 🟡 | `cost_service.get_cost_risers` aggregated by commodity_group; discount-gap headline + summary text remain seed | Commit 1 ✅ |
 | Rejection codes ("Why we lose") | 🟡 | `quote_service.get_rejection_codes` paginated by `?limit=` | Commit 1 ✅ |
 | Audit feed | ✅ | `audit_service.recent` for the calling user; falls back to seed when empty | Phase 12 |
-| A/B test tracker | ⛔ | `seed["abTests"]` | Wire to `AbTest` table where `status='running'` (Commit 2). |
+| A/B test tracker | 🟡 | `AbTest` table joined to latest `AbTestResult`; falls back to seed | Commit 2 ✅ |
 
 ## Pagination contract
 
@@ -50,3 +50,4 @@ limit cache on every audit-write so a wider view stays fresh.
 |---|---|---|
 | Phase 12 | 2026-05-10 | audit feed |
 | Commit 1 | 2026-05-10 | trust + lost_quote + rejections + negotiation |
+| Commit 2 | 2026-05-10 | abtests tracker (live from ab_tests table) |
