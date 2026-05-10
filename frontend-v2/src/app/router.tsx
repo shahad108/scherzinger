@@ -8,6 +8,13 @@ import QuotesPage from '@/features/quotes';
 import ForecastingPage from '@/features/forecasting';
 import PricingPage from '@/features/pricing-studio';
 import AiPage from '@/features/ai-briefing';
+import SettingsLayout from '@/features/settings/SettingsLayout';
+import ProfilePage from '@/features/settings/ProfilePage';
+import PreferencesPage from '@/features/settings/PreferencesPage';
+import SavedViewsPage from '@/features/settings/SavedViewsPage';
+import DataQualityPage from '@/features/settings/DataQualityPage';
+import NotificationsPage from '@/features/settings/NotificationsPage';
+import NotesPage from '@/features/settings/NotesPage';
 
 /**
  * Per-persona default landing (Phase 2 P2.T9).
@@ -40,6 +47,21 @@ export const router = createBrowserRouter(
         { path: 'forecasting', element: <ForecastingPage /> },
         { path: 'pricing', element: <PricingPage /> },
         { path: 'ai', element: <AiPage /> },
+
+        // Phase 14 — Settings + adjacent routes.
+        {
+          path: 'settings',
+          element: <SettingsLayout />,
+          children: [
+            { index: true, element: <Navigate to="/settings/profile" replace /> },
+            { path: 'profile', element: <ProfilePage /> },
+            { path: 'preferences', element: <PreferencesPage /> },
+            { path: 'saved-views', element: <SavedViewsPage /> },
+            { path: 'data-quality', element: <DataQualityPage /> },
+          ],
+        },
+        { path: 'notifications', element: <NotificationsPage /> },
+        { path: 'notes', element: <NotesPage /> },
 
         // Phase 10 / 11 placeholders. Till + Heiko screens proper land later;
         // for now redirect into Frank's space so a misclick doesn't 404.

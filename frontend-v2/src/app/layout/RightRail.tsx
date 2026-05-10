@@ -1,4 +1,5 @@
 import { Activity, AlertTriangle, ArrowUpRight, CheckCircle2, Menu, NotebookPen, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUiStore } from '@/stores/uiStore';
 import { useShell } from '@/data/api/useShell';
@@ -46,10 +47,12 @@ export function RightRail() {
           </button>
         ))}
         <div className="pz-notif-foot">
-          <button type="button" className="see">{t('rail.seeAll')} <ArrowUpRight size={13} /></button>
-          <button type="button" className="notes">
+          <Link to="/notifications" className="see" style={{ textDecoration: 'none' }}>
+            {t('rail.seeAll')} <ArrowUpRight size={13} />
+          </Link>
+          <Link to="/notes" className="notes" style={{ textDecoration: 'none' }}>
             <NotebookPen size={13} /> {t('rail.notes')}
-          </button>
+          </Link>
         </div>
       </div>
 
