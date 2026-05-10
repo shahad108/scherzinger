@@ -17,7 +17,7 @@ import type { WorkbenchData } from '@/types/studio';
 export function useStudioWorkbench(aid: string | null | undefined) {
   return useQuery({
     queryKey: qk.studioWorkbench(aid ?? ''),
-    queryFn: () => apiFetch<WorkbenchData>(`/studio/workbench/${aid}`),
+    queryFn: () => apiFetch<WorkbenchData>(`/screens/studio/workbench/${aid}`),
     enabled: !!aid,
     staleTime: 60_000,
   });
@@ -26,7 +26,7 @@ export function useStudioWorkbench(aid: string | null | undefined) {
 export function useStudioComparable(aid: string | null | undefined) {
   return useQuery({
     queryKey: qk.studioComparable(aid ?? ''),
-    queryFn: () => apiFetch(`/studio/comparable/${aid}`),
+    queryFn: () => apiFetch(`/screens/studio/comparable/${aid}`),
     enabled: !!aid,
     staleTime: 60_000,
   });

@@ -6,7 +6,7 @@ import type { AiShell } from '@/types/ai';
 export function useAi(params?: AiParams) {
   return useQuery({
     queryKey: qk.ai(params),
-    queryFn: () => apiFetch<AiShell>('/ai', { params }),
+    queryFn: () => apiFetch<AiShell>('/screens/ai', { params }),
     staleTime: 60_000,
   });
 }

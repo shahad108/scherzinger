@@ -61,3 +61,48 @@ write so a wider view stays fresh.
 | Commit 6 | 2026-05-10 | movable hero + buckets (CTE-based movable/locked classification) |
 | Commit 7 | 2026-05-10 | long-tail coverage (Pareto bin + 4 KPI tiles) |
 | Commit 8 | 2026-05-10 | frontend "Show all" toggle in PageHead — bumps ?limit= for every list block |
+| Walkthrough fixes | 2026-05-10 | Path prefix `/screens/*` on 8 hooks; live decision-card mutations (Accept / Reject / Slice as A/B); SkuRow.status `outlier`; LostQuoteData.linkedRecords + LongTailData.subhead |
+
+## Post-walkthrough fixes (2026-05-10)
+
+Live Playwright walkthrough surfaced 12 issues. Frontend changes landed
+in this commit; backend changes (in `scherzinger-platform/`, separate
+repo) are applied on disk only.
+
+**Frontend (this repo):**
+- 8 hooks gained the `/screens/` path prefix that was missing — fixes
+  every screen-data 404 against the real backend.
+- DecisionCards Accept / Reject / Slice as A/B now fire the matching
+  `useAcceptDecision` / `useDeclineDecision` / `useStartAbTest` mutation
+  with optimistic hide + on-error rollback.
+- LostQuoteCard reads `linkedRecords` from the API instead of hardcoded
+  "1,313 linked records".
+- LongTailCoverage subhead reads `data.subhead` instead of "47 SKUs
+  price-frozen".
+- `SkuRow.status` adds `'outlier'` for rows whose margin lies outside
+  ±100% (data-quality artefacts).
+
+**Backend (scherzinger-platform):**
+- bcrypt pinned <4 + PyJWT installed (auth was broken).
+- Auth middleware bypasses OPTIONS so CORS preflight lands.
+- CORS origin includes `127.0.0.1:5173`; allowed-headers adds
+  `x-pryzm-idempotency-key`.
+- `buckets.py` reports SKU counts with `(this year)` and adds
+  "X of Y catalog SKUs active this year" to the movable-bucket
+  subtitle.
+- `sku_table.py` outlier-guards margins outside ±100% (status
+  becomes `Data check`); replaces flat-40% cluster confidence with
+  log-scale formula on per-row sample size.
+- `decisions.py` requires ≥3 invoice rows + sane margins;
+  `cluster.confidence` now derived from `n` instead of fake 80/82%.
+- `lost_quote.py` returns `linkedRecords`; falls back to last-year
+  data when current year empty.
+- `long_tail.py` returns live `subhead` text driven by frozen-SKU
+  count.
+- `quote_service.get_rejection_codes` returns
+  `pct_of_lost_revenue` (revenue-share denominator), used by
+  `rejections.py` for `share`. Sort order is now revenue-desc, so
+  shares descend monotonically.
+- `shell.py` computes live sub-text for `sec-movable`, `sec-sku`,
+  `sec-decisions`, `sec-lost` so the right-rail mini-cards never
+  drift from the panels.

@@ -6,7 +6,7 @@ import type { QuotesShell } from '@/types/quotes';
 export function useQuotes(params?: QuotesParams) {
   return useQuery({
     queryKey: qk.quotes(params),
-    queryFn: () => apiFetch<QuotesShell>('/quotes', { params }),
+    queryFn: () => apiFetch<QuotesShell>('/screens/quotes', { params }),
     staleTime: 60_000,
   });
 }

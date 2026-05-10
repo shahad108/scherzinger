@@ -120,6 +120,7 @@ export interface LostQuoteData {
   differential: number;
   pValue: number;
   implication: string;
+  linkedRecords?: number;
 }
 
 export interface AbTestCard {
@@ -144,7 +145,7 @@ export interface SkuRow {
   clusterTone: 'high' | 'mid' | 'low';
   marginDelta: string;
   marginTone: Tone;
-  status: 'movable' | 'locked' | 'abtest';
+  status: 'movable' | 'locked' | 'abtest' | 'outlier';
   statusLabel: string;
   actionLabel: string;
 }
@@ -159,6 +160,7 @@ export interface LongTailMixSegment {
 export interface LongTailData {
   tiles: TrustTile[];
   mix: LongTailMixSegment[];
+  subhead?: string;
 }
 
 export interface CommodityRow {

@@ -6,7 +6,7 @@ import type { ForecastShell } from '@/types/forecast';
 export function useForecast(params?: ForecastParams) {
   return useQuery({
     queryKey: qk.forecast(params),
-    queryFn: () => apiFetch<ForecastShell>('/forecast', { params }),
+    queryFn: () => apiFetch<ForecastShell>('/screens/forecast', { params }),
     staleTime: 60_000,
   });
 }

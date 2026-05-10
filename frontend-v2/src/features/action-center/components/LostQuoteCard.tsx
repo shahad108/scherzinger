@@ -9,8 +9,8 @@ export function LostQuoteCard({ data }: { data: LostQuoteData }) {
           Lost-quote margin differential
         </h2>
         <p className="mt-0.5 text-xs text-[var(--muted)]">
-          Sales is systematically losing the highest-margin deals. Statistically significant across
-          1,313 linked records.
+          Sales is systematically losing the highest-margin deals. Statistically significant across{' '}
+          {(data.linkedRecords ?? 0).toLocaleString()} linked records.
         </p>
       </div>
       <div className="mb-6 rounded-xl border border-[var(--hairline)] bg-white p-6 shadow-[var(--shadow)]">

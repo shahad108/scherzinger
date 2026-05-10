@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ChevronDown, MoreHorizontal, Plus, Clock, GripVertical } from 'lucide-react';
 import { chart } from '@/lib/chartColors';
-import { useAcceptDecision } from '@/data/api/useActions';
+import { useAcceptDecision, useDeclineDecision, useStartAbTest } from '@/data/api/useActions';
 import { MessageStrip } from '@/components/fiori/MessageStrip';
 import type { DecisionCard, DecisionFact, DecisionTrend } from '@/types';
 import { EmptyBlock } from './EmptyBlock';
@@ -111,7 +111,19 @@ function FactRow({ fact }: { fact: DecisionFact }) {
   );
 }
 
-function FeedbackRow({ id }: { id: string }) {
+function FeedbackRow({
+  id,
+  decision,
+  onAccept,
+  onReject,
+  onSliceAb,
+}: {
+  id: string;
+  decision: DecisionCard;
+  onAccept?: (d: DecisionCard, variant: 'acc' | 'nim' | 'par') => void;
+  onReject?: (d: DecisionCard) => void;
+  onSliceAb?: (d: DecisionCard) => void;
+}) {
   const [act, setAct] = useState<ActState>('acc');
   const [open, setOpen] = useState(false);
 
@@ -138,7 +150,11 @@ function FeedbackRow({ id }: { id: string }) {
       <div className="relative inline-flex">
         <button
           type="button"
-          onClick={() => { setAct('acc'); setOpen(false); }}
+          onClick={() => {
+            setAct('acc');
+            setOpen(false);
+            onAccept?.(decision, 'acc');
+          }}
           className={`${baseFbtn} rounded-r-none pr-2.5`}
           style={accStyle}
         >
@@ -159,7 +175,11 @@ function FeedbackRow({ id }: { id: string }) {
               <button
                 key={k}
                 type="button"
-                onClick={() => { setAct(k); setOpen(false); }}
+                onClick={() => {
+                  setAct(k);
+                  setOpen(false);
+                  onAccept?.(decision, k);
+                }}
                 className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-[var(--surface-soft)]"
               >
                 <span
@@ -177,10 +197,20 @@ function FeedbackRow({ id }: { id: string }) {
           </div>
         )}
       </div>
-      <button type="button" onClick={() => setAct('rej')} className={baseFbtn} style={rejStyle}>
+      <button
+        type="button"
+        onClick={() => { setAct('rej'); onReject?.(decision); }}
+        className={baseFbtn}
+        style={rejStyle}
+      >
         <span aria-hidden>✗</span> Reject
       </button>
-      <button type="button" onClick={() => setAct('ab')} className={baseFbtn} style={abStyle}>
+      <button
+        type="button"
+        onClick={() => { setAct('ab'); onSliceAb?.(decision); }}
+        className={baseFbtn}
+        style={abStyle}
+      >
         <span aria-hidden>🧪</span> Slice as A/B
       </button>
       <span className="sr-only">Action {id}</span>
@@ -194,8 +224,10 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
   const [accepted, setAccepted] = useState<Set<string>>(new Set());
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const acceptMutation = useAcceptDecision();
+  const declineMutation = useDeclineDecision();
+  const sliceMutation = useStartAbTest();
 
-  const handleAccept = (d: DecisionCard) => {
+  const handleAccept = (d: DecisionCard, variant: 'acc' | 'nim' | 'par' = 'acc') => {
     const id = d.rank;
     setErrorMsg(null);
     setAccepted((prev) => {
@@ -204,7 +236,11 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
       return next;
     });
     acceptMutation.mutate(
-      { target_type: 'recommendation', target_id: id, after: { headline: d.headline ?? d.title } },
+      {
+        target_type: 'recommendation',
+        target_id: id,
+        after: { headline: d.headline ?? d.title, variant },
+      },
       {
         onError: (err) => {
           setAccepted((prev) => {
@@ -214,6 +250,46 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
           });
           setErrorMsg(`Could not accept "${d.headline ?? d.title}": ${(err as Error).message}`);
         },
+      },
+    );
+  };
+
+  const handleReject = (d: DecisionCard) => {
+    const id = d.rank;
+    setErrorMsg(null);
+    setAccepted((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+    declineMutation.mutate(
+      { target_type: 'recommendation', target_id: id, after: { headline: d.headline ?? d.title } },
+      {
+        onError: (err) => {
+          setAccepted((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
+          setErrorMsg(`Could not reject "${d.headline ?? d.title}": ${(err as Error).message}`);
+        },
+      },
+    );
+  };
+
+  const handleSliceAb = (d: DecisionCard) => {
+    setErrorMsg(null);
+    sliceMutation.mutate(
+      {
+        target_type: 'recommendation',
+        target_id: d.rank,
+        aid: (d as { aid?: string }).aid ?? d.rank,
+        slice_pct: 0.1,
+        after: { headline: d.headline ?? d.title, slice: '10%' },
+      },
+      {
+        onError: (err) =>
+          setErrorMsg(`Could not start A/B for "${d.headline ?? d.title}": ${(err as Error).message}`),
       },
     );
   };
@@ -422,7 +498,13 @@ export function DecisionCards({ decisions }: { decisions: DecisionCard[] }) {
 
             {/* Bottom section: feedback row + CTA row, SAME ac-section */}
             <div style={{ padding: '18px 22px', borderTop: '1px solid var(--hairline)' }}>
-              <FeedbackRow id={d.rank} />
+              <FeedbackRow
+                id={d.rank}
+                decision={d}
+                onAccept={(card, variant) => handleAccept(card, variant)}
+                onReject={(card) => handleReject(card)}
+                onSliceAb={(card) => handleSliceAb(card)}
+              />
               <div className="mt-3.5 flex items-stretch" style={{ gap: 10 }}>
                 {d.secondaryCta && (
                   <button

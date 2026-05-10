@@ -21,7 +21,7 @@ export function useStudio(params?: StudioParams) {
   return useQuery({
     queryKey: qk.studio(params),
     queryFn: async () => {
-      const raw = await apiFetch<StudioShell>('/studio', { params });
+      const raw = await apiFetch<StudioShell>('/screens/studio', { params });
       return enrichSkus(raw);
     },
     staleTime: 60_000,

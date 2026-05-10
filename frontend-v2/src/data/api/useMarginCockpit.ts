@@ -6,7 +6,7 @@ import type { MarginCockpitData } from '@/types';
 export function useMarginCockpit(params?: MarginCockpitParams) {
   return useQuery({
     queryKey: qk.marginCockpit(params),
-    queryFn: () => apiFetch<MarginCockpitData>('/margin-cockpit', { params }),
+    queryFn: () => apiFetch<MarginCockpitData>('/screens/margin-cockpit', { params }),
     staleTime: 60_000,
   });
 }

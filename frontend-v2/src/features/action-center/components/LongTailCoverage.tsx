@@ -14,7 +14,7 @@ export function LongTailCoverage({ data }: { data: LongTailData }) {
           Long-tail coverage · B and C products
         </h2>
         <p className="mt-0.5 text-xs text-[var(--muted)]">
-          C-tier coverage gap — 47 SKUs price-frozen &gt;9 months.
+          {data.subhead ?? 'C-tier coverage — review pricing freeze candidates.'}
         </p>
       </div>
       <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-4">

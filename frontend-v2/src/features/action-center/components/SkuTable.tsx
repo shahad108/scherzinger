@@ -17,6 +17,7 @@ const statusChip: Record<SkuRow['status'], string> = {
   movable: 'bg-[var(--green-bg)] text-[var(--green)] border-[var(--green-border)]',
   locked: 'bg-[var(--amber-bg)] text-[var(--amber)] border-[var(--amber-border)]',
   abtest: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  outlier: 'bg-[var(--red-bg)] text-[var(--red)] border-[var(--red-border)]',
 };
 
 const confChip: Record<SkuRow['clusterTone'], string> = {

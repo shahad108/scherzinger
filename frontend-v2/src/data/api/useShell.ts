@@ -6,7 +6,7 @@ import type { ShellRailData } from '@/types/shell';
 export function useShell(params?: ShellParams) {
   return useQuery({
     queryKey: qk.shell(params),
-    queryFn: () => apiFetch<ShellRailData>('/shell', { params }),
+    queryFn: () => apiFetch<ShellRailData>('/screens/shell', { params }),
     staleTime: 60_000,
   });
 }
