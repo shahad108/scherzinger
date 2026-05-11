@@ -24,10 +24,11 @@ from sqlalchemy.orm import Session
 
 from backend.auth.security import AuthContext, require_auth
 from backend.database import get_db
-from backend.models import AbTest, Notification
+from backend.models import AbTest, Note, Notification, User
 from backend.services import audit_service
 from backend.services import workflow_service
 from backend.services import ab_lifecycle_service, ab_simulation_service
+from backend.services import shell as shell_service
 from backend.services.action_center.composer import (
     invalidate_cache as invalidate_action_center_cache,
 )
@@ -59,7 +60,15 @@ ACTION_KINDS = {
     "notification_read",
     "section_save",
     "section_remove",
+    # Phase 11 — share a Frank decision with Till or Heiko. Writes a
+    # notification row for the recipient, a note row for the sender, and
+    # an audit row tying both back to the recommendation.
+    "share_decision",
 }
+
+
+_PERSONA_FRIENDLY = {"till": "Till (MD)", "heiko": "Heiko (Sales)", "frank": "Frank (Pricing)"}
+_SHAREABLE_PERSONAS = {"till", "heiko"}
 
 
 def _target_from_body(body: dict[str, Any]) -> tuple[str | None, str | None]:
@@ -148,6 +157,86 @@ def _lifecycle_transition(
     }
 
 
+def _share_decision(
+    db: Session, ctx: AuthContext, body: dict[str, Any], audit_hash: str
+) -> dict[str, Any]:
+    """Phase 11 — fan a Frank decision out to Till or Heiko.
+
+    Side effects:
+      * One ``Notification`` row for the recipient (unread, links back to
+        the source surface so the recipient can click through).
+      * One ``Note`` row owned by the sender (Frank's own record of what
+        he shared, with the recipient + note text).
+      * The audit row is written by the dispatcher around this call.
+    """
+    recipient = (body.get("recipient") or "till").lower().strip()
+    if recipient not in _SHAREABLE_PERSONAS:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"share_decision recipient must be one of {_SHAREABLE_PERSONAS}",
+        )
+    target_id = body.get("target_id") or body.get("recommendation_id") or body.get("aid")
+    if not target_id:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "share_decision requires target_id (recommendation/article)",
+        )
+
+    headline = str(body.get("headline") or body.get("title") or f"Decision {target_id}")
+    note_text = (body.get("note") or "").strip() or None
+    link = body.get("link") or f"/action-center?focus=rec-{target_id}"
+
+    recipient_user = (
+        db.query(User)
+        .filter(User.ui_persona_default == recipient, User.disabled.is_(False))
+        .order_by(User.created_at.asc())
+        .first()
+    )
+
+    notification_id: str | None = None
+    if recipient_user is not None:
+        sender_name = getattr(ctx, "name", None) or "Frank"
+        notif = shell_service.notify(
+            db,
+            user_id=recipient_user.id,
+            tone="info",
+            title=f"{sender_name} shared: {headline[:120]}",
+            sub=(
+                note_text
+                if note_text
+                else f"Audit-trail receipt attached · audit_hash {audit_hash[:12]}…"
+            ),
+            link=link,
+            external_id=f"share:{audit_hash[:16]}",
+        )
+        notification_id = str(notif.id)
+
+    # Also create a sender-owned note as Frank's record of what was sent.
+    sender_note = Note(
+        user_id=ctx.user_id,
+        title=f"Shared with {_PERSONA_FRIENDLY.get(recipient, recipient)}: {headline[:160]}",
+        body=(
+            (note_text + "\n\n" if note_text else "")
+            + f"target: {target_id}\nrecipient: {recipient}\nlink: {link}\n"
+            + f"audit_hash: {audit_hash}\n"
+        ),
+        pinned=False,
+    )
+    db.add(sender_note)
+    db.commit()
+    db.refresh(sender_note)
+
+    return {
+        "recipient": recipient,
+        "recipient_user_id": str(recipient_user.id) if recipient_user is not None else None,
+        "recipient_resolved": recipient_user is not None,
+        "notification_id": notification_id,
+        "note_id": str(sender_note.id),
+        "share_link": link,
+        "audit_hash": audit_hash,
+    }
+
+
 def _maybe_mark_notification_read(
     db: Session, ctx: AuthContext, body: dict[str, Any]
 ) -> dict[str, Any] | None:
@@ -225,6 +314,8 @@ def dispatch_action(
         ) or {}
     elif kind == "notification_read":
         extras = _maybe_mark_notification_read(db, ctx, body) or {}
+    elif kind == "share_decision":
+        extras = _share_decision(db, ctx, body, row.audit_hash) or {}
 
     if kind in {
         "accept_recommendation",

@@ -22,7 +22,9 @@ export type FormDrawerKind =
   // Phase 7 — admin & shell forms.
   | 'add_section'
   | 'saved_view_save'
-  | 'add_reviewer';
+  | 'add_reviewer'
+  // Phase 11 — share a Frank decision with Till or Heiko.
+  | 'share_decision';
 
 export interface ActionDrawerContext {
   recommendationId?: string;
@@ -60,6 +62,7 @@ export interface ActionIntent {
   targetType?: string;
   targetId?: string;
   body?: ActionBody;
+  optimistic?: boolean;
   route?: string;
   hash?: string;
   query?: Record<string, string | number | boolean | undefined | null>;
@@ -67,6 +70,8 @@ export interface ActionIntent {
   toastSeverity?: ActionToastSeverity;
   drawer?: ActionDrawerIntent;
   disabledReason?: string;
+  requiredPermission?: string;
+  permissionDeniedReason?: string;
   // Phase 1 — context fields backend composers attach so deep links and
   // mutations can route to the exact recommendation/article/test/etc.
   recommendationId?: string;
@@ -75,6 +80,7 @@ export interface ActionIntent {
   cluster?: string;
   abTestId?: string;
   sourceScreen?: string;
+  traceId?: string;
   returnTo?: string;
   focus?: string;
 }

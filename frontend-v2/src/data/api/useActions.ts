@@ -40,7 +40,8 @@ export type ActionKind =
   | 'forecast_override'
   | 'notification_read'
   | 'section_save'
-  | 'section_remove';
+  | 'section_remove'
+  | 'share_decision';
 
 export interface ActionBody {
   target_type?: string;
@@ -93,6 +94,13 @@ export interface ActionResponse {
   blockers?: string[];
   notification_id?: string;
   unread?: boolean;
+  // share_decision extras (Phase 11).
+  recipient?: 'till' | 'heiko' | string;
+  recipient_user_id?: string | null;
+  recipient_resolved?: boolean;
+  note_id?: string;
+  share_link?: string;
+  audit_hash?: string;
 }
 
 /** Default idempotency key generator: stable per (kind, target). */
@@ -167,6 +175,17 @@ export async function runAction(
           created_at: new Date().toISOString(),
         },
       };
+      if (kind === 'share_decision') {
+        const recipient = (body.recipient as string | undefined) ?? 'till';
+        const target = (body.target_id as string | undefined) ?? (body.aid as string | undefined) ?? '—';
+        base.recipient = recipient;
+        base.recipient_user_id = `mock-user-${recipient}`;
+        base.recipient_resolved = true;
+        base.notification_id = `mock-notif-${key}`;
+        base.note_id = `mock-note-${key}`;
+        base.share_link = (body.link as string | undefined) ?? `/action-center?focus=rec-${target}`;
+        base.audit_hash = base.audit.audit_hash;
+      }
       if (kind === 'start_ab_test') {
         // Mock-mode parity for Phase 7 — surface the same simulation
         // shape the live FastAPI dispatcher returns so the AbSetupForm

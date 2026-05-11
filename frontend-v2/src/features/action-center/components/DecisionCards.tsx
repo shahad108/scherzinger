@@ -118,12 +118,14 @@ function FeedbackRow({
   onAccept,
   onReject,
   onSliceAb,
+  onShare,
 }: {
   id: string;
   decision: DecisionCard;
   onAccept?: (d: DecisionCard, variant: 'acc' | 'nim' | 'par') => void;
   onReject?: (d: DecisionCard) => void;
   onSliceAb?: (d: DecisionCard) => void;
+  onShare?: (d: DecisionCard) => void;
 }) {
   const [act, setAct] = useState<ActState>('acc');
   const [open, setOpen] = useState(false);
@@ -213,6 +215,15 @@ function FeedbackRow({
         style={abStyle}
       >
         <span aria-hidden>🧪</span> Slice as A/B
+      </button>
+      <button
+        type="button"
+        aria-label="Share with Till or Heiko"
+        onClick={() => onShare?.(decision)}
+        className={baseFbtn}
+        style={{ background: '#fff', borderColor: 'var(--border)', color: 'var(--ink-2)', padding: '8px 12px', fontWeight: 500 }}
+      >
+        <span aria-hidden>↗</span> Share
       </button>
       <span className="sr-only">Action {id}</span>
     </div>
@@ -332,6 +343,29 @@ export function DecisionCards({
     );
   };
 
+  const handleShare = (d: DecisionCard) => {
+    setErrorMsg(null);
+    // Phase 11 — open the share_decision form drawer so Frank picks
+    // Till vs Heiko and writes an optional note before fanning out.
+    onAction?.({
+      drawer: {
+        title: 'Share decision',
+        description: `Forward "${d.headline ?? d.title}" with a note. Recipient gets an unread notification + audit-trail link.`,
+        formKind: 'share_decision',
+        context: {
+          recommendationId: d.recommendationId ?? d.primaryAction?.targetId,
+          articleId: d.primaryAction?.articleId,
+          customerId: d.primaryAction?.customerId,
+          cluster: d.primaryAction?.cluster,
+          sourceKind: d.primaryAction?.sourceScreen,
+          headline: d.headline ?? d.title,
+        },
+      },
+      requiredPermission: 'act.share_decision',
+      permissionDeniedReason: 'You are not allowed to share decisions from this workspace.',
+    });
+  };
+
   const handleSliceAb = (d: DecisionCard) => {
     setErrorMsg(null);
     // Phase 4 — open the ab_setup form drawer so the analyst chooses
@@ -348,6 +382,8 @@ export function DecisionCards({
           headline: d.headline ?? d.title,
         },
       },
+      requiredPermission: 'act.start_ab_test',
+      permissionDeniedReason: 'You are not allowed to start A/B tests from this workspace.',
     };
     onAction?.(intent);
   };
@@ -386,14 +422,13 @@ export function DecisionCards({
               onAction?.({
                 drawer: {
                   title: 'Create manual action',
-                  description: 'Manual action creation is staged here so the queue can later persist it through the BFF.',
+                  description: 'Create an operator-owned action and attach it to this review queue.',
                   items: [
                     { label: 'Default owner', value: 'Frank' },
                     { label: 'Destination', value: 'Action Center decision queue' },
                   ],
                 },
-                toast: 'Manual action composer opened',
-                toastSeverity: 'info',
+                requiredPermission: 'create.action',
               })
             }
             className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--hairline)] bg-white text-[var(--muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--ink-2)]"
@@ -407,14 +442,12 @@ export function DecisionCards({
               onAction?.({
                 drawer: {
                   title: 'Decision queue options',
-                  description: 'Bulk decision actions will live here once the BFF supports grouped action writes.',
+                  description: 'Queue-wide actions depend on backend support for grouped writes and are not yet available in this workspace.',
                   items: [
                     { label: 'Available now', value: 'Sort, inspect, and act on each recommendation.' },
-                    { label: 'Backend gap', value: 'Bulk accept / snooze action kinds.' },
+                    { label: 'Unavailable', value: 'Bulk accept and bulk snooze' },
                   ],
                 },
-                toast: 'Decision queue options opened',
-                toastSeverity: 'info',
               })
             }
             className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--hairline)] bg-white text-[var(--muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--ink-2)]"
@@ -628,6 +661,7 @@ export function DecisionCards({
                 onAccept={(card, variant) => handleAccept(card, variant)}
                 onReject={(card) => handleReject(card)}
                 onSliceAb={(card) => handleSliceAb(card)}
+                onShare={(card) => handleShare(card)}
               />
               <div className="mt-3.5 flex items-stretch" style={{ gap: 10 }}>
                 {d.secondaryCta && (

@@ -11,6 +11,7 @@ import { AbHoldPromoteForm } from '@/components/forms/AbHoldPromoteForm';
 import { AddSectionForm } from '@/components/forms/AddSectionForm';
 import { SavedViewSaveForm } from '@/components/forms/SavedViewSaveForm';
 import { AddReviewerForm } from '@/components/forms/AddReviewerForm';
+import { ShareDecisionForm } from '@/components/forms/ShareDecisionForm';
 
 export function ActionFeedback() {
   const toasts = useActionFeedbackStore((s) => s.toasts);
@@ -80,6 +81,9 @@ export function ActionFeedback() {
         )}
         {drawer && formKind === 'add_reviewer' && (
           <AddReviewerForm context={ctx} onClose={closeDrawer} onToast={pushToast} />
+        )}
+        {drawer && formKind === 'share_decision' && (
+          <ShareDecisionForm context={ctx} onClose={closeDrawer} onToast={pushToast} />
         )}
         {drawer && !formKind && (
           <div className="flex h-full flex-col p-6 pt-14">

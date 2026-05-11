@@ -12,6 +12,7 @@ import { SnoozeForm } from '@/components/forms/SnoozeForm';
 import { QueueRenewalForm } from '@/components/forms/QueueRenewalForm';
 import { AbSetupForm } from '@/components/forms/AbSetupForm';
 import { AbHoldPromoteForm } from '@/components/forms/AbHoldPromoteForm';
+import { ShareDecisionForm } from '@/components/forms/ShareDecisionForm';
 
 const runAction = vi.hoisted(() =>
   vi.fn().mockResolvedValue({ replay: false, audit: {} }),
@@ -183,5 +184,72 @@ describe('AbHoldPromoteForm', () => {
     expect(kind).toBe('promote_ab_test');
     expect(body.test_id).toBe('ab-1');
     expect(body.after.approval_acknowledged).toBe(true);
+  });
+});
+
+describe('ShareDecisionForm (Phase 11)', () => {
+  it('defaults to Till and posts share_decision with target/recipient/note', async () => {
+    runAction.mockResolvedValueOnce({
+      replay: false,
+      audit: { id: 'a', audit_hash: 'sharehash01', created_at: '2026-05-12T10:00:00Z' },
+      recipient: 'till',
+      recipient_user_id: 'u-till',
+      recipient_resolved: true,
+      notification_id: 'n-1',
+      note_id: 'note-1',
+      share_link: '/action-center?focus=rec-margin_erosion:200832-E',
+      audit_hash: 'sharehash01',
+    });
+    render(withQc(<ShareDecisionForm context={ctx} onClose={noop} onToast={noop} />));
+    fireEvent.change(screen.getByPlaceholderText(/One-line context/), {
+      target: { value: 'Need MD sign-off before Friday.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Share with Till/ }));
+    await waitFor(() => expect(runAction).toHaveBeenCalled());
+    const [kind, body] = runAction.mock.calls[0];
+    expect(kind).toBe('share_decision');
+    expect(body.recipient).toBe('till');
+    expect(body.target_id).toBe('margin_erosion:200832-E');
+    expect(body.note).toBe('Need MD sign-off before Friday.');
+    expect(body.after.recipient).toBe('till');
+  });
+
+  it('renders the share receipt with notification + audit hash on success', async () => {
+    runAction.mockResolvedValueOnce({
+      replay: false,
+      audit: { id: 'a', audit_hash: 'sharehash02', created_at: '2026-05-12T10:00:00Z' },
+      recipient: 'heiko',
+      recipient_user_id: 'u-heiko',
+      recipient_resolved: true,
+      notification_id: 'n-2',
+      note_id: 'note-2',
+      share_link: '/action-center?focus=rec-margin_erosion:200832-E',
+      audit_hash: 'sharehash02',
+    });
+    render(withQc(<ShareDecisionForm context={ctx} onClose={noop} onToast={noop} />));
+    // Switch to Heiko before submitting.
+    fireEvent.click(screen.getByTestId('recipient-heiko').querySelector('input')!);
+    fireEvent.click(screen.getByRole('button', { name: /Share with Heiko/ }));
+    expect(await screen.findByTestId('share-receipt')).toBeInTheDocument();
+    expect(screen.getByText(/Shared with Heiko/)).toBeInTheDocument();
+    expect(screen.getByTestId('share-notification-id')).toHaveTextContent('n-2');
+    expect(screen.getByTestId('share-audit-hash')).toHaveTextContent('sharehash02');
+  });
+
+  it('renders the unresolved-recipient warning when no user matches the persona', async () => {
+    runAction.mockResolvedValueOnce({
+      replay: false,
+      audit: { id: 'a', audit_hash: 'sharehash03', created_at: null },
+      recipient: 'till',
+      recipient_user_id: null,
+      recipient_resolved: false,
+      notification_id: null,
+      note_id: 'note-3',
+      share_link: '/action-center?focus=rec-margin_erosion:200832-E',
+      audit_hash: 'sharehash03',
+    });
+    render(withQc(<ShareDecisionForm context={ctx} onClose={noop} onToast={noop} />));
+    fireEvent.click(screen.getByRole('button', { name: /Share with Till/ }));
+    expect(await screen.findByText(/Recorded — recipient unresolved/)).toBeInTheDocument();
   });
 });
