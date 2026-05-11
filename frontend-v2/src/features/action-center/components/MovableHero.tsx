@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { chart } from '@/lib/chartColors';
@@ -9,9 +10,11 @@ interface Props {
 }
 
 export function MovableHero({ hero, onAction }: Props) {
+  const [showHeuristic, setShowHeuristic] = useState(false);
   const stroke = chart.rose();
   const fillStop = chart.roseSoft();
   const dot = chart.roseDeep();
+  const heuristic = hero.heuristic;
 
   const w = 320;
   const h = 110;
@@ -44,12 +47,41 @@ export function MovableHero({ hero, onAction }: Props) {
             <span className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--muted)]">
               Movable revenue
             </span>
-            <span
-              className="inline-grid h-4 w-4 place-items-center rounded-full border border-[var(--border)] text-[10px] text-[var(--muted)]"
-              title="Pilot estimate · refined weekly per cluster"
-            >
-              i
-            </span>
+            {heuristic && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowHeuristic((v) => !v)}
+                  onMouseEnter={() => setShowHeuristic(true)}
+                  onMouseLeave={() => setShowHeuristic(false)}
+                  aria-label="Show movable-revenue heuristic"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--amber)] bg-[var(--amber-bg,#FEF3C7)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--amber,#92400E)]"
+                  style={{ background: 'color-mix(in srgb, var(--amber, #F59E0B) 15%, white)' }}
+                >
+                  <span
+                    className="inline-grid h-3 w-3 place-items-center rounded-full border border-current text-[8px] leading-none"
+                    aria-hidden
+                  >
+                    ?
+                  </span>
+                  {heuristic.label}
+                </button>
+                {showHeuristic && (
+                  <div
+                    role="tooltip"
+                    className="absolute left-0 top-full z-30 mt-2 w-[320px] rounded-lg border border-[var(--hairline)] bg-white p-3 text-[12px] leading-relaxed text-[var(--ink)] shadow-[var(--shadow-md)]"
+                  >
+                    <div className="font-semibold text-[var(--ink)]">{heuristic.label}</div>
+                    <p className="mt-1 text-[var(--ink-2)]">{heuristic.rule}</p>
+                    {heuristic.qualifier && (
+                      <p className="mt-2 text-[11.5px] italic text-[var(--muted)]">
+                        {heuristic.qualifier}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex items-baseline gap-3">
@@ -77,6 +109,12 @@ export function MovableHero({ hero, onAction }: Props) {
             of <b className="font-semibold text-[var(--ink-2)]">{hero.totalRevenue}</b> total revenue
             this week —{' '}
             <b className="font-semibold text-[var(--ink-2)]">{movablePct}% open to repricing</b>.
+            {heuristic?.qualifier && (
+              <>
+                {' '}
+                <span className="italic text-[var(--muted-2)]">{heuristic.qualifier}</span>
+              </>
+            )}
           </p>
 
           <div className="mt-5 grid grid-cols-3 gap-0">

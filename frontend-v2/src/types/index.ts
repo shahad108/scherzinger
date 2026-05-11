@@ -51,6 +51,11 @@ export interface MovableHero {
   lockedPct: number;
   spark: number[];
   action?: ActionIntent;
+  heuristic?: {
+    label: string;
+    rule: string;
+    qualifier?: string;
+  };
 }
 
 export interface BucketCard {
