@@ -71,6 +71,39 @@ def _churn_f1(db) -> dict[str, Any] | None:
 
 
 def _forecast_error(db) -> dict[str, Any] | None:
+    """Headline forecast error — best (lowest-MAE) single cluster from
+    model_registry, mirroring the Pattern-accuracy tile so both tiles
+    answer the same question ("our best-defended cluster") instead of
+    one aggregate and one cluster.
+    """
+    from sqlalchemy import text as _sql_text
+
+    row = db.execute(
+        _sql_text(
+            """
+            SELECT model_name, entity_type, entity_id, metric_value, n_observations
+              FROM model_registry
+             WHERE metric_name = 'mae'
+               AND metric_value IS NOT NULL
+               AND COALESCE(n_observations, 0) >= 3
+               AND entity_type IN ('commodity_group', 'customer')
+             ORDER BY metric_value ASC, n_observations DESC
+             LIMIT 1
+            """
+        )
+    ).mappings().one_or_none()
+
+    if row:
+        return {
+            "label": "Forecast error (top cluster)",
+            "value": f"{float(row['metric_value']) * 100:.2f}pp",
+            "caption": (
+                f"{row['model_name']} · {row['entity_type']}={row['entity_id']} · "
+                f"MAE on n={int(row['n_observations'])} walk-forward steps"
+            ),
+        }
+
+    # Fallback to the legacy aggregate path if model_registry is empty.
     rows = forecast_service.get_forecast_accuracy(db)
     if not rows:
         return None
@@ -95,16 +128,24 @@ def _anomalies_caught(db) -> dict[str, Any] | None:
     by_type: dict[str, int] = {}
     for i in issues:
         by_type[i["issue_type"]] = by_type.get(i["issue_type"], 0) + 1
-    parts: list[str] = []
-    if by_type.get("negative_margin"):
-        parts.append(f"{by_type['negative_margin']} negative-margin")
-    if by_type.get("missing_margin"):
-        parts.append(f"{by_type['missing_margin']} missing")
-    if by_type.get("low_margin"):
-        parts.append(f"{by_type['low_margin']} low")
+    # Cover every issue type get_quality_issues can emit — previously the
+    # caption only mentioned the three invoice-side flags so the totals
+    # didn't add up to the headline (e.g. 53 ≠ 1,728 in Batch 8 audit).
+    label_for = {
+        "negative_margin": "neg-margin",
+        "missing_margin": "missing margin",
+        "low_margin": "low margin",
+        "missing_cost": "missing cost",
+        "100pct_margin": "100% margin",
+    }
+    # Render in descending-count order so the dominant type leads.
+    parts: list[str] = [
+        f"{n} {label_for.get(t, t)}"
+        for t, n in sorted(by_type.items(), key=lambda kv: kv[1], reverse=True)
+    ]
     return {
         "label": "Anomalies caught",
-        "value": str(len(issues)),
+        "value": f"{len(issues):,}",
         "caption": " · ".join(parts) if parts else "Across invoices + quotes",
     }
 
