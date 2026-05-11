@@ -25,6 +25,7 @@ describe('SettingsLayout', () => {
     expect(screen.getByRole('link', { name: /Preferences/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Saved views/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Data quality/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Model cards/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Notifications/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Notes/i })).toBeInTheDocument();
   });

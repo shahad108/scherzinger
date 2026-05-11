@@ -26,6 +26,7 @@ const ProfilePage = lazy(() => import('@/features/settings/ProfilePage'));
 const PreferencesPage = lazy(() => import('@/features/settings/PreferencesPage'));
 const SavedViewsPage = lazy(() => import('@/features/settings/SavedViewsPage'));
 const DataQualityPage = lazy(() => import('@/features/settings/DataQualityPage'));
+const ModelCardsPage = lazy(() => import('@/features/settings/ModelCardsPage'));
 const NotificationsPage = lazy(() => import('@/features/settings/NotificationsPage'));
 const NotesPage = lazy(() => import('@/features/settings/NotesPage'));
 
@@ -33,6 +34,17 @@ function RouteFallback() {
   return (
     <div className="w-full px-6 py-6 text-[13px] text-[var(--muted)]" aria-busy="true">
       …
+    </div>
+  );
+}
+
+function PersonaRouteUnavailable({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="w-full px-6 py-8">
+      <div className="max-w-3xl rounded-xl border border-[var(--hairline)] bg-white p-5 shadow-[var(--shadow)]">
+        <h1 className="font-display text-xl font-bold text-[var(--ink)]">{title}</h1>
+        <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">{detail}</p>
+      </div>
     </div>
   );
 }
@@ -85,15 +97,30 @@ export const router = createBrowserRouter(
             { path: 'preferences', element: lazyRoute(PreferencesPage) },
             { path: 'saved-views', element: lazyRoute(SavedViewsPage) },
             { path: 'data-quality', element: lazyRoute(DataQualityPage) },
+            { path: 'model-cards', element: lazyRoute(ModelCardsPage) },
           ],
         },
         { path: 'notifications', element: lazyRoute(NotificationsPage) },
         { path: 'notes', element: lazyRoute(NotesPage) },
 
-        // Phase 10 / 11 placeholders. Till + Heiko screens proper land later;
-        // for now redirect into Frank's space so a misclick doesn't 404.
-        { path: 'md/overview', element: <Navigate to="/action-center" replace /> },
-        { path: 'deal/inbox', element: <Navigate to="/quotes" replace /> },
+        {
+          path: 'md/overview',
+          element: (
+            <PersonaRouteUnavailable
+              title="Managing Director workspace unavailable"
+              detail="This frontend build does not yet expose a production-ready MD surface. The route stays isolated so users are not redirected into another persona's workflow."
+            />
+          ),
+        },
+        {
+          path: 'deal/inbox',
+          element: (
+            <PersonaRouteUnavailable
+              title="Sales workspace unavailable"
+              detail="This frontend build does not yet expose a production-ready Sales surface. The route stays isolated so users are not redirected into another persona's workflow."
+            />
+          ),
+        },
       ],
     },
   ],

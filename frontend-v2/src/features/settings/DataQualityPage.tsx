@@ -1,5 +1,9 @@
 // Phase 14 P14.T4 — Data quality dashboard (read-only).
+// Phase 8 — adds a cross-link to /settings/model-cards (the sibling
+// trust surface that reads from model_registry).
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { BrainCog } from 'lucide-react';
 import { apiFetch } from '@/lib/api/client';
 
 interface QualitySummary {
@@ -37,6 +41,21 @@ export default function DataQualityPage() {
 
   return (
     <div className="flex flex-col gap-5">
+      <Link
+        to="/settings/model-cards"
+        className="flex items-center justify-between rounded-[10px] border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-2 text-[12px] text-[var(--ink-2)] transition-colors hover:bg-white"
+      >
+        <span className="flex items-center gap-2">
+          <BrainCog size={13} className="text-[var(--rose-deep)]" />
+          <span>
+            <b className="text-[var(--ink)]">Model cards →</b> sibling trust surface · per-cluster
+            accuracy, last-trained date, feature list.
+          </span>
+        </span>
+        <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--rose-deep)]">
+          Open
+        </span>
+      </Link>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: 'Invoices', value: data.invoice_count ?? '—' },

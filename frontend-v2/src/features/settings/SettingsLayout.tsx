@@ -1,13 +1,14 @@
 // Phase 14 P14.T1 — Settings shell with left-rail nav inside <Outlet/>.
 import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { BellRing, BookmarkCheck, Database, NotebookPen, SlidersHorizontal, User } from 'lucide-react';
+import { BellRing, BookmarkCheck, BrainCog, Database, NotebookPen, SlidersHorizontal, User } from 'lucide-react';
 
 const links = [
   { to: '/settings/profile', icon: User, key: 'settings.profile' },
   { to: '/settings/preferences', icon: SlidersHorizontal, key: 'settings.preferences' },
   { to: '/settings/saved-views', icon: BookmarkCheck, key: 'settings.savedViews' },
   { to: '/settings/data-quality', icon: Database, key: 'settings.dataQuality' },
+  { to: '/settings/model-cards', icon: BrainCog, key: 'settings.modelCards' },
   { to: '/notifications', icon: BellRing, key: 'settings.notifications' },
   { to: '/notes', icon: NotebookPen, key: 'settings.notes' },
 ] as const;
@@ -17,6 +18,7 @@ const fallback: Record<string, string> = {
   'settings.preferences': 'Preferences',
   'settings.savedViews': 'Saved views',
   'settings.dataQuality': 'Data quality',
+  'settings.modelCards': 'Model cards',
   'settings.notifications': 'Notifications',
   'settings.notes': 'Notes',
 };
