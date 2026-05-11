@@ -18,6 +18,34 @@ export interface ForecastSeriesPoint {
   low: number;
   high: number;
   actual?: number;
+  // Phase 6 — named prediction-interval bands.
+  p50?: number;
+  p80Low?: number;
+  p80High?: number;
+  p95Low?: number;
+  p95High?: number;
+}
+
+export interface ForecastIntervalBand {
+  id: 'p50' | 'p80' | 'p95';
+  name: string;
+  desc: string;
+  calibration: string | null;
+}
+
+export interface ForecastIntervals {
+  title: string;
+  bands: ForecastIntervalBand[];
+  disclosure: string;
+  calibration: {
+    windowMonths: number;
+    p80Hit: number;
+    p95Hit: number;
+    p80HitPct: number | null;
+    p95HitPct: number | null;
+    footnote: string;
+  };
+  heuristic: { label: string; rule: string; qualifier?: string | null };
 }
 
 export interface ForecastHero {
@@ -35,6 +63,7 @@ export interface ForecastHero {
     sub: string;
     rows: { label: string; value: string; tone: 'red' | 'green' | 'amber'; sub: string }[];
   };
+  intervals?: ForecastIntervals;
 }
 
 export interface ClusterCard {

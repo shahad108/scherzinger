@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Area, ComposedChart, Line, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-import type { ForecastHero, ForecastMode } from '@/types/forecast';
+import type { ForecastHero, ForecastIntervals, ForecastMode } from '@/types/forecast';
 
 interface Props {
   hero: ForecastHero;
@@ -12,24 +12,43 @@ const MODES: { id: ForecastMode; label: string }[] = [
   { id: 'volume',  label: 'Volume (units)' },
 ];
 
+type BandMode = 'p80' | 'p80+p95';
+
 export function HeroForecast({ hero }: Props) {
   const [mode, setMode] = useState<ForecastMode>('revenue');
+  const [bandMode, setBandMode] = useState<BandMode>('p80+p95');
+  const showP95 = bandMode === 'p80+p95';
 
-  // Tuple-array Area gives a true range-band between low and high without
-  // forcing a 0-baseline, so we can keep the y-domain tight on actual values.
+  // Tuple-array Area gives a true range-band between bounds without
+  // forcing a 0-baseline, so we can keep the y-domain tight.
   const chartData = useMemo(
     () =>
-      hero.series.map((p) => ({
-        month: p.month,
-        envelope: [p.low, p.high] as [number, number],
-        primary: p.primary,
-        actual: p.actual,
-      })),
+      hero.series.map((p) => {
+        const p80Low = p.p80Low ?? p.low;
+        const p80High = p.p80High ?? p.high;
+        const p95Low = p.p95Low ?? p80Low;
+        const p95High = p.p95High ?? p80High;
+        return {
+          month: p.month,
+          p80: [p80Low, p80High] as [number, number],
+          p95: [p95Low, p95High] as [number, number],
+          primary: p.p50 ?? p.primary,
+          actual: p.actual,
+        };
+      }),
     [hero.series],
   );
 
-  const yMin = useMemo(() => Math.min(...hero.series.map((p) => p.low)) - 0.4, [hero.series]);
-  const yMax = useMemo(() => Math.max(...hero.series.map((p) => p.high)) + 0.4, [hero.series]);
+  const lowestBound = useMemo(
+    () => Math.min(...hero.series.map((p) => p.p95Low ?? p.low)),
+    [hero.series],
+  );
+  const highestBound = useMemo(
+    () => Math.max(...hero.series.map((p) => p.p95High ?? p.high)),
+    [hero.series],
+  );
+  const yMin = lowestBound - 0.4;
+  const yMax = highestBound + 0.4;
 
   const movablePct = hero.movableLockedSplit.movablePct;
 
@@ -57,16 +76,59 @@ export function HeroForecast({ hero }: Props) {
             </button>
           ))}
         </div>
-        <span className="tag-chip">{hero.caption}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {hero.intervals && (
+            <div
+              role="tablist"
+              aria-label="Prediction interval bands"
+              style={{
+                display: 'inline-flex',
+                gap: 2,
+                padding: 2,
+                borderRadius: 8,
+                background: 'var(--surface-soft)',
+                border: '1px solid var(--hairline)',
+              }}
+            >
+              {(['p80', 'p80+p95'] as BandMode[]).map((bm) => (
+                <button
+                  key={bm}
+                  type="button"
+                  onClick={() => setBandMode(bm)}
+                  className="band-toggle-btn"
+                  style={{
+                    border: 'none',
+                    background: bandMode === bm ? 'var(--surface)' : 'transparent',
+                    color: bandMode === bm ? 'var(--ink)' : 'var(--muted)',
+                    boxShadow: bandMode === bm ? 'var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.06))' : 'none',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    padding: '4px 10px',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {bm === 'p80' ? 'P50 + P80' : 'P50 + P80 + P95'}
+                </button>
+              ))}
+            </div>
+          )}
+          <span className="tag-chip">{hero.caption}</span>
+        </div>
       </div>
 
       <div style={{ height: 340, position: 'relative' }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 12, right: 16, left: 0, bottom: 8 }}>
             <defs>
-              <linearGradient id="bandGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#5a7da3" stopOpacity={0.32} />
-                <stop offset="100%" stopColor="#5a7da3" stopOpacity={0.16} />
+              <linearGradient id="p80Gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#5a7da3" stopOpacity={0.36} />
+                <stop offset="100%" stopColor="#5a7da3" stopOpacity={0.22} />
+              </linearGradient>
+              <linearGradient id="p95Gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#5a7da3" stopOpacity={0.14} />
+                <stop offset="100%" stopColor="#5a7da3" stopOpacity={0.06} />
               </linearGradient>
             </defs>
             <CartesianGrid stroke="#eaedf1" vertical={false} />
@@ -97,21 +159,30 @@ export function HeroForecast({ hero }: Props) {
               }}
               formatter={(value, name) => {
                 const n = String(name);
-                if (n === 'envelope' && Array.isArray(value)) {
+                if ((n === 'p80' || n === 'p95') && Array.isArray(value)) {
                   const [lo, hi] = value as [number, number];
-                  return [`€${lo.toFixed(2)}M – €${hi.toFixed(2)}M`, 'Envelope'];
+                  return [`€${lo.toFixed(2)}M – €${hi.toFixed(2)}M`, n.toUpperCase()];
                 }
                 if (typeof value !== 'number') return [String(value ?? ''), n];
-                if (n === 'primary') return [`€${value.toFixed(2)}M`, 'Primary'];
+                if (n === 'primary') return [`€${value.toFixed(2)}M`, 'P50'];
                 if (n === 'actual')  return [`€${value.toFixed(2)}M`, 'Actual'];
                 return [`€${value.toFixed(2)}M`, n];
               }}
             />
+            {showP95 && (
+              <Area
+                type="monotone"
+                dataKey="p95"
+                stroke="none"
+                fill="url(#p95Gradient)"
+                isAnimationActive={false}
+              />
+            )}
             <Area
               type="monotone"
-              dataKey="envelope"
+              dataKey="p80"
               stroke="none"
-              fill="url(#bandGradient)"
+              fill="url(#p80Gradient)"
               isAnimationActive={false}
             />
             <Line
@@ -136,6 +207,8 @@ export function HeroForecast({ hero }: Props) {
           </ComposedChart>
         </ResponsiveContainer>
       </div>
+
+      {hero.intervals && <IntervalsPanel intervals={hero.intervals} showP95={showP95} />}
 
       <div className="signal-with-trend" style={{ marginTop: 18 }}>
         <div className="signal-pane">
@@ -194,6 +267,66 @@ export function HeroForecast({ hero }: Props) {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function IntervalsPanel({ intervals, showP95 }: { intervals: ForecastIntervals; showP95: boolean }) {
+  const [heuristicOpen, setHeuristicOpen] = useState(false);
+  const visibleBands = intervals.bands.filter((b) => showP95 || b.id !== 'p95');
+  return (
+    <div
+      style={{
+        marginTop: 14,
+        borderRadius: 11,
+        border: '1px solid var(--hairline)',
+        background: 'var(--surface-soft)',
+        padding: '12px 14px',
+      }}
+      aria-label="Prediction interval calibration"
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{intervals.title}</div>
+        <div style={{ fontSize: 11, color: 'var(--muted)' }}>{intervals.calibration.footnote}</div>
+      </div>
+      <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: `repeat(${visibleBands.length}, minmax(0, 1fr))`, gap: 10 }}>
+        {visibleBands.map((b) => (
+          <div key={b.id} style={{ borderLeft: '3px solid var(--rose)', paddingLeft: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)' }}>{b.name}</div>
+            <div style={{ marginTop: 2, fontSize: 10.5, color: 'var(--ink-2)', lineHeight: 1.45 }}>{b.desc}</div>
+            {b.calibration && (
+              <div style={{ marginTop: 4, fontSize: 10.5, fontWeight: 600, color: 'var(--ink-2)', fontVariantNumeric: 'tabular-nums' }}>
+                {b.calibration}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <p style={{ marginTop: 8, fontSize: 11, color: 'var(--ink-2)', lineHeight: 1.5 }}>{intervals.disclosure}</p>
+      <button
+        type="button"
+        onClick={() => setHeuristicOpen((v) => !v)}
+        aria-expanded={heuristicOpen}
+        style={{
+          marginTop: 4,
+          background: 'transparent',
+          border: '1px solid var(--hairline)',
+          borderRadius: 5,
+          padding: '2px 7px',
+          fontSize: 10.5,
+          fontWeight: 600,
+          color: 'var(--ink-2)',
+          cursor: 'pointer',
+        }}
+      >
+        {intervals.heuristic.label} {heuristicOpen ? '▾' : '▸'}
+      </button>
+      {heuristicOpen && (
+        <p style={{ marginTop: 6, fontSize: 10.5, fontStyle: 'italic', color: 'var(--muted)', lineHeight: 1.45 }}>
+          {intervals.heuristic.rule}
+          {intervals.heuristic.qualifier && <span style={{ fontStyle: 'normal' }}> · {intervals.heuristic.qualifier}</span>}
+        </p>
+      )}
     </div>
   );
 }
