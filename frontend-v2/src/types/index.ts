@@ -400,6 +400,8 @@ export interface ShiftedRow {
   jumpTo: { kind: 'route'; to: string } | { kind: 'tab'; tab: string; segTab?: string };
 }
 
+export type WaterfallBucketClassification = 'strategic' | 'unintended' | 'mixed';
+
 export interface WaterfallBucket {
   id: string;                             // "target","mix","discount","cost","rebate","erosion","actual"
   name: string;
@@ -410,6 +412,11 @@ export interface WaterfallBucket {
   delta?: { label: string; tone: 'up' | 'down' | 'flat' };
   jumpLabel?: string;                     // "→ Cost trajectory"
   jumpTo?: ShiftedRow['jumpTo'];
+  // Phase 4 — strategic-vs-unintended classification + low-n warning.
+  classification?: WaterfallBucketClassification;
+  classificationNote?: string;
+  movableShare?: number;                  // 0..1 — share of bucket Frank can act on this cycle
+  lowNClusters?: { code: string; n: number; conf: number }[];
 }
 
 export interface WaterfallChartPoint {
@@ -426,6 +433,14 @@ export interface MovableLockedSplit {
   source: string;                         // "Pilot estimate · derived from price_governance.price_rules + frame-contract dates"
 }
 
+export interface WaterfallMovableView {
+  title: string;
+  buckets: WaterfallBucket[];
+  chart: WaterfallChartPoint[];
+  totalChip: string;
+  heuristic: { label: string; rule: string; qualifier?: string };
+}
+
 export interface WaterfallCardData {
   title: string;
   subtitle: string;
@@ -434,6 +449,7 @@ export interface WaterfallCardData {
   buckets: WaterfallBucket[];
   chart: WaterfallChartPoint[];
   movableLocked: MovableLockedSplit;
+  movableView?: WaterfallMovableView;     // Phase 4 — precomputed movable-only render
 }
 
 export interface LostQuoteDifferentialData {

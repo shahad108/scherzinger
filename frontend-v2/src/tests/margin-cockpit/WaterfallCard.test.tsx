@@ -54,6 +54,54 @@ describe('WaterfallCard', () => {
     expect(onTabJump).not.toHaveBeenCalled();
   });
 
+  it('toggles between full and movable-only views when movableView is provided', () => {
+    const dataWithMovable: WaterfallCardData = {
+      ...data,
+      buckets: [
+        data.buckets[0],
+        {
+          ...data.buckets[1],
+          classification: 'unintended',
+          classificationNote: 'Sales-rep guardrail breaches.',
+          movableShare: 0.85,
+        },
+        data.buckets[2],
+      ],
+      movableView: {
+        title: 'Movable-only',
+        totalChip: '€100K movable leakage of €417K total leakage',
+        buckets: [
+          data.buckets[0],
+          {
+            id: 'discount', name: 'Discounting',
+            pct: '−0.9pp', eur: '€99K',
+            classification: 'unintended', classificationNote: 'Sales-rep guardrail breaches.',
+            movableShare: 0.85,
+          },
+          { id: 'actual', name: 'Actual margin', endpoint: 'green-end', pct: '27.1%', eur: '−€99K' },
+        ],
+        chart: data.chart,
+        heuristic: { label: 'Pilot heuristic', rule: 'movable_eur = bucket_eur × share', qualifier: 'Hover the pill.' },
+      },
+    };
+    const onTabJump = vi.fn();
+    render(
+      <MemoryRouter>
+        <WaterfallCard data={dataWithMovable} onTabJump={onTabJump} />
+      </MemoryRouter>
+    );
+    // default: full view
+    expect(screen.getByText('€117K')).toBeInTheDocument();
+    expect(screen.getByText('€417K total leakage')).toBeInTheDocument();
+    // classification pill is rendered
+    expect(screen.getByRole('button', { name: /Bucket classification: Unintended/ })).toBeInTheDocument();
+    // toggle on
+    fireEvent.click(screen.getByLabelText('Show movable-only waterfall'));
+    expect(screen.getByText('€99K')).toBeInTheDocument();
+    expect(screen.getByText(/movable leakage of/)).toBeInTheDocument();
+    expect(screen.getByText(/Hover the pill\./)).toBeInTheDocument();
+  });
+
   it('fires onTabJump when a tab-kind bucket is clicked', () => {
     const tabData = { ...data, buckets: [
       ...data.buckets,
