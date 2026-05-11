@@ -27,6 +27,8 @@ const PreferencesPage = lazy(() => import('@/features/settings/PreferencesPage')
 const SavedViewsPage = lazy(() => import('@/features/settings/SavedViewsPage'));
 const DataQualityPage = lazy(() => import('@/features/settings/DataQualityPage'));
 const ModelCardsPage = lazy(() => import('@/features/settings/ModelCardsPage'));
+const MdOverviewPage = lazy(() => import('@/features/persona-overview/MdOverviewPage'));
+const DealInboxPage = lazy(() => import('@/features/persona-overview/DealInboxPage'));
 const NotificationsPage = lazy(() => import('@/features/settings/NotificationsPage'));
 const NotesPage = lazy(() => import('@/features/settings/NotesPage'));
 
@@ -103,24 +105,9 @@ export const router = createBrowserRouter(
         { path: 'notifications', element: lazyRoute(NotificationsPage) },
         { path: 'notes', element: lazyRoute(NotesPage) },
 
-        {
-          path: 'md/overview',
-          element: (
-            <PersonaRouteUnavailable
-              title="Managing Director workspace unavailable"
-              detail="This frontend build does not yet expose a production-ready MD surface. The route stays isolated so users are not redirected into another persona's workflow."
-            />
-          ),
-        },
-        {
-          path: 'deal/inbox',
-          element: (
-            <PersonaRouteUnavailable
-              title="Sales workspace unavailable"
-              detail="This frontend build does not yet expose a production-ready Sales surface. The route stays isolated so users are not redirected into another persona's workflow."
-            />
-          ),
-        },
+        // Phase 12 — Till MD + Heiko Sales read-only landing pages.
+        { path: 'md/overview', element: lazyRoute(MdOverviewPage) },
+        { path: 'deal/inbox', element: lazyRoute(DealInboxPage) },
       ],
     },
   ],
