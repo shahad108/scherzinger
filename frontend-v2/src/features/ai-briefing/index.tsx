@@ -2,8 +2,42 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, Forward, Send } from 'lucide-react';
 import { useAi } from '@/data/api/useAi';
-import type { AiSideCard } from '@/types/ai';
+import type { AiCitation, AiSideCard } from '@/types/ai';
 import { AiBriefingSkeleton } from './components/AiBriefingSkeleton';
+
+// Phase 10 — citation kind → chip color (matches existing palette).
+const citationToneStyle: Record<AiCitation['kind'], { bg: string; color: string; border: string }> = {
+  article:        { bg: 'var(--rose-bg)',   color: 'var(--rose-deep)', border: 'var(--rose-border, var(--rose-bg))' },
+  customer:       { bg: 'var(--surface-soft)', color: 'var(--ink-2)',  border: 'var(--hairline)' },
+  cluster:        { bg: 'var(--amber-bg)',  color: 'var(--amber)',     border: 'var(--amber-border)' },
+  recommendation: { bg: 'var(--green-bg)',  color: 'var(--green)',     border: 'var(--green-border)' },
+  ab_test:        { bg: 'var(--violet-bg)', color: 'var(--violet)',    border: 'var(--violet-bg)' },
+};
+
+function SourcesRow({ citations }: { citations: AiCitation[] | undefined }) {
+  if (!citations || citations.length === 0) return null;
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-3)]">
+        Sources →
+      </span>
+      {citations.map((c) => {
+        const s = citationToneStyle[c.kind];
+        return (
+          <Link
+            key={`${c.kind}|${c.target_id}`}
+            to={c.jumpTo}
+            className="inline-flex items-center gap-1 rounded-[5px] border px-1.5 py-[2px] text-[10.5px] font-semibold transition-colors hover:opacity-90"
+            style={{ background: s.bg, color: s.color, borderColor: s.border }}
+            data-citation-kind={c.kind}
+          >
+            {c.label}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
 
 const tagPalette: Record<NonNullable<AiSideCard['tag']>['tone'], { bg: string; color: string }> = {
   amber:  { bg: 'var(--amber-bg)',  color: 'var(--amber)' },
@@ -117,7 +151,10 @@ export default function AiBriefingPage() {
         </div>
         <div className="mt-4 space-y-3.5 text-[14px] leading-[1.7] text-[var(--ink-2)] [&_b]:font-semibold [&_b]:text-[var(--ink)]">
           {data.memo.paragraphs.map((p) => (
-            <p key={p.html.slice(0, 40)} dangerouslySetInnerHTML={{ __html: p.html }} />
+            <div key={p.html.slice(0, 40)}>
+              <p dangerouslySetInnerHTML={{ __html: p.html }} />
+              <SourcesRow citations={p.citations} />
+            </div>
           ))}
         </div>
         <div className="mt-5 border-t border-[var(--hairline)] pt-3.5 text-[12.5px] italic text-[var(--muted)]">
@@ -155,16 +192,20 @@ export default function AiBriefingPage() {
                       className="relative pl-3.5 before:absolute before:left-0 before:top-[7px] before:h-1.5 before:w-1.5 before:rounded-full before:bg-[var(--rose)]"
                     >
                       <span dangerouslySetInnerHTML={{ __html: b.html }} />
+                      <SourcesRow citations={b.citations} />
                     </li>
                   ))}
                 </ul>
               )}
               {c.body && (
-                <p
-                  className={`text-[12.5px] leading-[1.6] text-[var(--ink-3)] [&_b]:font-semibold [&_b]:text-[var(--ink)] ${c.bodyItalic ? 'italic' : ''}`}
-                >
-                  {c.body}
-                </p>
+                <>
+                  <p
+                    className={`text-[12.5px] leading-[1.6] text-[var(--ink-3)] [&_b]:font-semibold [&_b]:text-[var(--ink)] ${c.bodyItalic ? 'italic' : ''}`}
+                  >
+                    {c.body}
+                  </p>
+                  <SourcesRow citations={c.citations} />
+                </>
               )}
             </div>
           );

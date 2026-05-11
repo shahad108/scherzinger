@@ -9,10 +9,25 @@ export interface AiHeader {
   actions: { id: string; label: string; toast: string; primary?: boolean }[];
 }
 
+export type AiCitationKind = 'article' | 'customer' | 'cluster' | 'recommendation' | 'ab_test';
+
+export interface AiCitation {
+  kind: AiCitationKind;
+  target_id: string;
+  anchor: string;                      // verbatim substring from the prose
+  label: string;                       // display label for the chip ("SKU 200832-E")
+  jumpTo: string;                      // deep-link path
+}
+
+export interface AiMemoParagraph {
+  html: string;
+  citations?: AiCitation[];            // Phase 10 — clickable Sources row
+}
+
 export interface AiMemo {
   title: string;                       // "Monday Briefing — Pricing Manager — Week of Apr 27, 2026"
   fromLine: string;                    // "From: Pryzm · To: M. Weber · Generated..."
-  paragraphs: { html: string }[];      // 3 paragraphs, HTML allowed
+  paragraphs: AiMemoParagraph[];       // 3 paragraphs, HTML allowed
   signature: string;                   // "— Pryzm, in the voice of a 10-year senior pricing manager"
 }
 
@@ -25,7 +40,8 @@ export interface AiSideCard {
   tag?: { label: string; tone: 'amber' | 'green' | 'violet' };
   body?: string;                       // plain prose
   bodyItalic?: boolean;
-  bullets?: { html: string }[];        // for "changed" card
+  bullets?: AiMemoParagraph[];         // for "changed" card; carries citations too
+  citations?: AiCitation[];            // citations from `body` prose
 }
 
 export interface AiCrossLink {
