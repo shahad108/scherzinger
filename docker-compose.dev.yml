@@ -43,6 +43,7 @@ services:
       CORS_ORIGINS: "http://localhost:5173"
     volumes:
       - ./scherzinger-platform:/app
+      - ./Data:/app/data
     ports:
       - "8000:8000"
     depends_on:
