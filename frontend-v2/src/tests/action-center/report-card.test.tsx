@@ -44,4 +44,21 @@ describe('ReportCard lifecycle', () => {
     // After send, the button locks again (regenerate to send another).
     expect(screen.getByRole('button', { name: /Send to Till/i })).toBeDisabled();
   });
+
+  it('Phase 9: renders the branded preview tile + Print PDF button once ready', async () => {
+    render(withQc(<ReportCard />));
+    fireEvent.click(screen.getByRole('button', { name: /Generate report/i }));
+    await waitFor(() =>
+      expect(screen.getByTestId('report-preview-tile')).toBeInTheDocument(),
+    );
+    // Preview shows the 4 KPI tiles with the synth-mock numbers.
+    expect(screen.getByText(/Report preview · what Till will see/)).toBeInTheDocument();
+    expect(screen.getByText('Recommendations')).toBeInTheDocument();
+    expect(screen.getByText('Audit events')).toBeInTheDocument();
+    // Synth-mock values: 12 / 4 / 2 / 9.
+    expect(screen.getByText('12')).toBeInTheDocument();
+    expect(screen.getByText('9')).toBeInTheDocument();
+    // Print PDF button appears next to Open.
+    expect(screen.getByRole('button', { name: /Print PDF/i })).toBeInTheDocument();
+  });
 });

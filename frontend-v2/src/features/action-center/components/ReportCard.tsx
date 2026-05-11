@@ -1,27 +1,45 @@
 import { useState } from 'react';
-import { ArrowRight, FileText, Mail, RefreshCcw, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, FileText, Mail, Printer, RefreshCcw, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import {
   openReportArtifact,
+  printReportArtifact,
   useGenerateActionCenterReport,
   useSendReport,
   type ReportJob,
 } from '@/data/api/useReportJob';
 import type { ActionIntent } from '@/types/uiActions';
 
-export function ReportCard({ onAction }: { onAction?: (intent: ActionIntent) => void }) {
+export function ReportCard({
+  onAction,
+  enabled = true,
+  disabledReason,
+  traceId,
+}: {
+  onAction?: (intent: ActionIntent) => void;
+  enabled?: boolean;
+  disabledReason?: string;
+  traceId?: string;
+}) {
   const [job, setJob] = useState<ReportJob | null>(null);
   const [error, setError] = useState<string | null>(null);
   const generate = useGenerateActionCenterReport();
   const send = useSendReport();
 
   const sendDisabled =
+    !enabled ||
     !job ||
     job.status === 'failed' ||
     job.status === 'sent' ||
     !(job.payload?.artifact_html || job.download_url);
 
   function handleGenerate() {
+    if (!enabled) {
+      if (disabledReason) {
+        onAction?.({ toast: disabledReason, toastSeverity: 'warning' });
+      }
+      return;
+    }
     setError(null);
     generate.mutate(
       {},
@@ -29,7 +47,7 @@ export function ReportCard({ onAction }: { onAction?: (intent: ActionIntent) => 
         onSuccess: (j) => {
           setJob(j);
           onAction?.({
-            toast: `Report ${j.id.slice(0, 8)} ready (${j.status}).`,
+            toast: `Report ${j.id.slice(0, 8)} ready (${j.status})${traceId ? ` · ${traceId}` : ''}.`,
             toastSeverity: 'success',
           });
         },
@@ -45,7 +63,7 @@ export function ReportCard({ onAction }: { onAction?: (intent: ActionIntent) => 
   }
 
   function handleSend() {
-    if (!job) return;
+    if (!enabled || !job) return;
     setError(null);
     send.mutate(
       { reportId: job.id, recipient: 'till' },
@@ -79,6 +97,11 @@ export function ReportCard({ onAction }: { onAction?: (intent: ActionIntent) => 
             Auto-generated from the live Action Center snapshot. Audit trail attached. Reports are
             persisted as report_jobs for board review.
           </p>
+          {traceId && (
+            <p className="mt-1 text-[11px] text-[var(--muted)]">
+              Trace ID: <code>{traceId}</code>
+            </p>
+          )}
         </div>
         {job ? (
           <ReportStatusBadge status={job.status} />
@@ -104,6 +127,19 @@ export function ReportCard({ onAction }: { onAction?: (intent: ActionIntent) => 
         </div>
       )}
 
+      {!enabled && disabledReason && (
+        <div
+          role="alert"
+          className="mb-3 rounded-lg border border-[var(--amber-border)] bg-[var(--amber-bg)] px-3 py-2 text-[12.5px] text-[var(--ink-2)]"
+        >
+          {disabledReason}
+        </div>
+      )}
+
+      {job && job.status === 'ready' && job.preview && (
+        <ReportPreviewTile preview={job.preview} />
+      )}
+
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div className="rounded-xl border border-[var(--hairline)] bg-[var(--surface-soft)] p-4">
           <div className="flex items-center gap-2">
@@ -120,19 +156,30 @@ export function ReportCard({ onAction }: { onAction?: (intent: ActionIntent) => 
             </div>
             <div className="flex items-center gap-2">
               {job && job.status === 'ready' && (
-                <button
-                  type="button"
-                  onClick={() => openReportArtifact(job)}
-                  className="inline-flex items-center gap-1 rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] hover:bg-[var(--grey-bg)]"
-                >
-                  Open
-                  <ArrowRight size={12} />
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => openReportArtifact(job)}
+                    className="inline-flex items-center gap-1 rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] hover:bg-[var(--grey-bg)]"
+                  >
+                    Open
+                    <ArrowRight size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => printReportArtifact(job)}
+                    title="Open and print — produces a branded PDF via the browser's Print-to-PDF."
+                    className="inline-flex items-center gap-1 rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] hover:bg-[var(--grey-bg)]"
+                  >
+                    <Printer size={12} />
+                    Print PDF
+                  </button>
+                </>
               )}
               <button
                 type="button"
                 onClick={handleGenerate}
-                disabled={generate.isPending}
+                disabled={!enabled || generate.isPending}
                 className="inline-flex items-center gap-1 rounded-md bg-[var(--ink)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-black disabled:opacity-60"
               >
                 {generate.isPending
@@ -181,6 +228,55 @@ export function ReportCard({ onAction }: { onAction?: (intent: ActionIntent) => 
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ReportPreviewTile({ preview }: { preview: NonNullable<ReportJob['preview']> }) {
+  const tiles = [
+    { label: 'Recommendations', value: preview.recommendation_count, sub: 'live signals' },
+    {
+      label: 'Proposals',
+      value: preview.proposal_count,
+      sub: `${preview.draft_proposal_count} draft · ${preview.pending_approval_count} pending`,
+    },
+    { label: 'A/B tests', value: preview.ab_test_count, sub: 'in window' },
+    {
+      label: 'Audit events',
+      value: preview.audit_count,
+      sub: 'with hash chain',
+    },
+  ];
+  return (
+    <div
+      data-testid="report-preview-tile"
+      className="mb-3 rounded-xl border border-[var(--hairline)] bg-[var(--surface-soft)] p-3"
+    >
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+        <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--ink-3)]">
+          Report preview · what Till will see
+        </div>
+        <div className="text-[10.5px] text-[var(--muted)]">
+          Prepared by {preview.generated_for_name ?? 'Frank'} · {new Date(preview.generated_at).toLocaleString()}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {tiles.map((t) => (
+          <div key={t.label} className="rounded-lg border border-[var(--hairline)] bg-white px-2.5 py-1.5">
+            <div className="text-[9.5px] font-semibold uppercase tracking-wide text-[var(--ink-3)]">
+              {t.label}
+            </div>
+            <div className="mt-0.5 font-display text-[18px] font-bold leading-none tabular-nums text-[var(--ink)]">
+              {t.value}
+            </div>
+            <div className="mt-0.5 text-[10px] text-[var(--muted)]">{t.sub}</div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 text-[10.5px] leading-snug text-[var(--muted)]">
+        Branded PDF · Pryzm header on every page · audit hash chain footer (last{' '}
+        {preview.audit_count} actions). Use <b>Print PDF</b> to save the artifact directly.
+      </p>
     </div>
   );
 }

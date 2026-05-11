@@ -8,6 +8,18 @@ import { apiFetch, postJson } from '@/lib/api/client';
 
 export type ReportStatus = 'pending' | 'ready' | 'sent' | 'failed';
 
+export interface ReportPreview {
+  recommendation_count: number;
+  proposal_count: number;
+  draft_proposal_count: number;
+  pending_approval_count: number;
+  ab_test_count: number;
+  audit_count: number;
+  estimated_impact_eur_per_unit: number;
+  generated_at: string;
+  generated_for_name?: string;
+}
+
 export interface ReportJob {
   id: string;
   screen: string;
@@ -18,6 +30,8 @@ export interface ReportJob {
   created_at: string | null;
   /** Backend-provided convenience URL (relative). */
   download_url?: string | null;
+  /** Phase 9 — inline summary shown in the ReportCard preview tile. */
+  preview?: ReportPreview | null;
 }
 
 const SYNTH_KEY = 'pryzm_v2_synth_reports';
@@ -35,12 +49,12 @@ function writeSynth(rows: ReportJob[]) {
   window.sessionStorage.setItem(SYNTH_KEY, JSON.stringify(rows));
 }
 
-function synthCreate(filters: Record<string, unknown>): ReportJob {
+function synthCreate(filters: ReportFiltersBody): ReportJob {
   const id = `mock-report-${Date.now()}`;
   const job: ReportJob = {
     id,
     screen: 'action-center',
-    filters,
+    filters: { ...filters },
     status: 'ready',
     artifact_url: null,
     payload: {
@@ -48,6 +62,17 @@ function synthCreate(filters: Record<string, unknown>): ReportJob {
     },
     created_at: new Date().toISOString(),
     download_url: `mock://reports/${id}`,
+    preview: {
+      recommendation_count: 12,
+      proposal_count: 4,
+      draft_proposal_count: 3,
+      pending_approval_count: 1,
+      ab_test_count: 2,
+      audit_count: 9,
+      estimated_impact_eur_per_unit: 38.42,
+      generated_at: new Date().toISOString(),
+      generated_for_name: 'Frank',
+    },
   };
   writeSynth([job, ...readSynth()].slice(0, 25));
   return job;
@@ -111,6 +136,35 @@ export function openReportArtifact(job: ReportJob): void {
   // Mock-mode: inline preview from the synthetic html.
   const html = (job.payload?.artifact_html as string | undefined) ?? '<html><body>No artifact.</body></html>';
   const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+/** Phase 9 — open the artifact and auto-trigger the browser Print dialog.
+ *  Backed by an injected <script>window.print()</script> for the live
+ *  download path; for the mock-mode synthetic html we splice the script
+ *  in before opening the blob. */
+export function printReportArtifact(job: ReportJob): void {
+  if (typeof window === 'undefined') return;
+  if (job.download_url && !job.download_url.startsWith('mock://')) {
+    // Live path: open in a new tab and call print() once loaded.
+    const w = window.open(job.download_url, '_blank', 'noopener,noreferrer');
+    // Many browsers strip the opener for noopener — fall back gracefully.
+    if (w) {
+      try {
+        w.addEventListener('load', () => w.print(), { once: true });
+      } catch {
+        /* opener stripped; user can still print via menu */
+      }
+    }
+    return;
+  }
+  const html = (job.payload?.artifact_html as string | undefined) ?? '<html><body>No artifact.</body></html>';
+  const printable = html.replace(
+    /<\/body>/i,
+    "<script>window.addEventListener('load', function(){ setTimeout(function(){ window.print(); }, 50); });</script></body>",
+  );
+  const blob = new Blob([printable], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
   window.open(url, '_blank', 'noopener,noreferrer');
 }
