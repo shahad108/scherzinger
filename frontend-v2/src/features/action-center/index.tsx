@@ -6,6 +6,8 @@ import { BucketGrid } from './components/BucketGrid';
 import { DecisionCards } from './components/DecisionCards';
 import { TrustStrip } from './components/TrustStrip';
 import { TrustDrawer } from './components/TrustDrawer';
+import { CoverageBadge } from './components/CoverageBadge';
+import { DataFreshnessStrip } from './components/DataFreshnessStrip';
 import { LostQuoteCard } from './components/LostQuoteCard';
 import { SkuTable } from './components/SkuTable';
 import { LongTailCoverage } from './components/LongTailCoverage';
@@ -100,6 +102,7 @@ export function ActionCenterPage() {
         exportDisabledReason={reportDisabledReason}
         traceId={traceId}
       />
+      <DataFreshnessStrip freshness={data.meta?.dataFreshness} />
       {blocks?.movableHero.status === 'degraded' ? (
         <DegradedBlock
           title="Movable revenue unavailable"
@@ -107,10 +110,17 @@ export function ActionCenterPage() {
           traceId={traceId}
         />
       ) : (
-        <MovableHero
-          hero={data.movableHero}
-          onAction={() => runUiAction(data.movableHero.action ?? FALLBACK_MOVABLE_HERO)}
-        />
+        <>
+          {blocks?.movableHero.coverage && (
+            <div className="mb-1.5 flex justify-end">
+              <CoverageBadge coverage={blocks.movableHero.coverage} />
+            </div>
+          )}
+          <MovableHero
+            hero={data.movableHero}
+            onAction={() => runUiAction(data.movableHero.action ?? FALLBACK_MOVABLE_HERO)}
+          />
+        </>
       )}
       {blocks?.buckets.status === 'degraded' ? (
         <DegradedBlock
@@ -150,10 +160,17 @@ export function ActionCenterPage() {
           traceId={traceId}
         />
       ) : (
-        <TrustStrip
-          tiles={data.trust}
-          onTile={(tile) => setTrustTile(tile)}
-        />
+        <>
+          {blocks?.trust.coverage && (
+            <div className="mb-1.5 flex justify-end">
+              <CoverageBadge coverage={blocks.trust.coverage} />
+            </div>
+          )}
+          <TrustStrip
+            tiles={data.trust}
+            onTile={(tile) => setTrustTile(tile)}
+          />
+        </>
       )}
       <TrustDrawer open={!!trustTile} onClose={() => setTrustTile(null)} focusedTile={trustTile} />
       {blocks?.lostQuote.status === 'degraded' ? (
@@ -163,18 +180,25 @@ export function ActionCenterPage() {
           traceId={traceId}
         />
       ) : (
-        <LostQuoteCard
-          data={data.lostQuote}
-          onOpen={() =>
-            runUiAction(
-              data.lostQuote.action ?? {
-                route: '/margin',
-                query: { focus: 'lost_quote', source: 'action-center' },
-                toast: 'Opening lost-quote margin analysis.',
-              },
-            )
-          }
-        />
+        <>
+          {blocks?.lostQuote.coverage && (
+            <div className="mb-1.5 flex justify-end">
+              <CoverageBadge coverage={blocks.lostQuote.coverage} />
+            </div>
+          )}
+          <LostQuoteCard
+            data={data.lostQuote}
+            onOpen={() =>
+              runUiAction(
+                data.lostQuote.action ?? {
+                  route: '/margin',
+                  query: { focus: 'lost_quote', source: 'action-center' },
+                  toast: 'Opening lost-quote margin analysis.',
+                },
+              )
+            }
+          />
+        </>
       )}
       {blocks?.skuTable.status === 'degraded' ? (
         <DegradedBlock

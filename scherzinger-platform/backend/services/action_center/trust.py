@@ -27,10 +27,14 @@ def _churn_f1(db) -> dict[str, Any] | None:
     n = pick.get("n_backtests") or 0
     if f1 is None:
         return None
+    # No churn model is trained on Scherzinger data yet — we surface the
+    # best forecast model's directional accuracy from backtest_results
+    # under an honest label. Real churn lands once the model_registry has
+    # a churn entry; until then "Pattern accuracy" is the truthful framing.
     return {
-        "label": "Churn model F1",
-        "value": f"{float(f1):.2f}",
-        "caption": f"{pick.get('model_type')} · {pick.get('entity_type')} · n={n} backtests",
+        "label": "Pattern accuracy",
+        "value": f"{float(f1) * 100:.0f}%",
+        "caption": f"{pick.get('model_type')} · {pick.get('entity_type')} · n={n} walk-forward steps",
     }
 
 

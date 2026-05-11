@@ -15,7 +15,8 @@ import { QuotesSkeleton } from './components/QuotesSkeleton';
 export default function QuotesPage() {
   const { data, isLoading, error } = useQuotes();
   const [briefingOpen, setBriefingOpen] = useState(false);
-  const [analysisTab, setAnalysisTab] = useState<'rep' | 'sku' | 'cust'>('rep');
+  // Default tab is 'sku' for Frank — the 'rep' tab moved to Heiko's view.
+  const [analysisTab, setAnalysisTab] = useState<'rep' | 'sku' | 'cust'>('sku');
 
   useEffect(() => {
     document.body.classList.add('pz-fullbleed');
@@ -48,7 +49,9 @@ export default function QuotesPage() {
       <EscalationsSection
         data={data.escalations}
         onJumpByRep={() => {
-          setAnalysisTab('rep');
+          // Per-rep view moved to Heiko (deferred). Land Frank on the SKU
+          // breakdown which carries the same pattern signal.
+          setAnalysisTab('sku');
           document.getElementById('quote-analysis-block')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }}
       />

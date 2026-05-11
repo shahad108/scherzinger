@@ -261,11 +261,26 @@ export type ActionCenterBlockStatus = 'live' | 'empty' | 'degraded';
 export interface ActionCenterBlockMeta {
   status: ActionCenterBlockStatus;
   reason?: string | null;
+  coverage?: {
+    tone: 'green' | 'amber' | 'red';
+    label: string;
+    n?: number | null;
+  };
+}
+
+// Convenience alias used by the CoverageBadge component.
+export type BlockMeta = ActionCenterBlockMeta;
+
+export interface DataFreshness {
+  invoicesThrough?: string | null;
+  quotesThrough?: string | null;
+  linksUpdatedAt?: string | null;
 }
 
 export interface ActionCenterMeta {
   generatedAt: string;
   traceId: string;
+  dataFreshness?: DataFreshness;
   blocks: {
     header: ActionCenterBlockMeta;
     movableHero: ActionCenterBlockMeta;

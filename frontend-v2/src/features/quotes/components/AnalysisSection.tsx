@@ -8,8 +8,10 @@ interface Props {
   onTabChange: (id: 'rep' | 'sku' | 'cust') => void;
 }
 
+// "By sales rep" was moved to Heiko's view (Phase 11 — deferred for the
+// Frank-only demo cut). Frank reads the aggregate rep-pattern footer
+// inside this section, not a per-rep watchlist.
 const TAB_DEFS: { id: 'rep' | 'sku' | 'cust'; label: string }[] = [
-  { id: 'rep',  label: 'By sales rep' },
   { id: 'sku',  label: 'By SKU' },
   { id: 'cust', label: 'By customer' },
 ];
