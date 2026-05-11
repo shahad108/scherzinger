@@ -157,6 +157,20 @@ export interface AbTestCard {
   lift: string;
   liftTone: Tone;
   status: string;
+  decisionState?: string;
+  simulation?: {
+    stage?: string;
+    recommendation?: string;
+    label?: string;
+    tone?: Tone;
+    expectedLift?: number | null;
+    downsideProbability?: number | null;
+    blockers?: string[];
+    warnings?: string[];
+  };
+  significance?: string;
+  promotionEligible?: boolean;
+  promotionBlockers?: string[];
   actions?: {
     hold?: ActionIntent;
     stop?: ActionIntent;
@@ -221,7 +235,34 @@ export interface AuditRow {
   delta: string;
 }
 
+export type ActionCenterBlockStatus = 'live' | 'empty' | 'degraded';
+
+export interface ActionCenterBlockMeta {
+  status: ActionCenterBlockStatus;
+  reason?: string | null;
+}
+
+export interface ActionCenterMeta {
+  generatedAt: string;
+  traceId: string;
+  blocks: {
+    header: ActionCenterBlockMeta;
+    movableHero: ActionCenterBlockMeta;
+    buckets: ActionCenterBlockMeta;
+    decisions: ActionCenterBlockMeta;
+    trust: ActionCenterBlockMeta;
+    lostQuote: ActionCenterBlockMeta;
+    skuTable: ActionCenterBlockMeta;
+    longTail: ActionCenterBlockMeta;
+    negotiation: ActionCenterBlockMeta;
+    rejections: ActionCenterBlockMeta;
+    audit: ActionCenterBlockMeta;
+    abTests: ActionCenterBlockMeta;
+  };
+}
+
 export interface ActionCenterData {
+  meta?: ActionCenterMeta;
   header: ActionCenterHeader;
   movableHero: MovableHero;
   buckets: BucketCard[];

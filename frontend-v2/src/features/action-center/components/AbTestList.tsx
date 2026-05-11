@@ -47,16 +47,18 @@ export function AbTestList({
         </div>
         <button
           type="button"
-          onClick={() =>
-            onAction?.({
-              drawer: {
-                title: 'Start A/B test',
-                description: 'Slice a measured price test against an article. Pre-fill the article id from a SKU row if you have one in mind.',
-                formKind: 'ab_setup',
-                context: { sourceScreen: 'action-center' },
-              },
-            })
-          }
+            onClick={() =>
+              onAction?.({
+                drawer: {
+                  title: 'Start A/B test',
+                  description: 'Slice a measured price test against an article. Pre-fill the article id from a SKU row if you have one in mind.',
+                  formKind: 'ab_setup',
+                  context: { sourceScreen: 'action-center' },
+                },
+                requiredPermission: 'act.start_ab_test',
+                permissionDeniedReason: 'You are not allowed to start A/B tests from this workspace.',
+              })
+            }
           className="inline-flex items-center gap-1.5 rounded-full border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--grey-bg)]"
         >
           <Plus size={12} />
@@ -120,6 +122,41 @@ export function AbTestList({
                 </div>
               </div>
             </div>
+            {(t.simulation || t.significance || (t.promotionBlockers && t.promotionBlockers.length > 0)) && (
+              <div
+                data-testid="ab-simulation-strip"
+                className="mt-4 border-t border-[var(--hairline)] pt-3 text-xs"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  {t.simulation?.label && (
+                    <Badge tone={toneToBadge(t.simulation.tone ?? 'neutral')}>
+                      {t.simulation.label}
+                    </Badge>
+                  )}
+                  {t.significance && (
+                    <span className="text-[var(--muted)]">· {t.significance}</span>
+                  )}
+                  {typeof t.simulation?.downsideProbability === 'number' && (
+                    <span className="text-[var(--muted)]">
+                      · downside {(t.simulation.downsideProbability * 100).toFixed(0)}%
+                    </span>
+                  )}
+                  {t.promotionEligible && (
+                    <Badge tone="positive">promotion ready</Badge>
+                  )}
+                </div>
+                {((t.simulation?.blockers && t.simulation.blockers.length > 0) ||
+                  (t.promotionBlockers && t.promotionBlockers.length > 0)) && (
+                  <ul className="mt-2 list-disc pl-4 text-[var(--red)]">
+                    {[...(t.simulation?.blockers ?? []), ...(t.promotionBlockers ?? [])].map(
+                      (b, i) => (
+                        <li key={i}>{b}</li>
+                      ),
+                    )}
+                  </ul>
+                )}
+              </div>
+            )}
             <div className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
@@ -132,6 +169,7 @@ export function AbTestList({
                         formKind: 'ab_hold',
                         context: { abTestId: t.id, articleId: t.title, headline: `A/B test ${t.title}` },
                       },
+                      requiredPermission: 'act.start_ab_test',
                     },
                   )
                 }
@@ -148,6 +186,7 @@ export function AbTestList({
                       targetType: 'ab_test',
                       targetId: t.id,
                       body: { test_id: t.id, aid: t.title },
+                      requiredPermission: 'act.start_ab_test',
                       toast: `${t.id} stopped.`,
                       toastSeverity: 'warning',
                     },
@@ -168,6 +207,7 @@ export function AbTestList({
                         formKind: 'ab_promote',
                         context: { abTestId: t.id, articleId: t.title, headline: `A/B test ${t.title}` },
                       },
+                      requiredPermission: 'act.start_ab_test',
                     },
                   )
                 }
