@@ -7,6 +7,7 @@ import { ChangedStrip } from './components/ChangedStrip';
 import { EscalationsSection } from './components/EscalationsSection';
 import { FunnelSection } from './components/FunnelSection';
 import { GuardrailsSection } from './components/GuardrailsSection';
+import { QuoteToInvoiceGapCard } from './components/QuoteToInvoiceGapCard';
 import { ActiveQuotesTable } from './components/ActiveQuotesTable';
 import { AnalysisSection } from './components/AnalysisSection';
 import { CrossLinks } from './components/CrossLinks';
@@ -56,6 +57,7 @@ export default function QuotesPage() {
         }}
       />
       <FunnelSection data={data.funnel} />
+      <QuoteToInvoiceGapCard data={data.gap} />
       <GuardrailsSection data={data.guardrails} />
       <ActiveQuotesTable data={data.active} onJumpToEscalation={scrollToEscalation} />
       <AnalysisSection data={data.analysis} active={analysisTab} onTabChange={setAnalysisTab} />

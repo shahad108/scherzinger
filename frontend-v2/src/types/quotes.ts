@@ -230,6 +230,34 @@ export interface QuotesCrossLink {
   jumpTo: string;
 }
 
+// ---------- Quote → invoice gap card (Phase 5) ----------
+export interface QuoteToInvoiceGapByYear {
+  year: number;
+  n: number;
+  mean_gap_pp: number | null;
+  median_gap_pp: number | null;
+}
+
+export interface QuoteToInvoiceGapOverall {
+  n: number;
+  mean_gap_pp: number | null;
+  median_gap_pp: number | null;
+  std_gap_pp: number | null;
+}
+
+export interface QuoteToInvoiceGapData {
+  title: string;
+  subtitle: string;
+  overall: QuoteToInvoiceGapOverall | null;
+  byYear: QuoteToInvoiceGapByYear[];
+  tone: 'positive' | 'warning' | 'negative' | 'neutral';
+  headline: { median: string; mean: string; n: string };
+  coverage: { linked: number | null; pct: number | null; label: string; tone: 'positive' | 'warning' | 'negative' | 'neutral' };
+  interpretation: string;
+  source: { table: string; joinOn?: string; buildScript?: string };
+  heuristic: { label: string; rule: string; qualifier?: string | null };
+}
+
 // ---------- Top-level shell ----------
 export interface QuotesShell {
   header: QuotesPageHeader;
@@ -241,5 +269,6 @@ export interface QuotesShell {
   guardrails: GuardrailsSectionData;
   active: ActiveQuotesSectionData;
   analysis: QuotesAnalysisTabs;
+  gap: QuoteToInvoiceGapData;
   crossLinks: QuotesCrossLink[];
 }
