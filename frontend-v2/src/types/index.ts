@@ -140,6 +140,21 @@ export interface TrustTile {
   action?: ActionIntent;
 }
 
+export interface QuoteInvoiceGap {
+  overall: {
+    n: number;
+    mean_gap_pp: number | null;
+    median_gap_pp: number | null;
+    std_gap_pp: number | null;
+  } | null;
+  byYear: {
+    year: number;
+    n: number;
+    mean_gap_pp: number | null;
+    median_gap_pp: number | null;
+  }[];
+}
+
 export interface LostQuoteData {
   wonAvg: number;
   lostAvg: number;
@@ -147,6 +162,7 @@ export interface LostQuoteData {
   pValue: number;
   implication: string;
   linkedRecords?: number;
+  quoteInvoiceGap?: QuoteInvoiceGap;
   action?: ActionIntent;
 }
 
