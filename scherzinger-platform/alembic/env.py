@@ -14,6 +14,7 @@ from backend.models import (
     Notification, Panel, Reviewer, SidebarSection,
     Recommendation, RecommendationEvent, PricingProposal, ReportJob,
     AbTestAssignment,
+    ModelRegistryEntry,
 )
 
 config = context.config
