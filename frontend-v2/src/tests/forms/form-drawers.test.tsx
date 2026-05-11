@@ -99,6 +99,7 @@ describe('QueueRenewalForm', () => {
 
 describe('AbSetupForm', () => {
   it('posts start_ab_test with control/treatment/slice/duration', async () => {
+    runAction.mockResolvedValueOnce({ replay: false, audit: { id: 'a', audit_hash: 'h', created_at: null } });
     render(withQc(<AbSetupForm context={ctx} onClose={noop} onToast={noop} />));
     fireEvent.click(screen.getByRole('button', { name: /start test/i }));
     await waitFor(() => expect(runAction).toHaveBeenCalled());
@@ -109,6 +110,50 @@ describe('AbSetupForm', () => {
     expect(body.treatment_price).toBe(4.38);
     expect(body.slice_pct).toBeCloseTo(0.1);
     expect(body.after.duration_days).toBe(21);
+    // Phase 7 — top-level duration_days + success_metric for the dispatcher.
+    expect(body.duration_days).toBe(21);
+    expect(body.success_metric).toBe('margin_lift_pp');
+  });
+
+  it('renders the audit-trail receipt on a successful start (Phase 7)', async () => {
+    runAction.mockResolvedValueOnce({
+      replay: false,
+      audit: { id: 'audit-xyz', audit_hash: 'deadbeef0102', created_at: '2026-05-12T10:00:00Z' },
+      ab_test_id: 'abt-123',
+      status: 'running',
+      decision_state: 'running',
+      simulation_status: 'pre_launch_ok',
+      launch_readiness: 'ready',
+      blockers: [],
+      simulation_summary: { stage: 'pre_launch', recommendation: 'launch', detected_lift_pp: 6.8, blockers: [] },
+    });
+    render(withQc(<AbSetupForm context={ctx} onClose={noop} onToast={noop} />));
+    fireEvent.click(screen.getByRole('button', { name: /start test/i }));
+    const receipt = await screen.findByTestId('ab-receipt');
+    expect(receipt).toBeInTheDocument();
+    expect(screen.getByText(/A\/B test started/)).toBeInTheDocument();
+    expect(screen.getByTestId('audit-hash')).toHaveTextContent('deadbeef0102');
+    expect(screen.getByTestId('ab-test-id')).toHaveTextContent('abt-123');
+    expect(screen.getByText(/All pre-launch checks passed/)).toBeInTheDocument();
+    expect(screen.getByText(/\+6\.8pp/)).toBeInTheDocument();
+  });
+
+  it('renders the blocked receipt with the blocker list (Phase 7)', async () => {
+    runAction.mockResolvedValueOnce({
+      replay: false,
+      audit: { id: 'audit-zzz', audit_hash: 'aabbccdd', created_at: '2026-05-12T10:00:00Z' },
+      ab_test_id: 'abt-456',
+      status: 'running',
+      decision_state: 'running',
+      launch_readiness: 'blocked',
+      blockers: ['Slice exceeds 40% — capacity risk'],
+      simulation_summary: { stage: 'pre_launch', recommendation: 'block', blockers: ['Slice exceeds 40% — capacity risk'] },
+    });
+    render(withQc(<AbSetupForm context={ctx} onClose={noop} onToast={noop} />));
+    fireEvent.click(screen.getByRole('button', { name: /start test/i }));
+    expect(await screen.findByTestId('ab-receipt')).toBeInTheDocument();
+    expect(screen.getByText(/A\/B test recorded — blocked/)).toBeInTheDocument();
+    expect(screen.getByText('Slice exceeds 40% — capacity risk')).toBeInTheDocument();
   });
 });
 

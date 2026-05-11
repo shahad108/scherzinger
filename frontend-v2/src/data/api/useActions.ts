@@ -67,6 +67,18 @@ export interface AuditRow {
   created_at: string | null;
 }
 
+export interface AbSimulationSummary {
+  stage: 'pre_launch' | 'mid_run' | string;
+  recommendation: 'launch' | 'hold' | 'block' | string;
+  detected_lift_pp?: number | null;
+  detected_lift_pct?: number | null;
+  p_value?: number | null;
+  observed_arms?: { control_n?: number | null; treatment_n?: number | null };
+  blockers?: string[];
+  warnings?: string[];
+  [key: string]: unknown;
+}
+
 export interface ActionResponse {
   replay: boolean;
   audit: AuditRow;
@@ -74,6 +86,11 @@ export interface ActionResponse {
   ab_test_id?: string;
   aid?: string;
   status?: string;
+  decision_state?: string;
+  simulation_status?: string;
+  simulation_summary?: AbSimulationSummary;
+  launch_readiness?: 'ready' | 'blocked' | string;
+  blockers?: string[];
   notification_id?: string;
   unread?: boolean;
 }
@@ -134,7 +151,7 @@ export async function runAction(
     headers: { 'x-pryzm-idempotency-key': key },
     mockResolve: () => {
       syncSynthProposalForMock(kind, body);
-      return {
+      const base: ActionResponse = {
         replay: false,
         audit: {
           id: 'mock-' + key,
@@ -146,10 +163,43 @@ export async function runAction(
           before: null,
           after: null,
           delta_pp: body.delta_pp ?? null,
-          audit_hash: 'mockhash',
+          audit_hash: 'mock' + Math.random().toString(16).slice(2, 14),
           created_at: new Date().toISOString(),
         },
       };
+      if (kind === 'start_ab_test') {
+        // Mock-mode parity for Phase 7 — surface the same simulation
+        // shape the live FastAPI dispatcher returns so the AbSetupForm
+        // confirmation panel works without a backend.
+        const slicePct = (body.slice_pct as number | undefined) ?? 0.1;
+        const ctrl = (body.control_price as number | undefined) ?? 0;
+        const treat = (body.treatment_price as number | undefined) ?? 0;
+        const liftPp = ctrl > 0 ? ((treat - ctrl) / ctrl) * 100 : 0;
+        const blockers: string[] = [];
+        if (slicePct > 0.4) blockers.push('Slice exceeds 40% — capacity risk');
+        if (ctrl > 0 && treat > 0 && Math.abs(liftPp) > 20) {
+          blockers.push(`Price move ${liftPp.toFixed(1)}pp outside ±20pp guardrail`);
+        }
+        const ready = blockers.length === 0;
+        base.ab_test_id = 'mock-abt-' + key;
+        base.aid = (body.aid as string | undefined) ?? null ?? undefined;
+        base.status = 'running';
+        base.decision_state = 'running';
+        base.simulation_status = 'pre_launch_ok';
+        base.launch_readiness = ready ? 'ready' : 'blocked';
+        base.blockers = blockers;
+        base.simulation_summary = {
+          stage: 'pre_launch',
+          recommendation: ready ? 'launch' : 'block',
+          detected_lift_pp: liftPp,
+          detected_lift_pct: liftPp,
+          p_value: null,
+          observed_arms: { control_n: null, treatment_n: null },
+          blockers,
+          warnings: [],
+        };
+      }
+      return base;
     },
   });
 }
