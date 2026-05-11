@@ -1,8 +1,106 @@
 import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import type { SkuRow, Tone } from '@/types';
+import type { PerSkuRecommendation, SkuRow, Tone } from '@/types';
 import { EmptyBlock } from './EmptyBlock';
+
+function fmtPrice(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '—';
+  if (value >= 1000) return `€${value.toFixed(0)}`;
+  return `€${value.toFixed(2)}`;
+}
+
+function priceDelta(rec: PerSkuRecommendation | null | undefined): { label: string; tone: 'positive' | 'negative' | 'neutral' } {
+  if (!rec || rec.current_price == null || rec.recommended_price == null) {
+    return { label: '', tone: 'neutral' };
+  }
+  const delta = rec.recommended_price - rec.current_price;
+  if (Math.abs(delta) < 0.005) return { label: 'no change', tone: 'neutral' };
+  const pct = (delta / rec.current_price) * 100;
+  const sign = delta >= 0 ? '+' : '−';
+  return {
+    label: `${sign}${Math.abs(pct).toFixed(1)}%`,
+    tone: delta >= 0 ? 'positive' : 'negative',
+  };
+}
+
+function RecommendationCell({ rec }: { rec: PerSkuRecommendation | null | undefined }) {
+  const [open, setOpen] = useState(false);
+  if (!rec || rec.recommended_price == null) {
+    return <span className="text-[11px] text-[var(--muted)]">—</span>;
+  }
+  const delta = priceDelta(rec);
+  const deltaClass =
+    delta.tone === 'positive' ? 'text-[var(--green)]' :
+    delta.tone === 'negative' ? 'text-[var(--red)]' :
+    'text-[var(--muted)]';
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex flex-col items-start text-left"
+      >
+        <span className="font-display text-[13px] font-bold tabular-nums text-[var(--ink)]">
+          {fmtPrice(rec.recommended_price)}
+        </span>
+        <span className={cn('text-[10px] font-semibold tabular-nums', deltaClass)}>
+          {delta.label}
+          {rec.guardrail_clamped && (
+            <span className="ml-1 rounded-full bg-[var(--amber-bg,#FEF3C7)] px-1 py-0.5 text-[9px] font-semibold text-[var(--amber,#92400E)]">
+              capped
+            </span>
+          )}
+        </span>
+      </button>
+      {open && (
+        <div
+          role="tooltip"
+          className="absolute right-0 top-full z-30 mt-1 w-[280px] rounded-lg border border-[var(--hairline)] bg-white p-3 text-[11.5px] leading-relaxed text-[var(--ink-2)] shadow-[var(--shadow-md)]"
+        >
+          <div className="mb-2 grid grid-cols-3 gap-2 text-center">
+            <div>
+              <div className="text-[9.5px] font-semibold uppercase tracking-wider text-[var(--muted)]">Floor</div>
+              <div className="font-display text-[12px] font-bold tabular-nums">{fmtPrice(rec.floor)}</div>
+            </div>
+            <div>
+              <div className="text-[9.5px] font-semibold uppercase tracking-wider text-[var(--muted)]">Current</div>
+              <div className="font-display text-[12px] font-bold tabular-nums">{fmtPrice(rec.current_price)}</div>
+            </div>
+            <div>
+              <div className="text-[9.5px] font-semibold uppercase tracking-wider text-[var(--muted)]">Ceiling</div>
+              <div className="font-display text-[12px] font-bold tabular-nums">{fmtPrice(rec.ceiling)}</div>
+            </div>
+          </div>
+          {rec.top_drivers && rec.top_drivers.length > 0 && (
+            <div className="border-t border-[var(--hairline)] pt-2">
+              <div className="mb-1 text-[9.5px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+                Why · top 3 drivers
+              </div>
+              <ul className="space-y-0.5">
+                {rec.top_drivers.map((d) => (
+                  <li key={d.code} className="flex items-center justify-between gap-2">
+                    <span className="text-[var(--ink)]">{d.label}</span>
+                    <span className="tabular-nums text-[var(--muted)]">
+                      {Math.round(d.weight * 100)}%
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {rec.heuristic && (
+            <p className="mt-2 border-t border-[var(--hairline)] pt-2 text-[10.5px] italic text-[var(--muted)]">
+              {rec.heuristic.label}: {rec.heuristic.qualifier ?? rec.heuristic.rule}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const marginToneClass: Record<Tone, string> = {
   positive: 'text-[var(--green)]',
@@ -70,7 +168,7 @@ export function SkuTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-[var(--surface-soft)]">
-              {['Article', 'Description', 'Commodity', 'Cluster conf.', 'Margin Δ', 'Status', 'Action'].map(
+              {['Article', 'Description', 'Commodity', 'Cluster conf.', 'Margin Δ', 'Recommended', 'Status', 'Action'].map(
                 (h) => (
                   <th
                     key={h}
@@ -104,6 +202,9 @@ export function SkuTable({
                 </td>
                 <td className={cn('px-3 py-2.5 font-bold tabular-nums', marginToneClass[r.marginTone])}>
                   {r.marginDelta}
+                </td>
+                <td className="px-3 py-2.5">
+                  <RecommendationCell rec={r.recommendation} />
                 </td>
                 <td className="px-3 py-2.5">
                   <span

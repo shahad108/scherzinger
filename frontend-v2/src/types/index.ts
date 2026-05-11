@@ -199,6 +199,36 @@ export interface AbTestCard {
   };
 }
 
+// Phase 3 — canonical per-SKU recommendation contract served by both
+// /studio.skus[] and /action-center.skuTable[]. The pricing logic is a
+// transparent pilot heuristic; UI renders the heuristic block as a
+// honest tooltip identical to the movable-hero pattern.
+export interface PerSkuRecommendationDriver {
+  code: string;
+  label: string;
+  weight: number;
+  tone: 'positive' | 'negative' | 'neutral';
+}
+
+export interface PerSkuRecommendation {
+  article_id: string;
+  current_price: number | null;
+  recommended_price: number | null;
+  floor: number | null;
+  ceiling: number | null;
+  cluster_id: string | null;
+  cluster_confidence: number | null;
+  movable_share: number | null;
+  is_movable: boolean;
+  top_drivers: PerSkuRecommendationDriver[];
+  guardrail_clamped: boolean;
+  heuristic?: {
+    label: string;
+    rule: string;
+    qualifier?: string;
+  };
+}
+
 export interface SkuRow {
   article: string;
   description: string;
@@ -211,6 +241,7 @@ export interface SkuRow {
   statusLabel: string;
   actionLabel: string;
   action?: ActionIntent;
+  recommendation?: PerSkuRecommendation | null;
 }
 
 export interface LongTailMixSegment {
