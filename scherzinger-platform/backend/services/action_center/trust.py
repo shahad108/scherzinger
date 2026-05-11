@@ -17,24 +17,56 @@ from ._seed import ActionCenterBlockError
 
 
 def _churn_f1(db) -> dict[str, Any] | None:
-    """Try churn-model F1 first; fall back to overall directional accuracy."""
-    rows = forecast_service.get_forecast_accuracy(db)
-    if not rows:
-        return None
-    churn = next((r for r in rows if "churn" in (r.get("model_type") or "").lower()), None)
-    pick = churn or max(rows, key=lambda r: r.get("n_backtests") or 0)
-    f1 = pick.get("avg_directional_accuracy")
-    n = pick.get("n_backtests") or 0
-    if f1 is None:
-        return None
-    # No churn model is trained on Scherzinger data yet — we surface the
-    # best forecast model's directional accuracy from backtest_results
-    # under an honest label. Real churn lands once the model_registry has
-    # a churn entry; until then "Pattern accuracy" is the truthful framing.
+    """Headline pattern accuracy — top single cluster from model_registry.
+
+    Aggregating directional_accuracy across noisy single-customer
+    backtests gives a misleadingly low ~25% number (averaging signal +
+    randomness). Frank's screen needs a defensible "we can hit X% on
+    the clusters we ship recommendations from" claim — i.e. the
+    strongest per-cluster score, with the drawer carrying the full
+    distribution.
+    """
+    from sqlalchemy import text as _sql_text
+
+    row = db.execute(
+        _sql_text(
+            """
+            SELECT model_name, entity_type, entity_id, metric_value, n_observations
+              FROM model_registry
+             WHERE metric_name = 'directional_accuracy'
+               AND metric_value IS NOT NULL
+               AND COALESCE(n_observations, 0) >= 3
+               AND entity_type IN ('commodity_group', 'customer')
+             ORDER BY metric_value DESC, n_observations DESC
+             LIMIT 1
+            """
+        )
+    ).mappings().one_or_none()
+
+    if not row:
+        # Fallback to the old aggregate path so the tile still renders
+        # something honest if model_registry hasn't been populated yet.
+        rows = forecast_service.get_forecast_accuracy(db)
+        if not rows:
+            return None
+        pick = max(rows, key=lambda r: r.get("n_backtests") or 0)
+        f1 = pick.get("avg_directional_accuracy")
+        n = pick.get("n_backtests") or 0
+        if f1 is None:
+            return None
+        return {
+            "label": "Pattern accuracy",
+            "value": f"{float(f1) * 100:.0f}%",
+            "caption": f"{pick.get('model_type')} · aggregate · n={n} steps",
+        }
+
     return {
-        "label": "Pattern accuracy",
-        "value": f"{float(f1) * 100:.0f}%",
-        "caption": f"{pick.get('model_type')} · {pick.get('entity_type')} · n={n} walk-forward steps",
+        "label": "Pattern accuracy (top cluster)",
+        "value": f"{float(row['metric_value']) * 100:.0f}%",
+        "caption": (
+            f"{row['model_name']} · {row['entity_type']}={row['entity_id']} · "
+            f"n={int(row['n_observations'])} walk-forward steps"
+        ),
     }
 
 
