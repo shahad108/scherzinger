@@ -2,6 +2,7 @@ import type { NavigateFunction } from 'react-router-dom';
 import { runAction } from '@/data/api/useActions';
 import type { ActionDrawerIntent, ActionIntent } from '@/types/uiActions';
 import type { Severity } from '@/types';
+import { hasPermission, useAuthStore } from '@/stores/authStore';
 
 export interface UiActionDeps {
   navigate: NavigateFunction;
@@ -26,19 +27,33 @@ export async function executeUiAction(intent: ActionIntent, deps: UiActionDeps):
     return;
   }
 
+  if (intent.requiredPermission) {
+    const user = useAuthStore.getState().user;
+    if (!hasPermission(user, intent.requiredPermission)) {
+      deps.toast(
+        intent.permissionDeniedReason ?? 'You do not have permission for this action.',
+        'warning',
+      );
+      return;
+    }
+  }
+
   if (intent.drawer) deps.drawer(intent.drawer);
 
   const to = buildTo(intent);
-  if (to) deps.navigate(to);
 
   if (intent.kind) {
     const mutate = deps.mutate ?? runAction;
-    await mutate(intent.kind, {
+    if (intent.optimistic && to) deps.navigate(to);
+    const mutation = mutate(intent.kind, {
       target_type: intent.targetType,
       target_id: intent.targetId,
       ...(intent.body ?? {}),
     });
+    await mutation;
   }
+
+  if (to && !intent.optimistic) deps.navigate(to);
 
   if (intent.toast) deps.toast(intent.toast, intent.toastSeverity ?? 'success');
 }

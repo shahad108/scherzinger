@@ -75,9 +75,12 @@ export default function LoginPage() {
             {login.isPending ? 'Anmeldung läuft…' : 'Anmelden'}
           </button>
         </form>
-        <p className="pz-login-hint">
-          Demo-Konten: <code>frank@scherzinger.de / frank-demo-2026</code>
-        </p>
+        <div className="pz-login-hint">
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>Demo-Konten:</div>
+          <div><code>frank@scherzinger.de</code> / <code>frank-demo-2026</code> · Pricing Analyst</div>
+          <div><code>till@scherzinger.de</code> / <code>till-demo-2026</code> · Managing Director</div>
+          <div><code>heiko@scherzinger.de</code> / <code>heiko-demo-2026</code> · Sales / KAM</div>
+        </div>
       </div>
     </div>
   );

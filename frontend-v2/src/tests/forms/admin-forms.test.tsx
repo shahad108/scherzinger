@@ -14,7 +14,7 @@ import { SavedViewSaveForm } from '@/components/forms/SavedViewSaveForm';
 import { AddReviewerForm } from '@/components/forms/AddReviewerForm';
 
 const postJson = vi.hoisted(() =>
-  vi.fn().mockImplementation((path: string, body: unknown) => {
+  vi.fn().mockImplementation((_path: string, body: unknown) => {
     return Promise.resolve({ id: 'mock', ...((body as object) ?? {}) });
   }),
 );

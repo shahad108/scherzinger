@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { RequirePermission } from '@/features/auth/RequirePermission';
 import { useAuthStore, type MeUser } from '@/stores/authStore';
@@ -15,11 +15,15 @@ const FRANK: MeUser = {
 
 describe('RequirePermission', () => {
   afterEach(() => {
-    useAuthStore.setState({ user: null, isLoading: false });
+    act(() => {
+      useAuthStore.setState({ user: null, isLoading: false });
+    });
   });
 
   it('renders children when permission granted', () => {
-    useAuthStore.setState({ user: FRANK, isLoading: false });
+    act(() => {
+      useAuthStore.setState({ user: FRANK, isLoading: false });
+    });
     render(
       <RequirePermission name="act.start_ab_test">
         <button>Start A/B</button>
@@ -29,7 +33,9 @@ describe('RequirePermission', () => {
   });
 
   it('renders fallback when permission missing', () => {
-    useAuthStore.setState({ user: FRANK, isLoading: false });
+    act(() => {
+      useAuthStore.setState({ user: FRANK, isLoading: false });
+    });
     render(
       <RequirePermission name="admin.users" fallback={<span>denied</span>}>
         <button>Manage users</button>
@@ -40,7 +46,9 @@ describe('RequirePermission', () => {
   });
 
   it('renders fallback when no user', () => {
-    useAuthStore.setState({ user: null, isLoading: false });
+    act(() => {
+      useAuthStore.setState({ user: null, isLoading: false });
+    });
     render(
       <RequirePermission name="view.action_center" fallback={<span>anon</span>}>
         <button>Should not render</button>

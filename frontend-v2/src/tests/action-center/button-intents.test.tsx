@@ -62,12 +62,14 @@ describe('Action Center button wiring', () => {
   // Phase 4 — `All Departments` is preview until saved-views ships in
   // Phase 7; `Export` stays disabled until reports MVP (Phase 6). Both
   // must emit explicit production wording rather than a generic toast.
-  it('PageHead "All Departments" opens the preview drawer', () => {
+  it('PageHead workspace scope opens the drawer with live context', () => {
     const onAction = vi.fn();
     const header = { greeting: 'Good morning, Frank.', week: 'Week 18', dateRange: '—', stats: [] };
     render(
       <PageHead
         header={header}
+        breadcrumbLabel="Pricing Analyst · Frank"
+        greeting="Good morning, Frank."
         hideLocked={false}
         onToggleHideLocked={() => {}}
         showAll={false}
@@ -76,11 +78,11 @@ describe('Action Center button wiring', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /All Departments/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Workspace scope/i }));
     const intent = onAction.mock.calls[0][0];
-    expect(intent.drawer?.title).toMatch(/preview/i);
+    expect(intent.drawer?.title).toMatch(/workspace scope/i);
     expect(intent.drawer?.items).toEqual(
-      expect.arrayContaining([expect.objectContaining({ value: expect.stringMatching(/preview/i) })]),
+      expect.arrayContaining([expect.objectContaining({ value: expect.stringMatching(/Pricing Analyst · Frank/i) })]),
     );
 
     onAction.mockClear();

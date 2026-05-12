@@ -30,14 +30,16 @@ function mockKey(path: string): string {
   return path.replace(/^\/screens\//, '/').replace(/^\//, '').replace(/\//g, '-');
 }
 
-export type QueryParams = Record<string, string | number | boolean | undefined | null>;
+type QueryParamValue = string | number | boolean | undefined | null;
 
-function buildQuery(params?: QueryParams): string {
+export type QueryParams = Record<string, QueryParamValue>;
+
+function buildQuery(params?: object): string {
   // P13.T3: every BFF request gets ?lang= from the pryzm_lang cookie unless
   // the caller already supplied one. The cookie is written by i18n/index.ts
   // on every languageChanged event.
   const cookieLang = readCookie('pryzm_lang');
-  const merged: QueryParams = { ...(params ?? {}) };
+  const merged = { ...((params ?? {}) as Record<string, unknown>) };
   if (cookieLang && merged.lang === undefined) merged.lang = cookieLang;
 
   const usp = new URLSearchParams();
@@ -60,7 +62,7 @@ const FALLBACK_STATUSES = new Set([404, 503]);
 
 export async function apiFetch<T>(
   path: string,
-  options?: { params?: QueryParams; mockResolve?: () => T },
+  options?: { params?: object; mockResolve?: () => T },
 ): Promise<T> {
   if (USE_MOCKS) {
     // Path-specific synthesizer wins (used by Phase 2 deep-link surfaces
@@ -121,7 +123,7 @@ export async function postJson<T>(
   path: string,
   body?: unknown,
   options?: {
-    params?: QueryParams;
+    params?: object;
     mockResolve?: () => T;
     headers?: Record<string, string>;
   },

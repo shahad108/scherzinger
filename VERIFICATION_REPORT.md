@@ -4,7 +4,7 @@
 **Branch:** `demo-phase45`
 **Pinned commit:** `81aa9a3` (Batch 23 fixes) on top of `fb9337c` (Batch 22 Bedrock Frankfurt)
 **Stack under test:** FastAPI backend in Docker (`scherzinger_new-api-1`) + host-side Vite dev server (`pnpm dev` on port 5174) + Postgres in Docker (`scherzinger_new-postgres-1`)
-**Method:** Live Playwright walk across every shipped surface, both as Frank (analyst) and the other two persona accounts (Till / MD, Heiko / Sales). One screenshot per surface saved to `verification-screens/`. Every interaction logged in a TaskCreate task with status transitions.
+**Method:** Live Playwright walk across every shipped surface, both as Frank (analyst) and the other two persona accounts (Till / MD, Heiko / Sales). One screenshot per surface saved to [`docs/verification-screens/`](./docs/verification-screens/). Every interaction logged in a TaskCreate task with status transitions.
 
 ---
 

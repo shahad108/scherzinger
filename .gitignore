@@ -33,21 +33,30 @@ yarn-error.log*
 # Office lock files
 .~lock.*#
 
-# All markdown files (per user request)
+# Default-ignore markdown so transient notes don't sneak in.
+# Documentation we DO want tracked is force-listed below.
 *.md
+!README.md
+!VERIFICATION_REPORT.md
+!docs/**/*.md
+!frontend-v2/**/*.md
+!scherzinger-platform/**/*.md
 
-# Separate project (not included in this repo)
+# Separate project (force-add tracked files inside)
 scherzinger-platform/
 
 # Legacy code with embedded API keys — rotate and delete
 frontend/src_old/
 
-# Dev screenshots
-dashboard-*.png
-dashboard-*.jpeg
-revenue-*.png
-revenue-*.jpeg
-popup-*.png
-popup-*.jpeg
-page-*.png
-page-*.jpeg
+# Root-level screenshots (all png/jpeg in repo root only).
+# Subdir screenshots (e.g. docs/verification-screens/) are explicitly kept.
+/*.png
+/*.jpeg
+/*.jpg
+
+# Vendor / external reference binaries (PDFs, DOCX, XLSX, TEX)
+# kept locally under reference/ but not tracked in git.
+reference/
+
+# Playwright cache
+.playwright-mcp/

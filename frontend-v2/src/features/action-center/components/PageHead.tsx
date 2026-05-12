@@ -4,27 +4,37 @@ import type { ActionIntent } from '@/types/uiActions';
 
 interface Props {
   header: ActionCenterHeader;
+  breadcrumbLabel: string;
+  greeting: string;
   hideLocked?: boolean;
   onToggleHideLocked?: (next: boolean) => void;
   showAll?: boolean;
   onToggleShowAll?: (next: boolean) => void;
   onAction?: (intent: ActionIntent) => void;
+  reportReady?: boolean;
+  exportDisabledReason?: string;
+  traceId?: string;
 }
 
 export function PageHead({
   header,
+  breadcrumbLabel,
+  greeting,
   hideLocked = false,
   onToggleHideLocked,
   showAll = false,
   onToggleShowAll,
   onAction,
+  reportReady = false,
+  exportDisabledReason,
+  traceId,
 }: Props) {
   return (
     <>
       <div className="mb-3 text-xs text-[var(--muted)]">
         <span>Cockpit</span>
         <span className="mx-1.5 text-[var(--muted-2)]">/</span>
-        <span>Pricing Analyst · Frank</span>
+        <span>{breadcrumbLabel}</span>
         <span className="mx-1.5 text-[var(--muted-2)]">/</span>
         <b className="font-semibold text-[var(--ink-2)]">Action Center</b>
       </div>
@@ -32,7 +42,7 @@ export function PageHead({
       <div className="mb-[22px] flex flex-wrap items-start justify-between gap-x-3.5 gap-y-6">
         <div className="min-w-0 flex-1 basis-[360px]">
           <h1 className="font-display text-[34px] font-bold leading-[1.1] tracking-[-0.028em] text-[var(--ink)]">
-            {header.greeting}
+            {greeting}
           </h1>
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[12px] text-[var(--muted)]">
             <span
@@ -104,7 +114,6 @@ export function PageHead({
               {showAll ? 'Showing all' : 'Show all'}
             </button>
           )}
-          {/* Phase 7 — Save current view to /saved-views. */}
           <button
             type="button"
             onClick={() =>
@@ -138,28 +147,38 @@ export function PageHead({
           {[
             {
               icon: ChevronDown,
-              label: 'All Departments',
+              label: 'Workspace scope',
               action: {
                 drawer: {
-                  title: 'Department filter — preview',
-                  description: "Department-scoped filtering ships with saved-view persistence in Phase 7. Today the Action Center stays in Frank's default pricing workspace.",
+                  title: 'Workspace scope',
+                  description: 'This Action Center is operating inside the authenticated pricing workspace.',
                   items: [
-                    { label: 'Status', value: 'Preview — read-only' },
-                    { label: 'Active', value: 'Pricing & Analytics' },
-                    { label: 'Available', value: 'Sales, Operations' },
-                    { label: 'Lands in', value: 'Phase 7 (saved views)' },
+                    { label: 'Scope', value: breadcrumbLabel },
+                    { label: 'Current window', value: `${header.week} · ${header.dateRange}` },
+                    { label: 'Saved filters', value: 'Available through saved views' },
                   ],
                 },
-                toast: 'Department filter is preview-only until Phase 7.',
-                toastSeverity: 'info',
               } satisfies ActionIntent,
             },
             {
               icon: Download,
               label: 'Export',
-              action: {
-                disabledReason: 'Backend endpoint required before Action Center exports can be generated.',
-              } satisfies ActionIntent,
+              action: reportReady
+                ? ({
+                    drawer: {
+                      title: 'Report export',
+                      description: 'Exports are available through the report workflow on this screen.',
+                      items: [
+                        { label: 'Audit linkage', value: 'Live' },
+                        { label: 'Trace ID', value: traceId ?? 'Unavailable' },
+                        { label: 'Status', value: 'Generate or regenerate the report below before sending it on.' },
+                      ],
+                    },
+                  } satisfies ActionIntent)
+                : ({
+                    disabledReason:
+                      exportDisabledReason ?? 'Report export is unavailable until the report pipeline is live for this workspace.',
+                  } satisfies ActionIntent),
             },
           ].map(({ icon: Icon, label, action }) => (
             <button
