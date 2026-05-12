@@ -96,6 +96,85 @@ def test_ai_phase10_memo_paragraphs_carry_citations(client: TestClient) -> None:
     assert bullet_cites or body_cites, "expected at least one side-card citation"
 
 
+def test_bedrock_falls_back_when_boto3_missing(monkeypatch) -> None:
+    """Phase 21: bedrock provider degrades gracefully without boto3."""
+    import sys
+    from backend.services.ai_briefing import providers
+    from backend.services.ai_briefing.providers import draft_memo
+
+    monkeypatch.setenv("BRIEFING_PROVIDER", "bedrock")
+    # Force the import to fail inside _bedrock by hiding boto3 from sys.modules
+    # AND making the next import attempt raise.
+    monkeypatch.setitem(sys.modules, "boto3", None)
+
+    memo = draft_memo(scope="monday_briefing", persona="frank", lang=None)
+    assert memo.get("provider") != "bedrock"
+    assert memo["scope"] == "monday_briefing"
+    assert memo["persona"] == "frank"
+    # Sanity: providers module exposes _bedrock.
+    assert hasattr(providers, "_bedrock")
+
+
+def test_bedrock_falls_back_when_client_raises(monkeypatch) -> None:
+    """Phase 21: any runtime error from Bedrock degrades to template."""
+    import types
+    import sys
+    from backend.services.ai_briefing.providers import draft_memo
+
+    # Inject a fake boto3 whose client.converse always raises.
+    class _FakeClient:
+        def converse(self, **kwargs):
+            raise RuntimeError("simulated AWS credential error")
+
+    fake_boto3 = types.ModuleType("boto3")
+    fake_boto3.client = lambda *args, **kwargs: _FakeClient()  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "boto3", fake_boto3)
+    monkeypatch.setenv("BRIEFING_PROVIDER", "bedrock")
+
+    memo = draft_memo(scope="monday_briefing", persona="frank", lang=None)
+    # Failure path: still a usable memo, no provider stamp.
+    assert memo.get("provider") != "bedrock"
+    assert memo["paragraphs"]
+
+
+def test_bedrock_returns_provider_stamp_on_success(monkeypatch) -> None:
+    """Phase 21: happy path stamps provider=bedrock + carries model_id."""
+    import types
+    import sys
+    from backend.services.ai_briefing.providers import draft_memo
+
+    class _FakeClient:
+        def converse(self, **kwargs):
+            return {
+                "output": {
+                    "message": {
+                        "content": [
+                            {
+                                "text": (
+                                    "<p>Cluster <b>BKAGG</b> drifted. Article 200832-E "
+                                    "moved on customer 102330.</p>"
+                                    "<p>Recommendation #1 ready for approval.</p>"
+                                )
+                            }
+                        ]
+                    }
+                }
+            }
+
+    fake_boto3 = types.ModuleType("boto3")
+    fake_boto3.client = lambda *args, **kwargs: _FakeClient()  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "boto3", fake_boto3)
+    monkeypatch.setenv("BRIEFING_PROVIDER", "bedrock")
+    monkeypatch.setenv("BEDROCK_MODEL_ID", "anthropic.claude-haiku-4-5-20251001-v1:0")
+
+    memo = draft_memo(scope="monday_briefing", persona="frank", lang=None)
+    assert memo["provider"] == "bedrock"
+    assert memo["model_id"] == "anthropic.claude-haiku-4-5-20251001-v1:0"
+    # Citation extractor runs over the LLM output — at least one citation lands.
+    all_cites = [c for p in memo["paragraphs"] for c in p.get("citations", [])]
+    assert all_cites, "expected citation extractor to pick up Article/Cluster/Customer"
+
+
 def test_sanitize_html_strips_scripts_and_attributes() -> None:
     """Phase 13: bleach-style allow-list keeps <b>/<p>, drops <script>+ attrs."""
     from backend.services.ai_briefing.providers import sanitize_html

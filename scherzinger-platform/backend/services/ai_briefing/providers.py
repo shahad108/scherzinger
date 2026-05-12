@@ -5,6 +5,9 @@ Switchable via the ``BRIEFING_PROVIDER`` env var:
     template  — deterministic, no LLM (default; ships in Phase 9)
     llm       — Anthropic-backed; requires ANTHROPIC_API_KEY + the optional
                 ``anthropic`` and ``bleach`` packages
+    bedrock   — Amazon Bedrock; requires ``boto3`` + AWS credentials in the
+                ambient env (BEDROCK_REGION, BEDROCK_MODEL_ID configurable).
+                Default model is Claude Haiku 4.5 on Bedrock. Phase 21.
 
 The LLM provider is fed a structured snapshot (KPIs, deltas, lost-quote
 facts, top movers) plus a strict template; it returns sanitised HTML
@@ -14,7 +17,9 @@ allow-list.
 
 Phase 13: when ANTHROPIC_API_KEY or the ``anthropic`` package is missing,
 the LLM branch logs a warning and falls back to the template provider so
-the system never raises in production.
+the system never raises in production. The bedrock branch follows the
+same contract: missing boto3, missing creds, or a runtime error each
+degrade silently to the template provider.
 """
 from __future__ import annotations
 
@@ -38,6 +43,8 @@ def draft_memo(*, scope: str, persona: str, lang: str | None) -> dict[str, Any]:
         return _template(scope=scope, persona=persona, lang=lang)
     if provider == "llm":
         return _llm(scope=scope, persona=persona, lang=lang)
+    if provider == "bedrock":
+        return _bedrock(scope=scope, persona=persona, lang=lang)
     raise ValueError(f"unknown BRIEFING_PROVIDER={provider!r}")
 
 
@@ -179,4 +186,80 @@ def _llm(*, scope: str, persona: str, lang: str | None) -> dict[str, Any]:
     # so /pricing /margin /action-center deep-links stay consistent.
     base["paragraphs"] = annotate_paragraphs(paragraphs)
     base["provider"] = "llm"
+    return base
+
+
+def _bedrock(*, scope: str, persona: str, lang: str | None) -> dict[str, Any]:
+    """Amazon Bedrock provider via the Converse API.
+
+    Behaviour mirrors ``_llm`` for graceful degradation:
+      - Missing ``boto3`` package → fall back to template with a warning.
+      - Bedrock client construction or invocation raises → template fallback.
+      - Successful call → return sanitised paragraphs with provider=bedrock.
+
+    Configuration (all optional except AWS credentials, which Bedrock
+    pulls from the standard boto3 credential chain — env vars, ~/.aws,
+    IAM role, etc.):
+
+      BEDROCK_REGION    AWS region of the Bedrock endpoint (default us-east-1).
+      BEDROCK_MODEL_ID  Bedrock model id (default Claude Haiku 4.5).
+    """
+    try:
+        import boto3  # type: ignore
+    except ImportError:
+        logger.warning(
+            "BRIEFING_PROVIDER=bedrock but the 'boto3' package isn't installed — "
+            "falling back to template provider"
+        )
+        return _template(scope=scope, persona=persona, lang=lang)
+
+    region = os.environ.get("BEDROCK_REGION", "us-east-1")
+    model_id = os.environ.get(
+        "BEDROCK_MODEL_ID",
+        "anthropic.claude-haiku-4-5-20251001-v1:0",
+    )
+
+    snapshot = _structured_snapshot(persona=persona, lang=lang)
+    system_prompt = (
+        "You write a Monday pricing briefing in the voice of a senior pricing "
+        "manager. Output ONLY 3-4 short HTML paragraphs (use <p> + <b>). Do not "
+        "include any other tags, scripts, or attributes. Keep claims grounded "
+        "in the supplied snapshot."
+    )
+    if (lang or "").lower().startswith("en"):
+        system_prompt += " Respond in English."
+    else:
+        system_prompt += " Antworte auf Deutsch."
+
+    try:
+        client = boto3.client("bedrock-runtime", region_name=region)
+        # Use the Converse API — cross-model, returns a unified response
+        # shape so we don't have to special-case Anthropic vs Mistral vs etc.
+        resp = client.converse(
+            modelId=model_id,
+            system=[{"text": system_prompt}],
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"text": f"Snapshot: {snapshot}\n\nWrite the briefing."}
+                    ],
+                }
+            ],
+            inferenceConfig={"maxTokens": 800, "temperature": 0.4},
+        )
+        body = "".join(
+            blk.get("text", "")
+            for blk in (resp.get("output", {}).get("message", {}).get("content", []) or [])
+        )
+    except Exception:  # pragma: no cover - AWS creds / network / transient
+        logger.exception("Bedrock call failed — falling back to template provider")
+        return _template(scope=scope, persona=persona, lang=lang)
+
+    safe = sanitize_html(body)
+    base = _template(scope=scope, persona=persona, lang=lang)
+    paragraphs = [{"html": p.strip()} for p in re.split(r"</?p>", safe) if p.strip()]
+    base["paragraphs"] = annotate_paragraphs(paragraphs)
+    base["provider"] = "bedrock"
+    base["model_id"] = model_id
     return base
