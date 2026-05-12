@@ -10,6 +10,8 @@ interface DrawerProps {
   width?: number | string;
   children: React.ReactNode;
   className?: string;
+  /** Accessibility title for screen readers; visually hidden. Defaults to "Dialog". */
+  title?: string;
 }
 
 export function Drawer({
@@ -19,6 +21,7 @@ export function Drawer({
   width = 480,
   children,
   className,
+  title = 'Dialog',
 }: DrawerProps) {
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
@@ -50,6 +53,7 @@ export function Drawer({
                 <RadixDialog.Close className="absolute right-4 top-4 rounded-md p-1.5 text-gray-500 hover:bg-gray-100">
                   <X size={16} />
                 </RadixDialog.Close>
+                <RadixDialog.Title className="sr-only">{title}</RadixDialog.Title>
                 {children}
               </motion.aside>
             </RadixDialog.Content>

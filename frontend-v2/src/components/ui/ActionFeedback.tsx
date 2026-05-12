@@ -54,6 +54,7 @@ export function ActionFeedback() {
         open={!!drawer}
         onOpenChange={(open) => !open && closeDrawer()}
         width={formKind ? 520 : 460}
+        title={drawer?.title ?? 'Action'}
       >
         {drawer && formKind === 'partial_accept' && (
           <PartialAcceptForm context={ctx} onClose={closeDrawer} onToast={pushToast} />
