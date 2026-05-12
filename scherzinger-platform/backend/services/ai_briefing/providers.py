@@ -201,8 +201,14 @@ def _bedrock(*, scope: str, persona: str, lang: str | None) -> dict[str, Any]:
     pulls from the standard boto3 credential chain — env vars, ~/.aws,
     IAM role, etc.):
 
-      BEDROCK_REGION    AWS region of the Bedrock endpoint (default us-east-1).
-      BEDROCK_MODEL_ID  Bedrock model id (default Claude Haiku 4.5).
+      BEDROCK_REGION    AWS region of the Bedrock endpoint. Defaults to
+                        eu-central-1 (Frankfurt) so Scherzinger demo
+                        traffic stays inside EU data residency.
+      BEDROCK_MODEL_ID  Bedrock model id. Defaults to the EU cross-region
+                        inference profile for Claude Haiku 4.5
+                        (eu.anthropic...), which routes across EU
+                        regions (eu-central-1 / eu-west-1 / eu-west-3
+                        / eu-north-1) without leaving Europe.
     """
     try:
         import boto3  # type: ignore
@@ -213,10 +219,10 @@ def _bedrock(*, scope: str, persona: str, lang: str | None) -> dict[str, Any]:
         )
         return _template(scope=scope, persona=persona, lang=lang)
 
-    region = os.environ.get("BEDROCK_REGION", "us-east-1")
+    region = os.environ.get("BEDROCK_REGION", "eu-central-1")
     model_id = os.environ.get(
         "BEDROCK_MODEL_ID",
-        "anthropic.claude-haiku-4-5-20251001-v1:0",
+        "eu.anthropic.claude-haiku-4-5-20251001-v1:0",
     )
 
     snapshot = _structured_snapshot(persona=persona, lang=lang)

@@ -175,6 +175,48 @@ def test_bedrock_returns_provider_stamp_on_success(monkeypatch) -> None:
     assert all_cites, "expected citation extractor to pick up Article/Cluster/Customer"
 
 
+def test_bedrock_defaults_to_eu_frankfurt(monkeypatch) -> None:
+    """Phase 22: when BEDROCK_REGION / BEDROCK_MODEL_ID are unset, the
+    bedrock provider must construct the client against eu-central-1
+    (Frankfurt) and pick the EU cross-region inference profile so
+    Scherzinger demo traffic stays inside EU data residency."""
+    import types
+    import sys
+    from backend.services.ai_briefing.providers import draft_memo
+
+    captured: dict[str, object] = {}
+
+    class _FakeClient:
+        def converse(self, **kwargs):
+            captured["model_id"] = kwargs.get("modelId")
+            return {
+                "output": {
+                    "message": {"content": [{"text": "<p>ok</p>"}]}
+                }
+            }
+
+    def _fake_client_factory(service: str, region_name: str | None = None, **_kw):
+        captured["service"] = service
+        captured["region"] = region_name
+        return _FakeClient()
+
+    fake_boto3 = types.ModuleType("boto3")
+    fake_boto3.client = _fake_client_factory  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "boto3", fake_boto3)
+    monkeypatch.setenv("BRIEFING_PROVIDER", "bedrock")
+    monkeypatch.delenv("BEDROCK_REGION", raising=False)
+    monkeypatch.delenv("BEDROCK_MODEL_ID", raising=False)
+
+    memo = draft_memo(scope="monday_briefing", persona="frank", lang=None)
+    assert memo["provider"] == "bedrock"
+    assert captured["service"] == "bedrock-runtime"
+    assert captured["region"] == "eu-central-1", captured
+    assert captured["model_id"] == "eu.anthropic.claude-haiku-4-5-20251001-v1:0", captured
+    # The provider exposes the resolved model id on the memo so the UI /
+    # audit trail can show which model actually answered.
+    assert memo["model_id"].startswith("eu."), memo["model_id"]
+
+
 def test_sanitize_html_strips_scripts_and_attributes() -> None:
     """Phase 13: bleach-style allow-list keeps <b>/<p>, drops <script>+ attrs."""
     from backend.services.ai_briefing.providers import sanitize_html
