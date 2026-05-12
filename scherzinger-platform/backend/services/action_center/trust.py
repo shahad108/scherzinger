@@ -28,20 +28,25 @@ def _churn_f1(db) -> dict[str, Any] | None:
     """
     from sqlalchemy import text as _sql_text
 
-    row = db.execute(
-        _sql_text(
-            """
-            SELECT model_name, entity_type, entity_id, metric_value, n_observations
-              FROM model_registry
-             WHERE metric_name = 'directional_accuracy'
-               AND metric_value IS NOT NULL
-               AND COALESCE(n_observations, 0) >= 3
-               AND entity_type IN ('commodity_group', 'customer')
-             ORDER BY metric_value DESC, n_observations DESC
-             LIMIT 1
-            """
-        )
-    ).mappings().one_or_none()
+    try:
+        row = db.execute(
+            _sql_text(
+                """
+                SELECT model_name, entity_type, entity_id, metric_value, n_observations
+                  FROM model_registry
+                 WHERE metric_name = 'directional_accuracy'
+                   AND metric_value IS NOT NULL
+                   AND COALESCE(n_observations, 0) >= 3
+                   AND entity_type IN ('commodity_group', 'customer')
+                 ORDER BY metric_value DESC, n_observations DESC
+                 LIMIT 1
+                """
+            )
+        ).mappings().one_or_none()
+    except Exception:
+        # model_registry not migrated yet on this env — fall through.
+        db.rollback()
+        row = None
 
     if not row:
         # Fallback to the old aggregate path so the tile still renders
@@ -78,20 +83,24 @@ def _forecast_error(db) -> dict[str, Any] | None:
     """
     from sqlalchemy import text as _sql_text
 
-    row = db.execute(
-        _sql_text(
-            """
-            SELECT model_name, entity_type, entity_id, metric_value, n_observations
-              FROM model_registry
-             WHERE metric_name = 'mae'
-               AND metric_value IS NOT NULL
-               AND COALESCE(n_observations, 0) >= 3
-               AND entity_type IN ('commodity_group', 'customer')
-             ORDER BY metric_value ASC, n_observations DESC
-             LIMIT 1
-            """
-        )
-    ).mappings().one_or_none()
+    try:
+        row = db.execute(
+            _sql_text(
+                """
+                SELECT model_name, entity_type, entity_id, metric_value, n_observations
+                  FROM model_registry
+                 WHERE metric_name = 'mae'
+                   AND metric_value IS NOT NULL
+                   AND COALESCE(n_observations, 0) >= 3
+                   AND entity_type IN ('commodity_group', 'customer')
+                 ORDER BY metric_value ASC, n_observations DESC
+                 LIMIT 1
+                """
+            )
+        ).mappings().one_or_none()
+    except Exception:
+        db.rollback()
+        row = None
 
     if row:
         return {
