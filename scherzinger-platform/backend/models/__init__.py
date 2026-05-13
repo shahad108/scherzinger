@@ -17,6 +17,7 @@ from backend.models.audit import AuditLog, AbTest, AbTestResult, AbTestAssignmen
 from backend.models.p14 import SavedView, Note, UserPreferences
 from backend.models.workflow import Recommendation, RecommendationEvent, PricingProposal, ReportJob
 from backend.models.model_registry import ModelRegistryEntry
+from backend.models.scenario import Scenario
 
 __all__ = [
     "Customer", "Product", "Invoice", "Quote", "QuoteInvoiceLink", "RejectionCode",
@@ -28,4 +29,5 @@ __all__ = [
     "SavedView", "Note", "UserPreferences",
     "Recommendation", "RecommendationEvent", "PricingProposal", "ReportJob",
     "ModelRegistryEntry",
+    "Scenario",
 ]

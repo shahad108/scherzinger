@@ -48,6 +48,7 @@ export type ForecastParams = ShellParams & {
   tier?: 'A' | 'B' | 'C';
   mode?: 'revenue' | 'margin' | 'volume';
   horizon?: number;
+  scenario_id?: string;
 };
 
 // Phase 1 — simulator surface (tornado + per-entity distributions).

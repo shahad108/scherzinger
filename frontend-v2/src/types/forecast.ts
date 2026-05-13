@@ -430,6 +430,40 @@ export interface CustomerDetail {
   historicalRevenue: { month: string; revenue: number }[];
 }
 
+// Phase 5 — Scenario library.
+export type ScenarioVisibility = 'private' | 'team';
+export type ScenarioInputKind = 'market_series' | 'internal_lever' | 'commodity_override';
+
+export interface ScenarioInput {
+  name: string;
+  kind: ScenarioInputKind;
+  unit?: string;
+  perturbation: {
+    type: 'pct' | 'absolute';
+    value: number;
+  };
+}
+
+export interface ScenarioSummary {
+  id: string;
+  name: string;
+  description?: string;
+  inputs: ScenarioInput[];
+  visibility: ScenarioVisibility;
+  ownerUserId: string | null;
+  derivedFromScenarioId: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  lastUsedAt?: string;
+  isSystem?: boolean;
+}
+
+export interface ScenarioListResponse {
+  system: ScenarioSummary[];
+  saved: ScenarioSummary[];
+  teamShared: ScenarioSummary[];
+}
+
 export interface ForecastShell {
   header: ForecastHeader;
   hero: ForecastHero;

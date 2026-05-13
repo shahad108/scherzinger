@@ -23,6 +23,7 @@ from backend.api.v1 import (
     search,
     risk,
     saved_views,
+    scenarios,
     screens,
     shell,
     simulations,
@@ -102,6 +103,9 @@ app.include_router(search.router, prefix="/api/v1")
 
 # Phase 18: model registry (Trust strip drawer + Settings → Model Cards).
 app.include_router(models_registry.router, prefix="/api/v1")
+
+# Forecasting Phase 5: scenario library CRUD + share.
+app.include_router(scenarios.router, prefix="/api/v1")
 
 
 @app.get("/health")

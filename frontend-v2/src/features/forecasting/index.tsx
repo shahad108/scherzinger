@@ -24,6 +24,7 @@ import { CostDecompositionCard } from './components/CostDecompositionCard';
 import { SeasonalOverlayCard } from './components/SeasonalOverlayCard';
 import { CommodityTrajectoriesCard } from './components/CommodityTrajectoriesCard';
 import { PerCustomerTab } from './components/PerCustomerTab';
+import { ScenarioLibrary } from './components/ScenarioLibrary';
 import type {
   ForecastDistributions,
   ForecastMode,
@@ -49,9 +50,10 @@ export default function ForecastingPage() {
   const horizonParam = Number(params.get('horizon')) || 12;
   const tab = ((params.get('tab') as ForecastTab) ?? 'aggregate') as ForecastTab;
 
+  const scenarioId = params.get('scenario_id') ?? undefined;
   const forecastParams = useMemo(
-    () => ({ mode: modeParam, horizon: horizonParam }),
-    [modeParam, horizonParam],
+    () => ({ mode: modeParam, horizon: horizonParam, scenario_id: scenarioId }),
+    [modeParam, horizonParam, scenarioId],
   );
   const { data, isLoading } = useForecast(forecastParams);
 
@@ -134,6 +136,7 @@ export default function ForecastingPage() {
           </div>
         </div>
       )}
+      <ScenarioLibrary />
       <ModeToggle active={modeParam} horizonMonths={horizonParam as 3 | 6 | 12} />
 
       <div role="tablist" aria-label="Forecast view" className="mb-4 inline-flex items-center gap-1 rounded-full bg-white p-1 shadow-[inset_0_0_0_1px_var(--hairline)]" data-testid="forecast-tabs">
