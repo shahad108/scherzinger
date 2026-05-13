@@ -93,7 +93,8 @@ export function ModeToggle({ active, horizonMonths }: Props) {
       </label>
 
       <span className="ml-auto text-[11px] text-[var(--muted)]">
-        Toggle re-runs the tornado, distributions, and hero against the chosen metric × horizon.
+        Toggle re-runs the tornado, distributions, hero, and downstream cards against the chosen
+        metric × horizon.
       </span>
     </div>
   );

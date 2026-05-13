@@ -18,10 +18,10 @@ export function CalibrationCard({ data }: Props) {
     <section className="mt-6">
       <div className="section-row">
         <div>
-          <h2>{data.title ?? 'Per-cluster backtest accuracy'}</h2>
+          <h2>{data.title ?? 'Forecast accuracy by cluster'}</h2>
           <div className="sub">
             {data.subtitle ??
-              'MAPE = mean absolute % error · Directional = how often the model called the direction right.'}
+              'How close the forecast was to what actually happened, for each cluster. Lower MAPE = tighter forecast.'}
             {!isLive && (
               <span className="ml-2 text-[var(--red,#9a3232)]">⚠ source: {data.source}</span>
             )}

@@ -4,18 +4,43 @@ import type { ForecastHero, ForecastIntervals, ForecastMode } from '@/types/fore
 
 interface Props {
   hero: ForecastHero;
+  /**
+   * Phase 4.5 audit fix: the hero used to render its OWN Revenue/Margin/Volume
+   * tabs that only re-labelled the axis without swapping series. Those tabs are
+   * gone — the chart now follows the page-level ModeToggle. The BFF re-runs
+   * the composer when `?mode=` changes, so `hero.series` is already in the
+   * right metric. We use `mode` here purely for axis formatting + heading copy.
+   */
+  mode: ForecastMode;
 }
-
-const MODES: { id: ForecastMode; label: string }[] = [
-  { id: 'revenue', label: 'Revenue €' },
-  { id: 'margin',  label: 'Margin %' },
-  { id: 'volume',  label: 'Volume (units)' },
-];
 
 type BandMode = 'p80' | 'p80+p95';
 
-export function HeroForecast({ hero }: Props) {
-  const [mode, setMode] = useState<ForecastMode>('revenue');
+const MODE_TITLE: Record<ForecastMode, string> = {
+  revenue: 'Revenue forecast',
+  margin: 'Margin forecast',
+  volume: 'Volume forecast',
+};
+
+function formatY(mode: ForecastMode, v: number): string {
+  if (mode === 'margin') return `${v.toFixed(1)}%`;
+  if (mode === 'volume') {
+    // The BFF reports volume in millions of units when the hero series is at
+    // portfolio scale; keep the same convention as revenue (the series-domain
+    // values are already in scaled units). Fall back to integer otherwise.
+    if (Math.abs(v) >= 1) return `${v.toFixed(1)}M`;
+    return v.toFixed(0);
+  }
+  return `€${v.toFixed(1)}M`;
+}
+
+function formatTooltip(mode: ForecastMode, v: number): string {
+  if (mode === 'margin') return `${v.toFixed(2)}%`;
+  if (mode === 'volume') return Math.abs(v) >= 1 ? `${v.toFixed(2)}M units` : `${v.toFixed(0)} units`;
+  return `€${v.toFixed(2)}M`;
+}
+
+export function HeroForecast({ hero, mode }: Props) {
   const [bandMode, setBandMode] = useState<BandMode>('p80+p95');
   const showP95 = bandMode === 'p80+p95';
 
@@ -64,17 +89,26 @@ export function HeroForecast({ hero }: Props) {
           marginBottom: 14,
         }}
       >
-        <div className="fc-mode-toggle" role="tablist">
-          {MODES.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              className={mode === m.id ? 'active' : undefined}
-              onClick={() => setMode(m.id)}
-            >
-              {m.label}
-            </button>
-          ))}
+        {/*
+          Phase 4.5: internal mode tabs removed — they only swapped labels, not
+          data. The page-level ModeToggle is the single source of truth.
+        */}
+        <div>
+          <div
+            style={{
+              fontFamily: "'Manrope', sans-serif",
+              fontSize: 14,
+              fontWeight: 700,
+              color: 'var(--ink)',
+              letterSpacing: '-0.01em',
+            }}
+            data-testid="hero-title"
+          >
+            {MODE_TITLE[mode]}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+            Walk-forward · solid line = P50 · shaded = envelope
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           {hero.intervals && (
@@ -145,7 +179,7 @@ export function HeroForecast({ hero }: Props) {
               tickLine={false}
               axisLine={false}
               width={48}
-              tickFormatter={(v: number) => `€${v.toFixed(1)}M`}
+              tickFormatter={(v: number) => formatY(mode, v)}
               domain={[yMin, yMax]}
             />
             <Tooltip
@@ -161,12 +195,15 @@ export function HeroForecast({ hero }: Props) {
                 const n = String(name);
                 if ((n === 'p80' || n === 'p95') && Array.isArray(value)) {
                   const [lo, hi] = value as [number, number];
-                  return [`€${lo.toFixed(2)}M – €${hi.toFixed(2)}M`, n.toUpperCase()];
+                  return [
+                    `${formatTooltip(mode, lo)} – ${formatTooltip(mode, hi)}`,
+                    n.toUpperCase(),
+                  ];
                 }
                 if (typeof value !== 'number') return [String(value ?? ''), n];
-                if (n === 'primary') return [`€${value.toFixed(2)}M`, 'P50'];
-                if (n === 'actual')  return [`€${value.toFixed(2)}M`, 'Actual'];
-                return [`€${value.toFixed(2)}M`, n];
+                if (n === 'primary') return [formatTooltip(mode, value), 'P50'];
+                if (n === 'actual')  return [formatTooltip(mode, value), 'Actual'];
+                return [formatTooltip(mode, value), n];
               }}
             />
             {showP95 && (

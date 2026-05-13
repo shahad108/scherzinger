@@ -41,7 +41,7 @@ const hero: ForecastHero = {
 
 describe('HeroForecast intervals (Phase 6)', () => {
   it('renders the interval toggle and disclosure panel by default', () => {
-    render(<HeroForecast hero={hero} />);
+    render(<HeroForecast hero={hero} mode="revenue" />);
     expect(screen.getByRole('tablist', { name: /Prediction interval bands/i })).toBeInTheDocument();
     expect(screen.getByText(/Prediction intervals — what the band actually means/)).toBeInTheDocument();
     expect(screen.getByText(/P50 · expected/)).toBeInTheDocument();
@@ -52,7 +52,7 @@ describe('HeroForecast intervals (Phase 6)', () => {
   });
 
   it('hides the P95 band column when switched to P50 + P80 only', () => {
-    render(<HeroForecast hero={hero} />);
+    render(<HeroForecast hero={hero} mode="revenue" />);
     expect(screen.getByText(/P95 · plausible worst\/best/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'P50 + P80' }));
     expect(screen.queryByText(/P95 · plausible worst\/best/)).not.toBeInTheDocument();
@@ -62,7 +62,7 @@ describe('HeroForecast intervals (Phase 6)', () => {
   });
 
   it('expands the heuristic disclosure on click', () => {
-    render(<HeroForecast hero={hero} />);
+    render(<HeroForecast hero={hero} mode="revenue" />);
     expect(screen.queryByText(/p95 = primary ±/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Pilot heuristic/ }));
     expect(screen.getByText(/p95 = primary ±/)).toBeInTheDocument();

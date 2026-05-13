@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { postJson } from '@/lib/api/client';
+import { useActionFeedbackStore } from '@/stores/actionFeedbackStore';
 import type { NewProductForecast as NewProductForecastData } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
 
@@ -134,9 +137,48 @@ interface NewProductCardProps {
 function NewProductCardWithPicker({ card, renderBoldDescription }: NewProductCardProps) {
   const candidates = CANDIDATE_CLUSTERS[card.cluster] ?? [];
   const [selected, setSelected] = useState(candidates[0]?.id ?? card.cluster);
+  const [busy, setBusy] = useState(false);
+  const [showAvg, setShowAvg] = useState<string | null>(null);
+  const [confirmAssign, setConfirmAssign] = useState<string | null>(null);
+  const toast = useActionFeedbackStore((s) => s.pushToast);
   const toneCls = card.tone === 'status' ? 'status' : `status ${card.tone}`;
   const isManual = card.primaryAction === 'manual';
   const active = candidates.find((c) => c.id === selected) ?? candidates[0];
+
+  // Card titles begin with the article id (e.g. "218812-K · Sleeve variant").
+  // Pull the first token so the POST payloads carry a real id.
+  const articleId = card.title.split(/\s|·/)[0] ?? card.title;
+
+  const postAssign = async (clusterId: string) => {
+    setBusy(true);
+    try {
+      await postJson('/forecast/new-product/assign-cluster', {
+        article_id: articleId,
+        cluster_id: clusterId,
+      });
+      toast(`Cluster set to ${clusterId} for ${articleId}`, 'info');
+      setSelected(clusterId);
+    } catch (err) {
+      toast(`Assign failed: ${(err as Error).message}`, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const postManualReview = async () => {
+    setBusy(true);
+    try {
+      await postJson('/forecast/new-product/manual-review', {
+        article_id: articleId,
+        cluster_id: selected,
+      });
+      toast(`Manual review queued for ${articleId}`, 'info');
+    } catch (err) {
+      toast(`Manual review failed: ${(err as Error).message}`, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="action-card">
@@ -161,8 +203,9 @@ function NewProductCardWithPicker({ card, renderBoldDescription }: NewProductCar
               <select
                 data-testid={`cluster-picker-select-${card.rank}`}
                 value={selected}
-                onChange={(e) => setSelected(e.target.value)}
-                className="rounded-md border border-[var(--hairline)] bg-white px-2 py-1 text-[12px] font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--rose-deep)]"
+                disabled={busy}
+                onChange={(e) => postAssign(e.target.value)}
+                className="rounded-md border border-[var(--hairline)] bg-white px-2 py-1 text-[12px] font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--rose-deep)] disabled:opacity-60"
               >
                 {candidates.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -180,18 +223,135 @@ function NewProductCardWithPicker({ card, renderBoldDescription }: NewProductCar
         )}
 
         <div className="ac-cta-row" style={{ marginTop: 14 }}>
-          <button type="button" className="btn-secondary">
+          <button
+            type="button"
+            className="btn-secondary"
+            data-testid={`np-secondary-${card.rank}`}
+            onClick={() => setShowAvg(selected)}
+          >
             {card.secondaryLabel}
           </button>
           {isManual ? (
-            <button type="button" className="btn-secondary">
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={busy}
+              data-testid={`np-primary-${card.rank}`}
+              onClick={postManualReview}
+            >
               {card.primaryLabel}
             </button>
           ) : (
-            <button type="button" className="btn-primary-rose">
+            <button
+              type="button"
+              className="btn-primary-rose"
+              disabled={busy}
+              data-testid={`np-primary-${card.rank}`}
+              onClick={() => setConfirmAssign(selected)}
+            >
               {card.primaryLabel}
             </button>
           )}
+        </div>
+      </div>
+
+      {showAvg && (
+        <ClusterAverageDrawer
+          clusterId={showAvg}
+          articleId={articleId}
+          onClose={() => setShowAvg(null)}
+        />
+      )}
+      {confirmAssign && (
+        <ConfirmAssignModal
+          clusterId={confirmAssign}
+          articleId={articleId}
+          onCancel={() => setConfirmAssign(null)}
+          onConfirm={async () => {
+            await postAssign(confirmAssign);
+            setConfirmAssign(null);
+          }}
+          busy={busy}
+        />
+      )}
+    </div>
+  );
+}
+
+interface AvgDrawerProps {
+  clusterId: string;
+  articleId: string;
+  onClose: () => void;
+}
+
+function ClusterAverageDrawer({ clusterId, articleId, onClose }: AvgDrawerProps) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" data-testid="cluster-average-drawer">
+      <button type="button" aria-label="Dismiss" onClick={onClose} className="absolute inset-0 bg-black/30" />
+      <aside className="relative ml-auto h-full w-full max-w-[420px] overflow-y-auto bg-white shadow-2xl border-l-4 border-[var(--rose-deep)]">
+        <header className="sticky top-0 flex items-start justify-between border-b border-[var(--border)] bg-white px-5 py-4">
+          <div>
+            <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+              Cluster average
+            </div>
+            <h2 className="font-display text-[18px] font-bold tracking-tight text-[var(--ink)]">
+              {clusterId} · anchor for {articleId}
+            </h2>
+          </div>
+          <button type="button" aria-label="Close" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-md text-[var(--muted)] hover:bg-[var(--surface-sunken)]">
+            <X size={16} />
+          </button>
+        </header>
+        <div className="p-5 text-[12.5px] text-[var(--ink-2)] space-y-3">
+          <div>Cluster {clusterId} acts as the price/margin/volume anchor for this new SKU.</div>
+          <div className="rounded-md border border-[var(--hairline)] bg-[var(--surface-soft)] p-3 text-[11.5px] text-[var(--muted)]">
+            Real cluster averages will populate from
+            <code className="mx-1">/forecast/new-product/cluster-average?cluster_id={clusterId}</code>
+            when the endpoint ships.
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+interface ConfirmAssignProps {
+  clusterId: string;
+  articleId: string;
+  onCancel: () => void;
+  onConfirm: () => void | Promise<void>;
+  busy: boolean;
+}
+
+function ConfirmAssignModal({ clusterId, articleId, onCancel, onConfirm, busy }: ConfirmAssignProps) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onCancel]);
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40" role="dialog" aria-modal="true" data-testid="confirm-assign-modal">
+      <div className="w-full max-w-[420px] rounded-[14px] border border-[var(--border)] bg-white p-5 shadow-2xl">
+        <h3 className="font-display text-[16px] font-bold text-[var(--ink)]">Assign {articleId} to cluster {clusterId}?</h3>
+        <p className="mt-2 text-[12.5px] text-[var(--ink-2)]">
+          The forecast for this new SKU will use the {clusterId} cluster as its prior. You can change this later.
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <button type="button" className="btn-secondary" onClick={onCancel} disabled={busy}>
+            Cancel
+          </button>
+          <button type="button" className="btn-primary-rose" onClick={() => onConfirm()} disabled={busy}>
+            {busy ? 'Saving…' : 'Confirm'}
+          </button>
         </div>
       </div>
     </div>

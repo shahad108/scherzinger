@@ -50,9 +50,23 @@ export default function ForecastingPage() {
   const tab = ((params.get('tab') as ForecastTab) ?? 'aggregate') as ForecastTab;
 
   const scenarioId = params.get('scenario_id') ?? undefined;
+  // Phase 4.5 audit fix: plumb header filter pills (tier/family/cluster) into
+  // the BFF query so downstream sections actually re-fetch when the user
+  // narrows the lens. The BFF already accepts these query params.
+  const tierParam = params.get('tier') ?? undefined;
+  const familyParam = params.get('family') ?? undefined;
+  const clusterParam = params.get('cluster') ?? undefined;
+  const showAll = params.get('show_all') === '1';
   const forecastParams = useMemo(
-    () => ({ mode: modeParam, horizon: horizonParam, scenario_id: scenarioId }),
-    [modeParam, horizonParam, scenarioId],
+    () => ({
+      mode: modeParam,
+      horizon: horizonParam,
+      scenario_id: scenarioId,
+      tier: (tierParam as 'A' | 'B' | 'C' | 'D' | undefined) ?? undefined,
+      family: familyParam,
+      cluster: clusterParam,
+    }),
+    [modeParam, horizonParam, scenarioId, tierParam, familyParam, clusterParam],
   );
   const { data, isLoading } = useForecast(forecastParams);
   // Phase 1 cleanup: the BFF /screens/forecast already applies scenario_id
@@ -165,7 +179,7 @@ export default function ForecastingPage() {
       {tab === 'customers' ? (
         <PerCustomerTab />
       ) : (
-        <AggregateView data={data} article={article} />
+        <AggregateView data={data} article={article} mode={modeParam} showAll={showAll} />
       )}
 
       <CrossLinkStrip />
@@ -176,9 +190,11 @@ export default function ForecastingPage() {
 interface AggregateProps {
   data: ForecastShell;
   article: string | null;
+  mode: ForecastMode;
+  showAll: boolean;
 }
 
-function AggregateView({ data, article }: AggregateProps) {
+function AggregateView({ data, article, mode, showAll }: AggregateProps) {
   return (
     <>
       {data.tornado && <TornadoCard tornado={data.tornado} />}
@@ -191,11 +207,11 @@ function AggregateView({ data, article }: AggregateProps) {
         <CommodityTrajectoriesCard data={data.commodityTrajectories} />
       )}
       {data.calibration && <CalibrationCard data={data.calibration} />}
-      <HeroForecast hero={data.hero} />
+      <HeroForecast hero={data.hero} mode={mode} />
       <ClusterLens clusters={data.clusters} />
       <WalkForward panel={data.walkForward} />
       <InputCostTrajectory data={data.inputCost} />
-      <ParetoLayer data={data.pareto} />
+      <ParetoLayer data={data.pareto} showAll={showAll} />
       <div id="block-renewals" data-focus-target="renewals">
         <PriceFloor rows={data.priceFloor} footnote={data.priceFloorFootnote} highlightArticle={article} />
       </div>

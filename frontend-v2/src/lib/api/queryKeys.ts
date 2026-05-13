@@ -45,7 +45,7 @@ export type QuotesParams = ShellParams & {
 export type ForecastParams = ShellParams & {
   cluster?: string;
   family?: string;
-  tier?: 'A' | 'B' | 'C';
+  tier?: 'A' | 'B' | 'C' | 'D';
   mode?: 'revenue' | 'margin' | 'volume';
   horizon?: number;
   scenario_id?: string;

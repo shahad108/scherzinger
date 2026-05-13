@@ -64,6 +64,9 @@ export interface ForecastHero {
     rows: { label: string; value: string; tone: 'red' | 'green' | 'amber'; sub: string }[];
   };
   intervals?: ForecastIntervals;
+  moversSource?: 'live' | 'synthetic';
+  movableLockedSource?: 'live' | 'synthetic';
+  whyBandMovesSource?: 'live' | 'synthetic';
 }
 
 export interface ClusterCard {
@@ -121,6 +124,8 @@ export interface InputCostTile {
   value: string;
   unit: string;
   capRich: { tone: 'red' | 'green' | 'amber' | 'ink-3'; arrow: string; main: string; rest: string };
+  source?: 'internal-cost-trends' | 'external' | 'synthetic';
+  indicator?: string;
 }
 
 export interface InputCostStress {
@@ -135,6 +140,7 @@ export interface InputCostStress {
 export interface InputCostTrajectory {
   tiles: InputCostTile[];
   stress: InputCostStress;
+  source?: 'live' | 'synthetic' | 'internal-cost-trends';
 }
 
 export interface SkuMixRow {
@@ -375,6 +381,7 @@ export interface MarginTrajectory {
   floor: number;
   crossesFloorAt: string | null;
   methodologyNote: string;
+  source?: 'live' | 'synthetic';
 }
 
 export interface CostDecompositionLayer {
@@ -387,6 +394,7 @@ export interface CostDecompositionLayer {
 export interface CostDecomposition {
   quarters: string[];
   layers: CostDecompositionLayer[];
+  source?: 'live' | 'synthetic';
 }
 
 export interface SeasonalOverlay {
@@ -398,6 +406,7 @@ export interface SeasonalOverlay {
   deviationPct: number;
   deviationTone: 'green' | 'amber' | 'red';
   note: string;
+  source?: 'live' | 'synthetic';
 }
 
 export interface CommodityTrajectoryGroup {
@@ -410,6 +419,7 @@ export interface CommodityTrajectoryGroup {
 export interface CommodityTrajectories {
   quarters: string[];
   groups: CommodityTrajectoryGroup[];
+  source?: 'live' | 'synthetic';
 }
 
 // Phase 4 — per-customer slice.
@@ -546,6 +556,8 @@ export interface MarketTile {
   wowPct: number;
   tone: 'green' | 'amber' | 'red' | 'ink-3';
   context: string;
+  external?: boolean;
+  indicator?: string;
 }
 
 export interface MarketDirection {

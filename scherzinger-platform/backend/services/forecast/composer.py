@@ -11,6 +11,9 @@ from sqlalchemy.orm import Session
 from . import blocks
 from .real_backtest import build_walk_forward as _build_walk_forward_live
 from .real_clusters import build_clusters as _build_clusters_live
+from .real_pareto import build_pareto as _build_pareto_live
+from .real_price_floor import build_price_floor as _build_price_floor_live
+from .real_new_product import build_new_product as _build_new_product_live
 from .calibration import get_calibration
 from .commodity_trajectories import get_commodity_trajectories
 from .market_direction import get_market_direction
@@ -84,13 +87,31 @@ async def build_forecast(
         new_product,
     ) = await asyncio.gather(
         blocks.header(mode=mode),
-        blocks.hero(horizon=horizon),
-        blocks.input_cost(),
+        blocks.hero(horizon=horizon, db=db),
+        blocks.input_cost(db=db),
         blocks.pareto(tier=tier),
         blocks.price_floor(family=family),
         blocks.price_floor_footnote(),
         blocks.new_product(),
     )
+
+    # Real-data swaps (phase 45) — replace the Pareto, Price-floor, and
+    # New-product seed payloads with live queries when a DB session is
+    # available. Each swap is independently guarded so one broken block
+    # doesn't cascade.
+    if db is not None:
+        try:
+            pareto = _build_pareto_live(db, tier=tier)
+        except Exception:  # pragma: no cover — safety net
+            pass
+        try:
+            price_floor = _build_price_floor_live(db, family=family)
+        except Exception:  # pragma: no cover — safety net
+            pass
+        try:
+            new_product = _build_new_product_live(db)
+        except Exception:  # pragma: no cover — safety net
+            pass
 
     # Real walk-forward backtest sourced from `backtest_results` (Phase 8 wiring).
     # Falls back to the seed if no DB session is supplied (legacy callers).
@@ -141,14 +162,14 @@ async def build_forecast(
     )
 
     methodology = get_methodology(db=None)
-    margin_trajectory = get_margin_trajectory(db=None)
-    cost_decomposition = get_cost_decomposition(db=None)
-    seasonal_overlay = get_seasonal_overlay(db=None)
-    commodity_trajectories = get_commodity_trajectories(db=None)
-    customers = get_top_at_risk_customers(db=None, risk_filter="all")
-    quote_to_revenue = get_quote_to_revenue(db=None)
+    margin_trajectory = get_margin_trajectory(db=db)
+    cost_decomposition = get_cost_decomposition(db=db)
+    seasonal_overlay = get_seasonal_overlay(db=db)
+    commodity_trajectories = get_commodity_trajectories(db=db)
+    customers = get_top_at_risk_customers(db=db, risk_filter="all")
+    quote_to_revenue = get_quote_to_revenue(db=db)
     calibration = get_calibration(db=db)
-    market_direction = get_market_direction(db=None)
+    market_direction = get_market_direction(db=db)
 
     payload = {
         "header": header,

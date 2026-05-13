@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import type { ClusterCard } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
 
@@ -6,6 +7,19 @@ interface Props {
 }
 
 export function ClusterLens({ clusters }: Props) {
+  const [params, setParams] = useSearchParams();
+  const activeCluster = params.get('cluster');
+
+  const onSelect = (id: string) => {
+    const next = new URLSearchParams(params);
+    if (activeCluster === id) {
+      next.delete('cluster');
+    } else {
+      next.set('cluster', id);
+    }
+    setParams(next, { replace: true });
+  };
+
   return (
     <>
       <div className="section-row">
@@ -22,8 +36,24 @@ export function ClusterLens({ clusters }: Props) {
       <div className="round-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         {clusters.map((c) => {
           const toneCls = c.tone === 'status' ? 'status' : `status ${c.tone}`;
+          const isActive = activeCluster === c.id;
           return (
-            <div className="round-card" key={c.id} role="button" tabIndex={0}>
+            <div
+              className="round-card"
+              key={c.id}
+              role="button"
+              tabIndex={0}
+              data-testid={`cluster-card-${c.id}`}
+              aria-pressed={isActive}
+              onClick={() => onSelect(c.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelect(c.id);
+                }
+              }}
+              style={isActive ? { outline: '2px solid var(--rose-deep)', cursor: 'pointer' } : { cursor: 'pointer' }}
+            >
               <div className="rc-title">
                 <h3>{c.id}</h3>
                 <div className="sub">{c.ltm}</div>

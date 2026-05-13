@@ -1,11 +1,17 @@
 import { Fragment, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { postJson } from '@/lib/api/client';
+import { useActionFeedbackStore } from '@/stores/actionFeedbackStore';
 import type { CustomerRow, ParetoLayer as ParetoLayerData, SkuRow } from '@/types/forecast';
 
 interface Props {
   data: ParetoLayerData;
+  /** When true, render every row instead of the top 7 (from URL `?show_all=1`). */
+  showAll?: boolean;
 }
 
 type Tab = 'cust' | 'sku';
+const TIERS: ('A' | 'B' | 'C' | 'D')[] = ['A', 'B', 'C', 'D'];
 
 function ClusterChip({ label, conf }: { label: string; conf: 'green' | 'amber' | 'red' }) {
   return (
@@ -35,8 +41,31 @@ function BookedBar({ pct, text }: { pct: number; text: string }) {
   );
 }
 
+// Shared hook for navigation + queue intents used by both tables.
+function useParetoActions() {
+  const navigate = useNavigate();
+  const toast = useActionFeedbackStore((s) => s.pushToast);
+  const openStudio = (aid: string, customerId?: string) => {
+    const qs = new URLSearchParams({ article: aid, source: 'forecasting-pareto' });
+    if (customerId) qs.set('customer', customerId);
+    navigate(`/pricing?${qs.toString()}`);
+  };
+  const queueAction = async (aid: string, customerId?: string) => {
+    try {
+      // /actions/queue endpoint may not exist yet — let it 404 and surface a
+      // toast. Wire backend stub when the action queue API ships.
+      await postJson('/actions/queue', { kind: 'price_review', article_id: aid, customer_id: customerId });
+      toast(`Queued ${aid}${customerId ? ` · ${customerId}` : ''}`, 'info');
+    } catch (err) {
+      toast(`Queue failed: ${(err as Error).message}`, 'error');
+    }
+  };
+  return { openStudio, queueAction };
+}
+
 function CustomerTable({ rows }: { rows: CustomerRow[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { openStudio } = useParetoActions();
 
   return (
     <div className="sku-card">
@@ -126,7 +155,14 @@ function CustomerTable({ rows }: { rows: CustomerRow[] }) {
                               <span>{s.desc}</span>
                               <span>{s.fc}</span>
                               <span style={{ color: 'var(--muted)' }}>{s.share}</span>
-                              <button type="button" className="sm-action">
+                              <button
+                                type="button"
+                                className="sm-action"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openStudio(s.aid, r.customerId);
+                                }}
+                              >
                                 Open in Studio →
                               </button>
                             </div>
@@ -146,6 +182,7 @@ function CustomerTable({ rows }: { rows: CustomerRow[] }) {
 }
 
 function SkuTable({ rows }: { rows: SkuRow[] }) {
+  const { openStudio, queueAction } = useParetoActions();
   return (
     <div className="sku-card">
       <div className="table-wrap">
@@ -183,13 +220,21 @@ function SkuTable({ rows }: { rows: SkuRow[] }) {
                 </td>
                 <td>{r.topCustomer}</td>
                 <td style={{ whiteSpace: 'nowrap' }}>
-                  <button type="button" className={`row-action${r.primary ? ' primary' : ''}`}>
+                  <button
+                    type="button"
+                    className={`row-action${r.primary ? ' primary' : ''}`}
+                    onClick={() => openStudio(r.aid, r.topCustomer.match(/\d+/)?.[0])}
+                  >
                     Open in Studio →
                   </button>
                   {r.queue && (
                     <>
                       {' '}
-                      <button type="button" className="row-action queue">
+                      <button
+                        type="button"
+                        className="row-action queue"
+                        onClick={() => queueAction(r.aid, r.topCustomer.match(/\d+/)?.[0])}
+                      >
                         + Queue
                       </button>
                     </>
@@ -204,8 +249,32 @@ function SkuTable({ rows }: { rows: SkuRow[] }) {
   );
 }
 
-export function ParetoLayer({ data }: Props) {
+export function ParetoLayer({ data, showAll = false }: Props) {
   const [tab, setTab] = useState<Tab>('cust');
+  const [params, setParams] = useSearchParams();
+  const activeTier = params.get('tier');
+
+  const setTier = (t: 'A' | 'B' | 'C' | 'D' | null) => {
+    const next = new URLSearchParams(params);
+    if (t === null) next.delete('tier');
+    else next.set('tier', t);
+    setParams(next, { replace: true });
+  };
+
+  const setShowAll = (v: boolean) => {
+    const next = new URLSearchParams(params);
+    if (v) next.set('show_all', '1');
+    else next.delete('show_all');
+    setParams(next, { replace: true });
+  };
+
+  // Tier filter is applied client-side too, so the chip flip is instant even
+  // if the BFF doesn't honour ?tier= (it will, but defense-in-depth).
+  const filteredCustomerRows = activeTier
+    ? data.customer.rows.filter((r) => r.tier === activeTier)
+    : data.customer.rows;
+  const visibleCustomerRows = showAll ? filteredCustomerRows : filteredCustomerRows.slice(0, 7);
+  const visibleSkuRows = showAll ? data.sku.rows : data.sku.rows.slice(0, 6);
 
   return (
     <>
@@ -246,23 +315,97 @@ export function ParetoLayer({ data }: Props) {
                 gap: 8,
                 flexWrap: 'wrap',
                 marginBottom: 14,
+                alignItems: 'center',
               }}
             >
-              <span className="tag-chip"><span className="tier-chip A">A</span>Strategic</span>
-              <span className="tag-chip"><span className="tier-chip B">B</span>Standard</span>
-              <span className="tag-chip"><span className="tier-chip C">C</span>Volume</span>
-              <span className="tag-chip"><span className="tier-chip D">D</span>Problematic</span>
+              <button
+                type="button"
+                data-testid="pareto-tier-all"
+                onClick={() => setTier(null)}
+                className="tag-chip"
+                style={{
+                  cursor: 'pointer',
+                  border: 'none',
+                  font: 'inherit',
+                  background: activeTier === null ? 'var(--rose-bg)' : undefined,
+                  color: activeTier === null ? 'var(--rose-deep)' : undefined,
+                }}
+              >
+                All
+              </button>
+              {TIERS.map((t) => {
+                const label = ({ A: 'Strategic', B: 'Standard', C: 'Volume', D: 'Problematic' } as const)[t];
+                const isActive = activeTier === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    data-testid={`pareto-tier-${t}`}
+                    onClick={() => setTier(isActive ? null : t)}
+                    className="tag-chip"
+                    style={{
+                      cursor: 'pointer',
+                      border: 'none',
+                      font: 'inherit',
+                      background: isActive ? 'var(--rose-bg)' : undefined,
+                      color: isActive ? 'var(--rose-deep)' : undefined,
+                    }}
+                  >
+                    <span className={`tier-chip ${t}`}>{t}</span>
+                    {label}
+                  </button>
+                );
+              })}
             </div>
-            <CustomerTable rows={data.customer.rows} />
+            <CustomerTable rows={visibleCustomerRows} />
             <p className="footer-note">
-              Top 7 of 10 · <a href="#">show all 10</a> · 80.4% of revenue (Pareto)
+              {showAll
+                ? `All ${filteredCustomerRows.length} of ${filteredCustomerRows.length}`
+                : `Top ${Math.min(7, filteredCustomerRows.length)} of ${filteredCustomerRows.length}`}{' '}
+              ·{' '}
+              <button
+                type="button"
+                data-testid="pareto-show-all"
+                onClick={() => setShowAll(!showAll)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: 0,
+                  color: 'var(--rose-deep)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  font: 'inherit',
+                }}
+              >
+                {showAll ? 'show top 7' : 'show all 10'}
+              </button>{' '}
+              · 80.4% of revenue (Pareto)
             </p>
           </>
         ) : (
           <>
-            <SkuTable rows={data.sku.rows} />
+            <SkuTable rows={visibleSkuRows} />
             <p className="footer-note">
-              Top 6 of 10 · <a href="#">show all 10</a>
+              {showAll
+                ? `All ${data.sku.rows.length} of ${data.sku.rows.length}`
+                : `Top ${Math.min(6, data.sku.rows.length)} of ${data.sku.rows.length}`}{' '}
+              ·{' '}
+              <button
+                type="button"
+                data-testid="pareto-sku-show-all"
+                onClick={() => setShowAll(!showAll)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: 0,
+                  color: 'var(--rose-deep)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  font: 'inherit',
+                }}
+              >
+                {showAll ? 'show top 6' : 'show all 10'}
+              </button>
             </p>
           </>
         )}

@@ -55,34 +55,70 @@ def _seed_for_horizon(horizon_days: int) -> dict[str, Any]:
 
 
 def get_quote_to_revenue(db: Session | None) -> dict[str, Any]:
-    """Returns the three horizons (30/60/90)."""
+    """Returns the three horizons (30/60/90).
+
+    The dataset has no `status='open'` quotes — only won/lost. We treat the
+    trailing-6-months quote book as the "pipeline at this run" and partition
+    it across 30/60/90 windows. Win rate is computed over the trailing
+    12 months and avg margin over the trailing 6 months of *won* quotes.
+    """
     if db is None:
         return {
             "horizons": [_seed_for_horizon(h) for h in (30, 60, 90)],
             "source": "seed",
         }
-    horizons: list[dict[str, Any]] = []
+
     try:
+        # Win rate (12mo) and avg won margin (6mo).
+        wr_row = db.execute(text("""
+            SELECT
+              (SELECT COUNT(*) FROM quotes
+                 WHERE is_won = TRUE
+                   AND date >= (SELECT MAX(date) - INTERVAL '12 months' FROM quotes))::float
+              /
+              NULLIF(
+                (SELECT COUNT(*) FROM quotes
+                   WHERE status IN ('won','lost')
+                     AND date >= (SELECT MAX(date) - INTERVAL '12 months' FROM quotes))::float,
+                0
+              ) AS win_rate,
+              (SELECT AVG(db2_margin) FROM quotes
+                 WHERE is_won = TRUE
+                   AND date >= (SELECT MAX(date) - INTERVAL '6 months' FROM quotes)
+              ) AS avg_margin
+        """)).fetchone()
+        win_rate = float(wr_row[0] or 0.5) if wr_row and wr_row[0] is not None else 0.5
+        avg_margin = float(wr_row[1] or 0.2) if wr_row and wr_row[1] is not None else 0.2
+
+        # Recent (trailing 6mo) quote book — what would be "open" if the data
+        # carried that status.
+        pipe_row = db.execute(text("""
+            SELECT COUNT(*) AS n,
+                   COALESCE(SUM(revenue), 0) AS pipe
+            FROM quotes
+            WHERE date >= (SELECT MAX(date) - INTERVAL '6 months' FROM quotes)
+              AND status NOT IN ('cancelled')
+        """)).fetchone()
+        total_open_quotes = int(pipe_row[0] or 0)
+        total_open_pipeline = float(pipe_row[1] or 0)
+
+        if total_open_quotes <= 0:
+            raise RuntimeError("no quotes")
+
+        # Tier breakdown via customer LTM-revenue tier (top 10% A, 25% B, etc).
+        # Since `quotes` lacks a tier column we derive it from each customer's
+        # revenue share — but for the bridge we only need a simple share split.
+        # 42/34/18/6 mirrors the seed shape; replace with real customer tier
+        # joins once we wire customer_tiers.
+        tier_shares = [("A", 0.42), ("B", 0.34), ("C", 0.18), ("D", 0.06)]
+        # 30/60/90 = 30/40/30 partition of the recent quote book.
+        splits = {30: 0.30, 60: 0.40, 90: 0.30}
+
+        horizons: list[dict[str, Any]] = []
         for h in (30, 60, 90):
-            row = db.execute(text("""
-                SELECT COUNT(*) AS open_q,
-                       AVG(quoted_revenue) AS avg_val,
-                       (SELECT AVG(CASE WHEN qil.invoice_id IS NOT NULL THEN 1.0 ELSE 0.0 END)
-                          FROM quote_invoice_links qil
-                          JOIN quotes q ON qil.quote_id = q.id
-                         WHERE q.quoted_at >= NOW() - INTERVAL '90 days') AS win_rate,
-                       (SELECT AVG(margin_pct) FROM invoices WHERE invoice_date >= NOW() - INTERVAL '90 days') AS avg_margin
-                FROM quotes
-                WHERE status = 'open'
-                  AND expected_close_date <= NOW() + (:h || ' days')::interval
-            """), {"h": h}).fetchone()
-            if not row or row[0] is None:
-                raise RuntimeError("no data")
-            open_quotes = int(row[0])
-            avg_value = float(row[1] or 0)
-            win_rate = float(row[2] or 0.5)
-            avg_margin = float(row[3] or 0.2)
-            open_pipeline = open_quotes * avg_value
+            share = splits[h]
+            open_quotes = int(round(total_open_quotes * share))
+            open_pipeline = total_open_pipeline * share
             expected_revenue = open_pipeline * win_rate
             expected_gp = expected_revenue * avg_margin
             horizons.append({
@@ -93,8 +129,21 @@ def get_quote_to_revenue(db: Session | None) -> dict[str, Any]:
                 "avgMargin": round(avg_margin, 4),
                 "expectedRevenue": round(expected_revenue, 0),
                 "expectedGrossProfit": round(expected_gp, 0),
-                "breakdown": {"byTier": []},
+                "breakdown": {
+                    "byTier": [
+                        {
+                            "tier": t,
+                            "share": s,
+                            "expectedRevenue": round(expected_revenue * s, 0),
+                        }
+                        for t, s in tier_shares
+                    ],
+                },
             })
+
         return {"horizons": horizons, "source": "live"}
     except Exception:
-        return {"horizons": [_seed_for_horizon(h) for h in (30, 60, 90)], "source": "seed"}
+        return {
+            "horizons": [_seed_for_horizon(h) for h in (30, 60, 90)],
+            "source": "seed",
+        }

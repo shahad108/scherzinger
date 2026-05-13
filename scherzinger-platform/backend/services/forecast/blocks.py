@@ -14,7 +14,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 from ._seed import load_seed
+from .real_input_cost import build_input_cost as _build_input_cost_live
 
 
 async def header(*, mode: str | None) -> dict[str, Any]:
@@ -141,12 +145,168 @@ def _enrich_intervals(hero: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-async def hero(*, horizon: int | None) -> dict[str, Any]:
+def _hero_movers_live(db: Session) -> list[dict[str, Any]] | None:
+    """Top-3 customer deltas (positive + negative) between last week and prior week."""
+    try:
+        rows = db.execute(text("""
+            WITH bounds AS (
+                SELECT MAX(date) AS max_d FROM invoices
+            ),
+            last_week AS (
+                SELECT customer_id, SUM(revenue) AS rev
+                FROM invoices, bounds
+                WHERE date > bounds.max_d - INTERVAL '7 days'
+                  AND date <= bounds.max_d
+                GROUP BY customer_id
+            ),
+            prior_week AS (
+                SELECT customer_id, SUM(revenue) AS rev
+                FROM invoices, bounds
+                WHERE date > bounds.max_d - INTERVAL '14 days'
+                  AND date <= bounds.max_d - INTERVAL '7 days'
+                GROUP BY customer_id
+            )
+            SELECT COALESCE(lw.customer_id, pw.customer_id) AS cid,
+                   COALESCE(lw.rev, 0) - COALESCE(pw.rev, 0) AS delta,
+                   COALESCE(lw.rev, 0) AS last_rev
+            FROM last_week lw
+            FULL OUTER JOIN prior_week pw ON lw.customer_id = pw.customer_id
+            WHERE COALESCE(lw.rev, 0) - COALESCE(pw.rev, 0) <> 0
+            ORDER BY ABS(COALESCE(lw.rev, 0) - COALESCE(pw.rev, 0)) DESC
+            LIMIT 3
+        """)).fetchall()
+    except Exception:
+        return None
+    if not rows:
+        return None
+    movers: list[dict[str, Any]] = []
+    for r in rows:
+        cid = str(r[0])
+        delta = float(r[1])
+        sign = "+" if delta >= 0 else "−"
+        tone = "green" if delta >= 0 else "red"
+        movers.append({
+            "label": f"Customer {cid}",
+            "value": f"{sign}€{abs(delta) / 1000:.1f}K WoW",
+            "tone": tone,
+            "sub": f"vs prior week · last week €{float(r[2]) / 1000:.1f}K",
+        })
+    return movers
+
+
+def _movable_locked_live(db: Session) -> dict[str, Any] | None:
+    """Movable/locked split derived from customer_risk_scores risk_tier × LTM revenue.
+
+    Definition: high/critical risk customers' revenue is 'movable' (at risk of
+    being lost/won); low risk is 'locked' (sticky). Medium splits 50/50.
+    """
+    try:
+        rows = db.execute(text("""
+            WITH bounds AS (SELECT MAX(date) AS max_d FROM invoices),
+            ltm AS (
+                SELECT customer_id, SUM(revenue) AS rev
+                FROM invoices, bounds
+                WHERE date >= bounds.max_d - INTERVAL '12 months'
+                GROUP BY customer_id
+            ),
+            latest_risk AS (
+                SELECT DISTINCT ON (customer_id) customer_id, risk_tier
+                FROM customer_risk_scores
+                ORDER BY customer_id, score_date DESC
+            )
+            SELECT lr.risk_tier, SUM(ltm.rev) AS rev
+            FROM ltm
+            LEFT JOIN latest_risk lr ON lr.customer_id = ltm.customer_id
+            GROUP BY lr.risk_tier
+        """)).fetchall()
+    except Exception:
+        return None
+    if not rows:
+        return None
+    by_tier = {(r[0] or "unknown"): float(r[1] or 0) for r in rows}
+    movable = by_tier.get("high", 0) + by_tier.get("critical", 0) + 0.5 * by_tier.get("medium", 0) + by_tier.get("unknown", 0)
+    locked = by_tier.get("low", 0) + 0.5 * by_tier.get("medium", 0)
+    total = movable + locked
+    if total <= 0:
+        return None
+    movable_pct = round(movable / total * 100)
+    return {
+        "label": "Movable / Locked",
+        "value": f"{movable_pct}% / {100 - movable_pct}%",
+        "movablePct": movable_pct,
+        "sub": (
+            f"€{movable / 1e6:.2f}M movable · €{locked / 1e6:.2f}M locked "
+            f"(movable = high/critical risk + ½ medium; locked = low + ½ medium)"
+        ),
+    }
+
+
+def _why_band_moves_live(db: Session) -> dict[str, Any] | None:
+    """Top 3 monthly seasonal index deviations from 100."""
+    try:
+        rows = db.execute(text("""
+            SELECT month, AVG(seasonal_index) * 100 AS idx
+            FROM seasonal_patterns
+            WHERE entity_type = 'overall'
+            GROUP BY month
+            ORDER BY ABS(AVG(seasonal_index) * 100 - 100) DESC
+            LIMIT 3
+        """)).fetchall()
+    except Exception:
+        return None
+    if not rows:
+        return None
+    month_labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    band_rows = []
+    for r in rows:
+        m = int(r[0])
+        idx = float(r[1])
+        dev = idx - 100
+        sign = "+" if dev >= 0 else "−"
+        tone = "green" if dev >= 0 else "red"
+        band_rows.append({
+            "label": month_labels[m - 1],
+            "value": f"{sign}{abs(dev):.1f}%",
+            "tone": tone,
+            "sub": (
+                f"Seasonal index {idx:.1f} (anchor 100) · derived from 3-year "
+                "monthly revenue pattern in seasonal_patterns."
+            ),
+        })
+    return {
+        "title": "Why the band moves",
+        "sub": "seasonality annotations (live from seasonal_patterns)",
+        "rows": band_rows,
+    }
+
+
+async def hero(*, horizon: int | None, db: Session | None = None) -> dict[str, Any]:
     block = dict(load_seed()["hero"])
     if horizon and isinstance(block.get("series"), dict):
         # Phase 7 carries the seed series; the param is wired so callers
         # stay forward-compatible with the live walk-forward.
         block["activeHorizon"] = horizon
+
+    # Real-data overlays for the three sub-blocks
+    block["moversSource"] = "synthetic"
+    block["movableLockedSource"] = "synthetic"
+    block["whyBandMovesSource"] = "synthetic"
+
+    if db is not None:
+        movers = _hero_movers_live(db)
+        if movers:
+            block["movers"] = movers
+            block["moversSource"] = "live"
+        mlocked = _movable_locked_live(db)
+        if mlocked:
+            block["movableLockedSplit"] = mlocked
+            block["movableLockedSource"] = "live"
+        why = _why_band_moves_live(db)
+        if why:
+            block["whyBandMoves"] = why
+            block["whyBandMovesSource"] = "live"
+
     return _enrich_intervals(block)
 
 
@@ -165,8 +325,19 @@ async def walk_forward() -> Any:
     return load_seed()["walkForward"]
 
 
-async def input_cost() -> Any:
-    return load_seed()["inputCost"]
+async def input_cost(*, db: Session | None = None) -> Any:
+    if db is None:
+        seed = load_seed()["inputCost"]
+        seed = dict(seed)
+        seed["source"] = "synthetic"
+        return seed
+    try:
+        return _build_input_cost_live(db)
+    except Exception:
+        seed = load_seed()["inputCost"]
+        seed = dict(seed)
+        seed["source"] = "synthetic"
+        return seed
 
 
 async def pareto(*, tier: str | None) -> dict[str, Any]:

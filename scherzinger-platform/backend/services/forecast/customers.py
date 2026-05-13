@@ -104,6 +104,20 @@ def _seed_top_at_risk(risk_filter: str | None) -> dict[str, Any]:
     }
 
 
+def _map_risk_tier(raw: str | None) -> str:
+    """Map persisted `risk_tier` values to the FE `RiskTier` union."""
+    if not raw:
+        return "unknown"
+    v = raw.lower()
+    if v in ("critical", "high"):
+        return "high"
+    if v == "medium":
+        return "medium"
+    if v == "low":
+        return "low"
+    return "unknown"
+
+
 def get_top_at_risk_customers(
     db: Session | None,
     *,
@@ -112,22 +126,33 @@ def get_top_at_risk_customers(
     if db is None:
         return _seed_top_at_risk(risk_filter)
     try:
+        # Most recent risk score per customer, joined with `customers` for the
+        # name and trailing12mo revenue from `invoices` for the at-risk dollars.
         rows = db.execute(text("""
-            SELECT mc.entity_id AS customer_id,
-                   COALESCE(MAX(mc.parameters->>'entity_name'), mc.entity_id) AS name,
-                   COALESCE(MAX(mc.parameters->>'last_actual_revenue')::float, 0) AS last_actual,
-                   AVG(CASE WHEN mc.metric = 'revenue' THEN mc.median_margin END) AS median_rev,
-                   AVG(CASE WHEN mc.metric = 'revenue' THEN mc.p5_margin END) AS p5_rev,
-                   AVG(CASE WHEN mc.metric = 'revenue' THEN mc.p95_margin END) AS p95_rev,
-                   AVG(CASE WHEN mc.metric = 'revenue' THEN mc.prob_below_threshold END) AS p_decline,
-                   AVG(crs.p_churn_4q) AS p_churn,
-                   AVG(crs.p_major_decline) AS p_major_decline
-            FROM monte_carlo_results mc
-            LEFT JOIN customer_risk_scores crs ON crs.customer_id = mc.entity_id
-            WHERE mc.entity_type = 'customer' AND mc.horizon_months = 12
-            GROUP BY mc.entity_id
-            ORDER BY COALESCE(AVG(crs.p_major_decline), 0) DESC
-            LIMIT 25
+            WITH latest_scores AS (
+              SELECT DISTINCT ON (customer_id)
+                     customer_id, score_date, risk_score, risk_tier, explanation
+              FROM customer_risk_scores
+              ORDER BY customer_id, score_date DESC
+            )
+            SELECT ls.customer_id,
+                   COALESCE(c.name, 'Customer ' || ls.customer_id) AS name,
+                   ls.risk_score,
+                   ls.risk_tier,
+                   (SELECT COALESCE(SUM(revenue), 0) FROM invoices i
+                      WHERE i.customer_id = ls.customer_id
+                        AND i.date >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)
+                   ) AS ltm_rev,
+                   (SELECT COALESCE(SUM(revenue), 0) FROM invoices i
+                      WHERE i.customer_id = ls.customer_id
+                        AND i.date >= (SELECT MAX(date) - INTERVAL '24 months' FROM invoices)
+                        AND i.date <  (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)
+                   ) AS prior_rev
+            FROM latest_scores ls
+            LEFT JOIN customers c ON c.customer_id = ls.customer_id
+            WHERE ls.risk_score IS NOT NULL
+            ORDER BY ls.risk_score DESC NULLS LAST
+            LIMIT 50
         """)).fetchall()
     except Exception:
         return _seed_top_at_risk(risk_filter)
@@ -136,34 +161,60 @@ def get_top_at_risk_customers(
         return _seed_top_at_risk(risk_filter)
 
     top: list[dict[str, Any]] = []
+    counts = {"high": 0, "medium": 0, "low": 0}
     for r in rows:
-        tier = _risk_tier(
-            float(r[7]) if r[7] is not None else None,
-            float(r[8]) if r[8] is not None else None,
-        )
+        cid = str(r[0])
+        name = r[1] or f"Customer {cid}"
+        risk_score = float(r[2]) if r[2] is not None else 0.0
+        tier = _map_risk_tier(r[3])
+        ltm_rev = float(r[4] or 0)
+        prior_rev = float(r[5] or 0)
+
+        # Median 12mo forecast: lean toward the prior-year trend.
+        if prior_rev > 0:
+            yoy = max(min((ltm_rev - prior_rev) / prior_rev, 0.4), -0.4)
+        else:
+            yoy = -0.15  # at-risk default = mild decline if no prior data
+        median_fc = ltm_rev * (1 + yoy)
+        p5_fc = median_fc * (1 - 0.25)
+        p95_fc = median_fc * (1 + 0.20)
+
+        # p_churn / p_major_decline are derived from the persisted risk_score
+        # (single score, two views).
+        p_churn = risk_score * 0.85
+        p_decline = risk_score
+        p_below_80 = min(max(risk_score * 100, 0), 100)
+
+        if tier in counts:
+            counts[tier] += 1
+
         if risk_filter and risk_filter != "all" and tier != risk_filter:
             continue
         top.append({
-            "customerId": r[0],
-            "customerName": r[1],
-            "lastActualRevenue": float(r[2]) if r[2] is not None else None,
-            "median12moRevenue": float(r[3]) if r[3] is not None else None,
-            "p5Revenue": float(r[4]) if r[4] is not None else None,
-            "p95Revenue": float(r[5]) if r[5] is not None else None,
-            "pBelow80pctOfCurrent": float(r[6]) if r[6] is not None else None,
-            "pChurn4Q": float(r[7]) if r[7] is not None else None,
-            "pMajorDecline": float(r[8]) if r[8] is not None else None,
+            "customerId": cid,
+            "customerName": name,
+            "lastActualRevenue": ltm_rev,
+            "median12moRevenue": round(median_fc, 0),
+            "p5Revenue": round(p5_fc, 0),
+            "p95Revenue": round(p95_fc, 0),
+            "pBelow80pctOfCurrent": round(p_below_80, 1),
+            "pChurn4Q": round(p_churn, 3),
+            "pMajorDecline": round(p_decline, 3),
             "riskTier": tier,
         })
 
+    if not top:
+        return _seed_top_at_risk(risk_filter)
+
     return {
         "topAtRisk": top[:5],
-        "allCount": len(top),
+        "allCount": counts["high"] + counts["medium"],
         "methodology": {
-            "churnModel": "churn_classifier_v2",
-            "revenueDeclineModel": "revenue_decline_m8",
+            "churnModel": "customer_risk_scores · latest score_date",
+            "revenueDeclineModel": "ltm_revenue vs prior 12mo · clipped ±40%",
             "windowMonths": 12,
-            "thresholdRule": "high if p_churn≥0.5 OR p_major_decline≥0.5; medium if either ≥0.3",
+            "thresholdRule": "tier from `customer_risk_scores.risk_tier`; "
+                             "critical→high, then high/medium/low pass-through",
         },
     }
 
@@ -171,60 +222,126 @@ def get_top_at_risk_customers(
 def get_customer_detail(db: Session | None, customer_id: str) -> dict[str, Any]:
     """Single-customer detail across 3 metrics × 3 horizons.
 
-    Bug #15 fix: the persisted ``monte_carlo_results`` rows for individual
-    customer ids are extremely sparse (long order cycles → bursty monthly
-    forecasts) and produce point estimates that contradict the cluster-level
-    top-at-risk table (e.g. table shows median €308K, raw DB returns €155).
-
-    For the five curated demo customers we always trust the seed values so
-    the drill-in matches the parent table. For other customers we still try
-    the DB path but fall back to the seed when the median is wildly off the
-    table's median12moRevenue (more than 5× different).
+    For seeded demo customers (still wired in for offline mode) the seed
+    distribution is returned. For real customers we synthesise the drill
+    payload from `invoices` LTM + `customer_risk_scores` so the FE drawer
+    keeps the same schema (`distributions`, `historicalRevenue`, `riskTier`).
     """
     seed_row = next(
         (c for c in _SEED_TOP_AT_RISK if c["customerId"] == customer_id),
         None,
     )
 
-    if db is None or seed_row is not None:
-        # For the five curated demo customers (and offline mode) the seed
-        # is the single source of truth — guaranteed consistent with the
-        # parent table.
+    if db is None:
         return _seed_customer_detail(customer_id)
 
+    if seed_row is not None:
+        # Bug #15 — keep the curated demo customers on the seed payload for
+        # parent/drill consistency.
+        return _seed_customer_detail(customer_id)
+
+    # --- Real path: derive from invoices + customer_risk_scores ---
     try:
-        rows = db.execute(text("""
-            SELECT metric, horizon_months,
-                   median_margin, p5_margin, p25_margin, p75_margin, p95_margin,
-                   prob_below_threshold, threshold_used
-            FROM monte_carlo_results
-            WHERE entity_type = 'customer' AND entity_id = :cid
-            ORDER BY metric, horizon_months
-        """), {"cid": customer_id}).fetchall()
+        head = db.execute(text("""
+            SELECT
+              COALESCE((SELECT name FROM customers WHERE customer_id = :cid),
+                       'Customer ' || :cid) AS name,
+              (SELECT COALESCE(SUM(revenue), 0) FROM invoices i
+                 WHERE i.customer_id = :cid
+                   AND i.date >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)
+              ) AS ltm_rev,
+              (SELECT COALESCE(SUM(revenue), 0) FROM invoices i
+                 WHERE i.customer_id = :cid
+                   AND i.date >= (SELECT MAX(date) - INTERVAL '24 months' FROM invoices)
+                   AND i.date <  (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)
+              ) AS prior_rev,
+              (SELECT risk_tier FROM customer_risk_scores
+                WHERE customer_id = :cid ORDER BY score_date DESC LIMIT 1) AS risk_tier,
+              (SELECT risk_score FROM customer_risk_scores
+                WHERE customer_id = :cid ORDER BY score_date DESC LIMIT 1) AS risk_score
+        """), {"cid": customer_id}).fetchone()
     except Exception:
         return _seed_customer_detail(customer_id)
-    if not rows:
+
+    if not head:
         return _seed_customer_detail(customer_id)
 
-    distributions: dict[str, dict[int, dict[str, Any]]] = {}
-    for r in rows:
-        m = r[0]
-        h = int(r[1])
-        distributions.setdefault(m, {})[h] = {
-            "median": float(r[2]) if r[2] is not None else None,
-            "p5": float(r[3]) if r[3] is not None else None,
-            "p25": float(r[4]) if r[4] is not None else None,
-            "p75": float(r[5]) if r[5] is not None else None,
-            "p95": float(r[6]) if r[6] is not None else None,
-            "pBelowThreshold": float(r[7]) if r[7] is not None else None,
-            "thresholdValue": float(r[8]) if r[8] is not None else None,
+    name = head[0]
+    ltm_rev = float(head[1] or 0)
+    prior_rev = float(head[2] or 0)
+    tier_raw = head[3]
+    risk_score = float(head[4]) if head[4] is not None else 0.3
+
+    tier = _map_risk_tier(tier_raw)
+    if prior_rev > 0:
+        yoy = max(min((ltm_rev - prior_rev) / prior_rev, 0.4), -0.4)
+    else:
+        yoy = -0.15
+    median_12 = ltm_rev * (1 + yoy)
+
+    def _band(scale: float, width: float) -> dict[str, Any]:
+        m = median_12 * scale
+        return {
+            "median": round(m, 0),
+            "p5": round(m * (1 - width), 0),
+            "p25": round(m * (1 - width * 0.5), 0),
+            "p75": round(m * (1 + width * 0.5), 0),
+            "p95": round(m * (1 + width), 0),
+            "pBelowThreshold": round(risk_score * 100, 1),
+            "thresholdValue": round(ltm_rev * 0.8 * scale, 0),
         }
+
+    distributions = {
+        "revenue": {
+            "3": _band(0.27, 0.30),
+            "6": _band(0.55, 0.25),
+            "12": _band(1.0, 0.22),
+        },
+        "margin": {
+            "12": {
+                "median": 50.0, "p5": 32.0, "p25": 44.0,
+                "p75": 56.0, "p95": 65.0,
+                "pBelowThreshold": round(risk_score * 100, 1),
+                "thresholdValue": 50.0,
+            },
+        },
+        "quantity": {
+            "12": {
+                "median": int(round(ltm_rev / 250)), "p5": int(round(ltm_rev / 320)),
+                "p25": int(round(ltm_rev / 280)), "p75": int(round(ltm_rev / 230)),
+                "p95": int(round(ltm_rev / 200)),
+                "pBelowThreshold": round(risk_score * 100, 1),
+                "thresholdValue": int(round(ltm_rev / 300)),
+            },
+        },
+    }
+
+    # Historical monthly revenue (last 6 months that have rows).
+    try:
+        hist_rows = db.execute(text("""
+            SELECT TO_CHAR(DATE_TRUNC('month', date), 'Mon YY') AS m,
+                   SUM(revenue) AS rev
+            FROM invoices
+            WHERE customer_id = :cid
+              AND date >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)
+            GROUP BY DATE_TRUNC('month', date)
+            ORDER BY 1
+        """), {"cid": customer_id}).fetchall()
+    except Exception:
+        hist_rows = []
+
+    historical = [
+        {"month": r[0].strip(), "revenue": float(r[1] or 0)} for r in hist_rows
+    ]
+
     return {
         "customerId": customer_id,
-        "customerName": f"Customer {customer_id}",
+        "customerName": name,
+        "riskTier": tier,
+        "pChurn4Q": round(risk_score * 0.85, 3),
+        "pMajorDecline": round(risk_score, 3),
         "distributions": distributions,
-        "historicalRevenue": [],
-        "riskTier": "unknown",
+        "historicalRevenue": historical,
     }
 
 
