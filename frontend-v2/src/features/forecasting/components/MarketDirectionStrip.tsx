@@ -1,12 +1,15 @@
 // Phase 7 — Horizontal strip of curated market tiles.
 
-import type { MarketDirection } from '@/types/forecast';
+import { useState } from 'react';
+import type { MarketDirection, MarketTile } from '@/types/forecast';
+import { MarketTileDrawer } from './MarketTileDrawer';
 
 interface Props {
   data: MarketDirection;
 }
 
 export function MarketDirectionStrip({ data }: Props) {
+  const [active, setActive] = useState<MarketTile | null>(null);
   return (
     <section className="mb-4" data-testid="market-direction-strip">
       <div className="rounded-[14px] border border-[var(--border)] bg-white p-3">
@@ -28,27 +31,31 @@ export function MarketDirectionStrip({ data }: Props) {
                     : 'border-[var(--hairline)]';
             const arrow = tile.wowPct > 0 ? '↑' : tile.wowPct < 0 ? '↓' : '→';
             return (
-              <li
-                key={tile.name}
-                data-testid={`market-tile-${tile.name.toLowerCase().replace(/\W+/g, '-')}`}
-                title={tile.context}
-                className={`rounded-md border-l-4 ${tone} border border-[var(--hairline)] bg-[var(--surface-soft)] p-2`}
-              >
-                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted)] line-clamp-1">
-                  {tile.name}
-                </div>
-                <div className="mt-0.5 font-display text-[15px] font-bold tabular-nums text-[var(--ink)]">
-                  {tile.value} <span className="text-[10.5px] font-semibold text-[var(--muted)]">{tile.unit}</span>
-                </div>
-                <div className="text-[10.5px] text-[var(--muted)]">
-                  {arrow} {tile.wowPct >= 0 ? '+' : ''}
-                  {tile.wowPct.toFixed(1)}% WoW
-                </div>
+              <li key={tile.name}>
+                <button
+                  type="button"
+                  data-testid={`market-tile-${tile.name.toLowerCase().replace(/\W+/g, '-')}`}
+                  title={tile.context}
+                  onClick={() => setActive(tile)}
+                  className={`w-full text-left rounded-md border-l-4 ${tone} border border-[var(--hairline)] bg-[var(--surface-soft)] p-2 hover:bg-white hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rose-deep)]`}
+                >
+                  <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted)] line-clamp-1">
+                    {tile.name}
+                  </div>
+                  <div className="mt-0.5 font-display text-[15px] font-bold tabular-nums text-[var(--ink)]">
+                    {tile.value} <span className="text-[10.5px] font-semibold text-[var(--muted)]">{tile.unit}</span>
+                  </div>
+                  <div className="text-[10.5px] text-[var(--muted)]">
+                    {arrow} {tile.wowPct >= 0 ? '+' : ''}
+                    {tile.wowPct.toFixed(1)}% WoW
+                  </div>
+                </button>
               </li>
             );
           })}
         </ul>
       </div>
+      <MarketTileDrawer tile={active} open={!!active} onClose={() => setActive(null)} />
     </section>
   );
 }

@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react';
 import type { TornadoBar, ForecastTornado } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
 import { DistributionDrawer } from './DistributionDrawer';
+import { ThresholdAlertButton } from './ThresholdAlertButton';
 
 interface Props {
   tornado: ForecastTornado;
@@ -52,6 +53,13 @@ export function TornadoCard({ tornado }: Props) {
             }}
             entityType={tornado.entityType}
             drawerTitle={`Tornado · ${tornado.metric} lineage`}
+          />
+          <ThresholdAlertButton
+            metric={tornado.metric}
+            entityType={tornado.entityType}
+            label={`Tornado · ${tornado.metric}`}
+            thresholdKind="revenue_decline_prob_above"
+            defaultThreshold={0.3}
           />
           <span className="tag-chip">
             {tornado.metric} · {tornado.horizonMonths}mo · {tornado.entityType.replace('_', ' ')}

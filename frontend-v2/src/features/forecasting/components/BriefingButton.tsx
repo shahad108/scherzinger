@@ -1,9 +1,10 @@
 // Phase 7 — "Generate forecast briefing" button + modal.
 
-import { useState } from 'react';
-import { X } from 'lucide-react';
-import { postJson } from '@/lib/api/client';
+import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Download, X } from 'lucide-react';
+import { postJson } from '@/lib/api/client';
+import { useScenarios } from '@/data/api/useScenarios';
 
 interface BriefingReceipt {
   jobId: string;
@@ -21,6 +22,14 @@ export function BriefingButton() {
   const [receipt, setReceipt] = useState<BriefingReceipt | null>(null);
   const [busy, setBusy] = useState(false);
   const activeScenario = params.get('scenario_id') ?? undefined;
+
+  // Bug #4: resolve the active scenario id to its human-readable name.
+  const { data: scenarios } = useScenarios();
+  const activeScenarioName = useMemo(() => {
+    if (!activeScenario || !scenarios) return null;
+    const all = [...scenarios.system, ...scenarios.saved, ...scenarios.teamShared];
+    return all.find((s) => s.id === activeScenario)?.name ?? null;
+  }, [activeScenario, scenarios]);
 
   const handleGenerate = async () => {
     setBusy(true);
@@ -86,8 +95,10 @@ export function BriefingButton() {
             </header>
             <div className="p-5 space-y-3">
               <Field label="Scenario">
-                <span className="text-[12.5px] text-[var(--ink-2)]">
-                  {activeScenario ? `Active: ${activeScenario.slice(0, 8)}…` : 'Base case'}
+                <span className="text-[12.5px] text-[var(--ink-2)]" data-testid="briefing-scenario-name">
+                  {activeScenario
+                    ? activeScenarioName ?? `Scenario ${activeScenario.slice(0, 8)}…`
+                    : 'Base case'}
                 </span>
               </Field>
               <Field label="Format">
@@ -114,8 +125,24 @@ export function BriefingButton() {
                 </select>
               </Field>
               {receipt && (
-                <div className="rounded-md border border-[var(--hairline)] bg-[var(--surface-soft)] p-2 text-[12px]" data-testid="briefing-receipt">
-                  <b>Job queued:</b> {receipt.jobId.slice(0, 8)}… · format {receipt.format} · recipient {receipt.recipient}
+                <div
+                  className="rounded-md border border-[var(--hairline)] bg-[var(--surface-soft)] p-3 text-[12px] space-y-2"
+                  data-testid="briefing-receipt"
+                >
+                  <div>
+                    <b>Job queued:</b> {receipt.jobId.slice(0, 8)}… · format {receipt.format} ·
+                    recipient {receipt.recipient}
+                  </div>
+                  {/* Bug #5: surface the artifact URL so Frank can actually open the PDF. */}
+                  <a
+                    href={receipt.artifactUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-testid="briefing-download-link"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-[var(--rose-deep)] px-2.5 py-1 text-[11.5px] font-semibold text-white hover:bg-[var(--rose-deep)]/90"
+                  >
+                    <Download size={12} /> Open {receipt.format.toUpperCase()} →
+                  </a>
                 </div>
               )}
             </div>

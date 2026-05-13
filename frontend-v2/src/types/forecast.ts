@@ -464,6 +464,13 @@ export interface ScenarioListResponse {
   teamShared: ScenarioSummary[];
 }
 
+export interface ScenarioAppliedReceipt {
+  shiftPpMargin: number;
+  relativePctOnMetric: number;
+  metric: SimulatorMetric;
+  inputCount: number;
+}
+
 // Phase 6 — Quote-to-Revenue bridge.
 export interface QuoteToRevenueHorizon {
   horizonDays: number;
@@ -561,4 +568,7 @@ export interface ForecastShell {
   calibration: CalibrationPayload;
   // Phase 7 — Market direction.
   marketDirection: MarketDirection;
+  // Scenario perturbation receipt (only present when ?scenario_id= is set).
+  scenarioApplied?: ScenarioAppliedReceipt;
+  activeScenarioId?: string;
 }

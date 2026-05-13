@@ -23,6 +23,8 @@ import { SeasonalOverlayCard } from './components/SeasonalOverlayCard';
 import { CommodityTrajectoriesCard } from './components/CommodityTrajectoriesCard';
 import { PerCustomerTab } from './components/PerCustomerTab';
 import { ScenarioLibrary } from './components/ScenarioLibrary';
+import { ScenarioActiveBanner } from './components/ScenarioActiveBanner';
+import { ScenarioCompareView } from './components/ScenarioCompareView';
 import { QuoteToRevenueBridge } from './components/QuoteToRevenueBridge';
 import { CalibrationCard } from './components/CalibrationCard';
 import { MarketDirectionStrip } from './components/MarketDirectionStrip';
@@ -131,6 +133,10 @@ export default function ForecastingPage() {
         </div>
       )}
       <ScenarioLibrary />
+      {scenarioId && (
+        <ScenarioActiveBanner scenarioId={scenarioId} applied={data.scenarioApplied} />
+      )}
+      <ScenarioCompareView modeParam={modeParam} horizonParam={horizonParam} />
       <ModeToggle active={modeParam} horizonMonths={horizonParam as 3 | 6 | 12} />
 
       <div role="tablist" aria-label="Forecast view" className="mb-4 inline-flex items-center gap-1 rounded-full bg-white p-1 shadow-[inset_0_0_0_1px_var(--hairline)]" data-testid="forecast-tabs">

@@ -11,6 +11,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useNavigate } from 'react-router-dom';
+import { ExternalLink } from 'lucide-react';
 import { useForecastCustomers, useForecastCustomerDetail } from '@/data/api/useForecastCustomers';
 import type { CustomerAtRiskRow } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
@@ -159,6 +161,7 @@ function CustomerForecastDetail({ customerId, onClose, previewRow }: DetailProps
   const { data } = useForecastCustomerDetail(customerId);
   const distributions = data?.distributions ?? {};
   const history = data?.historicalRevenue ?? [];
+  const navigate = useNavigate();
 
   return (
     <div
@@ -236,6 +239,38 @@ function CustomerForecastDetail({ customerId, onClose, previewRow }: DetailProps
                   <Area type="monotone" dataKey="revenue" stroke="#3e5d80" fill="rgba(62,93,128,0.18)" />
                 </AreaChart>
               </ResponsiveContainer>
+            </div>
+          </Section>
+
+          {/* Wishlist #4 — cross-link the drill-in to the Action Center renewal queue. */}
+          <Section title="Next action">
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                data-testid="customer-stage-renewal"
+                onClick={() =>
+                  navigate(`/action-center?queue=renewals&customer=${customerId}&source=forecasting-customers`)
+                }
+                className="inline-flex items-center gap-1.5 rounded-md bg-[var(--rose-deep)] px-3 py-1.5 text-[12.5px] font-semibold text-white hover:bg-[var(--rose-deep)]/90"
+              >
+                Stage renewal proposal <ExternalLink size={12} />
+              </button>
+              <button
+                type="button"
+                data-testid="customer-open-margin"
+                onClick={() => navigate(`/margin?customer=${customerId}&source=forecasting-customers`)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-[12.5px] font-semibold text-[var(--ink-2)] hover:bg-[var(--surface-soft)]"
+              >
+                Open in margin cockpit <ExternalLink size={12} />
+              </button>
+              <button
+                type="button"
+                data-testid="customer-open-pricing"
+                onClick={() => navigate(`/pricing?customer=${customerId}&source=forecasting-customers`)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-[12.5px] font-semibold text-[var(--ink-2)] hover:bg-[var(--surface-soft)]"
+              >
+                SKU drill in pricing studio <ExternalLink size={12} />
+              </button>
             </div>
           </Section>
         </div>

@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import type { MarginTrajectory } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
+import { ThresholdAlertButton } from './ThresholdAlertButton';
 
 interface Props {
   data: MarginTrajectory;
@@ -42,6 +43,13 @@ export function MarginTrajectoryCard({ data }: Props) {
             data={{ metric: 'mape', value: 0.0688, n: 12, horizonMonths: 12 }}
             entityType="commodity_group"
             drawerTitle="Margin trajectory — lineage"
+          />
+          <ThresholdAlertButton
+            metric="margin"
+            entityType="commodity_group"
+            label="Margin trajectory"
+            thresholdKind="margin_below_pct"
+            defaultThreshold={data.floor}
           />
           {data.crossesFloorAt && (
             <span className="tag-chip status red">

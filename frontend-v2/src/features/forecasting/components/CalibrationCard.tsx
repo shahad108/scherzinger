@@ -2,6 +2,7 @@
 
 import type { CalibrationPayload } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
+import { ThresholdAlertButton } from './ThresholdAlertButton';
 
 interface Props {
   data: CalibrationPayload;
@@ -18,11 +19,20 @@ export function CalibrationCard({ data }: Props) {
             band? Should be ≈{data.nominalBand}% if the model is calibrated.
           </div>
         </div>
-        <AccuracyBadge
-          data={{ metric: 'calibration_p80_hit', value: 0.77, n: 66, horizonMonths: 12 }}
-          entityType="commodity_group"
-          drawerTitle="Calibration — lineage"
-        />
+        <div className="flex items-center gap-2">
+          <AccuracyBadge
+            data={{ metric: 'calibration_p80_hit', value: 0.77, n: 66, horizonMonths: 12 }}
+            entityType="commodity_group"
+            drawerTitle="Calibration — lineage"
+          />
+          <ThresholdAlertButton
+            metric="calibration_p80_hit"
+            entityType="commodity_group"
+            label="Calibration drift"
+            thresholdKind="mape_above"
+            defaultThreshold={0.1}
+          />
+        </div>
       </div>
 
       <div className="lq-card" data-testid="calibration-card">
