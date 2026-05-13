@@ -197,6 +197,75 @@ export interface NewProductForecast {
   cards: NewProductCard[];
 }
 
+// Phase 1 — simulator surface (tornado + per-entity distributions + mode toggle).
+export type SimulatorMetric = 'margin' | 'revenue' | 'quantity';
+export type SimulatorHorizon = 3 | 6 | 12;
+export type SimulatorEntityType = 'commodity_group' | 'customer' | 'business_unit';
+export type ShockMode = 'bootstrap' | 'normal' | 'degenerate';
+
+export interface TornadoClusterDelta {
+  cluster: string;
+  delta: number;
+}
+
+export interface TornadoBar {
+  inputName: string;
+  unit: string;
+  perturbationSize: number | null;
+  /** Median delta when this input is perturbed upward. Sign indicates direction. */
+  deltaPositive: number;
+  /** Median delta when this input is perturbed downward. */
+  deltaNegative: number;
+  /** P5/P95 of the entire distribution under the perturbation (optional). */
+  p5?: number | null;
+  p95?: number | null;
+  /** Human-readable unit string for the delta value (e.g. "pp margin"). */
+  deltaUnit: string;
+  clusterBreakdown?: TornadoClusterDelta[] | null;
+}
+
+export interface ForecastTornado {
+  computedAt: string;
+  metric: SimulatorMetric;
+  horizonMonths: number;
+  entityType: SimulatorEntityType;
+  n_simulations: number;
+  shockMode: ShockMode;
+  source: 'seed' | 'live';
+  bars: TornadoBar[];
+}
+
+export interface DistributionRow {
+  entityId: string;
+  entityName: string;
+  lastActual: number | null;
+  median: number | null;
+  mean: number | null;
+  p5: number | null;
+  p25: number | null;
+  p75: number | null;
+  p95: number | null;
+  pBelowThreshold: number | null;
+  thresholdValue: number | null;
+  thresholdKind: string;
+  shockMode: ShockMode;
+  nSimulations: number;
+}
+
+export interface ForecastDistributions {
+  computedAt: string;
+  metric: SimulatorMetric;
+  horizonMonths: number;
+  entityType: SimulatorEntityType;
+  source: 'seed' | 'live';
+  rows: DistributionRow[];
+}
+
+export interface ForecastModeState {
+  active: ForecastMode;
+  horizonMonths: SimulatorHorizon;
+}
+
 export interface ForecastShell {
   header: ForecastHeader;
   hero: ForecastHero;
@@ -207,4 +276,8 @@ export interface ForecastShell {
   priceFloor: FloorRow[];
   priceFloorFootnote: string;
   newProduct: NewProductForecast;
+  // Phase 1 — simulator surface.
+  mode: ForecastModeState;
+  tornado: ForecastTornado;
+  distributions: ForecastDistributions;
 }

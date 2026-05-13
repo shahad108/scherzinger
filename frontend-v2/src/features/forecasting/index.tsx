@@ -1,9 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, X } from 'lucide-react';
 import { useForecast } from '@/data/api/useForecast';
+import { useTornado } from '@/data/api/useTornado';
+import { useDistributions } from '@/data/api/useDistributions';
 import { PageHead } from './components/PageHead';
 import { HeroForecast } from './components/HeroForecast';
+import { ModeToggle } from './components/ModeToggle';
+import { TornadoCard } from './components/TornadoCard';
+import { DistributionGrid } from './components/DistributionGrid';
 import { ClusterLens } from './components/ClusterLens';
 import { WalkForward } from './components/WalkForward';
 import { InputCostTrajectory } from './components/InputCostTrajectory';
@@ -12,6 +17,7 @@ import { PriceFloor } from './components/PriceFloor';
 import { NewProductForecast } from './components/NewProductForecast';
 import { CrossLinkStrip } from './components/CrossLinkStrip';
 import { ForecastSkeleton } from './components/ForecastSkeleton';
+import type { ForecastMode } from '@/types/forecast';
 
 // Phase 2 — queue values the deep-link CTAs may pass via `?queue=`.
 // Each entry maps to the DOM id of the block to scroll into view.
@@ -21,12 +27,34 @@ const QUEUE_TO_BLOCK: Record<string, string> = {
 };
 
 export default function ForecastingPage() {
-  const { data, isLoading } = useForecast();
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const queue = params.get('queue');
   const article = params.get('article');
   const source = params.get('source');
+
+  // Phase 1 — read mode/horizon from the URL so deep links round-trip and the
+  // BFF + dedicated endpoints see the same slice.
+  const modeParam = (params.get('mode') as ForecastMode | null) ?? 'revenue';
+  const horizonParam = Number(params.get('horizon')) || 12;
+  const forecastParams = useMemo(
+    () => ({ mode: modeParam, horizon: horizonParam }),
+    [modeParam, horizonParam],
+  );
+  const { data, isLoading } = useForecast(forecastParams);
+
+  // Translate FE "volume" to BE "quantity" for the simulator endpoints.
+  const simulatorMetric = modeParam === 'volume' ? 'quantity' : modeParam;
+  const { data: tornadoData } = useTornado({
+    entity_type: 'commodity_group',
+    metric: simulatorMetric,
+    horizon_months: horizonParam,
+  });
+  const { data: distributionsData } = useDistributions({
+    entity_type: 'commodity_group',
+    metric: simulatorMetric,
+    horizon_months: horizonParam,
+  });
 
   // Scroll + pulse when ?queue=renewals lands here.
   useEffect(() => {
@@ -88,6 +116,16 @@ export default function ForecastingPage() {
             </div>
           </div>
         </div>
+      )}
+      <ModeToggle
+        active={modeParam}
+        horizonMonths={horizonParam as 3 | 6 | 12}
+      />
+      {(tornadoData ?? data.tornado) && (
+        <TornadoCard tornado={tornadoData ?? data.tornado} />
+      )}
+      {(distributionsData ?? data.distributions) && (
+        <DistributionGrid distributions={distributionsData ?? data.distributions} />
       )}
       <HeroForecast hero={data.hero} />
       <ClusterLens clusters={data.clusters} />

@@ -9,6 +9,7 @@ from backend.api.v1 import (
     benchmarks,
     costs,
     dashboard,
+    forecast as forecast_blocks,
     forecasts,
     margins,
     models_registry,
@@ -61,6 +62,8 @@ app.include_router(margins.router, prefix="/api/v1", tags=["margins"])
 app.include_router(quotes.router, prefix="/api/v1", tags=["quotes"])
 app.include_router(quality.router, prefix="/api/v1", tags=["data-quality"])
 app.include_router(forecasts.router, prefix="/api/v1", tags=["forecasts"])
+# Phase 1 simulator surface — tornado + per-entity distributions.
+app.include_router(forecast_blocks.router, prefix="/api/v1")
 app.include_router(risk.router, prefix="/api/v1", tags=["risk"])
 app.include_router(costs.router, prefix="/api/v1", tags=["costs"])
 app.include_router(benchmarks.router, prefix="/api/v1", tags=["benchmarks"])

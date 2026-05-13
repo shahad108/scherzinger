@@ -20,9 +20,19 @@ def test_forecast_top_level_shape(client: TestClient) -> None:
         "priceFloor",
         "priceFloorFootnote",
         "newProduct",
+        # Phase 1 — simulator surface (tornado + distributions + mode toggle).
+        "mode",
+        "tornado",
+        "distributions",
     }
     assert set(body.keys()) == expected
     assert {"customer", "sku"} <= set(body["pareto"].keys())
+    # Phase 1 — mode + horizon plumbed into the composer.
+    assert body["mode"]["active"] in ("revenue", "margin", "volume")
+    assert body["mode"]["horizonMonths"] in (3, 6, 12)
+    # Tornado + distributions always non-empty (seed fallback).
+    assert body["tornado"]["bars"]
+    assert body["distributions"]["rows"]
 
 
 def test_forecast_persona_till_404(client: TestClient) -> None:

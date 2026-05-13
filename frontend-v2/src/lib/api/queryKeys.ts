@@ -50,6 +50,13 @@ export type ForecastParams = ShellParams & {
   horizon?: number;
 };
 
+// Phase 1 — simulator surface (tornado + per-entity distributions).
+export type SimulatorParams = {
+  entity_type?: 'commodity_group' | 'customer' | 'business_unit';
+  metric?: 'margin' | 'revenue' | 'quantity' | 'volume';
+  horizon_months?: number;
+};
+
 export type StudioParams = ShellParams & {
   aid?: string;
   filter?: string;
@@ -73,6 +80,15 @@ export const qk = {
 
   forecast: (params?: ForecastParams) =>
     params ? (['forecast', params] as const) : (['forecast'] as const),
+
+  // Phase 1 — simulator surface; separate cache keys so mode-toggle invalidates
+  // tornado + distributions independently of the screen-wide BFF cache.
+  forecastTornado: (params?: SimulatorParams) =>
+    params ? (['forecast-tornado', params] as const) : (['forecast-tornado'] as const),
+  forecastDistributions: (params?: SimulatorParams) =>
+    params
+      ? (['forecast-distributions', params] as const)
+      : (['forecast-distributions'] as const),
 
   studio: (params?: StudioParams) =>
     params ? (['studio', params] as const) : (['studio'] as const),
