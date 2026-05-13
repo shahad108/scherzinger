@@ -81,10 +81,39 @@ export interface BacktestKpi {
   caption: string;
 }
 
+export interface BacktestMethodRow {
+  model: string;
+  modelLabel: string;
+  mae: number | null;
+  rmse: number | null;
+  mape: number | null;
+  directional: number | null;
+  nTestPeriods: number | null;
+  trainStart: string | null;
+  trainEnd: string | null;
+  testStart: string | null;
+  testEnd: string | null;
+  isWinnerMape: boolean;
+  isWinnerMae: boolean;
+  isWinnerRmse: boolean;
+  isWinnerDirectional: boolean;
+}
+
+export interface BacktestMethodComparison {
+  models: BacktestMethodRow[];
+  winner: string | null;
+  winnerNote?: string | null;
+  trainWindow?: string | null;
+  testWindow?: string | null;
+  horizonMonths?: number;
+}
+
 export interface BacktestPanel {
-  series: { month: string; mape: number }[];
+  series: { month: string; mape: number; model?: string; n?: number }[];
   target: number;
   kpis: BacktestKpi[];
+  methodComparison?: BacktestMethodComparison;
+  source?: 'live' | 'seed_fallback' | 'seed_no_db';
 }
 
 export interface InputCostTile {
@@ -493,15 +522,20 @@ export interface QuoteToRevenue {
 // Phase 6 — Per-cluster CI calibration.
 export interface CalibrationRow {
   clusterId: string;
-  actualHitRatePct: number;
-  nBacktests: number;
+  actualHitRatePct: number | null;
+  nBacktests: number | null;
   tone: 'green' | 'amber' | 'red';
+  mapePct?: number | null;
+  directionalPct?: number | null;
 }
 
 export interface CalibrationPayload {
   nominalBand: number;
   source: 'seed' | 'live';
   rows: CalibrationRow[];
+  title?: string;
+  subtitle?: string;
+  winnerModel?: string;
 }
 
 // Phase 7 — Market direction.

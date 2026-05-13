@@ -6,8 +6,11 @@ import time
 from typing import Any
 
 from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
 
 from . import blocks
+from .real_backtest import build_walk_forward as _build_walk_forward_live
+from .real_clusters import build_clusters as _build_clusters_live
 from .calibration import get_calibration
 from .commodity_trajectories import get_commodity_trajectories
 from .market_direction import get_market_direction
@@ -38,6 +41,7 @@ async def build_forecast(
     family: str | None,
     cluster: str | None,
     lang: str | None,
+    db: Session | None = None,
 ) -> dict[str, Any]:
     if persona == "frank":
         pass
@@ -73,8 +77,6 @@ async def build_forecast(
     (
         header,
         hero,
-        clusters_block,
-        walk_forward,
         input_cost,
         pareto,
         price_floor,
@@ -83,14 +85,37 @@ async def build_forecast(
     ) = await asyncio.gather(
         blocks.header(mode=mode),
         blocks.hero(horizon=horizon),
-        blocks.clusters(cluster=cluster),
-        blocks.walk_forward(),
         blocks.input_cost(),
         blocks.pareto(tier=tier),
         blocks.price_floor(family=family),
         blocks.price_floor_footnote(),
         blocks.new_product(),
     )
+
+    # Real walk-forward backtest sourced from `backtest_results` (Phase 8 wiring).
+    # Falls back to the seed if no DB session is supplied (legacy callers).
+    if db is not None:
+        try:
+            walk_forward = _build_walk_forward_live(db)
+        except Exception:  # pragma: no cover — safety net
+            walk_forward = await blocks.walk_forward()
+            walk_forward["source"] = "seed_fallback"
+    else:
+        walk_forward = await blocks.walk_forward()
+        walk_forward["source"] = "seed_no_db"
+
+    # Real cluster cards from `margin_forecasts` × `invoices` LTM (Phase 8 wiring).
+    if db is not None:
+        try:
+            clusters_block = _build_clusters_live(
+                db,
+                horizon_months=horizon if horizon in (1, 3, 6, 12) else 12,
+                only=cluster,
+            )
+        except Exception:
+            clusters_block = await blocks.clusters(cluster=cluster)
+    else:
+        clusters_block = await blocks.clusters(cluster=cluster)
 
     # Phase 1 — simulator surface (tornado + distributions + mode toggle).
     # ``mode`` and ``horizon`` from the query string drive which slice of
@@ -122,7 +147,7 @@ async def build_forecast(
     commodity_trajectories = get_commodity_trajectories(db=None)
     customers = get_top_at_risk_customers(db=None, risk_filter="all")
     quote_to_revenue = get_quote_to_revenue(db=None)
-    calibration = get_calibration(db=None)
+    calibration = get_calibration(db=db)
     market_direction = get_market_direction(db=None)
 
     payload = {

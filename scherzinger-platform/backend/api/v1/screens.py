@@ -254,6 +254,7 @@ async def get_forecast(
         family=family,
         cluster=cluster,
         lang=lang,
+        db=db,
     )
     if scenario_id:
         from backend.services import scenario_runner, scenario_service
