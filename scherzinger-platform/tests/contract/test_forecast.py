@@ -26,6 +26,11 @@ def test_forecast_top_level_shape(client: TestClient) -> None:
         "distributions",
         # Phase 2 — methodology + lineage payload.
         "methodology",
+        # Phase 3 — diagnostic charts.
+        "marginTrajectory",
+        "costDecomposition",
+        "seasonalOverlay",
+        "commodityTrajectories",
     }
     assert set(body.keys()) == expected
     assert {"customer", "sku"} <= set(body["pareto"].keys())

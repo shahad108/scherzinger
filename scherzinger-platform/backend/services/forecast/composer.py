@@ -8,8 +8,12 @@ from typing import Any
 from fastapi import HTTPException, status
 
 from . import blocks
+from .commodity_trajectories import get_commodity_trajectories
+from .cost_decomposition import get_cost_decomposition
 from .distributions import get_distributions
+from .margin_trajectory import get_margin_trajectory
 from .methodology import get_methodology
+from .seasonal_overlay import get_seasonal_overlay
 from .tornado import get_tornado
 
 CACHE_TTL_SECONDS = 60
@@ -108,6 +112,10 @@ async def build_forecast(
     )
 
     methodology = get_methodology(db=None)
+    margin_trajectory = get_margin_trajectory(db=None)
+    cost_decomposition = get_cost_decomposition(db=None)
+    seasonal_overlay = get_seasonal_overlay(db=None)
+    commodity_trajectories = get_commodity_trajectories(db=None)
 
     payload = {
         "header": header,
@@ -126,6 +134,11 @@ async def build_forecast(
         "tornado": tornado,
         "distributions": distributions,
         "methodology": methodology,
+        # Phase 3 — diagnostic charts.
+        "marginTrajectory": margin_trajectory,
+        "costDecomposition": cost_decomposition,
+        "seasonalOverlay": seasonal_overlay,
+        "commodityTrajectories": commodity_trajectories,
     }
     _CACHE[key] = (now, payload)
     return payload

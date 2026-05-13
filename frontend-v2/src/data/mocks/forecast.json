@@ -393,6 +393,73 @@
       "External market series refresh nightly; intraday moves are not reflected."
     ]
   },
+  "marginTrajectory": {
+    "historical": [
+      { "quarter": "Q2 23", "margin": 67.4 },
+      { "quarter": "Q3 23", "margin": 66.8 },
+      { "quarter": "Q4 23", "margin": 65.1 },
+      { "quarter": "Q1 24", "margin": 64.9 },
+      { "quarter": "Q2 24", "margin": 64.2 },
+      { "quarter": "Q3 24", "margin": 63.5 },
+      { "quarter": "Q4 24", "margin": 63.1 },
+      { "quarter": "Q1 25", "margin": 62.4 },
+      { "quarter": "Q2 25", "margin": 61.7 },
+      { "quarter": "Q3 25", "margin": 61.0 },
+      { "quarter": "Q4 25", "margin": 60.4 },
+      { "quarter": "Q1 26", "margin": 59.8 }
+    ],
+    "projected": [
+      { "quarter": "Q2 26", "margin": 59.1, "low": 56.5, "high": 61.7 },
+      { "quarter": "Q3 26", "margin": 58.4, "low": 55.5, "high": 61.3 },
+      { "quarter": "Q4 26", "margin": 57.7, "low": 54.4, "high": 61.0 },
+      { "quarter": "Q1 27", "margin": 57.0, "low": 53.3, "high": 60.7 }
+    ],
+    "floor": 60.0,
+    "crossesFloorAt": "Q3 26",
+    "methodologyNote": "4-quarter weighted MA (0.4/0.3/0.2/0.1) + residual stdev × 1.28 band. At the smoothed trend, margin crosses the 60% floor in Q3 26."
+  },
+  "costDecomposition": {
+    "quarters": ["Q2 23", "Q3 23", "Q4 23", "Q1 24", "Q2 24", "Q3 24", "Q4 24", "Q1 25", "Q2 25", "Q3 25", "Q4 25", "Q1 26"],
+    "layers": [
+      {
+        "name": "Material % of revenue",
+        "values": [33.1, 33.4, 33.0, 32.6, 32.2, 32.0, 31.6, 31.3, 31.0, 30.7, 30.4, 30.1],
+        "trendDirection": "down",
+        "insight": "Material costs declining 3pp over 3y — successful procurement program."
+      },
+      {
+        "name": "Direct manufacturing % of revenue",
+        "values": [21.0, 21.3, 21.6, 22.0, 22.4, 22.6, 23.0, 23.4, 23.8, 24.1, 24.5, 24.9],
+        "trendDirection": "up",
+        "insight": "Direct labor + setup costs rising 4pp — investigate capacity utilization."
+      },
+      {
+        "name": "Full manufacturing % of revenue",
+        "values": [42.9, 43.3, 43.7, 44.1, 44.6, 45.0, 45.5, 46.0, 46.5, 47.0, 47.6, 48.2],
+        "trendDirection": "up",
+        "insight": "Full cost rising 5pp despite material savings → fixed overhead growing. Material savings absorbed by capacity drag; revisit allocation model."
+      }
+    ]
+  },
+  "seasonalOverlay": {
+    "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    "indices": [94.2, 96.0, 105.3, 100.8, 102.1, 98.5, 92.6, 118.4, 103.6, 99.5, 96.2, 81.8],
+    "currentMonthLabel": "May",
+    "currentMonthExpected": 102.1,
+    "currentMonthActual": 105.3,
+    "deviationPct": 3.1,
+    "deviationTone": "green",
+    "note": "Indices derived from 3 years of monthly revenue (seasonal_patterns table). Aug peak driven by VDMA/EuroBlech maintenance cycles; Dec trough by plant shutdowns."
+  },
+  "commodityTrajectories": {
+    "quarters": ["Q2 23", "Q3 23", "Q4 23", "Q1 24", "Q2 24", "Q3 24", "Q4 24", "Q1 25", "Q2 25", "Q3 25", "Q4 25", "Q1 26"],
+    "groups": [
+      { "id": "BKAES", "name": "BKAES · Frame & shafts",  "series": [70.2, 69.8, 69.1, 68.4, 67.9, 67.3, 66.8, 66.2, 65.7, 65.2, 64.7, 64.4], "slopePerYear": -2.2 },
+      { "id": "BKAGG", "name": "BKAGG · Bearings",        "series": [64.5, 63.9, 63.1, 62.4, 61.8, 61.0, 60.3, 59.6, 59.0, 58.3, 57.7, 57.4], "slopePerYear": -2.7 },
+      { "id": "BKAIZ", "name": "BKAIZ · Couplings",       "series": [58.2, 57.5, 56.6, 55.7, 54.9, 54.0, 53.1, 52.3, 51.5, 50.7, 50.2, 50.1], "slopePerYear": -2.9 },
+      { "id": "SOPU",  "name": "SOPU · Specials (low-n)", "series": [54.0, 51.8, 49.5, 48.0, 47.2, 46.6, 45.9, 44.7, 43.8, 43.0, 42.4, 41.5], "slopePerYear": -4.3 }
+    ]
+  },
   "distributions": {
     "computedAt": "2026-05-13T06:14:00Z",
     "metric": "margin",

@@ -327,6 +327,62 @@ export interface LineagePayload {
   sources: MethodologySource[];
 }
 
+// Phase 3 — diagnostic charts.
+export interface MarginTrajectoryHistoricalPoint {
+  quarter: string;
+  margin: number;
+}
+
+export interface MarginTrajectoryProjectedPoint {
+  quarter: string;
+  margin: number;
+  low: number;
+  high: number;
+}
+
+export interface MarginTrajectory {
+  historical: MarginTrajectoryHistoricalPoint[];
+  projected: MarginTrajectoryProjectedPoint[];
+  floor: number;
+  crossesFloorAt: string | null;
+  methodologyNote: string;
+}
+
+export interface CostDecompositionLayer {
+  name: string;
+  values: number[];
+  trendDirection: 'up' | 'down' | 'flat';
+  insight: string;
+}
+
+export interface CostDecomposition {
+  quarters: string[];
+  layers: CostDecompositionLayer[];
+}
+
+export interface SeasonalOverlay {
+  months: string[];
+  indices: number[];
+  currentMonthLabel: string;
+  currentMonthExpected: number;
+  currentMonthActual: number;
+  deviationPct: number;
+  deviationTone: 'green' | 'amber' | 'red';
+  note: string;
+}
+
+export interface CommodityTrajectoryGroup {
+  id: string;
+  name: string;
+  series: (number | null)[];
+  slopePerYear: number;
+}
+
+export interface CommodityTrajectories {
+  quarters: string[];
+  groups: CommodityTrajectoryGroup[];
+}
+
 export interface ForecastShell {
   header: ForecastHeader;
   hero: ForecastHero;
@@ -343,4 +399,9 @@ export interface ForecastShell {
   distributions: ForecastDistributions;
   // Phase 2 — methodology + lineage.
   methodology: ForecastMethodology;
+  // Phase 3 — diagnostic charts.
+  marginTrajectory: MarginTrajectory;
+  costDecomposition: CostDecomposition;
+  seasonalOverlay: SeasonalOverlay;
+  commodityTrajectories: CommodityTrajectories;
 }

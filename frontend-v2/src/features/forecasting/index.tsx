@@ -19,6 +19,10 @@ import { CrossLinkStrip } from './components/CrossLinkStrip';
 import { ForecastSkeleton } from './components/ForecastSkeleton';
 import { MethodologyPanel } from './components/MethodologyPanel';
 import { AssumptionsFooter } from './components/AssumptionsFooter';
+import { MarginTrajectoryCard } from './components/MarginTrajectoryCard';
+import { CostDecompositionCard } from './components/CostDecompositionCard';
+import { SeasonalOverlayCard } from './components/SeasonalOverlayCard';
+import { CommodityTrajectoriesCard } from './components/CommodityTrajectoriesCard';
 import type { ForecastMode } from '@/types/forecast';
 
 // Phase 2 — queue values the deep-link CTAs may pass via `?queue=`.
@@ -128,6 +132,12 @@ export default function ForecastingPage() {
       )}
       {(distributionsData ?? data.distributions) && (
         <DistributionGrid distributions={distributionsData ?? data.distributions} />
+      )}
+      {data.marginTrajectory && <MarginTrajectoryCard data={data.marginTrajectory} />}
+      {data.costDecomposition && <CostDecompositionCard data={data.costDecomposition} />}
+      {data.seasonalOverlay && <SeasonalOverlayCard data={data.seasonalOverlay} />}
+      {data.commodityTrajectories && (
+        <CommodityTrajectoriesCard data={data.commodityTrajectories} />
       )}
       <HeroForecast hero={data.hero} />
       <ClusterLens clusters={data.clusters} />
