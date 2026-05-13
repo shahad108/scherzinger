@@ -1,4 +1,5 @@
 import type { ClusterCard } from '@/types/forecast';
+import { AccuracyBadge } from './AccuracyBadge';
 
 interface Props {
   clusters: ClusterCard[];
@@ -41,6 +42,21 @@ export function ClusterLens({ clusters }: Props) {
               <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{c.bandText}</div>
               <div className="round-tags">
                 <span className={`tag-chip ${toneCls}`}>{c.confidence}</span>
+                <span onClick={(e) => e.stopPropagation()} role="presentation">
+                  <AccuracyBadge
+                    data={{
+                      metric: 'mape',
+                      value: 0.0688,
+                      n: 36,
+                      horizonMonths: 12,
+                      clusterId: c.id,
+                      modelId: 'margin_walk_forward_v3',
+                    }}
+                    entityType="commodity_group"
+                    entityId={c.id}
+                    drawerTitle={`${c.id} — lineage`}
+                  />
+                </span>
               </div>
             </div>
           );

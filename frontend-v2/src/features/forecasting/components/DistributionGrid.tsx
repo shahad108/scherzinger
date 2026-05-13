@@ -6,6 +6,7 @@
 
 import { useMemo, useState } from 'react';
 import type { DistributionRow, ForecastDistributions } from '@/types/forecast';
+import { AccuracyBadge } from './AccuracyBadge';
 import { DistributionDrawer } from './DistributionDrawer';
 
 interface Props {
@@ -101,6 +102,21 @@ export function DistributionGrid({ distributions, initialLimit = 4 }: Props) {
                 </span>
                 <span className="tag-chip">
                   P5 {row.p5?.toFixed(1)} · P95 {row.p95?.toFixed(1)}
+                </span>
+                <span onClick={(e) => e.stopPropagation()} role="presentation">
+                  <AccuracyBadge
+                    data={{
+                      metric: 'mape',
+                      value: 0.0688,
+                      n: row.nSimulations,
+                      horizonMonths: distributions.horizonMonths,
+                      clusterId: row.entityId,
+                      modelId: 'margin_walk_forward_v3',
+                    }}
+                    entityType={distributions.entityType}
+                    entityId={row.entityId}
+                    drawerTitle={`${row.entityName} — lineage`}
+                  />
                 </span>
               </div>
             </button>

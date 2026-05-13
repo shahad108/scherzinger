@@ -17,6 +17,8 @@ import { PriceFloor } from './components/PriceFloor';
 import { NewProductForecast } from './components/NewProductForecast';
 import { CrossLinkStrip } from './components/CrossLinkStrip';
 import { ForecastSkeleton } from './components/ForecastSkeleton';
+import { MethodologyPanel } from './components/MethodologyPanel';
+import { AssumptionsFooter } from './components/AssumptionsFooter';
 import type { ForecastMode } from '@/types/forecast';
 
 // Phase 2 — queue values the deep-link CTAs may pass via `?queue=`.
@@ -136,6 +138,17 @@ export default function ForecastingPage() {
         <PriceFloor rows={data.priceFloor} footnote={data.priceFloorFootnote} highlightArticle={article} />
       </div>
       <NewProductForecast data={data.newProduct} />
+      {data.methodology && (
+        <>
+          <AssumptionsFooter
+            assumptions={data.methodology.assumptions}
+            dataThrough={
+              data.methodology.assumptions.find((a) => a.label === 'Data-through')?.value
+            }
+          />
+          <MethodologyPanel methodology={data.methodology} />
+        </>
+      )}
       <CrossLinkStrip />
     </section>
   );

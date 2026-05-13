@@ -1,5 +1,6 @@
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { BacktestPanel } from '@/types/forecast';
+import { AccuracyBadge } from './AccuracyBadge';
 
 interface Props {
   panel: BacktestPanel;
@@ -18,7 +19,20 @@ export function WalkForward({ panel }: Props) {
             retraining ensures accuracy improves over time.
           </div>
         </div>
-        <span className="tag-chip status">Target &lt;5%</span>
+        <div className="flex items-center gap-2">
+          <AccuracyBadge
+            data={{
+              metric: 'mape',
+              value: (series[series.length - 1]?.mape ?? 5) / 100,
+              n: series.length,
+              horizonMonths: 12,
+              modelId: 'margin_walk_forward_v3',
+            }}
+            entityType="commodity_group"
+            drawerTitle="Walk-forward MAPE — lineage"
+          />
+          <span className="tag-chip status">Target &lt;5%</span>
+        </div>
       </div>
 
       <div className="lq-card">

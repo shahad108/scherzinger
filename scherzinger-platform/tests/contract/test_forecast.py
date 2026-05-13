@@ -24,6 +24,8 @@ def test_forecast_top_level_shape(client: TestClient) -> None:
         "mode",
         "tornado",
         "distributions",
+        # Phase 2 — methodology + lineage payload.
+        "methodology",
     }
     assert set(body.keys()) == expected
     assert {"customer", "sku"} <= set(body["pareto"].keys())

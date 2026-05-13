@@ -266,6 +266,67 @@ export interface ForecastModeState {
   horizonMonths: SimulatorHorizon;
 }
 
+// Phase 2 — Methodology + audit lineage + accuracy badges.
+export interface MethodologySource {
+  name: string;
+  kind: 'internal' | 'external';
+  description: string;
+  lastFetchedAt: string;
+}
+
+export interface MethodologyAssumption {
+  label: string;
+  value: string;
+  note?: string;
+}
+
+export interface ModelSpec {
+  modelName: string;
+  version: string;
+  trainedAt: string | null;
+  holdoutMonths: number | null;
+  entityType: string;
+  metric: string;
+  metricValue: number | null;
+  nObservations: number | null;
+  notes?: string | null;
+}
+
+export interface ForecastMethodology {
+  lastReviewedAt: string;
+  validationReportMd: string | null;
+  sources: MethodologySource[];
+  assumptions: MethodologyAssumption[];
+  models: ModelSpec[];
+  limitations: string[];
+}
+
+export interface AccuracyBadgeData {
+  metric: 'mape' | 'auc_roc' | 'calibration_p80_hit' | 'wape';
+  value: number;
+  n: number;
+  horizonMonths: number;
+  clusterId?: string;
+  modelId?: string;
+}
+
+export interface LineageAuditEntry {
+  kind: string;
+  targetType: string;
+  targetId: string;
+  at: string;
+  hash: string;
+}
+
+export interface LineagePayload {
+  entityType: string;
+  entityId: string | null;
+  metric: string | null;
+  models: (ModelSpec & { featureList?: string[]; entityId?: string | null })[];
+  auditChain: LineageAuditEntry[];
+  sources: MethodologySource[];
+}
+
 export interface ForecastShell {
   header: ForecastHeader;
   hero: ForecastHero;
@@ -280,4 +341,6 @@ export interface ForecastShell {
   mode: ForecastModeState;
   tornado: ForecastTornado;
   distributions: ForecastDistributions;
+  // Phase 2 — methodology + lineage.
+  methodology: ForecastMethodology;
 }

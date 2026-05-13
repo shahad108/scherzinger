@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend.services.forecast.distributions import get_distributions
+from backend.services.forecast.methodology import get_lineage, get_methodology
 from backend.services.forecast.tornado import get_tornado
 
 router = APIRouter(prefix="/forecast", tags=["forecast-blocks"])
@@ -65,4 +66,34 @@ def distributions(
         entity_type=entity_type,
         metric=_coerce_metric(metric),
         horizon_months=horizon_months,
+    )
+
+
+@router.get("/methodology")
+def methodology(db: Session = Depends(get_db)):
+    """Phase 2 — methodology + assumptions + models payload.
+
+    Renders the notebook's ``validation_report.md`` content + a structured
+    ``assumptions`` block (growth, pass-through, seasonality, win-rate,
+    data-through date). The FE renders this as a collapsible panel and an
+    ``AssumptionsFooter`` strip.
+    """
+    return get_methodology(db)
+
+
+@router.get("/lineage")
+def lineage(
+    entity_type: EntityType = Query(default="commodity_group"),
+    entity_id: Optional[str] = Query(default=None),
+    metric: Optional[str] = Query(default=None),
+    model_id: Optional[str] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    """Phase 2 — lineage chain for one (entity, metric, model)."""
+    return get_lineage(
+        db=db,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        metric=metric,
+        model_id=model_id,
     )

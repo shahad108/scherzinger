@@ -9,6 +9,7 @@ from fastapi import HTTPException, status
 
 from . import blocks
 from .distributions import get_distributions
+from .methodology import get_methodology
 from .tornado import get_tornado
 
 CACHE_TTL_SECONDS = 60
@@ -106,6 +107,8 @@ async def build_forecast(
         horizon_months=horizon_months,
     )
 
+    methodology = get_methodology(db=None)
+
     payload = {
         "header": header,
         "hero": hero,
@@ -122,6 +125,7 @@ async def build_forecast(
         },
         "tornado": tornado,
         "distributions": distributions,
+        "methodology": methodology,
     }
     _CACHE[key] = (now, payload)
     return payload

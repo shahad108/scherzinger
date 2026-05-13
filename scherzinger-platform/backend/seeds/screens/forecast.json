@@ -363,6 +363,36 @@
       }
     ]
   },
+  "methodology": {
+    "lastReviewedAt": "2026-05-13T06:14:00Z",
+    "validationReportMd": "# Forecasting Notebook Validation Report\n\nGenerated: 2026-05-13T20:41:20Z\n\n## Baseline accuracy gate (db2_margin × commodity_group)\n- Eligible series: 3\n- Target MAPE: ≤ 8.0%\n- Meeting target share: 66.67%\n\n## Multi-grain forecast accuracy\nPrimary gate (aggregate grains): MAPE ≤ 12% for ratios, WAPE ≤ 25% for monetary.\n12 eligible series · 66.67% meeting target · Pass: **True**.\n\nInformational (customer / article): per-account monthly cadence is bursty;\nconsume quarterly aggregates for planning, monthly for ranking.\n",
+    "sources": [
+      { "name": "invoices (Scherzinger ERP)", "kind": "internal", "description": "Monthly DB2-margin, revenue, quantity per article × customer × commodity_group.", "lastFetchedAt": "2026-05-13T20:41:20Z" },
+      { "name": "monte_carlo_results", "kind": "internal", "description": "387 persisted bootstrap scenarios (43 entities × 3 metrics × 3 horizons).", "lastFetchedAt": "2026-05-13T20:41:20Z" },
+      { "name": "Steel HRC (Eurofer)", "kind": "external", "description": "Hot-rolled coil index, monthly.", "lastFetchedAt": "2026-05-11T00:00:00Z" },
+      { "name": "EUR/USD (ECB)", "kind": "external", "description": "Daily reference rate; resampled monthly.", "lastFetchedAt": "2026-05-12T00:00:00Z" },
+      { "name": "ifo Business Climate", "kind": "external", "description": "Monthly German industrial leading indicator.", "lastFetchedAt": "2026-04-28T00:00:00Z" },
+      { "name": "VDMA / EuroBlech cycle calendar", "kind": "external", "description": "Industrial-maintenance + trade-show seasonality overlay.", "lastFetchedAt": "2026-05-01T00:00:00Z" }
+    ],
+    "assumptions": [
+      { "label": "Growth-rate prior", "value": "+3.4% YoY", "note": "M3 nested CV walk-forward — recomputed monthly." },
+      { "label": "Pass-through %", "value": "62% (steel) · 28% (alloys) · 15% (copper)", "note": "Backed out from invoiced-vs-raw-material trajectory (M5)." },
+      { "label": "Seasonality", "value": "3-year monthly indices from seasonal_patterns table", "note": "Aug peak · Dec trough · Mar fiscal-year-end bump." },
+      { "label": "Cost-trend method", "value": "4-quarter weighted MA + residual stdev band", "note": "M11 leak-free residuals." },
+      { "label": "Win rate (Quote-to-Revenue)", "value": "62.4% trailing 90d", "note": "Computed over quote_invoice_links table." },
+      { "label": "Data-through", "value": "2026-04-30", "note": "Latest invoice / market series ingest." }
+    ],
+    "models": [
+      { "modelName": "margin_walk_forward_v3", "version": "v3.2", "trainedAt": "2026-05-10T08:00:00Z", "holdoutMonths": 6, "entityType": "commodity_group", "metric": "mape_db2_margin", "metricValue": 0.0688, "nObservations": 36, "notes": "M3 nested CV + M9 customer-grouped CV." },
+      { "modelName": "churn_classifier_v2", "version": "v2.1", "trainedAt": "2026-05-09T08:00:00Z", "holdoutMonths": 12, "entityType": "customer", "metric": "auc_roc", "metricValue": 0.93, "nObservations": 482, "notes": "M8 revenue-decline classifier + GroupKFold." },
+      { "modelName": "monte_carlo_simulator_v2", "version": "v2.0", "trainedAt": "2026-05-12T16:00:00Z", "holdoutMonths": 12, "entityType": "commodity_group", "metric": "calibration_p80_hit", "metricValue": 0.81, "nObservations": 1000, "notes": "Bootstrap shocks; 387 scenarios persisted." }
+    ],
+    "limitations": [
+      "SOPU cluster has n<30; ranges are quoted but Frank should defer to manual review.",
+      "Monthly per-customer point forecasts are bursty; use quarterly aggregates.",
+      "External market series refresh nightly; intraday moves are not reflected."
+    ]
+  },
   "distributions": {
     "computedAt": "2026-05-13T06:14:00Z",
     "metric": "margin",

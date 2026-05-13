@@ -1,5 +1,6 @@
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { NewProductForecast as NewProductForecastData } from '@/types/forecast';
+import { AccuracyBadge } from './AccuracyBadge';
 
 interface Props {
   data: NewProductForecastData;
@@ -31,7 +32,20 @@ export function NewProductForecast({ data }: Props) {
             SKU to its closest cluster.
           </div>
         </div>
-        <span className="tag-chip">Predictive Portfolio Pricing</span>
+        <div className="flex items-center gap-2">
+          <AccuracyBadge
+            data={{
+              metric: 'mape',
+              value: 0.0688,
+              n: 36,
+              horizonMonths: 12,
+              modelId: 'margin_walk_forward_v3',
+            }}
+            entityType="product"
+            drawerTitle="New-product cluster anchor — lineage"
+          />
+          <span className="tag-chip">Predictive Portfolio Pricing</span>
+        </div>
       </div>
 
       <div className="lq-card">

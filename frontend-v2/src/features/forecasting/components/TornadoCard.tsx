@@ -5,6 +5,7 @@
 
 import { useMemo, useState } from 'react';
 import type { TornadoBar, ForecastTornado } from '@/types/forecast';
+import { AccuracyBadge } from './AccuracyBadge';
 import { DistributionDrawer } from './DistributionDrawer';
 
 interface Props {
@@ -40,9 +41,22 @@ export function TornadoCard({ tornado }: Props) {
             mode {tornado.shockMode}.
           </div>
         </div>
-        <span className="tag-chip">
-          {tornado.metric} · {tornado.horizonMonths}mo · {tornado.entityType.replace('_', ' ')}
-        </span>
+        <div className="flex items-center gap-2">
+          <AccuracyBadge
+            data={{
+              metric: 'calibration_p80_hit',
+              value: 0.81,
+              n: tornado.n_simulations,
+              horizonMonths: tornado.horizonMonths,
+              modelId: 'monte_carlo_simulator_v2',
+            }}
+            entityType={tornado.entityType}
+            drawerTitle={`Tornado · ${tornado.metric} lineage`}
+          />
+          <span className="tag-chip">
+            {tornado.metric} · {tornado.horizonMonths}mo · {tornado.entityType.replace('_', ' ')}
+          </span>
+        </div>
       </div>
 
       <div className="lq-card" data-testid="tornado-card">

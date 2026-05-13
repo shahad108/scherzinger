@@ -4,8 +4,14 @@
  */
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TornadoCard } from '@/features/forecasting/components/TornadoCard';
 import type { ForecastTornado } from '@/types/forecast';
+
+function withQuery(ui: React.ReactNode) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return <QueryClientProvider client={qc}>{ui}</QueryClientProvider>;
+}
 
 const tornado: ForecastTornado = {
   computedAt: '2026-05-13T06:14:00Z',
@@ -53,7 +59,7 @@ const tornado: ForecastTornado = {
 
 describe('TornadoCard (Phase 1)', () => {
   it('renders bars sorted by |delta| desc', () => {
-    render(<TornadoCard tornado={tornado} />);
+    render(withQuery(<TornadoCard tornado={tornado} />));
     const card = screen.getByTestId('tornado-card');
     const bars = within(card).getAllByRole('button');
     // First bar should be Steel (|5.1| = 5.1 is the largest absolute delta).
@@ -65,7 +71,7 @@ describe('TornadoCard (Phase 1)', () => {
   });
 
   it('clicking a bar opens the drawer with per-cluster breakdown', () => {
-    render(<TornadoCard tornado={tornado} />);
+    render(withQuery(<TornadoCard tornado={tornado} />));
     fireEvent.click(screen.getByTestId('tornado-bar-Steel S355'));
     const drawer = screen.getByTestId('distribution-drawer');
     expect(within(drawer).getByText(/Per-cluster breakdown/i)).toBeInTheDocument();
@@ -74,7 +80,7 @@ describe('TornadoCard (Phase 1)', () => {
   });
 
   it('renders the entity-type chip in the header', () => {
-    render(<TornadoCard tornado={tornado} />);
+    render(withQuery(<TornadoCard tornado={tornado} />));
     expect(screen.getByText(/margin · 12mo · commodity group/i)).toBeInTheDocument();
   });
 });
