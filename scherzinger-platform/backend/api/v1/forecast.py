@@ -18,6 +18,10 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
+from backend.services.forecast.customers import (
+    get_customer_detail,
+    get_top_at_risk_customers,
+)
 from backend.services.forecast.distributions import get_distributions
 from backend.services.forecast.methodology import get_lineage, get_methodology
 from backend.services.forecast.tornado import get_tornado
@@ -79,6 +83,21 @@ def methodology(db: Session = Depends(get_db)):
     ``AssumptionsFooter`` strip.
     """
     return get_methodology(db)
+
+
+@router.get("/customers")
+def customers(
+    risk_filter: Optional[str] = Query(default="high", regex="^(high|medium|low|all)$"),
+    db: Session = Depends(get_db),
+):
+    """Phase 4 — top customers at decline risk."""
+    return get_top_at_risk_customers(db=db, risk_filter=risk_filter)
+
+
+@router.get("/customers/{customer_id}")
+def customer_detail(customer_id: str, db: Session = Depends(get_db)):
+    """Phase 4 — single-customer distributions + risk + history."""
+    return get_customer_detail(db=db, customer_id=customer_id)
 
 
 @router.get("/lineage")

@@ -23,14 +23,20 @@ import { MarginTrajectoryCard } from './components/MarginTrajectoryCard';
 import { CostDecompositionCard } from './components/CostDecompositionCard';
 import { SeasonalOverlayCard } from './components/SeasonalOverlayCard';
 import { CommodityTrajectoriesCard } from './components/CommodityTrajectoriesCard';
-import type { ForecastMode } from '@/types/forecast';
+import { PerCustomerTab } from './components/PerCustomerTab';
+import type {
+  ForecastDistributions,
+  ForecastMode,
+  ForecastShell,
+  ForecastTornado,
+} from '@/types/forecast';
 
-// Phase 2 — queue values the deep-link CTAs may pass via `?queue=`.
-// Each entry maps to the DOM id of the block to scroll into view.
 const QUEUE_TO_BLOCK: Record<string, string> = {
   renewals: 'block-renewals',
   price_floor: 'block-renewals',
 };
+
+type ForecastTab = 'aggregate' | 'customers';
 
 export default function ForecastingPage() {
   const [params, setParams] = useSearchParams();
@@ -39,17 +45,16 @@ export default function ForecastingPage() {
   const article = params.get('article');
   const source = params.get('source');
 
-  // Phase 1 — read mode/horizon from the URL so deep links round-trip and the
-  // BFF + dedicated endpoints see the same slice.
   const modeParam = (params.get('mode') as ForecastMode | null) ?? 'revenue';
   const horizonParam = Number(params.get('horizon')) || 12;
+  const tab = ((params.get('tab') as ForecastTab) ?? 'aggregate') as ForecastTab;
+
   const forecastParams = useMemo(
     () => ({ mode: modeParam, horizon: horizonParam }),
     [modeParam, horizonParam],
   );
   const { data, isLoading } = useForecast(forecastParams);
 
-  // Translate FE "volume" to BE "quantity" for the simulator endpoints.
   const simulatorMetric = modeParam === 'volume' ? 'quantity' : modeParam;
   const { data: tornadoData } = useTornado({
     entity_type: 'commodity_group',
@@ -62,7 +67,6 @@ export default function ForecastingPage() {
     horizon_months: horizonParam,
   });
 
-  // Scroll + pulse when ?queue=renewals lands here.
   useEffect(() => {
     if (!data || !queue) return;
     const blockId = QUEUE_TO_BLOCK[queue];
@@ -80,6 +84,13 @@ export default function ForecastingPage() {
   if (isLoading || !data) {
     return <ForecastSkeleton />;
   }
+
+  const setTab = (next: ForecastTab) => {
+    const p = new URLSearchParams(params);
+    if (next === 'aggregate') p.delete('tab');
+    else p.set('tab', next);
+    setParams(p, { replace: true });
+  };
 
   return (
     <section id="screen-forecast" className="mx-auto max-w-[1400px] px-8 py-6">
@@ -123,10 +134,57 @@ export default function ForecastingPage() {
           </div>
         </div>
       )}
-      <ModeToggle
-        active={modeParam}
-        horizonMonths={horizonParam as 3 | 6 | 12}
-      />
+      <ModeToggle active={modeParam} horizonMonths={horizonParam as 3 | 6 | 12} />
+
+      <div role="tablist" aria-label="Forecast view" className="mb-4 inline-flex items-center gap-1 rounded-full bg-white p-1 shadow-[inset_0_0_0_1px_var(--hairline)]" data-testid="forecast-tabs">
+        {(['aggregate', 'customers'] as ForecastTab[]).map((t) => {
+          const isActive = t === tab;
+          return (
+            <button
+              key={t}
+              role="tab"
+              type="button"
+              data-testid={`forecast-tab-${t}`}
+              aria-selected={isActive}
+              onClick={() => setTab(t)}
+              className={
+                isActive
+                  ? 'rounded-full bg-[var(--rose-bg)] px-4 py-1.5 text-[12.5px] font-semibold text-[var(--rose-deep)]'
+                  : 'rounded-full px-4 py-1.5 text-[12.5px] font-semibold text-[var(--muted)] hover:bg-[var(--surface-soft)]'
+              }
+            >
+              {t === 'aggregate' ? 'Aggregate & clusters' : 'Per customer'}
+            </button>
+          );
+        })}
+      </div>
+
+      {tab === 'customers' ? (
+        <PerCustomerTab />
+      ) : (
+        <AggregateView
+          data={data}
+          tornadoData={tornadoData}
+          distributionsData={distributionsData}
+          article={article}
+        />
+      )}
+
+      <CrossLinkStrip />
+    </section>
+  );
+}
+
+interface AggregateProps {
+  data: ForecastShell;
+  tornadoData?: ForecastTornado;
+  distributionsData?: ForecastDistributions;
+  article: string | null;
+}
+
+function AggregateView({ data, tornadoData, distributionsData, article }: AggregateProps) {
+  return (
+    <>
       {(tornadoData ?? data.tornado) && (
         <TornadoCard tornado={tornadoData ?? data.tornado} />
       )}
@@ -159,7 +217,6 @@ export default function ForecastingPage() {
           <MethodologyPanel methodology={data.methodology} />
         </>
       )}
-      <CrossLinkStrip />
-    </section>
+    </>
   );
 }

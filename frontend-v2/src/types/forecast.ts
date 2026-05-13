@@ -383,6 +383,53 @@ export interface CommodityTrajectories {
   groups: CommodityTrajectoryGroup[];
 }
 
+// Phase 4 — per-customer slice.
+export type RiskTier = 'high' | 'medium' | 'low' | 'unknown';
+
+export interface CustomerAtRiskRow {
+  customerId: string;
+  customerName: string;
+  lastActualRevenue: number | null;
+  median12moRevenue: number | null;
+  p5Revenue: number | null;
+  p95Revenue: number | null;
+  pBelow80pctOfCurrent: number | null;
+  pChurn4Q: number | null;
+  pMajorDecline: number | null;
+  riskTier: RiskTier;
+}
+
+export interface CustomersPreview {
+  topAtRisk: CustomerAtRiskRow[];
+  allCount: number;
+  methodology: {
+    churnModel: string;
+    revenueDeclineModel: string;
+    windowMonths: number;
+    thresholdRule: string;
+  };
+}
+
+export interface CustomerDistribution {
+  median: number | null;
+  p5: number | null;
+  p25: number | null;
+  p75: number | null;
+  p95: number | null;
+  pBelowThreshold: number | null;
+  thresholdValue: number | null;
+}
+
+export interface CustomerDetail {
+  customerId: string;
+  customerName: string;
+  riskTier: RiskTier;
+  pChurn4Q?: number;
+  pMajorDecline?: number;
+  distributions: Record<string, Record<string, CustomerDistribution>>;
+  historicalRevenue: { month: string; revenue: number }[];
+}
+
 export interface ForecastShell {
   header: ForecastHeader;
   hero: ForecastHero;
@@ -404,4 +451,6 @@ export interface ForecastShell {
   costDecomposition: CostDecomposition;
   seasonalOverlay: SeasonalOverlay;
   commodityTrajectories: CommodityTrajectories;
+  // Phase 4 — per-customer preview (full tab lives at /forecasting/customers).
+  customers: CustomersPreview;
 }

@@ -31,6 +31,8 @@ def test_forecast_top_level_shape(client: TestClient) -> None:
         "costDecomposition",
         "seasonalOverlay",
         "commodityTrajectories",
+        # Phase 4 — per-customer preview.
+        "customers",
     }
     assert set(body.keys()) == expected
     assert {"customer", "sku"} <= set(body["pareto"].keys())

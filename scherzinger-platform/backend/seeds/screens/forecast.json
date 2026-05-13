@@ -451,6 +451,22 @@
     "deviationTone": "green",
     "note": "Indices derived from 3 years of monthly revenue (seasonal_patterns table). Aug peak driven by VDMA/EuroBlech maintenance cycles; Dec trough by plant shutdowns."
   },
+  "customers": {
+    "topAtRisk": [
+      { "customerId": "101487", "customerName": "Customer 101487 (alloys distributor)", "lastActualRevenue": 412000, "median12moRevenue": 308000, "p5Revenue": 248000, "p95Revenue": 388000, "pBelow80pctOfCurrent": 78.4, "pChurn4Q": 0.61, "pMajorDecline": 0.74, "riskTier": "high" },
+      { "customerId": "104447", "customerName": "Customer 104447 (German OEM tier-2)", "lastActualRevenue": 295000, "median12moRevenue": 226000, "p5Revenue": 178000, "p95Revenue": 286000, "pBelow80pctOfCurrent": 71.2, "pChurn4Q": 0.48, "pMajorDecline": 0.66, "riskTier": "high" },
+      { "customerId": "100924", "customerName": "Customer 100924 (industrial pump assembler)", "lastActualRevenue": 234000, "median12moRevenue": 196000, "p5Revenue": 152000, "p95Revenue": 245000, "pBelow80pctOfCurrent": 58.9, "pChurn4Q": 0.43, "pMajorDecline": 0.57, "riskTier": "high" },
+      { "customerId": "101154", "customerName": "Customer 101154 (specialty bearings)", "lastActualRevenue": 198000, "median12moRevenue": 174000, "p5Revenue": 138000, "p95Revenue": 218000, "pBelow80pctOfCurrent": 49.1, "pChurn4Q": 0.37, "pMajorDecline": 0.51, "riskTier": "medium" },
+      { "customerId": "100702", "customerName": "Customer 100702 (precision-shaft customer)", "lastActualRevenue": 176000, "median12moRevenue": 158000, "p5Revenue": 122000, "p95Revenue": 198000, "pBelow80pctOfCurrent": 42.6, "pChurn4Q": 0.32, "pMajorDecline": 0.46, "riskTier": "medium" }
+    ],
+    "allCount": 43,
+    "methodology": {
+      "churnModel": "churn_classifier_v2",
+      "revenueDeclineModel": "revenue_decline_m8",
+      "windowMonths": 12,
+      "thresholdRule": "high if p_churn≥0.5 OR p_major_decline≥0.5; medium if either ≥0.3"
+    }
+  },
   "commodityTrajectories": {
     "quarters": ["Q2 23", "Q3 23", "Q4 23", "Q1 24", "Q2 24", "Q3 24", "Q4 24", "Q1 25", "Q2 25", "Q3 25", "Q4 25", "Q1 26"],
     "groups": [

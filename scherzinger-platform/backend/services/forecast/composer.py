@@ -10,6 +10,7 @@ from fastapi import HTTPException, status
 from . import blocks
 from .commodity_trajectories import get_commodity_trajectories
 from .cost_decomposition import get_cost_decomposition
+from .customers import get_top_at_risk_customers
 from .distributions import get_distributions
 from .margin_trajectory import get_margin_trajectory
 from .methodology import get_methodology
@@ -116,6 +117,7 @@ async def build_forecast(
     cost_decomposition = get_cost_decomposition(db=None)
     seasonal_overlay = get_seasonal_overlay(db=None)
     commodity_trajectories = get_commodity_trajectories(db=None)
+    customers = get_top_at_risk_customers(db=None, risk_filter="all")
 
     payload = {
         "header": header,
@@ -139,6 +141,8 @@ async def build_forecast(
         "costDecomposition": cost_decomposition,
         "seasonalOverlay": seasonal_overlay,
         "commodityTrajectories": commodity_trajectories,
+        # Phase 4 — per-customer preview (top at risk).
+        "customers": customers,
     }
     _CACHE[key] = (now, payload)
     return payload
