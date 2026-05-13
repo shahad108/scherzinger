@@ -8,12 +8,14 @@ from typing import Any
 from fastapi import HTTPException, status
 
 from . import blocks
+from .calibration import get_calibration
 from .commodity_trajectories import get_commodity_trajectories
 from .cost_decomposition import get_cost_decomposition
 from .customers import get_top_at_risk_customers
 from .distributions import get_distributions
 from .margin_trajectory import get_margin_trajectory
 from .methodology import get_methodology
+from .quote_to_revenue import get_quote_to_revenue
 from .seasonal_overlay import get_seasonal_overlay
 from .tornado import get_tornado
 
@@ -118,6 +120,8 @@ async def build_forecast(
     seasonal_overlay = get_seasonal_overlay(db=None)
     commodity_trajectories = get_commodity_trajectories(db=None)
     customers = get_top_at_risk_customers(db=None, risk_filter="all")
+    quote_to_revenue = get_quote_to_revenue(db=None)
+    calibration = get_calibration(db=None)
 
     payload = {
         "header": header,
@@ -143,6 +147,9 @@ async def build_forecast(
         "commodityTrajectories": commodity_trajectories,
         # Phase 4 — per-customer preview (top at risk).
         "customers": customers,
+        # Phase 6 — Quote-to-Revenue bridge + per-cluster CI calibration.
+        "quoteToRevenue": quote_to_revenue,
+        "calibration": calibration,
     }
     _CACHE[key] = (now, payload)
     return payload

@@ -25,6 +25,8 @@ import { SeasonalOverlayCard } from './components/SeasonalOverlayCard';
 import { CommodityTrajectoriesCard } from './components/CommodityTrajectoriesCard';
 import { PerCustomerTab } from './components/PerCustomerTab';
 import { ScenarioLibrary } from './components/ScenarioLibrary';
+import { QuoteToRevenueBridge } from './components/QuoteToRevenueBridge';
+import { CalibrationCard } from './components/CalibrationCard';
 import type {
   ForecastDistributions,
   ForecastMode,
@@ -194,12 +196,14 @@ function AggregateView({ data, tornadoData, distributionsData, article }: Aggreg
       {(distributionsData ?? data.distributions) && (
         <DistributionGrid distributions={distributionsData ?? data.distributions} />
       )}
+      {data.quoteToRevenue && <QuoteToRevenueBridge data={data.quoteToRevenue} />}
       {data.marginTrajectory && <MarginTrajectoryCard data={data.marginTrajectory} />}
       {data.costDecomposition && <CostDecompositionCard data={data.costDecomposition} />}
       {data.seasonalOverlay && <SeasonalOverlayCard data={data.seasonalOverlay} />}
       {data.commodityTrajectories && (
         <CommodityTrajectoriesCard data={data.commodityTrajectories} />
       )}
+      {data.calibration && <CalibrationCard data={data.calibration} />}
       <HeroForecast hero={data.hero} />
       <ClusterLens clusters={data.clusters} />
       <WalkForward panel={data.walkForward} />

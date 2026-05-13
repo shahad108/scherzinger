@@ -18,12 +18,14 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
+from backend.services.forecast.calibration import get_calibration
 from backend.services.forecast.customers import (
     get_customer_detail,
     get_top_at_risk_customers,
 )
 from backend.services.forecast.distributions import get_distributions
 from backend.services.forecast.methodology import get_lineage, get_methodology
+from backend.services.forecast.quote_to_revenue import get_quote_to_revenue
 from backend.services.forecast.tornado import get_tornado
 
 router = APIRouter(prefix="/forecast", tags=["forecast-blocks"])
@@ -98,6 +100,18 @@ def customers(
 def customer_detail(customer_id: str, db: Session = Depends(get_db)):
     """Phase 4 — single-customer distributions + risk + history."""
     return get_customer_detail(db=db, customer_id=customer_id)
+
+
+@router.get("/quote-to-revenue")
+def quote_to_revenue(db: Session = Depends(get_db)):
+    """Phase 6 — Open Quotes × Win Rate × Avg Margin for 30/60/90 days."""
+    return get_quote_to_revenue(db=db)
+
+
+@router.get("/calibration")
+def calibration(db: Session = Depends(get_db)):
+    """Phase 6 — per-cluster CI calibration (nominal 80% vs actual hit rate)."""
+    return get_calibration(db=db)
 
 
 @router.get("/lineage")

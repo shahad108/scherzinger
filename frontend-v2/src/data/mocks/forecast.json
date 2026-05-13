@@ -451,6 +451,24 @@
     "deviationTone": "green",
     "note": "Indices derived from 3 years of monthly revenue (seasonal_patterns table). Aug peak driven by VDMA/EuroBlech maintenance cycles; Dec trough by plant shutdowns."
   },
+  "quoteToRevenue": {
+    "source": "seed",
+    "horizons": [
+      { "horizonDays": 30, "openQuotes": 38, "openPipelineEur": 699200, "winRate": 0.624, "avgMargin": 0.187, "expectedRevenue": 436301, "expectedGrossProfit": 81588, "breakdown": { "byTier": [{ "tier": "A", "share": 0.42, "expectedRevenue": 183246 }, { "tier": "B", "share": 0.34, "expectedRevenue": 148342 }, { "tier": "C", "share": 0.18, "expectedRevenue": 78534 }, { "tier": "D", "share": 0.06, "expectedRevenue": 26178 }] } },
+      { "horizonDays": 60, "openQuotes": 71, "openPipelineEur": 1221200, "winRate": 0.604, "avgMargin": 0.183, "expectedRevenue": 737605, "expectedGrossProfit": 134982, "breakdown": { "byTier": [] } },
+      { "horizonDays": 90, "openQuotes": 104, "openPipelineEur": 1747200, "winRate": 0.591, "avgMargin": 0.179, "expectedRevenue": 1032595, "expectedGrossProfit": 184834, "breakdown": { "byTier": [] } }
+    ]
+  },
+  "calibration": {
+    "nominalBand": 80,
+    "source": "seed",
+    "rows": [
+      { "clusterId": "BKAES", "actualHitRatePct": 81, "nBacktests": 18, "tone": "green" },
+      { "clusterId": "BKAGG", "actualHitRatePct": 76, "nBacktests": 18, "tone": "amber" },
+      { "clusterId": "BKAIZ", "actualHitRatePct": 72, "nBacktests": 18, "tone": "amber" },
+      { "clusterId": "SOPU",  "actualHitRatePct": 58, "nBacktests": 12, "tone": "red" }
+    ]
+  },
   "customers": {
     "topAtRisk": [
       { "customerId": "101487", "customerName": "Customer 101487 (alloys distributor)", "lastActualRevenue": 412000, "median12moRevenue": 308000, "p5Revenue": 248000, "p95Revenue": 388000, "pBelow80pctOfCurrent": 78.4, "pChurn4Q": 0.61, "pMajorDecline": 0.74, "riskTier": "high" },

@@ -464,6 +464,39 @@ export interface ScenarioListResponse {
   teamShared: ScenarioSummary[];
 }
 
+// Phase 6 — Quote-to-Revenue bridge.
+export interface QuoteToRevenueHorizon {
+  horizonDays: number;
+  openQuotes: number;
+  openPipelineEur: number;
+  winRate: number;
+  avgMargin: number;
+  expectedRevenue: number;
+  expectedGrossProfit: number;
+  breakdown: {
+    byTier: { tier: string; share: number; expectedRevenue: number }[];
+  };
+}
+
+export interface QuoteToRevenue {
+  source: 'seed' | 'live';
+  horizons: QuoteToRevenueHorizon[];
+}
+
+// Phase 6 — Per-cluster CI calibration.
+export interface CalibrationRow {
+  clusterId: string;
+  actualHitRatePct: number;
+  nBacktests: number;
+  tone: 'green' | 'amber' | 'red';
+}
+
+export interface CalibrationPayload {
+  nominalBand: number;
+  source: 'seed' | 'live';
+  rows: CalibrationRow[];
+}
+
 export interface ForecastShell {
   header: ForecastHeader;
   hero: ForecastHero;
@@ -487,4 +520,7 @@ export interface ForecastShell {
   commodityTrajectories: CommodityTrajectories;
   // Phase 4 — per-customer preview (full tab lives at /forecasting/customers).
   customers: CustomersPreview;
+  // Phase 6 — Quote-to-Revenue + Calibration.
+  quoteToRevenue: QuoteToRevenue;
+  calibration: CalibrationPayload;
 }

@@ -33,6 +33,9 @@ def test_forecast_top_level_shape(client: TestClient) -> None:
         "commodityTrajectories",
         # Phase 4 — per-customer preview.
         "customers",
+        # Phase 6 — Quote-to-Revenue + calibration.
+        "quoteToRevenue",
+        "calibration",
     }
     assert set(body.keys()) == expected
     assert {"customer", "sku"} <= set(body["pareto"].keys())

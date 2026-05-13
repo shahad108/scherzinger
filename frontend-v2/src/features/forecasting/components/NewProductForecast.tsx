@@ -1,6 +1,25 @@
+import { useState } from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { NewProductForecast as NewProductForecastData } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
+
+const CANDIDATE_CLUSTERS: Record<string, { id: string; similarityScore: number; sampleSize: number; rationale: string }[]> = {
+  BKAES: [
+    { id: 'BKAES', similarityScore: 0.92, sampleSize: 627, rationale: 'Shares commodity_group BKAES + same business_unit; BOM signature overlap 86%.' },
+    { id: 'BKAGG', similarityScore: 0.61, sampleSize: 370, rationale: 'Similar bearing/shaft assembly cohort.' },
+    { id: 'BKAIZ', similarityScore: 0.34, sampleSize: 142, rationale: 'Adjacent coupling family; weaker match.' },
+  ],
+  BKAGG: [
+    { id: 'BKAGG', similarityScore: 0.94, sampleSize: 370, rationale: 'Direct cluster match; n adequate.' },
+    { id: 'BKAES', similarityScore: 0.58, sampleSize: 627, rationale: 'Larger neighbour cohort; useful prior.' },
+    { id: 'BKAIZ', similarityScore: 0.41, sampleSize: 142, rationale: 'Adjacent coupling family.' },
+  ],
+  SOPU: [
+    { id: 'SOPU', similarityScore: 0.79, sampleSize: 6, rationale: 'Direct match but very low n; defer to manual review.' },
+    { id: 'BKAIZ', similarityScore: 0.46, sampleSize: 142, rationale: 'Specialty coupling adjacency.' },
+    { id: 'BKAGG', similarityScore: 0.32, sampleSize: 370, rationale: 'Closest stable-n alternative.' },
+  ],
+};
 
 interface Props {
   data: NewProductForecastData;
@@ -99,41 +118,82 @@ export function NewProductForecast({ data }: Props) {
       </div>
 
       <div className="actions-list" style={{ marginTop: 14 }}>
-        {cards.map((c) => {
-          const toneCls = c.tone === 'status' ? 'status' : `status ${c.tone}`;
-          const isManual = c.primaryAction === 'manual';
-          return (
-            <div className="action-card" key={c.rank}>
-              <div className="ac-section">
-                <div className="ac-head">
-                  <div className="ac-rank">{c.rank}</div>
-                  <div className="ac-title">
-                    <div className="h">{c.title}</div>
-                    <div className="t">{renderBoldDescription(c.description)}</div>
-                  </div>
-                  <div className="ac-tools">
-                    <span className={`tag-chip ${toneCls}`}>{c.confidence}</span>
-                  </div>
-                </div>
-                <div className="ac-cta-row" style={{ marginTop: 14 }}>
-                  <button type="button" className="btn-secondary">
-                    {c.secondaryLabel}
-                  </button>
-                  {isManual ? (
-                    <button type="button" className="btn-secondary">
-                      {c.primaryLabel}
-                    </button>
-                  ) : (
-                    <button type="button" className="btn-primary-rose">
-                      {c.primaryLabel}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {cards.map((c) => (
+          <NewProductCardWithPicker key={c.rank} card={c} renderBoldDescription={renderBoldDescription} />
+        ))}
       </div>
     </>
+  );
+}
+
+interface NewProductCardProps {
+  card: NewProductForecastData['cards'][number];
+  renderBoldDescription: (text: string) => React.ReactNode;
+}
+
+function NewProductCardWithPicker({ card, renderBoldDescription }: NewProductCardProps) {
+  const candidates = CANDIDATE_CLUSTERS[card.cluster] ?? [];
+  const [selected, setSelected] = useState(candidates[0]?.id ?? card.cluster);
+  const toneCls = card.tone === 'status' ? 'status' : `status ${card.tone}`;
+  const isManual = card.primaryAction === 'manual';
+  const active = candidates.find((c) => c.id === selected) ?? candidates[0];
+
+  return (
+    <div className="action-card">
+      <div className="ac-section">
+        <div className="ac-head">
+          <div className="ac-rank">{card.rank}</div>
+          <div className="ac-title">
+            <div className="h">{card.title}</div>
+            <div className="t">{renderBoldDescription(card.description)}</div>
+          </div>
+          <div className="ac-tools">
+            <span className={`tag-chip ${toneCls}`}>{card.confidence}</span>
+          </div>
+        </div>
+
+        {candidates.length > 0 && (
+          <div className="mt-3 rounded-md border border-[var(--hairline)] bg-[var(--surface-soft)] p-3" data-testid={`cluster-picker-${card.rank}`}>
+            <div className="flex items-center justify-between">
+              <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+                Assigned cluster
+              </span>
+              <select
+                data-testid={`cluster-picker-select-${card.rank}`}
+                value={selected}
+                onChange={(e) => setSelected(e.target.value)}
+                className="rounded-md border border-[var(--hairline)] bg-white px-2 py-1 text-[12px] font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--rose-deep)]"
+              >
+                {candidates.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.id} · similarity {(c.similarityScore * 100).toFixed(0)}% · n={c.sampleSize}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {active && (
+              <div className="mt-1 text-[11.5px] italic text-[var(--muted)]" title="Why this cluster?">
+                {active.rationale}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="ac-cta-row" style={{ marginTop: 14 }}>
+          <button type="button" className="btn-secondary">
+            {card.secondaryLabel}
+          </button>
+          {isManual ? (
+            <button type="button" className="btn-secondary">
+              {card.primaryLabel}
+            </button>
+          ) : (
+            <button type="button" className="btn-primary-rose">
+              {card.primaryLabel}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
