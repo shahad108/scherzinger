@@ -1,25 +1,19 @@
 // Single fetcher for all data.
 //
-// Modes (controlled by env at build time):
-//   1. Pure mock          — VITE_SCHERZINGER_API unset.
-//                           apiFetch always reads from src/data/mocks/<key>.json.
-//   2. Pure API           — VITE_SCHERZINGER_API set, VITE_ALLOW_MOCK_FALLBACK
-//                           unset or "0". apiFetch hits the network; failures
-//                           surface to React Query.
-//   3. Hybrid             — VITE_SCHERZINGER_API set, VITE_ALLOW_MOCK_FALLBACK="1".
-//                           apiFetch hits the network and, on network error
-//                           or 404 / 503, falls back to the bundled mock for
-//                           that path. Used while the BFF is partial.
+// Runtime: always hits the real backend. ``VITE_SCHERZINGER_API`` configures
+// the base URL (default ``/api/v1`` for same-origin proxy / nginx). The
+// historical mock-fallback paths have been removed — the BFF must be up
+// for the app to render.
 //
-// The mock-key convention strips the leading slash and replaces the rest with
-// hyphens. Screen endpoints also strip /screens, so /screens/action-center ->
-// action-center.json and /screens/margin-cockpit -> margin-cockpit.json.
+// Tests (Vitest): ``import.meta.env.MODE === 'test'`` flips on the mock
+// resolver so component tests don't need a running backend. Per-call
+// ``mockResolve`` callbacks remain the way to inject synthesised payloads
+// (used by deep-link surfaces where a static JSON fixture would be wrong).
 
 import { newTraceId } from '@/lib/observability';
 
-const BASE = import.meta.env.VITE_SCHERZINGER_API as string | undefined;
-const ALLOW_FALLBACK = import.meta.env.VITE_ALLOW_MOCK_FALLBACK === '1';
-const USE_MOCKS = !BASE;
+const BASE = (import.meta.env.VITE_SCHERZINGER_API as string | undefined) || '/api/v1';
+const USE_MOCKS = import.meta.env.MODE === 'test';
 
 const mocks = import.meta.glob('../../data/mocks/*.json', { eager: true }) as Record<
   string,
@@ -58,35 +52,22 @@ function readMock<T>(path: string): T {
   return entry[1].default as T;
 }
 
-const FALLBACK_STATUSES = new Set([404, 503]);
-
 export async function apiFetch<T>(
   path: string,
   options?: { params?: object; mockResolve?: () => T },
 ): Promise<T> {
+  // Tests don't have a backend; they resolve through the bundled mocks or a
+  // per-call synthesizer. Production / dev always hits the network.
   if (USE_MOCKS) {
-    // Path-specific synthesizer wins (used by Phase 2 deep-link surfaces
-    // where the resource is identified by an opaque ref instead of a
-    // bundled JSON fixture). Otherwise fall back to the static mock.
     if (options?.mockResolve) return options.mockResolve();
     return readMock<T>(path);
   }
 
   const url = `${BASE}${path}${buildQuery(options?.params)}`;
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      credentials: 'include',
-      headers: { 'x-pryzm-trace-id': newTraceId() },
-    });
-  } catch (err) {
-    // Network error / DNS / CORS preflight failure / etc.
-    if (ALLOW_FALLBACK) {
-      console.warn(`[apiFetch] ${path} network error — falling back to mock`, err);
-      return readMock<T>(path);
-    }
-    throw err;
-  }
+  const res = await fetch(url, {
+    credentials: 'include',
+    headers: { 'x-pryzm-trace-id': newTraceId() },
+  });
 
   if (res.ok) {
     const ct = res.headers.get('content-type') ?? '';
@@ -101,11 +82,6 @@ export async function apiFetch<T>(
     } catch (err) {
       throw new Error(`API ${path} → invalid JSON: ${(err as Error).message}`);
     }
-  }
-
-  if (ALLOW_FALLBACK && FALLBACK_STATUSES.has(res.status)) {
-    console.warn(`[apiFetch] ${path} → ${res.status} — falling back to mock`);
-    return readMock<T>(path);
   }
 
   throw new Error(`API ${path} → ${res.status}`);

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// We re-import the module after mutating env so the BASE/ALLOW_FALLBACK consts
+// We re-import the module after mutating env so the BASE/USE_MOCKS consts
 // pick up the new values.
 async function importClient() {
   vi.resetModules();
@@ -22,10 +22,11 @@ afterEach(() => {
 });
 
 describe('apiFetch', () => {
-  describe('pure mock mode (VITE_SCHERZINGER_API unset)', () => {
+  describe('test-mode mock resolution (default under Vitest)', () => {
     beforeEach(() => {
-      delete (import.meta.env as Record<string, unknown>).VITE_SCHERZINGER_API;
-      delete (import.meta.env as Record<string, unknown>).VITE_ALLOW_MOCK_FALLBACK;
+      // MODE === 'test' under Vitest, so USE_MOCKS=true. apiFetch reads from
+      // the bundled JSON in src/data/mocks/ instead of hitting the network.
+      (import.meta.env as Record<string, unknown>).MODE = 'test';
     });
 
     it('reads from bundled mocks for /shell', async () => {
@@ -39,12 +40,22 @@ describe('apiFetch', () => {
       const { apiFetch } = await importClient();
       await expect(apiFetch('/does-not-exist')).rejects.toThrow(/No mock found/);
     });
+
+    it('honours per-call mockResolve over the bundled mock', async () => {
+      const { apiFetch } = await importClient();
+      const synthesized = { synth: true };
+      const out = await apiFetch<{ synth: boolean }>('/shell', {
+        mockResolve: () => synthesized,
+      });
+      expect(out).toBe(synthesized);
+    });
   });
 
-  describe('pure API mode (mock fallback disabled)', () => {
+  describe('runtime mode (always-network)', () => {
     beforeEach(() => {
-      import.meta.env.VITE_SCHERZINGER_API = 'https://api.test/api/v1/screens';
-      delete (import.meta.env as Record<string, unknown>).VITE_ALLOW_MOCK_FALLBACK;
+      // Simulate a non-test runtime by overriding MODE before importing.
+      (import.meta.env as Record<string, unknown>).MODE = 'production';
+      import.meta.env.VITE_SCHERZINGER_API = 'https://api.test/api/v1';
     });
 
     it('returns parsed json on 200', async () => {
@@ -60,7 +71,7 @@ describe('apiFetch', () => {
       const out = await apiFetch<{ ok: boolean }>('/shell');
       expect(out).toEqual({ ok: true });
       expect(fetchMock).toHaveBeenCalledWith(
-        'https://api.test/api/v1/screens/shell',
+        'https://api.test/api/v1/shell',
         expect.objectContaining({ credentials: 'include' }),
       );
     });
@@ -125,13 +136,30 @@ describe('apiFetch', () => {
       const { apiFetch } = await importClient();
       await expect(apiFetch('/shell')).rejects.toThrow(/invalid JSON/);
     });
+
+    it('defaults BASE to /api/v1 when VITE_SCHERZINGER_API is unset', async () => {
+      delete (import.meta.env as Record<string, unknown>).VITE_SCHERZINGER_API;
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+
+      const { apiFetch } = await importClient();
+      await apiFetch('/shell');
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/v1/shell',
+        expect.objectContaining({ credentials: 'include' }),
+      );
+    });
   });
 
   describe('lang routing (P13.T3)', () => {
     beforeEach(() => {
-      import.meta.env.VITE_SCHERZINGER_API = 'https://api.test/api/v1/screens';
-      delete (import.meta.env as Record<string, unknown>).VITE_ALLOW_MOCK_FALLBACK;
-      // Set the pryzm_lang cookie that i18n/index.ts writes on languageChanged.
+      (import.meta.env as Record<string, unknown>).MODE = 'production';
+      import.meta.env.VITE_SCHERZINGER_API = 'https://api.test/api/v1';
       document.cookie = 'pryzm_lang=en; path=/';
     });
 
@@ -164,52 +192,6 @@ describe('apiFetch', () => {
       const url = fetchMock.mock.calls[0][0] as string;
       expect(url).toContain('lang=de');
       expect(url).not.toContain('lang=en');
-    });
-  });
-
-  describe('hybrid mode (mock fallback enabled)', () => {
-    beforeEach(() => {
-      import.meta.env.VITE_SCHERZINGER_API = 'https://api.test/api/v1/screens';
-      import.meta.env.VITE_ALLOW_MOCK_FALLBACK = '1';
-    });
-
-    it('falls back to mock on 404', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue(new Response('not found', { status: 404 })),
-      );
-      const { apiFetch } = await importClient();
-      const data = await apiFetch<{ notifications: unknown }>('/shell');
-      expect(data).toHaveProperty('notifications');
-    });
-
-    it('falls back to mock on 503', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue(new Response('busy', { status: 503 })),
-      );
-      const { apiFetch } = await importClient();
-      const data = await apiFetch<{ notifications: unknown }>('/shell');
-      expect(data).toHaveProperty('notifications');
-    });
-
-    it('falls back to mock on network error', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockRejectedValue(new TypeError('offline')),
-      );
-      const { apiFetch } = await importClient();
-      const data = await apiFetch<{ notifications: unknown }>('/shell');
-      expect(data).toHaveProperty('notifications');
-    });
-
-    it('does NOT fall back on 500 (programmer error, surface it)', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue(new Response('boom', { status: 500 })),
-      );
-      const { apiFetch } = await importClient();
-      await expect(apiFetch('/shell')).rejects.toThrow(/→ 500/);
     });
   });
 });

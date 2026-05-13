@@ -46,10 +46,14 @@ describe('apiFetch trace ID', () => {
     return import('@/lib/api/client');
   }
 
+  const ORIGINAL_MODE = import.meta.env.MODE;
   beforeEach(() => {
+    // Force non-test runtime so apiFetch actually hits fetch().
+    (import.meta.env as Record<string, unknown>).MODE = 'production';
     import.meta.env.VITE_SCHERZINGER_API = 'https://api.test/api/v1/screens';
   });
   afterEach(() => {
+    (import.meta.env as Record<string, unknown>).MODE = ORIGINAL_MODE;
     delete (import.meta.env as Record<string, unknown>).VITE_SCHERZINGER_API;
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
