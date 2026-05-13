@@ -1,0 +1,54 @@
+// Phase 7 — Horizontal strip of curated market tiles.
+
+import type { MarketDirection } from '@/types/forecast';
+
+interface Props {
+  data: MarketDirection;
+}
+
+export function MarketDirectionStrip({ data }: Props) {
+  return (
+    <section className="mb-4" data-testid="market-direction-strip">
+      <div className="rounded-[14px] border border-[var(--border)] bg-white p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+            External market direction
+          </h2>
+          <span className="tag-chip">WoW: {data.digest.wow}</span>
+        </div>
+        <ul className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-8">
+          {data.tiles.map((tile) => {
+            const tone =
+              tile.tone === 'red'
+                ? 'border-[var(--red,#9a3232)]'
+                : tile.tone === 'amber'
+                  ? 'border-[var(--amber,#b59300)]'
+                  : tile.tone === 'green'
+                    ? 'border-[var(--green,#2e7c5a)]'
+                    : 'border-[var(--hairline)]';
+            const arrow = tile.wowPct > 0 ? '↑' : tile.wowPct < 0 ? '↓' : '→';
+            return (
+              <li
+                key={tile.name}
+                data-testid={`market-tile-${tile.name.toLowerCase().replace(/\W+/g, '-')}`}
+                title={tile.context}
+                className={`rounded-md border-l-4 ${tone} border border-[var(--hairline)] bg-[var(--surface-soft)] p-2`}
+              >
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted)] line-clamp-1">
+                  {tile.name}
+                </div>
+                <div className="mt-0.5 font-display text-[15px] font-bold tabular-nums text-[var(--ink)]">
+                  {tile.value} <span className="text-[10.5px] font-semibold text-[var(--muted)]">{tile.unit}</span>
+                </div>
+                <div className="text-[10.5px] text-[var(--muted)]">
+                  {arrow} {tile.wowPct >= 0 ? '+' : ''}
+                  {tile.wowPct.toFixed(1)}% WoW
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </section>
+  );
+}

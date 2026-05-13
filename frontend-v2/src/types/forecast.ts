@@ -497,6 +497,42 @@ export interface CalibrationPayload {
   rows: CalibrationRow[];
 }
 
+// Phase 7 — Market direction.
+export interface MarketTile {
+  name: string;
+  value: number;
+  unit: string;
+  wowPct: number;
+  tone: 'green' | 'amber' | 'red' | 'ink-3';
+  context: string;
+}
+
+export interface MarketDirection {
+  source: 'seed' | 'live';
+  tiles: MarketTile[];
+  digest: {
+    wow: string;
+    mom: string;
+    yoy: string;
+    notes: string;
+  };
+}
+
+// Phase 7 — Threshold alerts.
+export interface ForecastAlert {
+  id: string;
+  userId: string;
+  metric: string;
+  entityType: string;
+  entityId: string | null;
+  thresholdKind: 'mape_above' | 'margin_below_pct' | 'revenue_decline_prob_above';
+  thresholdValue: number;
+  notifyVia: 'in_app' | 'email';
+  isActive: boolean;
+  createdAt: string;
+  lastTriggeredAt: string | null;
+}
+
 export interface ForecastShell {
   header: ForecastHeader;
   hero: ForecastHero;
@@ -523,4 +559,6 @@ export interface ForecastShell {
   // Phase 6 — Quote-to-Revenue + Calibration.
   quoteToRevenue: QuoteToRevenue;
   calibration: CalibrationPayload;
+  // Phase 7 — Market direction.
+  marketDirection: MarketDirection;
 }

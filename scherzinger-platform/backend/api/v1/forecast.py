@@ -18,7 +18,14 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
+from pydantic import BaseModel
+
+from backend.auth.security import AuthContext, require_auth
+from backend.services.forecast import alerts as alerts_service
+from backend.services.forecast.briefing import generate_briefing
 from backend.services.forecast.calibration import get_calibration
+from backend.services.forecast.market_direction import get_market_direction
+from backend.services.forecast.scenarios_parse import parse_scenario_prompt
 from backend.services.forecast.customers import (
     get_customer_detail,
     get_top_at_risk_customers,
@@ -112,6 +119,86 @@ def quote_to_revenue(db: Session = Depends(get_db)):
 def calibration(db: Session = Depends(get_db)):
     """Phase 6 — per-cluster CI calibration (nominal 80% vs actual hit rate)."""
     return get_calibration(db=db)
+
+
+# ----- Phase 7 -----
+
+@router.get("/market-direction")
+def market_direction(db: Session = Depends(get_db)):
+    """Phase 7 — 6–8 external market tiles + a WoW/MoM/YoY digest."""
+    return get_market_direction(db=db)
+
+
+class BriefingRequest(BaseModel):
+    scenario_id: str | None = None
+    output_format: Literal["pdf", "html"] = "pdf"
+    recipient: Literal["till", "heiko", "self"] = "self"
+
+
+@router.post("/briefing")
+def briefing(
+    body: BriefingRequest,
+    ctx: AuthContext = Depends(require_auth),
+):
+    """Phase 7 — generate a forecast briefing artifact (PDF/HTML)."""
+    return generate_briefing(
+        user_id=str(ctx.user_id),
+        scenario_id=body.scenario_id,
+        output_format=body.output_format,
+        recipient=body.recipient,
+    )
+
+
+@router.get("/alerts")
+def list_alerts(ctx: AuthContext = Depends(require_auth)):
+    return {"alerts": alerts_service.list_alerts(str(ctx.user_id))}
+
+
+class AlertCreate(BaseModel):
+    metric: str
+    entity_type: str
+    entity_id: str | None = None
+    threshold_kind: Literal["mape_above", "margin_below_pct", "revenue_decline_prob_above"]
+    threshold_value: float
+    notify_via: Literal["in_app", "email"] = "in_app"
+
+
+@router.post("/alerts")
+def create_alert(body: AlertCreate, ctx: AuthContext = Depends(require_auth)):
+    return alerts_service.create_alert(
+        user_id=str(ctx.user_id),
+        metric=body.metric,
+        entity_type=body.entity_type,
+        entity_id=body.entity_id,
+        threshold_kind=body.threshold_kind,
+        threshold_value=body.threshold_value,
+        notify_via=body.notify_via,
+    )
+
+
+@router.delete("/alerts/{alert_id}", status_code=204)
+def delete_alert(alert_id: str, ctx: AuthContext = Depends(require_auth)):
+    if not alerts_service.delete_alert(alert_id, str(ctx.user_id)):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="alert not found")
+
+
+@router.post("/alerts/{alert_id}/test")
+def test_alert(alert_id: str, ctx: AuthContext = Depends(require_auth)):
+    return alerts_service.test_alert(alert_id, str(ctx.user_id))
+
+
+class ScenarioParseRequest(BaseModel):
+    prompt: str
+
+
+@router.post("/scenarios/parse")
+def scenario_parse(
+    body: ScenarioParseRequest,
+    ctx: AuthContext = Depends(require_auth),
+):
+    """Phase 7 — NL → scenario JSON (feature-flagged behind ?ai_scenarios=1)."""
+    return parse_scenario_prompt(body.prompt)
 
 
 @router.get("/lineage")

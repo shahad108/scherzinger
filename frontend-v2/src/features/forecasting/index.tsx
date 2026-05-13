@@ -27,6 +27,8 @@ import { PerCustomerTab } from './components/PerCustomerTab';
 import { ScenarioLibrary } from './components/ScenarioLibrary';
 import { QuoteToRevenueBridge } from './components/QuoteToRevenueBridge';
 import { CalibrationCard } from './components/CalibrationCard';
+import { MarketDirectionStrip } from './components/MarketDirectionStrip';
+import { BriefingButton } from './components/BriefingButton';
 import type {
   ForecastDistributions,
   ForecastMode,
@@ -99,6 +101,10 @@ export default function ForecastingPage() {
   return (
     <section id="screen-forecast" className="mx-auto max-w-[1400px] px-8 py-6">
       <PageHead header={data.header} />
+      {data.marketDirection && <MarketDirectionStrip data={data.marketDirection} />}
+      <div className="mb-3 flex items-center justify-end">
+        <BriefingButton />
+      </div>
       {(queue || article) && (
         <div className="mb-3 rounded-[12px] border border-[var(--border)] bg-[var(--surface-soft)] p-3 text-[12.5px] text-[var(--ink)]">
           <div className="flex items-start justify-between gap-3">

@@ -10,6 +10,7 @@ from fastapi import HTTPException, status
 from . import blocks
 from .calibration import get_calibration
 from .commodity_trajectories import get_commodity_trajectories
+from .market_direction import get_market_direction
 from .cost_decomposition import get_cost_decomposition
 from .customers import get_top_at_risk_customers
 from .distributions import get_distributions
@@ -122,6 +123,7 @@ async def build_forecast(
     customers = get_top_at_risk_customers(db=None, risk_filter="all")
     quote_to_revenue = get_quote_to_revenue(db=None)
     calibration = get_calibration(db=None)
+    market_direction = get_market_direction(db=None)
 
     payload = {
         "header": header,
@@ -150,6 +152,8 @@ async def build_forecast(
         # Phase 6 — Quote-to-Revenue bridge + per-cluster CI calibration.
         "quoteToRevenue": quote_to_revenue,
         "calibration": calibration,
+        # Phase 7 — Market direction widget.
+        "marketDirection": market_direction,
     }
     _CACHE[key] = (now, payload)
     return payload
