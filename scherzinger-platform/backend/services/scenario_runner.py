@@ -69,17 +69,41 @@ def apply_scenario(forecast: dict[str, Any], scenario_inputs: list[dict[str, Any
             # Absolute lever — treat it as a fraction of the bar's positive delta.
             total_pct_shift += float(bar.get("deltaPositive", 0)) * (value / 100.0)
 
-    # Apply shift to distributions.
+    # Apply shift to distributions. The shift is computed in pp-margin space
+    # (because the tornado bars are calibrated to margin sensitivity). For
+    # revenue and quantity metrics we convert the pp-margin delta into a
+    # relative percent of the current value so the impact is visible at the
+    # right scale (e.g. -4.2pp margin ≈ -6.5% revenue at the 64% base margin).
     distributions = out.get("distributions") or {}
+    metric = distributions.get("metric", "margin")
+    base_margin_pct = 64.0  # Approximate baseline margin for relative scaling.
+
     for row in distributions.get("rows") or []:
+        if metric == "margin":
+            shift_abs = total_pct_shift  # additive pp on a fraction stored as %
+        else:
+            # Convert margin pp delta to a relative percent change.
+            rel_pct = total_pct_shift / base_margin_pct
+            shift_factor = 1.0 + rel_pct
+            for key in ("median", "mean", "p5", "p25", "p75", "p95"):
+                v = row.get(key)
+                if v is not None:
+                    row[key] = round(v * shift_factor, 2)
+            continue
         for key in ("median", "mean", "p5", "p25", "p75", "p95"):
             v = row.get(key)
             if v is not None:
-                row[key] = round(v + total_pct_shift, 2)
+                row[key] = round(v + shift_abs, 2)
 
-    # Update header label so the UI can show "Steel shock +10%" in the corner.
+    # Surface the relative impact in the receipt so the FE can show a banner.
+    if metric == "margin":
+        relative_pct = total_pct_shift
+    else:
+        relative_pct = round((total_pct_shift / base_margin_pct) * 100, 1)
     out["scenarioApplied"] = {
         "shiftPpMargin": round(total_pct_shift, 2),
+        "relativePctOnMetric": relative_pct,
+        "metric": metric,
         "inputCount": len(scenario_inputs),
     }
     return out

@@ -14,6 +14,7 @@ import type {
   ForecastTornado,
   TornadoBar,
 } from '@/types/forecast';
+import { capP95, formatMetricValue, metricUnit } from './metricFormat';
 
 interface Props {
   open: boolean;
@@ -82,19 +83,25 @@ export function DistributionDrawer({ open, onClose, bar, row, tornado, distribut
 }
 
 function BarDetail({ bar, tornado }: { bar: TornadoBar; tornado: ForecastTornado }) {
+  // Bug #7 + #8: surface the actual metric instead of hardcoding "pp margin",
+  // and render the up/down shocks with their own signed magnitudes so we
+  // don't end up showing "+ -4.20".
+  const metricLabel = `${tornado.metric.toUpperCase()} · ${metricUnit(tornado.metric)}`;
+  const negDisplay = formatSignedDelta(bar.deltaNegative);
+  const posDisplay = formatSignedDelta(bar.deltaPositive);
   return (
     <>
       <section>
         <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[var(--muted)]">
-          Median Δ {bar.deltaUnit}
+          Median Δ · {metricLabel}
         </h3>
         <div className="mt-1 flex items-baseline gap-3 tabular-nums">
           <span className="text-[22px] font-bold text-[var(--red,#9a3232)]">
-            {bar.deltaNegative.toFixed(2)}
+            {negDisplay}
           </span>
           <span className="text-[11px] text-[var(--muted)]">downshock</span>
           <span className="text-[22px] font-bold text-[var(--green,#2e7c5a)]">
-            +{bar.deltaPositive.toFixed(2)}
+            {posDisplay}
           </span>
           <span className="text-[11px] text-[var(--muted)]">upshock</span>
         </div>
@@ -137,18 +144,21 @@ function RowDetail({
 }) {
   const buckets = synthesiseHistogram(row);
   const maxBucket = Math.max(1, ...buckets.map((b) => b.frequency));
+  const metric = distributions.metric;
+  const fmt = (v: number | null | undefined) => formatMetricValue(metric, v);
+  const { value: cappedP95 } = capP95(row.p95, row.median);
 
   return (
     <>
       <section className="grid grid-cols-3 gap-2 text-[12.5px]">
         {[
-          { label: 'Median', value: row.median },
-          { label: 'Mean', value: row.mean },
-          { label: 'P5 / P95', value: `${row.p5?.toFixed(1)} – ${row.p95?.toFixed(1)}` },
-          { label: 'P25 / P75', value: `${row.p25?.toFixed(1)} – ${row.p75?.toFixed(1)}` },
-          { label: 'Last actual', value: row.lastActual },
+          { label: 'Median', value: fmt(row.median) },
+          { label: 'Mean', value: fmt(row.mean) },
+          { label: 'P5 / P95', value: `${fmt(row.p5)} – ${fmt(cappedP95)}` },
+          { label: 'P25 / P75', value: `${fmt(row.p25)} – ${fmt(row.p75)}` },
+          { label: 'Last actual', value: fmt(row.lastActual) },
           {
-            label: `P(<${row.thresholdValue})`,
+            label: `P(<${fmt(row.thresholdValue)})`,
             value: row.pBelowThreshold != null ? `${row.pBelowThreshold.toFixed(1)}%` : '—',
           },
         ].map((stat) => (
@@ -160,7 +170,7 @@ function RowDetail({
               {stat.label}
             </div>
             <div className="mt-0.5 font-display text-[15px] font-bold tabular-nums text-[var(--ink)]">
-              {typeof stat.value === 'number' ? stat.value.toFixed(1) : stat.value ?? '—'}
+              {stat.value ?? '—'}
             </div>
           </div>
         ))}
@@ -195,6 +205,14 @@ function RowDetail({
       </section>
     </>
   );
+}
+
+function formatSignedDelta(value: number): string {
+  // Negative values keep their `-` sign; positive ones get an explicit `+`.
+  // Bug #8 fix: never render "+-4.20".
+  if (value > 0) return `+${value.toFixed(2)}`;
+  if (value < 0) return value.toFixed(2);
+  return '0.00';
 }
 
 function synthesiseHistogram(row: DistributionRow): { label: string; frequency: number }[] {

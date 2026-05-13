@@ -2,8 +2,6 @@ import { useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, X } from 'lucide-react';
 import { useForecast } from '@/data/api/useForecast';
-import { useTornado } from '@/data/api/useTornado';
-import { useDistributions } from '@/data/api/useDistributions';
 import { PageHead } from './components/PageHead';
 import { HeroForecast } from './components/HeroForecast';
 import { ModeToggle } from './components/ModeToggle';
@@ -29,12 +27,7 @@ import { QuoteToRevenueBridge } from './components/QuoteToRevenueBridge';
 import { CalibrationCard } from './components/CalibrationCard';
 import { MarketDirectionStrip } from './components/MarketDirectionStrip';
 import { BriefingButton } from './components/BriefingButton';
-import type {
-  ForecastDistributions,
-  ForecastMode,
-  ForecastShell,
-  ForecastTornado,
-} from '@/types/forecast';
+import type { ForecastMode, ForecastShell } from '@/types/forecast';
 
 const QUEUE_TO_BLOCK: Record<string, string> = {
   renewals: 'block-renewals',
@@ -60,18 +53,11 @@ export default function ForecastingPage() {
     [modeParam, horizonParam, scenarioId],
   );
   const { data, isLoading } = useForecast(forecastParams);
-
-  const simulatorMetric = modeParam === 'volume' ? 'quantity' : modeParam;
-  const { data: tornadoData } = useTornado({
-    entity_type: 'commodity_group',
-    metric: simulatorMetric,
-    horizon_months: horizonParam,
-  });
-  const { data: distributionsData } = useDistributions({
-    entity_type: 'commodity_group',
-    metric: simulatorMetric,
-    horizon_months: horizonParam,
-  });
+  // Phase 1 cleanup: the BFF /screens/forecast already applies scenario_id
+  // and re-runs the composer for the active mode/horizon — read tornado +
+  // distributions from `data` so the scenario perturbation propagates.
+  // (The dedicated `/forecast/tornado` and `/forecast/distributions` hooks
+  // remain available for components that want independent invalidation.)
 
   useEffect(() => {
     if (!data || !queue) return;
@@ -173,12 +159,7 @@ export default function ForecastingPage() {
       {tab === 'customers' ? (
         <PerCustomerTab />
       ) : (
-        <AggregateView
-          data={data}
-          tornadoData={tornadoData}
-          distributionsData={distributionsData}
-          article={article}
-        />
+        <AggregateView data={data} article={article} />
       )}
 
       <CrossLinkStrip />
@@ -188,20 +169,14 @@ export default function ForecastingPage() {
 
 interface AggregateProps {
   data: ForecastShell;
-  tornadoData?: ForecastTornado;
-  distributionsData?: ForecastDistributions;
   article: string | null;
 }
 
-function AggregateView({ data, tornadoData, distributionsData, article }: AggregateProps) {
+function AggregateView({ data, article }: AggregateProps) {
   return (
     <>
-      {(tornadoData ?? data.tornado) && (
-        <TornadoCard tornado={tornadoData ?? data.tornado} />
-      )}
-      {(distributionsData ?? data.distributions) && (
-        <DistributionGrid distributions={distributionsData ?? data.distributions} />
-      )}
+      {data.tornado && <TornadoCard tornado={data.tornado} />}
+      {data.distributions && <DistributionGrid distributions={data.distributions} />}
       {data.quoteToRevenue && <QuoteToRevenueBridge data={data.quoteToRevenue} />}
       {data.marginTrajectory && <MarginTrajectoryCard data={data.marginTrajectory} />}
       {data.costDecomposition && <CostDecompositionCard data={data.costDecomposition} />}

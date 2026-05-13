@@ -19,9 +19,58 @@ from sqlalchemy.orm import Session
 from ._seed import load_seed
 
 
+# Per-metric scaling map for the seed (margin) distribution rows. The seed
+# in ``frontend-v2/src/data/mocks/forecast.json`` stores margin percentages
+# (e.g. BKAES median 64.4). For revenue mode we project that onto realistic
+# Scherzinger € numbers; for quantity mode we project onto unit counts.
+_METRIC_SCALES: dict[str, dict[str, float]] = {
+    "margin": {
+        "median_scale": 1.0,
+        "p_scale": 1.0,
+        "threshold": 50.0,  # 50% margin floor
+        "threshold_kind": "margin_below_pct",
+        "last_actual_offset": 0.8,  # last actual ≈ 0.8pp above current median
+    },
+    "revenue": {
+        # Margin 64.4 → median revenue ≈ €5,200K (×80_000) — matches BKAES LTM €12.3M annualised.
+        "median_scale": 80_000.0,
+        "p_scale": 80_000.0,
+        "threshold": 4_000_000.0,
+        "threshold_kind": "revenue_below_eur",
+        "last_actual_offset": 0.95,  # last actual ≈ 95% of median
+    },
+    "quantity": {
+        # Margin 64.4 → median quantity ≈ 1,288 units (×20)
+        "median_scale": 20.0,
+        "p_scale": 20.0,
+        "threshold": 800.0,
+        "threshold_kind": "quantity_below_units",
+        "last_actual_offset": 0.95,
+    },
+}
+
+
+def _scale_row(row: dict[str, Any], metric: str) -> dict[str, Any]:
+    """Project a margin-shaped seed row onto the active metric's scale."""
+    scale = _METRIC_SCALES.get(metric, _METRIC_SCALES["margin"])
+    scaled = dict(row)
+    base_median = float(row.get("median") or 0)
+    scaled["median"] = round(base_median * scale["median_scale"], 1)
+    scaled["mean"] = round(float(row.get("mean") or base_median) * scale["median_scale"], 1)
+    for key in ("p5", "p25", "p75", "p95"):
+        v = row.get(key)
+        if v is not None:
+            scaled[key] = round(float(v) * scale["p_scale"], 1)
+    scaled["lastActual"] = round(base_median * scale["median_scale"] * scale["last_actual_offset"], 1)
+    scaled["thresholdValue"] = scale["threshold"]
+    scaled["thresholdKind"] = scale["threshold_kind"]
+    return scaled
+
+
 def _seed_rows(metric: str, horizon_months: int, entity_type: str) -> dict[str, Any]:
     seed = load_seed().get("distributions") or {}
-    rows = list(seed.get("rows") or [])
+    raw_rows = list(seed.get("rows") or [])
+    rows = [_scale_row(r, metric) for r in raw_rows]
     return {
         "computedAt": seed.get("computedAt") or datetime.now(timezone.utc).isoformat(),
         "metric": metric,
