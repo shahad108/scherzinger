@@ -179,6 +179,9 @@ export function HeroForecast({
           p95: [p95Low, p95High] as [number, number],
           primary: scale(p.p50 ?? p.primary),
           actual: p.actual != null ? scale(p.actual) : undefined,
+          // v2.1 — pipeline-implied P50 (open-quote book × win_prob).
+          // Optional; renders only where the backend supplied it.
+          pipelineP50: p.pipelineP50 != null ? scale(p.pipelineP50) : undefined,
         };
       }),
     [hero.series, scale],
@@ -410,6 +413,7 @@ export function HeroForecast({
                 if (n === 'primary') return [formatTooltip(mode, value), 'P50'];
                 if (n === 'actual')  return [formatTooltip(mode, value), 'Actual'];
                 if (n === 'overrideY') return [formatTooltip(mode, value), 'Override'];
+                if (n === 'pipelineP50') return [formatTooltip(mode, value), 'Pipeline P50'];
                 return [formatTooltip(mode, value), n];
               }}
               // Phase 3.3 — show the "Click to enter actual" hint only when
@@ -500,6 +504,23 @@ export function HeroForecast({
                 name="Override"
               />
             )}
+            {/* v2.1 — pipeline-implied P50 (open-quote book × win_prob).
+                Lighter rose, dashed, no dots. Renders only where the
+                backend supplied a value; connectNulls=false keeps the
+                line broken across missing months. */}
+            <Line
+              type="monotone"
+              dataKey="pipelineP50"
+              stroke="var(--rose-soft, #f9b8c2)"
+              strokeWidth={1.5}
+              strokeDasharray="6 4"
+              dot={false}
+              activeDot={false}
+              connectNulls={false}
+              isAnimationActive={false}
+              name="Pipeline P50"
+            />
+
           </ComposedChart>
         </ResponsiveContainer>
       </div>

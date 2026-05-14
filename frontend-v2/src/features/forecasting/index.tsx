@@ -34,6 +34,12 @@ import { PVMWaterfall } from './components/PVMWaterfall';
 import { TopSKUsForecastTable } from './components/TopSKUsForecastTable';
 import { OverrideLog } from './components/OverrideLog';
 import { Accordion } from '@/components/Accordion';
+// v2.1 — plan-first, pocket-margin, prescriptive bridge.
+import { PlanTrackingStrip } from './components/PlanTrackingStrip';
+import { PocketWaterfallCard } from './components/PocketWaterfallCard';
+import { BiasCard } from './components/BiasCard';
+import { NextCycleMovesStrip } from './components/NextCycleMovesStrip';
+import { DiagnosticsAccordionToggle } from './components/DiagnosticsAccordionToggle';
 import type { ForecastMode, ForecastShell } from '@/types/forecast';
 
 const QUEUE_TO_BLOCK: Record<string, string> = {
@@ -125,7 +131,7 @@ export default function ForecastingPage() {
 
   return (
     <section id="screen-forecast" className="mx-auto max-w-[1400px] px-8 py-6">
-      <PageHead header={data.header} methodology={data.methodology} hero={data.hero} />
+      <PageHead header={data.header} methodology={data.methodology} hero={data.hero} dataThrough={data.dataThrough} />
       {data.marketDirection && <MarketDirectionStrip data={data.marketDirection} />}
       <div className="mb-3 flex items-center justify-end">
         <BriefingButton />
@@ -288,6 +294,9 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
 
   return (
     <>
+      {/* v2.1 — PlanTrackingStrip sits ABOVE the KPI strip so finance/Manuel
+          see plan-vs-actual first. */}
+      <PlanTrackingStrip data={data.planTracking} />
       <HeroKPIStrip
         forecast12mo={forecast12mo}
         varianceVsPlanPct={varianceVsPlanPct}
@@ -296,6 +305,9 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
         mode={mode}
       />
       <HeroForecast hero={data.hero} mode={mode} cluster={activeCluster} enableActualEntry />
+      {/* v2.1 — Prescriptive bridge directly under the forecast: "what should
+          I do this cycle?" Each card emits a forecast:action-intent event. */}
+      <NextCycleMovesStrip moves={data.nextMoves} />
       {data.pvm && (
         <PVMWaterfall
           periodLabel={data.pvm.periodLabel}
@@ -303,6 +315,9 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
           mode={mode}
         />
       )}
+      {/* v2.1 — PocketWaterfallCard promoted out of the Drivers accordion
+          because pocket-margin leakage is decision-relevant, not diagnostic. */}
+      <PocketWaterfallCard data={data.pocketWaterfall} />
       {data.pareto?.sku?.rows?.length ? (
         <TopSKUsForecastTable
           rows={data.pareto.sku.rows}
@@ -317,24 +332,29 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
       {data.activeScenarioId && (
         <ScenarioActiveBanner scenarioId={data.activeScenarioId} applied={data.scenarioApplied} />
       )}
-      {/* slot 9: Drivers accordion — Phase 6 */}
+      {/* Drivers accordion — v2.1 reordered: decision-relevant cards
+          (WalkForward, Calibration, BiasCard, Tornado, Distributions,
+          Quote→Revenue, MarginTrajectory) visible by default; the four
+          deeper diagnostics collapsed behind a single toggle. */}
       <Accordion title="Drivers & accuracy" defaultOpen={false}>
+        <WalkForward panel={data.walkForward} />
+        {data.calibration && <CalibrationCard data={data.calibration} />}
+        <BiasCard data={data.bias} />
         {data.tornado && <TornadoCard tornado={data.tornado} />}
         {data.distributions && (
           <DistributionGrid distributions={data.distributions} clusters={data.clusters} />
         )}
-        {data.calibration && <CalibrationCard data={data.calibration} />}
-        <WalkForward panel={data.walkForward} />
-        {data.marginTrajectory && <MarginTrajectoryCard data={data.marginTrajectory} />}
-        {data.costDecomposition && <CostDecompositionCard data={data.costDecomposition} />}
-        {data.seasonalOverlay && <SeasonalOverlayCard data={data.seasonalOverlay} />}
-        {data.commodityTrajectories && (
-          <CommodityTrajectoriesCard data={data.commodityTrajectories} />
-        )}
-        <InputCostTrajectory data={data.inputCost} />
         {data.quoteToRevenue && <QuoteToRevenueBridge data={data.quoteToRevenue} />}
+        {data.marginTrajectory && <MarginTrajectoryCard data={data.marginTrajectory} />}
+        <DiagnosticsAccordionToggle count={4}>
+          {data.seasonalOverlay && <SeasonalOverlayCard data={data.seasonalOverlay} />}
+          {data.commodityTrajectories && (
+            <CommodityTrajectoriesCard data={data.commodityTrajectories} />
+          )}
+          {data.costDecomposition && <CostDecompositionCard data={data.costDecomposition} />}
+          <InputCostTrajectory data={data.inputCost} />
+        </DiagnosticsAccordionToggle>
       </Accordion>
-      {/* slot 10: Renewals/NewProduct accordion — Phase 6 */}
       <Accordion title="Renewals & new product" id="block-renewals" defaultOpen={false}>
         <div data-focus-target="renewals">
           <PriceFloor rows={data.priceFloor} footnote={data.priceFloorFootnote} highlightArticle={article} />
@@ -342,13 +362,13 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
         <NewProductForecast data={data.newProduct} />
       </Accordion>
       <ParetoLayer data={data.pareto} showAll={showAll} />
-      {/* slot 11: OverrideLog — Phase 6 */}
       <OverrideLog />
       {data.methodology && (
         <>
           <AssumptionsFooter
             assumptions={data.methodology.assumptions}
             dataThrough={
+              data.dataThrough ??
               data.methodology.assumptions.find((a) => a.label === 'Data-through')?.value
             }
           />

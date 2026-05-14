@@ -17,6 +17,19 @@ interface Props {
   header: ForecastHeader;
   methodology?: ForecastMethodology;
   hero?: ForecastHero;
+  /** v2.1 — canonical freshness timestamp from BFF. Renders a traffic-light chip. */
+  dataThrough?: string;
+}
+
+// v2.1 — freshness tone. Green ≤24h, amber ≤72h, rose >72h. Mittelstand trust signal.
+function freshnessTone(iso: string | undefined): { bg: string; fg: string; label: string } {
+  if (!iso) return { bg: 'bg-[var(--surface-soft)]', fg: 'text-[var(--muted)]', label: 'unknown' };
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return { bg: 'bg-[var(--surface-soft)]', fg: 'text-[var(--muted)]', label: 'unknown' };
+  const ageHours = (Date.now() - parsed.getTime()) / 3_600_000;
+  if (ageHours <= 24) return { bg: 'bg-emerald-50', fg: 'text-emerald-700', label: 'fresh' };
+  if (ageHours <= 72) return { bg: 'bg-amber-50', fg: 'text-amber-800', label: 'aging' };
+  return { bg: 'bg-rose-50', fg: 'text-rose-700', label: 'stale' };
 }
 
 const TITLE_BY_MODE: Record<ForecastMode, string> = {
@@ -160,7 +173,7 @@ function FilterMenu({ label, paramKey, options }: FilterMenuProps) {
   );
 }
 
-export function PageHead({ header, methodology, hero }: Props) {
+export function PageHead({ header, methodology, hero, dataThrough }: Props) {
   const [params] = useSearchParams();
   const mode = (params.get('mode') as ForecastMode | null) ?? 'revenue';
   const horizon = Number(params.get('horizon')) || 12;
@@ -218,6 +231,22 @@ export function PageHead({ header, methodology, hero }: Props) {
                 <b>{s.label}</b> {s.value}
               </span>
             ))}
+            {(() => {
+              // v2.1 — single canonical traffic-light freshness chip.
+              const dt = dataThrough
+                ?? methodology?.assumptions?.find((a) => a.label === 'Data-through')?.value;
+              const tone = freshnessTone(dt);
+              return (
+                <span
+                  data-testid="freshness-chip"
+                  data-freshness={tone.label}
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide ${tone.bg} ${tone.fg}`}
+                  title={dt ? `Data through ${dt}` : 'Data freshness unknown'}
+                >
+                  {tone.label}
+                </span>
+              );
+            })()}
             <span className="sub-stat">{header.modeLabel}</span>
           </div>
         </div>

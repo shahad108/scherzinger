@@ -12,6 +12,19 @@ import type { ScenarioSummary } from '@/types/forecast';
 import { ScenarioBuilder } from './ScenarioBuilder';
 import { useCompareParam } from './ScenarioCompareView';
 
+// v2.1 — pump-manufacturer-specific scenario presets. Five one-click
+// scenarios for Frank's weekly review, eliminating the friction of
+// composing driver multipliers in the ScenarioBuilder. Each preset writes
+// `?scenario_id=preset:<key>` so the BFF picks it up the same way it does
+// saved-scenario ids.
+const SCENARIO_PRESETS: { key: string; label: string; desc: string }[] = [
+  { key: 'preset:steel-spike', label: 'Steel S355 +20%', desc: 'Commodity stress · 60% pass-through' },
+  { key: 'preset:list-uplift', label: '+3% list price', desc: 'Price action · 50% capture' },
+  { key: 'preset:bkagg-churn', label: 'Lose top-3 BKAGG', desc: 'Concentration risk · churn shock' },
+  { key: 'preset:recapture-pa', label: 'Win +5pp PA quotes', desc: 'p=0.003 finding · recapture' },
+  { key: 'preset:macro-recession', label: '−10% volume', desc: 'Industrial recession · macro' },
+];
+
 export function ScenarioLibrary() {
   const [params, setParams] = useSearchParams();
   const { data, isLoading } = useScenarios();
@@ -43,6 +56,29 @@ export function ScenarioLibrary() {
       <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted)]">
         Scenarios
       </span>
+      {/* v2.1 — one-click presets row. */}
+      <div data-testid="scenario-presets" className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted)]">Presets:</span>
+        {SCENARIO_PRESETS.map((preset) => {
+          const isActive = activeId === preset.key;
+          return (
+            <button
+              key={preset.key}
+              type="button"
+              data-testid={`scenario-preset-${preset.key.replace(/[:_]/g, '-')}`}
+              onClick={() => setActive(isActive ? null : preset.key)}
+              title={preset.desc}
+              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition ${
+                isActive
+                  ? 'border-[var(--rose-deep)] bg-[var(--rose-bg)] text-[var(--rose-deep)]'
+                  : 'border-[var(--hairline)] bg-white text-[var(--ink-2)] hover:bg-[var(--surface-soft)]'
+              }`}
+            >
+              {preset.label}
+            </button>
+          );
+        })}
+      </div>
       {isLoading && <span className="text-[11px] text-[var(--muted)]">Loading…</span>}
       {data && (
         <>
