@@ -39,6 +39,82 @@ def test_briefing_returns_artifact_receipt(client: TestClient) -> None:
     assert {"jobId", "status", "artifactUrl", "format", "recipient"} <= set(body.keys())
     assert body["format"] == "pdf"
     assert body["artifactUrl"].endswith(".pdf")
+    # Default persona = analyst_memo (preserves prior behavior). Default
+    # language for analyst_memo is English.
+    assert body["persona"] == "analyst_memo"
+    assert body["language"] == "en"
+
+
+def test_briefing_manuel_persona_autoflips_to_german(client: TestClient) -> None:
+    """v2.2 Phase I — when persona = manuel_1pager and no language given,
+    the endpoint should auto-flip to German (Manuel reads German)."""
+    res = client.post(
+        f"{URL}/briefing",
+        json={
+            "scenario_id": None,
+            "output_format": "pdf",
+            "recipient": "till",
+            "persona": "manuel_1pager",
+        },
+        headers=_csrf(client),
+    )
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["persona"] == "manuel_1pager"
+    assert body["language"] == "de"
+    pack = body["promptPack"]
+    assert pack["tone"] == "terse"
+    assert pack["length"] == "one_page"
+    # Pricing terms preserved across languages.
+    assert "EBITDA" in pack["preservedTerms"]
+    assert "P50" in pack["preservedTerms"]
+
+
+def test_briefing_prompt_pack_branches_all_four_combinations(client: TestClient) -> None:
+    """v2.2 Phase I — persona × language matrix (4 cases).
+
+    Asserts the prompt pack selected by the briefing service routes on both
+    axes independently. No LLM is invoked; the receipt carries the pack
+    metadata produced by ``_select_prompt_pack``.
+    """
+    matrix = [
+        ("manuel_1pager", "de"),
+        ("manuel_1pager", "en"),
+        ("analyst_memo", "de"),
+        ("analyst_memo", "en"),
+    ]
+    for persona, language in matrix:
+        res = client.post(
+            f"{URL}/briefing",
+            json={
+                "scenario_id": None,
+                "output_format": "pdf",
+                "recipient": "self",
+                "persona": persona,
+                "language": language,
+            },
+            headers=_csrf(client),
+        )
+        assert res.status_code == 200, res.text
+        body = res.json()
+        assert body["persona"] == persona, (persona, language, body)
+        assert body["language"] == language, (persona, language, body)
+        pack = body["promptPack"]
+        # Persona controls tone + length.
+        if persona == "manuel_1pager":
+            assert pack["tone"] == "terse"
+            assert pack["length"] == "one_page"
+            assert pack["audience"] == "bu_lead"
+        else:
+            assert pack["tone"] == "analytical"
+            assert pack["length"] == "full_memo"
+            assert pack["audience"] == "pricing_analyst"
+        # Language controls the output-language directive.
+        if language == "de":
+            assert "Deutsch" in pack["languageDirective"]
+            assert pack["preservedTerms"], "German output must preserve pricing terms"
+        else:
+            assert "English" in pack["languageDirective"]
 
 
 def test_alert_lifecycle(client: TestClient) -> None:

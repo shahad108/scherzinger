@@ -6,12 +6,17 @@ import { Download, X } from 'lucide-react';
 import { postJson } from '@/lib/api/client';
 import { useScenarios } from '@/data/api/useScenarios';
 
+type BriefingPersona = 'manuel_1pager' | 'analyst_memo';
+type BriefingLanguage = 'de' | 'en';
+
 interface BriefingReceipt {
   jobId: string;
   status: string;
   artifactUrl: string;
   format: string;
   recipient: string;
+  persona?: BriefingPersona;
+  language?: BriefingLanguage;
 }
 
 export function BriefingButton() {
@@ -19,6 +24,19 @@ export function BriefingButton() {
   const [params] = useSearchParams();
   const [recipient, setRecipient] = useState<'self' | 'till' | 'heiko'>('self');
   const [format, setFormat] = useState<'pdf' | 'html'>('pdf');
+  // v2.2 Phase I — persona + language toggle.
+  // Default persona = analyst_memo (preserves prior behavior). When the user
+  // flips to manuel_1pager we auto-switch language to de; the user can still
+  // override the language manually after that.
+  const [persona, setPersonaState] = useState<BriefingPersona>('analyst_memo');
+  const [language, setLanguage] = useState<BriefingLanguage>('en');
+  const [languageTouched, setLanguageTouched] = useState(false);
+  const setPersona = (next: BriefingPersona) => {
+    setPersonaState(next);
+    if (!languageTouched) {
+      setLanguage(next === 'manuel_1pager' ? 'de' : 'en');
+    }
+  };
   const [receipt, setReceipt] = useState<BriefingReceipt | null>(null);
   const [busy, setBusy] = useState(false);
   const activeScenario = params.get('scenario_id') ?? undefined;
@@ -36,7 +54,13 @@ export function BriefingButton() {
     try {
       const result = await postJson<BriefingReceipt>(
         '/forecast/briefing',
-        { scenario_id: activeScenario, output_format: format, recipient },
+        {
+          scenario_id: activeScenario,
+          output_format: format,
+          recipient,
+          persona,
+          language,
+        },
         {
           mockResolve: () => ({
             jobId: crypto.randomUUID(),
@@ -44,6 +68,8 @@ export function BriefingButton() {
             artifactUrl: `/api/v1/reports/synth.${format}`,
             format,
             recipient,
+            persona,
+            language,
           }),
         },
       );
@@ -122,6 +148,31 @@ export function BriefingButton() {
                   <option value="self">Just me</option>
                   <option value="till">Till (MD)</option>
                   <option value="heiko">Heiko (Sales)</option>
+                </select>
+              </Field>
+              <Field label="Persona">
+                <select
+                  data-testid="briefing-persona"
+                  value={persona}
+                  onChange={(e) => setPersona(e.target.value as BriefingPersona)}
+                  className="rounded-md border border-[var(--hairline)] bg-white px-2 py-1 text-[12.5px]"
+                >
+                  <option value="analyst_memo">Analyst memo (full)</option>
+                  <option value="manuel_1pager">Manuel 1-pager (BU lead)</option>
+                </select>
+              </Field>
+              <Field label="Language">
+                <select
+                  data-testid="briefing-language"
+                  value={language}
+                  onChange={(e) => {
+                    setLanguage(e.target.value as BriefingLanguage);
+                    setLanguageTouched(true);
+                  }}
+                  className="rounded-md border border-[var(--hairline)] bg-white px-2 py-1 text-[12.5px]"
+                >
+                  <option value="en">English</option>
+                  <option value="de">Deutsch</option>
                 </select>
               </Field>
               {receipt && (

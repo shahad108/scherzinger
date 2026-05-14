@@ -133,6 +133,9 @@ class BriefingRequest(BaseModel):
     scenario_id: str | None = None
     output_format: Literal["pdf", "html"] = "pdf"
     recipient: Literal["till", "heiko", "self"] = "self"
+    # v2.2 Phase I — briefing persona toggle (Manuel mode + German).
+    persona: Literal["manuel_1pager", "analyst_memo"] | None = None
+    language: Literal["de", "en"] | None = None
 
 
 @router.post("/briefing")
@@ -140,12 +143,25 @@ def briefing(
     body: BriefingRequest,
     ctx: AuthContext = Depends(require_auth),
 ):
-    """Phase 7 — generate a forecast briefing artifact (PDF/HTML)."""
+    """Phase 7 — generate a forecast briefing artifact (PDF/HTML).
+
+    v2.2 Phase I: optional ``persona`` / ``language`` route the prompt pack.
+    Defaults: persona = ``analyst_memo`` (preserves prior behavior). When the
+    caller picks ``manuel_1pager`` without specifying a language, auto-flip
+    to ``de`` (Manuel reads German). Otherwise default language to ``en``.
+    """
+    persona = body.persona or "analyst_memo"
+    if body.language is not None:
+        language = body.language
+    else:
+        language = "de" if persona == "manuel_1pager" else "en"
     return generate_briefing(
         user_id=str(ctx.user_id),
         scenario_id=body.scenario_id,
         output_format=body.output_format,
         recipient=body.recipient,
+        persona=persona,
+        language=language,
     )
 
 
