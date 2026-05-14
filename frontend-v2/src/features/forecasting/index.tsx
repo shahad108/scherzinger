@@ -62,7 +62,10 @@ export default function ForecastingPage() {
   const familyParam = params.get('family') ?? undefined;
   const clusterParam = params.get('cluster') ?? undefined;
   const showAll = params.get('show_all') === '1';
-  const layoutV2 = params.get('layout') === 'v2';
+  // Phase 8: v2 is now the default layout. The legacy aggregate view stays
+  // reachable via ?layout=v1 as a rollback path. Removing the v1 branch is a
+  // follow-up once Frank has signed off on v2 in production.
+  const layoutV2 = params.get('layout') !== 'v1';
   const forecastParams = useMemo(
     () => ({
       mode: modeParam,
