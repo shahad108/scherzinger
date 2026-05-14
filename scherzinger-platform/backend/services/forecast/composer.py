@@ -319,9 +319,42 @@ def _next_move_signals(
         for bucket in signals.values():
             bucket["signal"] = "cost crossing list price"
 
+    # Lost-quote rejection codes (PA = competitor cheaper, PR = price too
+    # high). Mine quotes per commodity_group in a recent 90-day window —
+    # when a cluster crosses a meaningful threshold we surface a
+    # "Tighten quoting" partial-accept move so Phase B's drawer can open
+    # straight into the right remediation.
+    try:
+        rejection_buckets = _rejection_signals_by_cluster(db, threshold=3)
+        for cl_key, rej in rejection_buckets.items():
+            bucket = signals.setdefault(cl_key, {
+                "forecast_impact_eur": 0.0,
+                "signal": "quotes lost on price",
+                "intent_kind": "partial_accept",
+            })
+            # Prefer the partial-accept intent over a weaker queue_renewal.
+            bucket["intent_kind"] = "partial_accept"
+            # Revenue carried by the lost quotes is a direct forecast risk.
+            bucket["forecast_impact_eur"] = float(
+                bucket.get("forecast_impact_eur", 0)
+            ) + float(rej["lost_revenue_eur"])
+            # Keep the most specific signal label.
+            bucket["signal"] = (
+                f"Tighten quoting on cluster {cl_key} — "
+                f"{rej['lost_count']} quotes lost to {rej['top_code']} in last 90d"
+            )
+            # Carry rejectionCode through to the intent_context so Phase B
+            # can deep-link the drawer with the right rejection filter.
+            bucket["_rejection_code"] = rej["top_code"]
+            bucket["_rejection_count"] = int(rej["lost_count"])
+    except Exception as exc:  # pragma: no cover — composer-wide safety net
+        _log.warning("rejection-signal mining failed: %s", exc)
+
     # Decorate buckets with the intent_context the Phase B frontend will use.
     for cl_key, bucket in signals.items():
         articles = bucket.pop("intent_articles", []) or []
+        rej_code = bucket.pop("_rejection_code", None)
+        rej_count = bucket.pop("_rejection_count", None)
         # Drop the keyword arg to avoid the build_next_moves headline using it.
         ctx_obj: dict[str, Any] = {
             "cluster": cl_key,
@@ -331,8 +364,79 @@ def _next_move_signals(
         if articles:
             ctx_obj["articleId"] = articles[0]
             ctx_obj["articles"] = articles
+        if rej_code:
+            ctx_obj["rejectionCode"] = rej_code
+            if rej_count is not None:
+                ctx_obj["rejectionCount"] = rej_count
         bucket["intent_context"] = ctx_obj
     return signals
+
+
+def _rejection_signals_by_cluster(
+    db: Session | None,
+    *,
+    threshold: int = 3,
+    window_days: int = 90,
+) -> dict[str, dict[str, Any]]:
+    """Aggregate PA/PR rejections per commodity_group in a recent window.
+
+    Returns ``{cluster_key: {top_code, lost_count, lost_revenue_eur}}`` for
+    clusters where at least ``threshold`` quotes were lost to PA or PR in
+    the last ``window_days`` days. The 90-day window is anchored to the
+    most-recent quote date in the table so the signal still fires on
+    historical demo data (the live ledger ends 2025).
+    """
+    if db is None:
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    try:
+        anchor_row = db.execute(_sql_text(
+            "SELECT MAX(date) FROM quotes WHERE rejection_code IN ('PA', 'PR')"
+        )).fetchone()
+        anchor = anchor_row[0] if anchor_row else None
+        if anchor is None:
+            return {}
+        cutoff = anchor - _dt.timedelta(days=window_days)
+        rows = db.execute(_sql_text("""
+            SELECT commodity_group,
+                   rejection_code,
+                   COUNT(*) AS n,
+                   COALESCE(SUM(revenue), 0) AS rev
+              FROM quotes
+             WHERE NOT is_won
+               AND rejection_code IN ('PA', 'PR')
+               AND date >= :cutoff
+               AND commodity_group IS NOT NULL
+             GROUP BY commodity_group, rejection_code
+        """), {"cutoff": cutoff}).fetchall()
+    except Exception as exc:  # pragma: no cover — schema-mismatch safety net
+        _log.warning("rejection cluster query failed: %s", exc)
+        return {}
+
+    # Roll up per-cluster: total count, total revenue, dominant code.
+    by_cluster: dict[str, dict[str, Any]] = {}
+    for cg, code, n, rev in rows:
+        cl_key = (cg or "?").split(" ")[0]
+        b = by_cluster.setdefault(cl_key, {
+            "lost_count": 0,
+            "lost_revenue_eur": 0.0,
+            "_by_code": {},
+        })
+        b["lost_count"] = int(b["lost_count"]) + int(n or 0)
+        b["lost_revenue_eur"] = float(b["lost_revenue_eur"]) + float(rev or 0)
+        b["_by_code"][str(code)] = int(b["_by_code"].get(str(code), 0)) + int(n or 0)
+
+    for cl_key, b in by_cluster.items():
+        if b["lost_count"] < threshold:
+            continue
+        by_code: dict[str, int] = b.pop("_by_code")
+        top_code = max(by_code.items(), key=lambda kv: kv[1])[0] if by_code else "PA"
+        out[cl_key] = {
+            "lost_count": b["lost_count"],
+            "lost_revenue_eur": b["lost_revenue_eur"],
+            "top_code": top_code,
+        }
+    return out
 
 
 async def build_forecast(

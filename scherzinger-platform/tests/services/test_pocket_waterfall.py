@@ -37,6 +37,8 @@ def test_from_db_monotonic_steps(db):
     for prev, nxt in zip(values, values[1:]):
         assert nxt <= prev + 1e-6, f"step values not monotonic: {values}"
     # At least one per-cluster band — the live invoice ledger has multiple
-    # commodity groups; the seed fallback path returns 0 bands, in which case
-    # we accept the seed (DB session may be absent in some test envs).
+    # commodity groups; v2.2 Phase A requires real per-cluster price bands
+    # so the FE Pocket Waterfall card has something to render below the
+    # main waterfall steps.
     assert isinstance(out["perCluster"], list)
+    assert len(out["perCluster"]) >= 1, "expected ≥1 per-cluster band from live DB"
