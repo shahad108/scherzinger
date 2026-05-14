@@ -55,6 +55,91 @@ function v21FixtureExtras() {
       { id: 'm2', rank: 2, cluster: null, headline: '38% of quotes lost to PA-code last 90d', forecastImpactEur: 280_000, sourceSignal: 'win-loss · price too high', actionIntent: { kind: 'partial_accept', payload: { sourceScreen: 'forecasting', sourceKind: 'next-cycle-move', headline: '38% of quotes lost to PA-code last 90d', rejectionCode: 'PA', rejectionCount: 38 } } },
       { id: 'm3', rank: 3, cluster: 'BKAES', headline: 'BKAES: 8 renewals overdue', forecastImpactEur: 180_000, sourceSignal: 'renewal queue', actionIntent: { kind: 'queue_renewal', payload: { cluster: 'BKAES', sourceScreen: 'forecasting', sourceKind: 'next-cycle-move', headline: 'BKAES: 8 renewals overdue', articles: ['A-101', 'A-102'] } } },
     ],
+    // v2.2 Phase D — WinLossDriverCard
+    winLoss: {
+      window: { days: 90, anchor: '2026-05-14' },
+      rows: [
+        {
+          cluster: 'BKAGG',
+          paPct: 38.2,
+          prPct: 12.4,
+          sample: 142,
+          monthlySparkline: [
+            { month: '2026-01', paPct: 32, prPct: 10 },
+            { month: '2026-02', paPct: 34, prPct: 11 },
+            { month: '2026-03', paPct: 36, prPct: 12 },
+            { month: '2026-04', paPct: 38, prPct: 12 },
+          ],
+        },
+        {
+          cluster: 'BKAES',
+          paPct: 21.6,
+          prPct: 8.0,
+          sample: 96,
+          monthlySparkline: [
+            { month: '2026-01', paPct: 24, prPct: 9 },
+            { month: '2026-02', paPct: 23, prPct: 8 },
+            { month: '2026-03', paPct: 22, prPct: 8 },
+            { month: '2026-04', paPct: 21, prPct: 8 },
+          ],
+        },
+      ],
+    },
+    // v2.2 Phase E — ErosionProjectionCard. One row has a crossover, one is safe.
+    erosionProjection: {
+      horizonMonths: 12,
+      rows: [
+        {
+          cluster: 'BKAGG',
+          currentListPrice: 100,
+          currentFloor: 92,
+          monthlyListSlope: -0.6,
+          monthlyCostSlope: 0.4,
+          projection: [
+            { month: '2026-05', listPrice: 100, floor: 92 },
+            { month: '2026-08', listPrice: 98, floor: 93 },
+            { month: '2026-11', listPrice: 96, floor: 95 },
+            { month: '2027-02', listPrice: 94, floor: 96 },
+          ],
+          crossoverMonth: '2027-02',
+          cadence: { updatesEveryMonths: 6, benchmarkMonths: 3 },
+        },
+        {
+          cluster: 'BKAES',
+          currentListPrice: 110,
+          currentFloor: 88,
+          monthlyListSlope: 0.1,
+          monthlyCostSlope: 0.1,
+          projection: [
+            { month: '2026-05', listPrice: 110, floor: 88 },
+            { month: '2026-11', listPrice: 110.6, floor: 88.6 },
+            { month: '2027-05', listPrice: 111.2, floor: 89.2 },
+          ],
+          crossoverMonth: null,
+          cadence: { updatesEveryMonths: 3, benchmarkMonths: 3 },
+        },
+      ],
+    },
+    // v2.2 Phase F — AtRiskRevenueBar (4 tier rows: A/B/C/D).
+    atRiskRevenue: {
+      tiers: [
+        { tier: 'A', forecastEur: 4_200_000, atRiskEur: 600_000, safeEur: 3_600_000, atRiskShare: 0.143, customerCount: 12 },
+        { tier: 'B', forecastEur: 2_800_000, atRiskEur: 720_000, safeEur: 2_080_000, atRiskShare: 0.257, customerCount: 34 },
+        { tier: 'C', forecastEur: 1_400_000, atRiskEur: 480_000, safeEur: 920_000, atRiskShare: 0.343, customerCount: 56 },
+        { tier: 'D', forecastEur: 600_000, atRiskEur: 280_000, safeEur: 320_000, atRiskShare: 0.467, customerCount: 88 },
+      ],
+      totalForecastEur: 9_000_000,
+      totalAtRiskEur: 2_080_000,
+    },
+    // v2.2 Phase G — FvaSummary strip (positive net delta → "pos" tone).
+    fvaSummary: {
+      period: '2026Q2',
+      entered: 24,
+      improved: 15,
+      worsened: 6,
+      neutral: 3,
+      netFvaDeltaPp: 0.42,
+    },
   };
 }
 
@@ -202,6 +287,37 @@ export async function installForecastMocks(page: Page): Promise<MockState> {
       body: JSON.stringify({ items: [] }),
     }),
   );
+  // v2.2 Phase H — annotations endpoint. GET returns an empty list; POST
+  // echoes a synthesized annotation so the popover can confirm save.
+  await page.route('**/api/v1/forecast/annotations**', (route) => {
+    const req = route.request();
+    const method = req.method();
+    if (method === 'GET') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ items: [] }),
+      });
+    }
+    if (method === 'POST') {
+      const body = req.postDataJSON() as { target?: { kind: string; value: string }; body?: string };
+      return route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: `mock-ann-${Math.floor(Math.random() * 10_000)}`,
+          target: body.target ?? { kind: 'month', value: '2026-01' },
+          body: body.body ?? '',
+          author: 'frank-mock',
+          createdAt: new Date().toISOString(),
+        }),
+      });
+    }
+    if (method === 'DELETE') {
+      return route.fulfill({ status: 204, body: '' });
+    }
+    return route.fulfill({ status: 405, body: '' });
+  });
   await page.route('**/api/v1/forecast/customers**', (route) =>
     route.fulfill({
       status: 200,
