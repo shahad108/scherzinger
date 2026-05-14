@@ -1,4 +1,9 @@
 // Phase 3 — Quarterly DB2 margin with 4-quarter WMA projection + floor band.
+//
+// Filter scope: does NOT honor tier/family/cluster — composer returns a global
+// invoice aggregate. Renders an unfiltered FilterScopeBadge when any
+// page-level filter is active.
+// (v2.2 Phase C audit, 2026-05-14)
 
 import {
   Area,
@@ -11,15 +16,17 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { MarginTrajectory } from '@/types/forecast';
+import type { FilterScope, MarginTrajectory } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
+import { FilterScopeBadge } from './FilterScopeBadge';
 import { ThresholdAlertButton } from './ThresholdAlertButton';
 
 interface Props {
   data: MarginTrajectory;
+  filterScope?: FilterScope;
 }
 
-export function MarginTrajectoryCard({ data }: Props) {
+export function MarginTrajectoryCard({ data, filterScope }: Props) {
   const merged = [
     ...data.historical.map((p) => ({ quarter: p.quarter, actual: p.margin })),
     ...data.projected.map((p) => ({
@@ -35,7 +42,10 @@ export function MarginTrajectoryCard({ data }: Props) {
     <section className="mt-6">
       <div className="section-row">
         <div>
-          <h2>Margin trajectory · 12 quarters + 4 quarter projection</h2>
+          <h2 className="flex items-center gap-2">
+            Margin trajectory · 12 quarters + 4 quarter projection
+            <FilterScopeBadge unfiltered scope={filterScope} />
+          </h2>
           <div className="sub">{data.methodologyNote}</div>
         </div>
         <div className="flex items-center gap-2">

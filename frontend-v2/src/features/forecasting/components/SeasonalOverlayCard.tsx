@@ -1,4 +1,9 @@
 // Phase 3 — Seasonal indices + current-month actual overlay.
+//
+// Filter scope: does NOT honor tier/family/cluster — composer reads the
+// `seasonal_patterns` table with `entity_type='overall'`. Renders an
+// unfiltered FilterScopeBadge when any page-level filter is active.
+// (v2.2 Phase C audit, 2026-05-14)
 
 import {
   Bar,
@@ -10,14 +15,16 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { SeasonalOverlay } from '@/types/forecast';
+import type { FilterScope, SeasonalOverlay } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
+import { FilterScopeBadge } from './FilterScopeBadge';
 
 interface Props {
   data: SeasonalOverlay;
+  filterScope?: FilterScope;
 }
 
-export function SeasonalOverlayCard({ data }: Props) {
+export function SeasonalOverlayCard({ data, filterScope }: Props) {
   const merged = data.months.map((m, i) => ({
     month: m,
     index: data.indices[i],
@@ -35,7 +42,10 @@ export function SeasonalOverlayCard({ data }: Props) {
     <section className="mt-6">
       <div className="section-row">
         <div>
-          <h2>Seasonal pattern · current month deviation</h2>
+          <h2 className="flex items-center gap-2">
+            Seasonal pattern · current month deviation
+            <FilterScopeBadge unfiltered scope={filterScope} />
+          </h2>
           <div className="sub">{data.note}</div>
         </div>
         <div className="flex items-center gap-2">

@@ -3,11 +3,18 @@
 // Renders one card per entity (commodity_group by default — 4 visible,
 // "Show all" expands to 43 customers). Each card carries the median,
 // p5/p95 range bar, and a "P-below-threshold" severity chip.
+//
+// Filter scope: does NOT honor the active cluster/tier/family filter — the
+// composer always returns the full set of per-cluster distribution rows
+// (entity selection is via the "Show all" toggle, not the page filter).
+// Renders an unfiltered FilterScopeBadge when any page-level filter is active.
+// (v2.2 Phase C audit, 2026-05-14)
 
 import { useMemo, useState, type KeyboardEvent } from 'react';
-import type { ClusterCard, DistributionRow, ForecastDistributions } from '@/types/forecast';
+import type { ClusterCard, DistributionRow, FilterScope, ForecastDistributions } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
 import { DistributionDrawer } from './DistributionDrawer';
+import { FilterScopeBadge } from './FilterScopeBadge';
 import {
   capP95,
   defaultThreshold,
@@ -20,9 +27,10 @@ interface Props {
   initialLimit?: number;
   // Phase 4.5: per-cluster MAPE comes from `clusters` (DB-backed backtest).
   clusters?: ClusterCard[];
+  filterScope?: FilterScope;
 }
 
-export function DistributionGrid({ distributions, initialLimit = 4, clusters }: Props) {
+export function DistributionGrid({ distributions, initialLimit = 4, clusters, filterScope }: Props) {
   // Phase 4.5 audit fix #4: map per-entity MAPE from the cluster payload
   // instead of hardcoding 0.0688 on every card.
   const mapeByCluster = useMemo(() => {
@@ -55,7 +63,10 @@ export function DistributionGrid({ distributions, initialLimit = 4, clusters }: 
     <section className="mt-6">
       <div className="section-row">
         <div>
-          <h2>Per-entity distributions</h2>
+          <h2 className="flex items-center gap-2">
+            Per-entity distributions
+            <FilterScopeBadge unfiltered scope={filterScope} />
+          </h2>
           <div className="sub">
             Monte Carlo distribution per {distributions.entityType.replace('_', ' ')} for the active
             metric × horizon. Click a card for the full histogram + lineage.

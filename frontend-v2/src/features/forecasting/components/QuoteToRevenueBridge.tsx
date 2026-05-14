@@ -1,16 +1,25 @@
 // Phase 6 — Compact pipeline bridge card.
+//
+// Filter scope: does NOT honor tier/family/cluster — composer pulls the
+// whole open-quote book and a global win-rate / margin estimate; the
+// `byTier` breakdown inside the payload is a fixed share, not a tier
+// filter. Renders an unfiltered FilterScopeBadge when any page-level filter
+// is active.
+// (v2.2 Phase C audit, 2026-05-14)
 
 import { useState } from 'react';
-import type { QuoteToRevenue } from '@/types/forecast';
+import type { FilterScope, QuoteToRevenue } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
+import { FilterScopeBadge } from './FilterScopeBadge';
 
 interface Props {
   data: QuoteToRevenue;
+  filterScope?: FilterScope;
 }
 
 const HORIZONS = [30, 60, 90] as const;
 
-export function QuoteToRevenueBridge({ data }: Props) {
+export function QuoteToRevenueBridge({ data, filterScope }: Props) {
   const [horizon, setHorizon] = useState<(typeof HORIZONS)[number]>(30);
   const row =
     data.horizons.find((h) => h.horizonDays === horizon) ?? data.horizons[0];
@@ -19,7 +28,10 @@ export function QuoteToRevenueBridge({ data }: Props) {
     <section className="mt-6">
       <div className="section-row">
         <div>
-          <h2>Pipeline · Quote-to-Revenue bridge</h2>
+          <h2 className="flex items-center gap-2">
+            Pipeline · Quote-to-Revenue bridge
+            <FilterScopeBadge unfiltered scope={filterScope} />
+          </h2>
           <div className="sub">
             Open Quotes × Win Rate × Avg Margin = Expected Gross Profit, over the chosen horizon.
             Backs into the deal-empowerment story for Heiko.

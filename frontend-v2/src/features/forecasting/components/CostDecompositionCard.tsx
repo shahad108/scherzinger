@@ -1,4 +1,9 @@
 // Phase 3 — Cost decomposition multi-line.
+//
+// Filter scope: does NOT honor tier/family/cluster — composer returns a global
+// invoice aggregate (material/direct/full mfg % of revenue). Renders an
+// unfiltered FilterScopeBadge when any page-level filter is active.
+// (v2.2 Phase C audit, 2026-05-14)
 
 import {
   CartesianGrid,
@@ -10,16 +15,18 @@ import {
   YAxis,
   Legend,
 } from 'recharts';
-import type { CostDecomposition } from '@/types/forecast';
+import type { CostDecomposition, FilterScope } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
+import { FilterScopeBadge } from './FilterScopeBadge';
 
 const LAYER_COLOR = ['#3e5d80', '#9a3232', '#6c5b9a'];
 
 interface Props {
   data: CostDecomposition;
+  filterScope?: FilterScope;
 }
 
-export function CostDecompositionCard({ data }: Props) {
+export function CostDecompositionCard({ data, filterScope }: Props) {
   const merged = data.quarters.map((q, i) => {
     const row: Record<string, number | string> = { quarter: q };
     data.layers.forEach((layer) => {
@@ -32,7 +39,10 @@ export function CostDecompositionCard({ data }: Props) {
     <section className="mt-6">
       <div className="section-row">
         <div>
-          <h2>Cost decomposition · material vs full manufacturing</h2>
+          <h2 className="flex items-center gap-2">
+            Cost decomposition · material vs full manufacturing
+            <FilterScopeBadge unfiltered scope={filterScope} />
+          </h2>
           <div className="sub">
             Each layer plotted as % of revenue. The insights below are data-driven trend reads.
           </div>

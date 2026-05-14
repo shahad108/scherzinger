@@ -234,22 +234,39 @@ function AggregateView({ data, article, mode, showAll, layoutV2 }: AggregateProp
 function AggregateViewV1({ data, article, mode, showAll }: Omit<AggregateProps, 'layoutV2'>) {
   return (
     <>
-      {data.tornado && <TornadoCard tornado={data.tornado} />}
+      {data.tornado && <TornadoCard tornado={data.tornado} filterScope={data.filterScope} />}
       {data.distributions && (
-        <DistributionGrid distributions={data.distributions} clusters={data.clusters} />
+        <DistributionGrid
+          distributions={data.distributions}
+          clusters={data.clusters}
+          filterScope={data.filterScope}
+        />
       )}
-      {data.quoteToRevenue && <QuoteToRevenueBridge data={data.quoteToRevenue} />}
-      {data.marginTrajectory && <MarginTrajectoryCard data={data.marginTrajectory} />}
-      {data.costDecomposition && <CostDecompositionCard data={data.costDecomposition} />}
-      {data.seasonalOverlay && <SeasonalOverlayCard data={data.seasonalOverlay} />}
+      {data.quoteToRevenue && (
+        <QuoteToRevenueBridge data={data.quoteToRevenue} filterScope={data.filterScope} />
+      )}
+      {data.marginTrajectory && (
+        <MarginTrajectoryCard data={data.marginTrajectory} filterScope={data.filterScope} />
+      )}
+      {data.costDecomposition && (
+        <CostDecompositionCard data={data.costDecomposition} filterScope={data.filterScope} />
+      )}
+      {data.seasonalOverlay && (
+        <SeasonalOverlayCard data={data.seasonalOverlay} filterScope={data.filterScope} />
+      )}
       {data.commodityTrajectories && (
-        <CommodityTrajectoriesCard data={data.commodityTrajectories} />
+        <CommodityTrajectoriesCard
+          data={data.commodityTrajectories}
+          filterScope={data.filterScope}
+        />
       )}
-      {data.calibration && <CalibrationCard data={data.calibration} />}
+      {data.calibration && (
+        <CalibrationCard data={data.calibration} filterScope={data.filterScope} />
+      )}
       <HeroForecast hero={data.hero} mode={mode} />
       <ClusterLens clusters={data.clusters} />
-      <WalkForward panel={data.walkForward} />
-      <InputCostTrajectory data={data.inputCost} />
+      <WalkForward panel={data.walkForward} filterScope={data.filterScope} />
+      <InputCostTrajectory data={data.inputCost} filterScope={data.filterScope} />
       <ParetoLayer data={data.pareto} showAll={showAll} />
       <div id="block-renewals" data-focus-target="renewals">
         <PriceFloor rows={data.priceFloor} footnote={data.priceFloorFootnote} highlightArticle={article} />
@@ -338,22 +355,39 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
           Quote→Revenue, MarginTrajectory) visible by default; the four
           deeper diagnostics collapsed behind a single toggle. */}
       <Accordion title="Drivers & accuracy" defaultOpen={false}>
-        <WalkForward panel={data.walkForward} />
-        {data.calibration && <CalibrationCard data={data.calibration} />}
-        <BiasCard data={data.bias} />
-        {data.tornado && <TornadoCard tornado={data.tornado} />}
-        {data.distributions && (
-          <DistributionGrid distributions={data.distributions} clusters={data.clusters} />
+        <WalkForward panel={data.walkForward} filterScope={data.filterScope} />
+        {data.calibration && (
+          <CalibrationCard data={data.calibration} filterScope={data.filterScope} />
         )}
-        {data.quoteToRevenue && <QuoteToRevenueBridge data={data.quoteToRevenue} />}
-        {data.marginTrajectory && <MarginTrajectoryCard data={data.marginTrajectory} />}
+        <BiasCard data={data.bias} />
+        {data.tornado && <TornadoCard tornado={data.tornado} filterScope={data.filterScope} />}
+        {data.distributions && (
+          <DistributionGrid
+            distributions={data.distributions}
+            clusters={data.clusters}
+            filterScope={data.filterScope}
+          />
+        )}
+        {data.quoteToRevenue && (
+          <QuoteToRevenueBridge data={data.quoteToRevenue} filterScope={data.filterScope} />
+        )}
+        {data.marginTrajectory && (
+          <MarginTrajectoryCard data={data.marginTrajectory} filterScope={data.filterScope} />
+        )}
         <DiagnosticsAccordionToggle count={4}>
-          {data.seasonalOverlay && <SeasonalOverlayCard data={data.seasonalOverlay} />}
-          {data.commodityTrajectories && (
-            <CommodityTrajectoriesCard data={data.commodityTrajectories} />
+          {data.seasonalOverlay && (
+            <SeasonalOverlayCard data={data.seasonalOverlay} filterScope={data.filterScope} />
           )}
-          {data.costDecomposition && <CostDecompositionCard data={data.costDecomposition} />}
-          <InputCostTrajectory data={data.inputCost} />
+          {data.commodityTrajectories && (
+            <CommodityTrajectoriesCard
+              data={data.commodityTrajectories}
+              filterScope={data.filterScope}
+            />
+          )}
+          {data.costDecomposition && (
+            <CostDecompositionCard data={data.costDecomposition} filterScope={data.filterScope} />
+          )}
+          <InputCostTrajectory data={data.inputCost} filterScope={data.filterScope} />
         </DiagnosticsAccordionToggle>
       </Accordion>
       <Accordion title="Renewals & new product" id="block-renewals" defaultOpen={false}>

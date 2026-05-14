@@ -2,18 +2,26 @@
 //
 // Inputs sorted by |delta| desc. Positive perturbation → green; negative → red.
 // Click a bar to open the `DistributionDrawer` with the per-cluster breakdown.
+//
+// Filter scope: does NOT honor the active cluster/tier/family filter — the
+// composer aggregates the latest Monte Carlo run across all clusters; the
+// per-cluster breakdown inside each bar is a fixed dimension, not a filter.
+// Renders an unfiltered FilterScopeBadge when any page-level filter is active.
+// (v2.2 Phase C audit, 2026-05-14)
 
 import { useMemo, useState } from 'react';
-import type { TornadoBar, ForecastTornado } from '@/types/forecast';
+import type { FilterScope, TornadoBar, ForecastTornado } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
 import { DistributionDrawer } from './DistributionDrawer';
+import { FilterScopeBadge } from './FilterScopeBadge';
 import { ThresholdAlertButton } from './ThresholdAlertButton';
 
 interface Props {
   tornado: ForecastTornado;
+  filterScope?: FilterScope;
 }
 
-export function TornadoCard({ tornado }: Props) {
+export function TornadoCard({ tornado, filterScope }: Props) {
   const [activeBar, setActiveBar] = useState<TornadoBar | null>(null);
 
   const sortedBars = useMemo(() => {
@@ -35,7 +43,10 @@ export function TornadoCard({ tornado }: Props) {
     <section className="mt-4">
       <div className="section-row">
         <div>
-          <h2>Input sensitivity · Tornado</h2>
+          <h2 className="flex items-center gap-2">
+            Input sensitivity · Tornado
+            <FilterScopeBadge unfiltered scope={filterScope} />
+          </h2>
           <div className="sub">
             Each input perturbed by ±1σ historical. Bars show median Δ to the active metric over
             the chosen horizon · n={tornado.n_simulations.toLocaleString()} simulations · shock

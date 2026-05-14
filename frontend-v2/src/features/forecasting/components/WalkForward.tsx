@@ -1,12 +1,20 @@
+// Filter scope: does NOT honor the active cluster/tier/family filter — the
+// walk-forward backtest always reports every cluster (and an overall bar)
+// from `backtest_results`. Renders an unfiltered FilterScopeBadge when any
+// page-level filter is active.
+// (v2.2 Phase C audit, 2026-05-14)
+
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { BacktestPanel } from '@/types/forecast';
+import type { BacktestPanel, FilterScope } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
+import { FilterScopeBadge } from './FilterScopeBadge';
 
 interface Props {
   panel: BacktestPanel;
+  filterScope?: FilterScope;
 }
 
-export function WalkForward({ panel }: Props) {
+export function WalkForward({ panel, filterScope }: Props) {
   const { series, target, kpis, methodComparison, source } = panel;
   const isLive = source === 'live';
 
@@ -14,7 +22,10 @@ export function WalkForward({ panel }: Props) {
     <section className="mt-6">
       <div className="section-row">
         <div>
-          <h2>Walk-forward backtest · per cluster MAPE (h=3mo)</h2>
+          <h2 className="flex items-center gap-2">
+            Walk-forward backtest · per cluster MAPE (h=3mo)
+            <FilterScopeBadge unfiltered scope={filterScope} />
+          </h2>
           <div className="sub">
             Each model trained on 2022-01 → 2025-09 and tested on the holdout that follows.
             {methodComparison?.testWindow && ` Test window: ${methodComparison.testWindow}.`}

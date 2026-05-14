@@ -1,4 +1,9 @@
 // Phase 3 — Per-commodity-group quarterly margin multi-line.
+//
+// Filter scope: does NOT honor the active cluster/tier/family filter — the
+// composer always returns all four commodity groups (BKAES/BKAGG/BKAIZ/MBDIV).
+// Renders an unfiltered FilterScopeBadge when any page-level filter is active.
+// (v2.2 Phase C audit, 2026-05-14)
 
 import {
   CartesianGrid,
@@ -10,16 +15,18 @@ import {
   YAxis,
   Legend,
 } from 'recharts';
-import type { CommodityTrajectories } from '@/types/forecast';
+import type { CommodityTrajectories, FilterScope } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
+import { FilterScopeBadge } from './FilterScopeBadge';
 
 const COLORS = ['#3e5d80', '#9a3232', '#6c5b9a', '#7d8693'];
 
 interface Props {
   data: CommodityTrajectories;
+  filterScope?: FilterScope;
 }
 
-export function CommodityTrajectoriesCard({ data }: Props) {
+export function CommodityTrajectoriesCard({ data, filterScope }: Props) {
   const merged = data.quarters.map((q, i) => {
     const row: Record<string, number | string | null> = { quarter: q };
     data.groups.forEach((g) => {
@@ -32,7 +39,10 @@ export function CommodityTrajectoriesCard({ data }: Props) {
     <section className="mt-6">
       <div className="section-row">
         <div>
-          <h2>Commodity-group margin trajectories</h2>
+          <h2 className="flex items-center gap-2">
+            Commodity-group margin trajectories
+            <FilterScopeBadge unfiltered scope={filterScope} />
+          </h2>
           <div className="sub">
             One line per cluster. Trend arrows below the chart show the YoY slope.
           </div>

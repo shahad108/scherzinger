@@ -1,3 +1,8 @@
+// Filter scope: does NOT honor tier/family/cluster — composer returns global
+// internal cost-component averages (material/fertigung/fixed/full mfg).
+// Renders an unfiltered FilterScopeBadge when any page-level filter is active.
+// (v2.2 Phase C audit, 2026-05-14)
+
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import {
@@ -9,10 +14,12 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { InputCostTile, InputCostTrajectory as InputCostTrajectoryData } from '@/types/forecast';
+import type { FilterScope, InputCostTile, InputCostTrajectory as InputCostTrajectoryData } from '@/types/forecast';
+import { FilterScopeBadge } from './FilterScopeBadge';
 
 interface Props {
   data: InputCostTrajectoryData;
+  filterScope?: FilterScope;
 }
 
 const MONTHS = [
@@ -61,7 +68,7 @@ function renderBold(text: string) {
   );
 }
 
-export function InputCostTrajectory({ data }: Props) {
+export function InputCostTrajectory({ data, filterScope }: Props) {
   const { tiles, stress } = data;
   const [active, setActive] = useState<InputCostTile | null>(null);
 
@@ -69,7 +76,10 @@ export function InputCostTrajectory({ data }: Props) {
     <>
       <div className="section-row">
         <div>
-          <h2>Input cost trajectory · next 12 months</h2>
+          <h2 className="flex items-center gap-2">
+            Input cost trajectory · next 12 months
+            <FilterScopeBadge unfiltered scope={filterScope} />
+          </h2>
           <div className="sub">
             Your revenue forecasts are net of these inputs. Pass-through % = how much is
             contractually indexed; the rest is absorbed in margin.

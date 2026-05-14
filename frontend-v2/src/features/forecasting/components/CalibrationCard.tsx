@@ -3,22 +3,32 @@
 // The DB doesn't currently store pred/actual pairs, so we cannot compute a
 // real prediction-interval hit rate. This panel now shows the real
 // per-cluster MAPE and directional accuracy from `backtest_results`.
+//
+// Filter scope: does NOT honor the active cluster/tier/family filter — the
+// composer always emits a row per cluster. Renders an unfiltered
+// FilterScopeBadge when any page-level filter is active.
+// (v2.2 Phase C audit, 2026-05-14)
 
-import type { CalibrationPayload } from '@/types/forecast';
+import type { CalibrationPayload, FilterScope } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
+import { FilterScopeBadge } from './FilterScopeBadge';
 import { ThresholdAlertButton } from './ThresholdAlertButton';
 
 interface Props {
   data: CalibrationPayload;
+  filterScope?: FilterScope;
 }
 
-export function CalibrationCard({ data }: Props) {
+export function CalibrationCard({ data, filterScope }: Props) {
   const isLive = data.source === 'live';
   return (
     <section className="mt-6">
       <div className="section-row">
         <div>
-          <h2>{data.title ?? 'Forecast accuracy by cluster'}</h2>
+          <h2 className="flex items-center gap-2">
+            {data.title ?? 'Forecast accuracy by cluster'}
+            <FilterScopeBadge unfiltered scope={filterScope} />
+          </h2>
           <div className="sub">
             {data.subtitle ??
               'How close the forecast was to what actually happened, for each cluster. Lower MAPE = tighter forecast.'}
