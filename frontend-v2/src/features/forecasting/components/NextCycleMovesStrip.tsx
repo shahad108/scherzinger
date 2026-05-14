@@ -1,27 +1,24 @@
 // NextCycleMovesStrip — 3-5 ranked recommendations tied to the current
 // forecast view, each stamped with the source signal that drove the
-// recommendation. Click "Open" → dispatches an ActionIntent the Action
-// Center can pick up.
+// recommendation. Click "Open" → routes through useUiAction() so the
+// global ActionFeedback drawer host opens with the matching form
+// (partial_accept / queue_renewal / …) populated from the move's
+// actionIntent.payload.
 //
 // Closes the diagnostic → action gap the v2 review called out. Without
 // this strip, Frank has to leave the page to act.
+//
+// v2.2 Phase B: replaced the no-op `forecast:action-intent` window event
+// with a direct useUiAction() call. The intent shape comes from
+// `mapForecastActionIntent()`.
 
 import { ArrowRight } from 'lucide-react';
 import type { NextMove } from '@/types/forecast';
+import { useUiAction } from '@/hooks/useUiAction';
+import { mapForecastActionIntent } from '../lib/mapActionIntent';
 
 interface Props {
   moves: NextMove[] | undefined;
-}
-
-// Fire a window event the Action Center can listen for. Keeps wiring loose
-// for now; the existing useUiAction plumbing can subscribe to this event
-// in a follow-up without forcing this component to import it directly.
-function dispatchIntent(move: NextMove) {
-  window.dispatchEvent(
-    new CustomEvent('forecast:action-intent', {
-      detail: { intent: move.actionIntent, move },
-    }),
-  );
 }
 
 function formatEur(value: number): string {
@@ -31,6 +28,7 @@ function formatEur(value: number): string {
 }
 
 export function NextCycleMovesStrip({ moves }: Props) {
+  const runAction = useUiAction();
   if (!moves || moves.length === 0) return null;
   return (
     <section data-testid="next-cycle-moves-strip" className="mb-4">
@@ -59,7 +57,7 @@ export function NextCycleMovesStrip({ moves }: Props) {
             </div>
             <button
               type="button"
-              onClick={() => dispatchIntent(move)}
+              onClick={() => runAction(mapForecastActionIntent(move))}
               className="mt-3 inline-flex items-center justify-center gap-1 self-end rounded-md bg-[var(--rose-deep)] px-3 py-1.5 text-[12px] font-semibold text-white hover:opacity-90"
             >
               Open <ArrowRight size={12} />

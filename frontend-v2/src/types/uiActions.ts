@@ -46,6 +46,12 @@ export interface ActionDrawerContext {
   /** Phase 7 — reviewer panel target. */
   panelId?: string;
   panelLabel?: string;
+  /** v2.2 — NextCycleMovesStrip → ActionCenter. Articles referenced by the
+   *  move (renewal queue can carry multiple). */
+  articles?: string[];
+  /** v2.2 — rejection-code provenance for moves driven by win/loss data. */
+  rejectionCode?: 'PA' | 'PR';
+  rejectionCount?: number;
 }
 
 export interface ActionDrawerIntent {

@@ -306,7 +306,8 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
       />
       <HeroForecast hero={data.hero} mode={mode} cluster={activeCluster} enableActualEntry />
       {/* v2.1 — Prescriptive bridge directly under the forecast: "what should
-          I do this cycle?" Each card emits a forecast:action-intent event. */}
+          I do this cycle?" v2.2 Phase B: each card now dispatches a typed
+          ActionIntent via useUiAction(), opening the global Action drawer. */}
       <NextCycleMovesStrip moves={data.nextMoves} />
       {data.pvm && (
         <PVMWaterfall

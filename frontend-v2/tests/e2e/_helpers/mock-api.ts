@@ -48,10 +48,12 @@ function v21FixtureExtras() {
       windowMonths: 6,
       footnote: 'Tracking signal = cumulative ME / MAD. |value| > 4 conventionally flags bias.',
     },
+    // v2.2 Phase B — actionIntent.kind uses real FormDrawerKind values so the
+    // mapped ActionIntent opens the global ActionFeedback drawer host.
     nextMoves: [
-      { id: 'm1', rank: 1, cluster: 'BKAGG', headline: 'BKAGG cluster: 12 SKUs below cost-floor', forecastImpactEur: 420_000, sourceSignal: 'cost crossing list price', actionIntent: { kind: 'open_studio', payload: { cluster: 'BKAGG' } } },
-      { id: 'm2', rank: 2, cluster: null, headline: '38% of quotes lost to PA-code last 90d', forecastImpactEur: 280_000, sourceSignal: 'win-loss · price too high', actionIntent: { kind: 'open_quotes', payload: { reason: 'PA' } } },
-      { id: 'm3', rank: 3, cluster: 'BKAES', headline: 'BKAES: 8 renewals overdue', forecastImpactEur: 180_000, sourceSignal: 'renewal queue', actionIntent: { kind: 'open_renewals', payload: { cluster: 'BKAES' } } },
+      { id: 'm1', rank: 1, cluster: 'BKAGG', headline: 'BKAGG cluster: 12 SKUs below cost-floor', forecastImpactEur: 420_000, sourceSignal: 'cost crossing list price', actionIntent: { kind: 'partial_accept', payload: { cluster: 'BKAGG', sourceScreen: 'forecasting', sourceKind: 'next-cycle-move', headline: 'BKAGG cluster: 12 SKUs below cost-floor' } } },
+      { id: 'm2', rank: 2, cluster: null, headline: '38% of quotes lost to PA-code last 90d', forecastImpactEur: 280_000, sourceSignal: 'win-loss · price too high', actionIntent: { kind: 'partial_accept', payload: { sourceScreen: 'forecasting', sourceKind: 'next-cycle-move', headline: '38% of quotes lost to PA-code last 90d', rejectionCode: 'PA', rejectionCount: 38 } } },
+      { id: 'm3', rank: 3, cluster: 'BKAES', headline: 'BKAES: 8 renewals overdue', forecastImpactEur: 180_000, sourceSignal: 'renewal queue', actionIntent: { kind: 'queue_renewal', payload: { cluster: 'BKAES', sourceScreen: 'forecasting', sourceKind: 'next-cycle-move', headline: 'BKAES: 8 renewals overdue', articles: ['A-101', 'A-102'] } } },
     ],
   };
 }
