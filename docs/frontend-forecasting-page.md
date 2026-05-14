@@ -1,8 +1,22 @@
 # Frontend Forecasting Page — Reference
 
-> Last updated: 2026-05-14. Mirrors the state of `forecast-redesign-v2` branch at HEAD `b9118b4`.
+> Last updated: 2026-05-15. Mirrors the state of `forecast-redesign-v2` branch after the v2.2 cycle (HEAD ≥ `9ae2d24`).
 >
 > Source of truth lives in `frontend-v2/src/features/forecasting/`. This document indexes every component the page can render, in render order, with data sources and interactions.
+
+## What v2.2 shipped
+
+- **Real-data composers** (Phase A): `planTracking`, `pocketWaterfall`, `bias`, `nextMoves`, `pipelineP50` are now backed by live DB queries in `scherzinger-platform/backend/services/forecast/` (previously placeholder fixtures).
+- **NextCycleMovesStrip → Action Center** (Phase B): clicking "Open" routes through `useUiAction()` → `mapForecastActionIntent()` → `ActionDrawerHost`, replacing the no-op window event. Strip now exposes `role="region"` + `aria-label` + tabIndex so the horizontal scroller is keyboard-reachable.
+- **Filter-scope badges** (Phase C): 10 cards that don't honor `tier`/`family`/`cluster` filters now render a `FilterScopeBadge` indicating unfiltered status: `MarginTrajectoryCard`, `CostDecompositionCard`, `SeasonalOverlayCard`, `CommodityTrajectoriesCard`, `InputCostTrajectory`, `QuoteToRevenueBridge`, `WalkForward`, `CalibrationCard`, `TornadoCard`, `DistributionGrid`.
+- **New diagnostic cards**:
+  - **`WinLossDriverCard`** (Phase D, in Drivers accordion after `BiasCard`) — PA/PR rejection-code lens by cluster + trailing-12mo sparkline (`role="img"` + a11y label).
+  - **`ErosionProjectionCard`** (Phase E, in Renewals accordion after `PriceFloor`) — list-price vs cost-floor projection per cluster + crossover/safe/cadence chips.
+  - **`AtRiskRevenueBar`** (Phase F, above `ParetoLayer`) — tier-stacked at-risk revenue with 4 tier rows.
+  - **FVA summary strip** (Phase G, inside `OverrideLog` accordion above the audit table) — quarterly FVA tally with tone-colored border.
+- **Annotation layer** (Phase H): right-click any HeroForecast month or ClusterLens card opens `AnnotationPopover`. Keyboard fallback: `+ Add note` button below the hero chart (`aria-label="Add note for YYYY-MM"`). Backed by `/api/v1/forecast/annotations` (GET/POST/DELETE) and `services/forecast/annotations.py` JSON store.
+- **Briefing persona toggle** (Phase I): `BriefingButton` modal now exposes Persona (`analyst_memo` / `manuel_1pager`) and Language (`en` / `de`) selects. Picking `manuel_1pager` auto-flips language to `de` until the user touches it.
+- **Restructuring** (Phase J): the standalone "Per customer" tab is gone. ParetoLayer customer rows now set `?customer=<id>`, which the page shell uses to mount `CustomerForecastDetail` as a drill-in drawer. `ScenarioCompareView` removed.
 
 ## 1. Entry point
 
@@ -16,7 +30,8 @@
 |---|---|---|
 | `mode` | `revenue` | One of `revenue` · `margin` · `volume`. Drives the entire shell — chart units, KPI tiles, axes. |
 | `horizon` | `12` | Forecast horizon months (3 / 6 / 12). |
-| `tab` | `aggregate` | `aggregate` shows the redesign body. `customers` swaps to `PerCustomerTab`. |
+| `tab` | `aggregate` | **v2.2: deprecated.** The forecasting page is now a single view — `?tab=customers` is silently stripped at navigation time. Customer drill-in is reached via `?customer=<id>` instead. |
+| `customer` | — | **v2.2** — opens `CustomerForecastDetail` drawer for the given customer id. Set by `ParetoLayer` row clicks (`data-testid="pareto-customer-detail-<id>"`). |
 | `scenario_id` | — | When set, BFF re-runs the composer with the scenario perturbation; `ScenarioActiveBanner` appears. |
 | `tier` | — | Filter pill (`A`/`B`/`C`/`D`). Plumbed into the BFF query. |
 | `family` | — | Product-family filter. Plumbed into the BFF query. |
@@ -43,12 +58,13 @@ BriefingButton                          (top-right of the strip)
 Deep-link banner                        (when queue || article)
 ScenarioLibrary                         (single mount — Phase 8 dedup)
 ScenarioActiveBanner                    (when scenarioId param is set)
-ScenarioCompareView
 ModeToggle                              (revenue/margin/volume + horizon)
-[Tablist: "Aggregate & clusters" | "Per customer"]
-└─ AggregateView (V1 or V2) | PerCustomerTab
+AggregateView (V1 or V2)                ← single view in v2.2 (no tablist)
 CrossLinkStrip                          (footer)
+CustomerForecastDetail                  (when ?customer=<id> is set — drill-in drawer)
 ```
+
+> v2.2 removed `ScenarioCompareView` (unused) and the "Per customer" tab (now a drill-in via `?customer=<id>` from `ParetoLayer`).
 
 ---
 
@@ -70,6 +86,8 @@ Source: `AggregateViewV2` in `index.tsx:267`. Renders only when `?layout=v1` is 
 | 7a | TornadoCard | `components/TornadoCard.tsx` | Input-sensitivity tornado: horizontal bars showing how each driver moves the forecast (Steel price, Volume mix, FX, etc.). Number of bars from `tornado.bars`. Per-bar MAPE-by-cluster chip. | **Click a bar** → opens `DistributionDrawer` with the full Monte Carlo distribution for that driver. |
 | 7b | DistributionGrid | `components/DistributionGrid.tsx` | Per-entity Monte Carlo distribution cards (one per cluster). Each card shows p5/median/p95 range bar + sparkline + headline simulated value. n_simulations badge. | "Show all" toggle to expand from preview-mode to full grid. |
 | 7c | CalibrationCard | `components/CalibrationCard.tsx` | Per-cluster backtest accuracy (was "CI calibration"). 4 rows of MBDIV ±σ bands, real per-cluster directional accuracy + MAPE. | Read-only. |
+| 7c′ | **BiasCard** (v2.1) | `components/BiasCard.tsx` | Per-cluster tracking-signal table (CME/MAD, hit rate, trailing-6mo direction). | Read-only. |
+| 7c″ | **WinLossDriverCard** (v2.2 Phase D) | `components/WinLossDriverCard.tsx` | PA/PR rejection-code lens — per-cluster lost-quote breakdown over the trailing 90d, plus a PA/PR sparkline per row. Selectors: `data-testid="win-loss-card"`, `win-loss-row[data-cluster]`, `win-loss-pa`, `win-loss-pr`, `win-loss-sparkline` (role="img"). Source: BFF `winLoss` field, composed from `services/forecast/win_loss.py`. | Read-only. |
 | 7d | WalkForward | `components/WalkForward.tsx` | Per-cluster MAPE backtest bar chart. Trained 2022-01 → 2025-09, holdout test. Target reference line. | Read-only. |
 | 7e | MarginTrajectoryCard | `components/MarginTrajectoryCard.tsx` | Quarterly DB2 margin with 4-quarter WMA projection + floor band. | Read-only. |
 | 7f | CostDecompositionCard | `components/CostDecompositionCard.tsx` | Cost structure breakdown (multi-line over time) + insights list. | Read-only. |
@@ -79,9 +97,11 @@ Source: `AggregateViewV2` in `index.tsx:267`. Renders only when `?layout=v1` is 
 | 7j | QuoteToRevenueBridge | `components/QuoteToRevenueBridge.tsx` | Quote-to-revenue funnel: trailing 30/60/90mo cumulative. Tabbed by closing-horizon. | Tab switching between horizons. |
 | 8 | **Accordion: "Renewals & new product"** | `components/Accordion.tsx` (id=`block-renewals`) | Collapsed by default. Houses contract-edge artifacts. | Header expands. Auto-opens when deep-linked via `?queue=renewals`. |
 | 8a | PriceFloor | `components/PriceFloor.tsx` | Top 10 renewal articles per cluster/tier. Columns: Tier · Customer · Article · Current price · Floor · Headroom · Movable share · Cluster · Next. CSV export. Highlights the article from `?article=`. | "Queue" / "Edit" row actions. CSV download. |
+| 8a′ | **ErosionProjectionCard** (v2.2 Phase E) | `components/ErosionProjectionCard.tsx` | List-price vs cost-floor projection per cluster over the next 12 months. Per-row chips: crossover-month (when list crosses floor), safe (when projection holds), and update-cadence. Selectors: `data-testid="erosion-projection-card"`, `erosion-row[data-cluster]`, `erosion-chart`, `erosion-crossover-chip`, `erosion-safe-chip`, `erosion-cadence-chip`. Source: BFF `erosionProjection`, composed from `services/forecast/erosion_projection.py`. | Read-only. |
 | 8b | NewProductForecast | `components/NewProductForecast.tsx` | Cluster-anchor recommendation cards (similarity score, sample size) + 12mo projection area chart. | "Pick this anchor" picker per card. |
-| 9 | **ParetoLayer** | `components/ParetoLayer.tsx` | Customer & SKU tables: LTM revenue · % booked · 12mo forecast · YoY · trend (volume/price split) · renewal due · confidence. Top tier by default; `?show_all=1` expands. | Per-row actions: "Open Studio" or "Queue". Tier tabs at top. |
-| 10 | **OverrideLog** | `components/OverrideLog.tsx` (V2 only) | `Accordion` collapsed by default. Audit table of every override Frank has entered. Columns: Month · Mode · Actual · Adj % · Source · Reason · Author · FVA Δ · Delete. Empty state directs the user to click the hero chart. Renders an error block with Retry when `useForecastOverrides` fails. | **Delete** per row (each row owns its own `useDeleteOverride` mutation, so pending-state is per-row). **Retry** button on fetch error. |
+| 8c | **AtRiskRevenueBar** (v2.2 Phase F) | `components/AtRiskRevenueBar.tsx` | Tier-stacked at-risk-vs-safe revenue bar with one legend row per tier (A/B/C/D), each showing customer count + at-risk share. Selectors: `data-testid="at-risk-revenue-card"`, `at-risk-revenue-subtitle`, `at-risk-revenue-chart`, `at-risk-tier-row[data-tier]`. Source: BFF `atRiskRevenue`, composed from `services/forecast/at_risk_revenue.py`. | Read-only. |
+| 9 | **ParetoLayer** | `components/ParetoLayer.tsx` | Customer & SKU tables: LTM revenue · % booked · 12mo forecast · YoY · trend (volume/price split) · renewal due · confidence. Top tier by default; `?show_all=1` expands. **v2.2:** Customer-id buttons (`data-testid="pareto-customer-detail-<id>"`) set `?customer=<id>` to open the `CustomerForecastDetail` drawer (drilled-in from the former PerCustomerTab). | Per-row actions: "Open Studio" or "Queue". Tier tabs at top. Customer-id button opens drill-in drawer. |
+| 10 | **OverrideLog** | `components/OverrideLog.tsx` (V2 only) | `Accordion` collapsed by default. **v2.2 Phase G:** Above the audit table, an FVA summary strip (`data-testid="override-fva-summary"[data-tone]`) shows this quarter's entered / improved / worsened counts + net FVA Δpp with a tone-colored border (pos/neg/flat). The audit table columns: Month · Mode · Actual · Adj % · Source · Reason · Author · FVA Δ · Delete. Empty state directs the user to click the hero chart. Renders an error block with Retry when `useForecastOverrides` fails. | **Delete** per row (each row owns its own `useDeleteOverride` mutation, so pending-state is per-row). **Retry** button on fetch error. |
 | 11 | **AssumptionsFooter** | `components/AssumptionsFooter.tsx` | Compact one-line-per-assumption strip — "Data-through · 2026-04-30" etc. | Read-only. |
 | 12 | **MethodologyPanel** | `components/MethodologyPanel.tsx` | Collapsible deep-dive: model lineage, sources, assumptions, accuracy metrics. | Click header to expand. |
 
@@ -117,15 +137,40 @@ V1 will be deleted after Frank signs off on V2 in production.
 
 ---
 
-## 4. Per-customer tab
+## 4. Customer drill-in (v2.2)
 
-Source: `components/PerCustomerTab.tsx`. Renders when `?tab=customers`.
+Source: `CustomerForecastDetail` exported from `components/PerCustomerTab.tsx`. Renders when `?customer=<id>` is set; the page shell mounts it as a side drawer (`data-testid="customer-detail"`).
 
-- "Top customers at decline risk" — sorted by joint risk `max(P(churn 4Q), P(major decline))`.
-- Drill-in detail modal per customer.
+- Triggered by `ParetoLayer` customer-id buttons (`data-testid="pareto-customer-detail-<id>"`).
+- "Top customers at decline risk" plus single-customer summary — sorted by joint risk `max(P(churn 4Q), P(major decline))`.
 - Risk-tier chip per row (`components/RiskTierChip.tsx`).
-- Data: `useForecastCustomers` hook; `pChurn4Q`/`pDecline4Q` fields. AUC-ROC 0.93 badge advertised on the page.
-- Currently the **only** place churn surfaces in the page; PVMWaterfall surfaces it as a delta bar but does not deep-link here yet.
+- Data: `useForecastCustomers` hook; `pChurn4Q` / `pDecline4Q` fields. AUC-ROC 0.93 badge advertised on the page.
+- Closing the drawer strips `?customer` from the URL.
+- The standalone "Per customer" tab was removed in v2.2 Phase J — `?tab=customers` is silently stripped at navigation time.
+
+---
+
+## 4a. Annotation layer (v2.2 Phase H)
+
+Source: `components/AnnotationPopover.tsx` + `data/api/useForecastAnnotations.ts` + backend `api/v1/forecast_annotations.py` (service `services/forecast/annotations.py`, JSON store `data/forecast-annotations.json`).
+
+- **Discoverable path**: right-click any month on `HeroForecast` (chart container has `onContextMenu`). Right-click any `ClusterLens` card.
+- **Keyboard fallback**: below the hero chart, the `+ Add note` button (`data-testid="hero-add-annotation"`, `aria-label="Add note for YYYY-MM"`) opens the same popover for the most-recently-hovered month. Disabled until a month has been hovered.
+- **Popover** (`data-testid="annotation-popover"`, `role="dialog"`): lists existing annotations for the target, lets the user add a new one, and supports delete. Escape closes.
+- **Endpoints**: `GET /api/v1/forecast/annotations[?target_kind=&target_value=]`, `POST` (auth required, author stamped from JWT), `DELETE /:id` (auth required).
+- **Out of scope**: per-author ownership enforcement on delete (single-tenant demo).
+
+---
+
+## 4b. Briefing persona toggle (v2.2 Phase I)
+
+Source: `components/BriefingButton.tsx`. The briefing modal now exposes:
+
+- `data-testid="briefing-persona"` — select with `analyst_memo` (default — full analyst memo) or `manuel_1pager` (short BU-lead one-pager).
+- `data-testid="briefing-language"` — select with `en` (default) or `de`.
+- Picking `manuel_1pager` auto-flips language to `de` until the user manually picks one.
+- Endpoint: `POST /api/v1/forecast/briefing` (model: `BriefingRequest` with `Literal["manuel_1pager","analyst_memo"]` persona + `Literal["de","en"]` language).
+- Receipt shows queued job id + a download link (`data-testid="briefing-download-link"`) once available.
 
 ---
 
@@ -182,7 +227,16 @@ Backend: FastAPI router `scherzinger-platform/backend/api/v1/forecast_overrides.
 | **ModeToggle** | `components/ModeToggle.tsx` | Below scenario rows | Revenue/Margin/Volume mode + 3/6/12mo horizon dropdown. Writes to URL. |
 | **ScenarioLibrary** | `components/ScenarioLibrary.tsx` | After ModeToggle | Saved-scenarios picker strip. "Create", "Apply", "Edit" actions. Opens `ScenarioBuilder` drawer. |
 | **ScenarioBuilder** | `components/ScenarioBuilder.tsx` | Right-side drawer | Scenario creation form: name + driver multipliers + horizon. |
-| **ScenarioCompareView** | `components/ScenarioCompareView.tsx` | After ScenarioLibrary | Side-by-side scenario comparison (wishlist #2). |
+| **CustomerForecastDetail** | `components/PerCustomerTab.tsx` | Drawer when `?customer=<id>` | v2.2 drill-in from `ParetoLayer` (formerly the "Per customer" tab). |
+| **AnnotationPopover** | `components/AnnotationPopover.tsx` | Popover on right-click of HeroForecast / ClusterLens, or keyboard fallback | v2.2 — comment / note layer; `role="dialog"`. |
+| **PlanTrackingStrip** | `components/PlanTrackingStrip.tsx` | Above the hero strip | v2.1 — plan vs actual + cumulative gap (now real-data backed by `composer.py` plan-tracking). |
+| **PocketWaterfallCard** | `components/PocketWaterfallCard.tsx` | In the diagnostics accordion | v2.1 — list → quoted → booked → invoiced → DB2 leakage waterfall (real-data). |
+| **NextCycleMovesStrip** | `components/NextCycleMovesStrip.tsx` | Below the hero | v2.1 / v2.2 Phase B — 3-5 ranked moves; "Open" routes through `useUiAction()` → `ActionDrawerHost`. Scroller exposed via `role="region"` + tabIndex. |
+| **BiasCard** | `components/BiasCard.tsx` | Drivers accordion | v2.1 — tracking-signal table (real-data). |
+| **WinLossDriverCard** | `components/WinLossDriverCard.tsx` | Drivers accordion | v2.2 — PA/PR rejection lens. |
+| **ErosionProjectionCard** | `components/ErosionProjectionCard.tsx` | Renewals accordion | v2.2 — list-price erosion projection. |
+| **AtRiskRevenueBar** | `components/AtRiskRevenueBar.tsx` | Above ParetoLayer | v2.2 — tier-stacked at-risk revenue. |
+| **FilterScopeBadge** | `components/FilterScopeBadge.tsx` | Header of 10+ cards (Phase C) | v2.2 — chip noting whether the card honors the active `tier`/`family`/`cluster` filter. |
 | **CrossLinkStrip** | `components/CrossLinkStrip.tsx` | Footer | Links out to Action Center, Margin Cockpit, Quotes. |
 | **ThresholdAlertButton** | `components/ThresholdAlertButton.tsx` | Used inside specific cards | "Notify me when X crosses Y" — sets a server-side alert (wishlist #5). |
 | **AccuracyBadge** | `components/AccuracyBadge.tsx` | Used inside cards (ClusterLens, etc.) | Reusable accuracy chip (MAPE / AUC / calibration hit rate). Tone: status/amber/red. |
@@ -200,20 +254,25 @@ Backend: FastAPI router `scherzinger-platform/backend/api/v1/forecast_overrides.
 
 | Layer | Location | Count |
 |---|---|---|
-| **Vitest unit** | `frontend-v2/src/features/forecasting/components/*.test.tsx`, `hooks/*.test.ts`, `src/tests/forecasting/*` | 194 tests across 52 files (full repo) — incl. `HeroForecast.test.tsx`, `ActualEntryPanel.test.tsx`, `HeroKPIStrip.test.tsx`, `PVMWaterfall.test.tsx`, `TopSKUsForecastTable.test.tsx`, `OverrideLog.test.tsx`, `Accordion.test.tsx`, `useFVAGuardrail.test.ts`, `use-forecast-overrides.test.tsx`. |
-| **Playwright E2E** | `frontend-v2/tests/e2e/forecasting-actual-entry.spec.ts` | 2 — layout-first-viewport assertion + click-to-actual round trip with FVA guardrail and reload persistence. |
+| **Vitest unit** | `frontend-v2/src/features/forecasting/components/*.test.tsx`, `hooks/*.test.ts`, `src/tests/forecasting/*` | 269 tests across 64 files (full repo as of v2.2). New v2.2 unit tests: `WinLossDriverCard.test.tsx`, `ErosionProjectionCard.test.tsx`, `AtRiskRevenueBar.test.tsx`, `AnnotationPopover.test.tsx`, `BriefingButton.test.tsx`, `NextCycleMovesStrip.test.tsx`, `BiasCard.test.tsx`, `PocketWaterfallCard.test.tsx`. |
+| **Playwright E2E** | `frontend-v2/tests/e2e/forecasting-actual-entry.spec.ts`, `forecasting-v2-1.spec.ts`, `forecasting-v2-2.spec.ts` | 10 specs total. v2.1 (NextCycleMovesStrip → Action Center drawer round-trip, 3 specs). v2.2 (WinLoss, Erosion, AtRisk, FVA strip, AnnotationPopover keyboard fallback, briefing persona toggle, single-view tablist + customer drill-in, 7 specs). |
 | **Playwright visual** | `frontend-v2/tests/e2e/forecasting-visual.spec.ts` | 2 — first-viewport baseline + panel-open baseline. PNG snapshots in `forecasting-visual.spec.ts-snapshots/`. |
 | **Pytest (overrides API)** | `scherzinger-platform/tests/services/test_overrides.py`, `tests/api/test_forecast_overrides.py` | 23 — service CRUD, concurrent writes (20 threads), auth, 404 on unknown delete, FVA scoring bands, client-`author`-ignored. |
+| **Pytest (v2.2 services)** | `tests/services/test_win_loss.py`, `test_erosion_projection.py`, `test_at_risk_revenue.py`, `test_annotations.py`, `test_fva_summary.py`, `test_pocket_waterfall.py`, `test_plan_tracking.py`, `test_pipeline_p50.py`, `test_next_moves.py`, `test_bias.py` | Service-layer coverage for every new composer / data feed. |
+| **Pytest (v2.2 API)** | `tests/api/test_forecast_annotations.py` | 6 — POST/GET/DELETE roundtrip, empty-body rejection, bad-target-kind rejection, writes-require-auth, client-`author`-ignored, unknown-delete 404. |
 
 ---
 
 ## 8. Open follow-ups (documented but not yet shipped)
 
-- **Churn as stacked-negative band** in `HeroForecast` — needs BFF to expose a per-month churn-forecast series; currently only `PVMWaterfall` and `PerCustomerTab` surface churn.
+- **Churn as stacked-negative band** in `HeroForecast` — needs BFF to expose a per-month churn-forecast series; currently only `PVMWaterfall` and the customer drill-in surface churn.
 - **Real ML retrain pipeline** wired to the `forecast:retrain-requested` window event — backend job queue.
-- **`fvaDelta` from actual backtest** — `_score_fva` is currently a heuristic stub.
-- **Migrate JSON store → analytics warehouse table** — the JSON file is fine for demo / single-process, but not for multi-worker prod.
+- **`fvaDelta` from actual backtest** — `_score_fva` is currently a heuristic stub. Phase G's FVA summary strip consumes whatever `fvaDelta` is at the time; accuracy improves for free when the real cycle lands.
+- **Migrate JSON store → analytics warehouse table** — applies to `forecast-overrides.json`, `plan.json`, and the new (Phase H) `forecast-annotations.json`. Fine for demo / single-process, not for multi-worker prod.
+- **Annotation ownership enforcement** — `DELETE /forecast/annotations/:id` currently allows any authed user to delete any annotation. Acceptable for single-tenant Scherzinger demo; needs author check for multi-tenant.
+- **Pricing-studio + margin-cockpit filter propagation** — reuse the `FilterScopeBadge` primitive (separate plan).
 - **Delete `AggregateViewV1`** — once Frank signs off on V2.
+- **Right-click annotation E2E** — covered by `HeroForecast.test.tsx` (unit) + structurally in `forecasting-v2-2.spec.ts`; the discoverable mouse path works in real browsers but the Recharts hover/contextmenu combo is flaky under Playwright (chart `mouseLeave` clears `hoverMonth` before contextmenu fires).
 - **Pre-existing `dangerouslySetInnerHTML`** on movers in `HeroForecast.tsx` was *fixed* in Phase 9 (commit `38a8144`) — `renderMoverSub` now emits real `<strong>` JSX nodes.
 
 ---
@@ -243,7 +302,17 @@ frontend-v2/src/features/forecasting/
 │   ├── ParetoLayer.tsx                    ← customers + SKUs Pareto tables
 │   ├── PriceFloor.tsx                     ← renewals top-10
 │   ├── NewProductForecast.tsx             ← cluster-anchor cards
-│   ├── OverrideLog.tsx                    ← V2 audit table
+│   ├── OverrideLog.tsx                    ← V2 audit table (v2.2: + FVA summary strip)
+│   ├── WinLossDriverCard.tsx              ← v2.2 PA/PR rejection lens
+│   ├── ErosionProjectionCard.tsx          ← v2.2 list-price erosion projection
+│   ├── AtRiskRevenueBar.tsx               ← v2.2 tier-stacked at-risk revenue
+│   ├── AnnotationPopover.tsx              ← v2.2 note layer (right-click / keyboard)
+│   ├── PlanTrackingStrip.tsx              ← v2.1 plan vs actual
+│   ├── PocketWaterfallCard.tsx            ← v2.1 pocket-margin waterfall
+│   ├── NextCycleMovesStrip.tsx            ← v2.1/v2.2 ranked moves → Action Center
+│   ├── BiasCard.tsx                       ← v2.1 tracking-signal table
+│   ├── FilterScopeBadge.tsx               ← v2.2 unfiltered chip
+│   ├── DiagnosticsAccordionToggle.tsx     ← v2.1 nested toggle
 │   ├── PageHead.tsx                       ← header + filter pills
 │   ├── MarketDirectionStrip.tsx           ← market tiles row
 │   ├── MarketTileDrawer.tsx               ← tile detail drawer
