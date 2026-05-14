@@ -80,7 +80,9 @@ def create_override(payload: dict[str, Any]) -> dict[str, Any]:
         "source": payload["source"],
         "confidence": payload["confidence"],
         "reason": payload["reason"].strip(),
-        "author": payload.get("author") or "Frank",
+        # Router stamps author from JWT; "unknown" is only a defensive fallback
+        # for direct service callers (e.g. seed scripts / future batch jobs).
+        "author": payload.get("author") or "unknown",
         "createdAt": datetime.now(timezone.utc).isoformat(),
         "fvaDelta": None,
     }

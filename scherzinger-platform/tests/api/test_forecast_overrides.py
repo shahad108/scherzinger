@@ -53,7 +53,10 @@ def test_post_get_patch_delete_roundtrip(tmp_path, monkeypatch):
         "/api/v1/forecast/overrides", json=payload, headers=_csrf_headers(client)
     )
     assert r.status_code == 201, r.text
-    oid = r.json()["id"]
+    body = r.json()
+    oid = body["id"]
+    # Author must be derived from the JWT session, not a client-supplied value.
+    assert body["author"] and body["author"] != "Frank-spoof"
 
     # GET stays open (read endpoints mirror other forecast reads).
     r2 = client.get("/api/v1/forecast/overrides")
@@ -139,6 +142,39 @@ def test_writes_require_auth(monkeypatch, tmp_path):
 
     r3 = anon.delete("/api/v1/forecast/overrides/whatever", headers=csrf)
     assert r3.status_code == 401, r3.text
+
+
+def test_post_ignores_client_supplied_author(monkeypatch, tmp_path):
+    """Client cannot spoof the author field — it must come from the JWT."""
+    import pytest
+
+    from backend.services.forecast import overrides
+
+    store = tmp_path / "overrides.json"
+    store.write_text("[]")
+    monkeypatch.setattr(overrides, "STORE_PATH", store)
+
+    client = _login_frank()
+    if client is None:
+        pytest.skip("frank user not seeded — run scripts/seed_auth.py")
+
+    r = client.post(
+        "/api/v1/forecast/overrides",
+        json={
+            "month": "2026-08",
+            "cluster": None,
+            "mode": "revenue",
+            "actual": 100,
+            "modelP50": 90,
+            "source": "manual",
+            "confidence": "low",
+            "reason": "client supplied author should be ignored",
+            "author": "attacker",  # extra field — pydantic will ignore by default
+        },
+        headers=_csrf_headers(client),
+    )
+    assert r.status_code == 201, r.text
+    assert r.json()["author"] != "attacker"
 
 
 def test_delete_unknown_returns_404(monkeypatch, tmp_path):

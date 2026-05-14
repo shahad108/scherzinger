@@ -18,7 +18,8 @@ class OverrideIn(BaseModel):
     source: Literal["erp", "manual", "contracted", "other"]
     confidence: Literal["low", "medium", "high"]
     reason: str = Field(..., min_length=10)
-    author: str = "Frank"
+    # author intentionally omitted — derived server-side from the JWT session
+    # in create_override below. Never trust client-supplied authorship.
 
 
 class OverridePatch(BaseModel):
@@ -41,10 +42,8 @@ def create_override(
 ):
     try:
         payload = body.model_dump()
-        # Stamp the authenticated user as the author unless the client provided
-        # a non-default override; never trust a fully-anonymous "Frank" string.
-        if not payload.get("author") or payload.get("author") == "Frank":
-            payload["author"] = ctx.name or ctx.email or "Frank"
+        # Always stamp the authenticated user — client cannot set author.
+        payload["author"] = ctx.name or ctx.email or "unknown"
         return svc.create_override(payload)
     except ValueError as e:
         raise HTTPException(400, str(e))
