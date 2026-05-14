@@ -131,6 +131,26 @@ export interface NextMove {
   };
 }
 
+// v2.2 Phase D — per-cluster PA/PR rejection-code lens.
+export interface WinLossSparklinePoint {
+  month: string; // YYYY-MM
+  paPct: number;
+  prPct: number;
+}
+
+export interface WinLossRow {
+  cluster: string;
+  paPct: number;
+  prPct: number;
+  sample: number;
+  monthlySparkline: WinLossSparklinePoint[];
+}
+
+export interface WinLossPanel {
+  window: { days: number; anchor: string };
+  rows: WinLossRow[];
+}
+
 export interface FilterScope {
   tier?: string;
   family?: string;
@@ -783,6 +803,8 @@ export interface ForecastShell {
   pocketWaterfall?: PocketWaterfall;
   bias?: BiasPanel;
   nextMoves?: NextMove[];
+  // v2.2 Phase D — PA/PR rejection-code lens.
+  winLoss?: WinLossPanel;
   dataThrough?: string;          // canonical ISO timestamp for freshness chip
   filterScope?: FilterScope;     // mirrors the active URL params so cards can render unfiltered badges
 }

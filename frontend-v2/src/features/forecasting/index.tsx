@@ -38,6 +38,7 @@ import { Accordion } from '@/components/Accordion';
 import { PlanTrackingStrip } from './components/PlanTrackingStrip';
 import { PocketWaterfallCard } from './components/PocketWaterfallCard';
 import { BiasCard } from './components/BiasCard';
+import { WinLossDriverCard } from './components/WinLossDriverCard';
 import { NextCycleMovesStrip } from './components/NextCycleMovesStrip';
 import { DiagnosticsAccordionToggle } from './components/DiagnosticsAccordionToggle';
 import type { ForecastMode, ForecastShell } from '@/types/forecast';
@@ -360,6 +361,7 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
           <CalibrationCard data={data.calibration} filterScope={data.filterScope} />
         )}
         <BiasCard data={data.bias} />
+        <WinLossDriverCard data={data.winLoss} filterScope={data.filterScope} />
         {data.tornado && <TornadoCard tornado={data.tornado} filterScope={data.filterScope} />}
         {data.distributions && (
           <DistributionGrid

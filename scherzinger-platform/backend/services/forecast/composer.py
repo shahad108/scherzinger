@@ -687,6 +687,15 @@ async def build_forecast(
     except Exception as e:  # pragma: no cover - safety net
         _log.warning("pipeline_p50 compose failed: %s", e)
 
+    # v2.2 Phase D — per-cluster PA/PR rejection lens. Independent of the
+    # Phase A rejection-signal helper above: this one surfaces the same data
+    # visually (percentages + 12-month sparkline) on its own diagnostic card.
+    try:
+        from .win_loss import build_win_loss
+        payload["winLoss"] = build_win_loss(db, cluster=cluster)
+    except Exception as e:  # pragma: no cover - safety net
+        _log.warning("win_loss compose failed: %s", e)
+
     # Canonical freshness signal — prefer methodology's data-through value,
     # fall back to "now" so the freshness chip always has *something* to render.
     try:

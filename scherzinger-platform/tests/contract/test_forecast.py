@@ -43,6 +43,8 @@ def test_forecast_top_level_shape(client: TestClient) -> None:
         "pocketWaterfall",
         "bias",
         "nextMoves",
+        # v2.2 Phase D — PA/PR rejection-code lens.
+        "winLoss",
         "dataThrough",
         "filterScope",
     }
