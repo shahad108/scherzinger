@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactElement } from 'react';
-import { HeroForecast } from './HeroForecast';
+import { HeroForecast, renderMoverSub } from './HeroForecast';
 import type { ForecastHero, ForecastSeriesPoint } from '@/types/forecast';
 
 // Phase 3 (forecast redesign v2) — the chart pulls overrides from the BFF on
@@ -77,5 +77,33 @@ describe('HeroForecast v2', () => {
     const onPointClick = vi.fn();
     wrap(<HeroForecast hero={makeHero()} mode="revenue" onPointClick={onPointClick} />);
     expect(screen.getByTestId('hero-title')).toBeInTheDocument();
+  });
+});
+
+describe('renderMoverSub (XSS-safe bolding)', () => {
+  it('returns plain text when there is no match', () => {
+    const out = renderMoverSub('no numbers here');
+    expect(out).toEqual(['no numbers here']);
+  });
+
+  it('wraps 6-digit customer IDs in <strong>', () => {
+    const { container } = render(<>{renderMoverSub('Customer 123456 closed')}</>);
+    expect(container.querySelectorAll('strong')).toHaveLength(1);
+    expect(container.querySelector('strong')?.textContent).toBe('123456');
+    expect(container.textContent).toBe('Customer 123456 closed');
+  });
+
+  it('wraps +€NK deltas in <strong>', () => {
+    const { container } = render(<>{renderMoverSub('Up +€42K MoM')}</>);
+    expect(container.querySelector('strong')?.textContent).toBe('+€42K');
+  });
+
+  it('does not interpret HTML in the input (XSS safety)', () => {
+    const { container } = render(
+      <>{renderMoverSub('<img src=x onerror=alert(1)> 123456')}</>,
+    );
+    // No <img> ever ends up in the DOM — only literal text + the strong tag.
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.textContent).toContain('<img src=x onerror=alert(1)>');
   });
 });

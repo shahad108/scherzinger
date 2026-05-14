@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   Area,
   ComposedChart,
@@ -64,6 +64,31 @@ function formatY(mode: ForecastMode, v: number): string {
   if (Math.abs(v) >= 1_000_000) return `€${(v / 1_000_000).toFixed(1)}M`;
   if (Math.abs(v) >= 1_000) return `€${(v / 1_000).toFixed(0)}K`;
   return `€${v.toFixed(0)}`;
+}
+
+/**
+ * Phase 9 security fix: render mover sub-text safely without
+ * dangerouslySetInnerHTML. Bolds the numeric portions of the string
+ * (matches the same pattern the old inline regex used) but does so via
+ * real <strong> nodes so server text can never inject markup. Exported
+ * for unit tests.
+ */
+export function renderMoverSub(text: string): ReactNode[] {
+  // Match either a 6-digit number (e.g. customer ID) or a +€NK delta.
+  // Mirrors the legacy pre-Phase-9 regex but renders as React nodes rather
+  // than raw HTML so server text can never inject markup.
+  const RE = /(\d{6}|\+€\d+K)/g;
+  const out: ReactNode[] = [];
+  let last = 0;
+  let i = 0;
+  for (const m of text.matchAll(RE)) {
+    const start = m.index ?? 0;
+    if (start > last) out.push(text.slice(last, start));
+    out.push(<strong key={i++}>{m[0]}</strong>);
+    last = start + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
 }
 
 function formatTooltip(mode: ForecastMode, v: number): string {
@@ -472,7 +497,7 @@ export function HeroForecast({ hero, mode, onPointClick, enableActualEntry = fal
                 <div className="fact-l">{m.label}</div>
                 <div className="fact-mid">
                   <div className={`fact-v ${m.tone}`}>{m.value}</div>
-                  <div className="fact-s" dangerouslySetInnerHTML={{ __html: m.sub.replace(/\b(\d{6}|\+€\d+K)\b/g, '<b>$1</b>') }} />
+                  <div className="fact-s">{renderMoverSub(m.sub)}</div>
                 </div>
               </div>
             ))}
