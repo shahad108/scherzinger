@@ -14,6 +14,14 @@ class RO {
 }
 vi.stubGlobal('ResizeObserver', RO);
 
+// Phase 3 (forecast redesign v2) — HeroForecast now fetches saved overrides
+// via React Query. This pre-existing test file is concerned only with the
+// intervals panel, so we stub the hook to a no-op response instead of
+// wrapping every render in a QueryClientProvider.
+vi.mock('@/data/api/useForecastOverrides', () => ({
+  useForecastOverrides: () => ({ data: { items: [] } }),
+}));
+
 const hero: ForecastHero = {
   caption: 'Walk-forward · solid = P50 · shaded = band',
   series: [

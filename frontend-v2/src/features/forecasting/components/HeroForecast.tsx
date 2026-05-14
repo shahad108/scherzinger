@@ -1,6 +1,18 @@
 import { useMemo, useState } from 'react';
-import { Area, ComposedChart, Line, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import {
+  Area,
+  ComposedChart,
+  Line,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ReferenceLine,
+  Scatter,
+} from 'recharts';
 import type { ForecastHero, ForecastIntervals, ForecastMode } from '@/types/forecast';
+import { useForecastOverrides } from '@/data/api/useForecastOverrides';
 
 interface Props {
   hero: ForecastHero;
@@ -12,6 +24,13 @@ interface Props {
    * right metric. We use `mode` here purely for axis formatting + heading copy.
    */
   mode: ForecastMode;
+  /**
+   * Phase 3 (forecast redesign v2) — click-to-edit hook. When provided, P50
+   * active dots become clickable and the tooltip shows a "Click to enter
+   * actual →" hint. Phase 4 will wire this to the ActualEntryPanel. Optional
+   * so existing call sites (AggregateViewV1) continue to compile.
+   */
+  onPointClick?: (month: string) => void;
 }
 
 type BandMode = 'p80' | 'p80+p95';
@@ -54,9 +73,23 @@ function formatTooltip(mode: ForecastMode, v: number): string {
   return `€${v.toFixed(0)}`;
 }
 
-export function HeroForecast({ hero, mode }: Props) {
+export function HeroForecast({ hero, mode, onPointClick }: Props) {
   const [bandMode, setBandMode] = useState<BandMode>('p80+p95');
   const showP95 = bandMode === 'p80+p95';
+  // Phase 3 (forecast redesign v2): cap history to 6mo by default. Frank told
+  // us the early history months were eating screen real estate without adding
+  // signal. Toggle restores the full series on demand.
+  const [showFullHistory, setShowFullHistory] = useState(false);
+
+  // Phase 3.4 — fetch saved overrides and project them as diamond glyphs onto
+  // the chart. Filtered to the active mode (a margin override doesn't belong
+  // on a revenue chart). Hook tolerates a missing/empty backend (returns
+  // `{ items: [] }`).
+  const { data: overridesData } = useForecastOverrides({});
+  const overrideMonths = useMemo(() => {
+    const items = overridesData?.items ?? [];
+    return new Set(items.filter((o) => o.mode === mode).map((o) => o.month));
+  }, [overridesData, mode]);
 
   // Round 4 fix: backend now ships REAL per-mode series sourced from invoices
   // (real_hero.py). No heuristic rescale needed. Identity function.
@@ -65,7 +98,7 @@ export function HeroForecast({ hero, mode }: Props) {
 
   // Tuple-array Area gives a true range-band between bounds without
   // forcing a 0-baseline, so we can keep the y-domain tight.
-  const chartData = useMemo(
+  const fullChartData = useMemo(
     () =>
       hero.series.map((p) => {
         const p80Low = scale(p.p80Low ?? p.low);
@@ -81,6 +114,40 @@ export function HeroForecast({ hero, mode }: Props) {
         };
       }),
     [hero.series, scale],
+  );
+
+  // Phase 3.2 — trim to last 6 months of history + everything forward.
+  // The series mixes history (actual != null) and forecast (actual == null);
+  // we find the first forecast index and slice back 6 from there.
+  const firstForecastIdx = useMemo(() => {
+    const idx = fullChartData.findIndex((p) => p.actual == null);
+    return idx === -1 ? fullChartData.length : idx;
+  }, [fullChartData]);
+
+  const chartData = useMemo(() => {
+    if (showFullHistory) return fullChartData;
+    if (firstForecastIdx <= 6) return fullChartData;
+    return fullChartData.slice(Math.max(0, firstForecastIdx - 6));
+  }, [fullChartData, firstForecastIdx, showFullHistory]);
+
+  const firstForecastMonth = useMemo(() => {
+    const idxInTrimmed = chartData.findIndex((p) => p.actual == null);
+    return idxInTrimmed === -1 ? null : chartData[idxInTrimmed].month;
+  }, [chartData]);
+
+  // Diamond glyphs for months that have a saved override. We pin them to the
+  // chart's own p50 line so they snap to the visible band regardless of where
+  // the user's actual landed (the actual value already shows via the actual
+  // dot — the diamond is the "this month was overridden" signal).
+  const overrideMarkers = useMemo(
+    () =>
+      chartData
+        .filter((p) => overrideMonths.has(p.month))
+        .map((p) => ({
+          month: p.month,
+          overrideY: p.actual ?? p.primary,
+        })),
+    [chartData, overrideMonths],
   );
 
   const lowestBound = useMemo(
@@ -156,6 +223,27 @@ export function HeroForecast({ hero, mode }: Props) {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setShowFullHistory((v) => !v)}
+            aria-pressed={showFullHistory}
+            data-testid="hero-history-toggle"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--hairline)',
+              borderRadius: 6,
+              padding: '4px 10px',
+              fontSize: 11,
+              fontWeight: 600,
+              color: 'var(--muted)',
+              cursor: 'pointer',
+              letterSpacing: '0.02em',
+              textTransform: 'uppercase',
+              fontFamily: 'inherit',
+            }}
+          >
+            {showFullHistory ? 'Trim history' : 'Show full history'}
+          </button>
           {hero.intervals && (
             <div
               role="tablist"
@@ -201,13 +289,18 @@ export function HeroForecast({ hero, mode }: Props) {
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 12, right: 16, left: 0, bottom: 8 }}>
             <defs>
+              {/*
+                Phase 3 (forecast redesign v2) — moved bands from the legacy
+                blue (#5a7da3) to the rose design language. Two stacked bands:
+                P80 darker on top, P95 lighter underneath.
+              */}
               <linearGradient id="p80Gradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#5a7da3" stopOpacity={0.36} />
-                <stop offset="100%" stopColor="#5a7da3" stopOpacity={0.22} />
+                <stop offset="0%" stopColor="var(--rose-deep, #a04055)" stopOpacity={0.26} />
+                <stop offset="100%" stopColor="var(--rose-deep, #a04055)" stopOpacity={0.18} />
               </linearGradient>
               <linearGradient id="p95Gradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#5a7da3" stopOpacity={0.14} />
-                <stop offset="100%" stopColor="#5a7da3" stopOpacity={0.06} />
+                <stop offset="0%" stopColor="var(--rose-deep, #a04055)" stopOpacity={0.12} />
+                <stop offset="100%" stopColor="var(--rose-deep, #a04055)" stopOpacity={0.06} />
               </linearGradient>
             </defs>
             <CartesianGrid stroke="#eaedf1" vertical={false} />
@@ -248,9 +341,42 @@ export function HeroForecast({ hero, mode }: Props) {
                 if (typeof value !== 'number') return [String(value ?? ''), n];
                 if (n === 'primary') return [formatTooltip(mode, value), 'P50'];
                 if (n === 'actual')  return [formatTooltip(mode, value), 'Actual'];
+                if (n === 'overrideY') return [formatTooltip(mode, value), 'Override'];
                 return [formatTooltip(mode, value), n];
               }}
+              // Phase 3.3 — when a click handler is supplied, append a small
+              // hint under the tooltip rows so Frank knows the chart is
+              // interactive. We compose via the `content` prop's default-ish
+              // wrapper using `wrapperStyle`-friendly content trick: simpler
+              // to render the hint as a labelFormatter suffix.
+              labelFormatter={(label) => (
+                <span>
+                  {label}
+                  {onPointClick && (
+                    <span
+                      data-testid="hero-tooltip-click-hint"
+                      style={{
+                        display: 'block',
+                        marginTop: 2,
+                        fontSize: 10,
+                        fontWeight: 500,
+                        color: 'var(--muted)',
+                      }}
+                    >
+                      Click to enter actual →
+                    </span>
+                  )}
+                </span>
+              )}
             />
+            {firstForecastMonth && (
+              <ReferenceLine
+                x={firstForecastMonth}
+                stroke="var(--hairline, #dde1e7)"
+                strokeDasharray="3 3"
+                label={{ value: 'Now', position: 'top', fill: 'var(--muted)', fontSize: 10 }}
+              />
+            )}
             {showP95 && (
               <Area
                 type="monotone"
@@ -274,7 +400,24 @@ export function HeroForecast({ hero, mode }: Props) {
               strokeWidth={2}
               strokeLinecap="round"
               dot={false}
-              activeDot={{ r: 4, fill: '#3e5d80' }}
+              activeDot={
+                onPointClick
+                  ? {
+                      r: 5,
+                      fill: '#3e5d80',
+                      cursor: 'pointer',
+                      // Recharts passes the dot payload (including `month`)
+                      // as the second arg of `onClick`. We tolerate both
+                      // shapes — some Recharts versions pass it on the
+                      // event target's `payload` property.
+                      onClick: (_evt: unknown, payload: unknown) => {
+                        const p = payload as { payload?: { month?: string }; month?: string } | undefined;
+                        const month = p?.payload?.month ?? p?.month;
+                        if (month) onPointClick(month);
+                      },
+                    }
+                  : { r: 4, fill: '#3e5d80' }
+              }
               isAnimationActive={false}
             />
             <Line
@@ -286,6 +429,15 @@ export function HeroForecast({ hero, mode }: Props) {
               connectNulls={false}
               isAnimationActive={false}
             />
+            {overrideMarkers.length > 0 && (
+              <Scatter
+                data={overrideMarkers}
+                dataKey="overrideY"
+                shape={DiamondShape}
+                isAnimationActive={false}
+                name="Override"
+              />
+            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -350,6 +502,22 @@ export function HeroForecast({ hero, mode }: Props) {
         </div>
       </div>
     </div>
+  );
+}
+
+// Phase 3.4 — diamond glyph drawn at the override actual on the P50 line.
+// Rendered via a Recharts `<Scatter>` with this custom `shape`.
+function DiamondShape(props: { cx?: number; cy?: number }) {
+  const { cx, cy } = props;
+  if (cx == null || cy == null) return null;
+  return (
+    <polygon
+      points={`${cx},${cy - 6} ${cx + 6},${cy} ${cx},${cy + 6} ${cx - 6},${cy}`}
+      fill="var(--rose-deep, #a04055)"
+      stroke="#fff"
+      strokeWidth={1.5}
+      data-testid="hero-override-diamond"
+    />
   );
 }
 
