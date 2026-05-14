@@ -670,4 +670,8 @@ export interface ForecastShell {
   // Scenario perturbation receipt (only present when ?scenario_id= is set).
   scenarioApplied?: ScenarioAppliedReceipt;
   activeScenarioId?: string;
+  // Phase 5 (forecast redesign v2) — PVM waterfall. Optional; the v2 shell
+  // only renders the waterfall when this payload is present. The BFF will
+  // populate this in a follow-up; today mocks omit it.
+  pvm?: { periodLabel: string; bars: PVMBar[] };
 }
