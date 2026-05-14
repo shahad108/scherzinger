@@ -34,3 +34,14 @@ def test_no_actuals(tmp_plan):
     out = plan_tracking.build_plan_tracking()
     assert out["cumulativeGapEur"] == 0
     assert all(p["actual"] is None for p in out["points"])
+
+
+def test_recent_month_attribution_populated(tmp_plan):
+    """v2.2 Phase A: when the composer passes a PVM dict in, the plan-tracking
+    payload echoes it as ``recentMonthAttribution`` for the FE chip strip."""
+    actuals = {"2026-01": 480, "2026-02": 590}
+    pvm = {"price": -10_000, "volume": -5_000, "mix": -2_000, "cost": 3_000}
+    out = plan_tracking.build_plan_tracking(actuals_by_month=actuals, pvm_attribution=pvm)
+    assert out["recentMonthAttribution"] == pvm
+    # Cumulative gap should still match the seeded plan vs actuals map.
+    assert out["cumulativeGapEur"] == pytest.approx(-30)

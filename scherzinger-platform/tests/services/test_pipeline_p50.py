@@ -34,3 +34,17 @@ def test_skips_invalid_values():
     ])
     aug = next(p for p in out if p["month"] == "2026-08")
     assert aug["pipelineP50"] == pytest.approx(50)
+
+
+def test_pipeline_p50_from_open_quote_payload(db):
+    """v2.2 Phase A: the composer helper builds an open-quotes list from the
+    same quote ledger ``quote_to_revenue`` reads. Verify the resulting
+    payload yields at least one month with a positive pipeline value."""
+    from backend.services.forecast.composer import _open_quotes_payload
+    open_quotes = _open_quotes_payload(db, cluster=None)
+    # Live dataset has 12 months of quotes — should yield ≥ 1 entry.
+    assert isinstance(open_quotes, list)
+    assert open_quotes, "expected at least one open quote from the live ledger"
+    out = pipeline_p50.build_pipeline_p50(open_quotes=open_quotes)
+    assert out
+    assert any(p["pipelineP50"] > 0 for p in out)

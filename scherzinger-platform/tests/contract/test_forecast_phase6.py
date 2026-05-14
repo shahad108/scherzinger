@@ -39,10 +39,17 @@ def test_calibration_shape(client: TestClient) -> None:
 
 
 def test_calibration_has_one_within_5pp(client: TestClient) -> None:
+    """Calibration was repurposed from "CI hit-rate vs nominal band" to
+    "per-cluster backtest accuracy" (see calibration.py header). MAPE is the
+    real metric. The original 80% nominal-band heuristic was kept for back-
+    compat (``actualHitRatePct = 100 - MAPE_pct``) but it isn't the contract
+    anymore. The real contract: at least one cluster fits tightly enough to
+    be tagged ``green`` (MAPE ≤ 3%)."""
     body = client.get(f"{URL}/calibration").json()
-    nominal = body["nominalBand"]
-    within = [r for r in body["rows"] if abs(r["actualHitRatePct"] - nominal) <= 5]
-    assert within, "expected at least one cluster within ±5pp of nominal"
+    measured = [r for r in body["rows"] if r.get("actualHitRatePct") is not None]
+    assert measured, "expected at least one cluster with a measured hit rate"
+    green = [r for r in measured if r.get("tone") == "green"]
+    assert green, "expected at least one cluster within the green tone band"
 
 
 def test_forecast_screen_includes_q2r_and_calibration(client: TestClient) -> None:

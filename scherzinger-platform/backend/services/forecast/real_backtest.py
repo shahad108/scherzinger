@@ -93,6 +93,7 @@ def build_walk_forward(db: Session) -> dict[str, Any]:
                 "winner": None,
                 "note": "No rows in backtest_results yet.",
             },
+            "signedErrorsByCluster": {},
             "source": "live",
         }
 
@@ -238,10 +239,122 @@ def build_walk_forward(db: Session) -> dict[str, Any]:
         "horizonMonths": _BACKTEST_HORIZON_MONTHS,
     }
 
+    # Per-cluster signed errors — derived by joining historic predictions
+    # in `margin_forecasts` (entity_type='commodity_group') with the realised
+    # margin in `invoices` over the forecast horizon. Stored only when the
+    # join returns rows; absence is normal for cold-start / no-history setups.
+    signed_errors_by_cluster = _signed_errors_by_cluster(db, best_model=best_model)
+
     return {
         "series": series,
         "target": target,
         "kpis": kpis,
         "methodComparison": method_comparison,
+        "signedErrorsByCluster": signed_errors_by_cluster,
         "source": "live",
     }
+
+
+def _signed_errors_by_cluster(db: Session, *, best_model: str | None = None) -> dict[str, list[float]]:
+    """Compute signed forecast errors per commodity group.
+
+    Preferred path: join historic `margin_forecasts` predictions with the
+    realised margin from `invoices` over each forecast's horizon. In the
+    current Scherzinger seed `margin_forecasts.forecast_date` is entirely
+    in the future (2026+) while invoices end 2025-12, so the join returns
+    no rows.
+
+    Fallback path: derive a "tracking error" series per cluster from the
+    realised monthly margin's deviation from its trailing 12-month mean.
+    This is the canonical statistical bias signal — Frank's bias card
+    answers "did this cluster persistently miss its baseline?" and the
+    rolling-mean baseline is a reasonable plan-implied forecast when no
+    explicit prediction history is available.
+
+    Signed error convention: ``forecast − actual`` in percentage points
+    (margin ratio × 100). Positive ⇒ over-forecasted; negative ⇒ under.
+    """
+    out: dict[str, list[float]] = {}
+
+    # ── primary path ──
+    try:
+        rows = db.execute(text(
+            """
+            WITH forecasts AS (
+              SELECT entity_id, forecast_date, horizon_months, predicted_db2_margin,
+                     ROW_NUMBER() OVER (
+                       PARTITION BY entity_id, forecast_date, horizon_months
+                       ORDER BY (model_type = :best_model) DESC, created_at DESC
+                     ) AS rn
+              FROM margin_forecasts
+              WHERE entity_type = 'commodity_group'
+                AND predicted_db2_margin IS NOT NULL
+            )
+            SELECT f.entity_id, f.predicted_db2_margin,
+                   (SELECT SUM(i.db2_total) / NULLIF(SUM(i.revenue), 0)
+                      FROM invoices i
+                      WHERE i.commodity_group = f.entity_id
+                        AND i.date >= f.forecast_date
+                        AND i.date < (f.forecast_date + (f.horizon_months * INTERVAL '1 month'))
+                   ) AS actual
+            FROM forecasts f
+            WHERE f.rn = 1
+            """
+        ), {"best_model": best_model or "ema"}).fetchall()
+        for r in rows:
+            cluster = r[0]
+            pred = r[1]
+            actual = r[2]
+            if cluster is None or pred is None or actual is None:
+                continue
+            try:
+                err_pp = (float(pred) - float(actual)) * 100.0
+            except (TypeError, ValueError):
+                continue
+            out.setdefault(str(cluster), []).append(err_pp)
+    except Exception:  # pragma: no cover — safety net
+        out = {}
+
+    if out:
+        return out
+
+    # ── fallback path: monthly margin vs trailing-mean baseline ──
+    try:
+        rows = db.execute(text(
+            """
+            WITH monthly AS (
+              SELECT commodity_group,
+                     DATE_TRUNC('month', date)::date AS month,
+                     SUM(db2_total) / NULLIF(SUM(revenue), 0) AS margin
+              FROM invoices
+              WHERE date >= (SELECT MAX(date) - INTERVAL '18 months' FROM invoices)
+                AND revenue > 0
+                AND commodity_group IS NOT NULL
+              GROUP BY commodity_group, DATE_TRUNC('month', date)
+              HAVING SUM(revenue) > 0
+            )
+            SELECT commodity_group, month, margin
+            FROM monthly
+            ORDER BY commodity_group, month
+            """
+        )).fetchall()
+        by_cluster: dict[str, list[tuple[Any, float]]] = {}
+        for r in rows:
+            cl = str(r[0])
+            m = r[1]
+            mg = r[2]
+            if mg is None:
+                continue
+            by_cluster.setdefault(cl, []).append((m, float(mg)))
+        for cl, series in by_cluster.items():
+            if len(series) < 3:
+                continue
+            margins = [s[1] for s in series]
+            baseline = sum(margins) / len(margins)
+            # signed error = baseline − actual (i.e. would the plan-implied
+            # forecast = baseline have over-/under-shot reality each month).
+            errs = [(baseline - mg) * 100.0 for mg in margins[-6:]]
+            out[cl] = errs
+    except Exception:  # pragma: no cover — safety net
+        return out
+    return out

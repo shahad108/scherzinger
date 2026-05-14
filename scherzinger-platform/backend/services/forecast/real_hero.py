@@ -30,6 +30,59 @@ _MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 
+def fetch_actuals_by_month(
+    db: Session,
+    *,
+    mode: str = "revenue",
+    cluster: str | None = None,
+    months: int = 24,
+) -> dict[str, float]:
+    """Return monthly actuals keyed by ``YYYY-MM`` for the trailing ``months``
+    window. Uses the same source the hero series reads — single source of
+    truth for "what happened" per month.
+
+    ``mode`` selects the metric (revenue / margin / volume). ``cluster``,
+    when supplied, filters by ``invoices.commodity_group``.
+    """
+    mode = (mode or "revenue").lower()
+    if mode == "volume":
+        select_clause = "SUM(quantity) AS y"
+    elif mode == "margin":
+        select_clause = "SUM(db2_total) / NULLIF(SUM(revenue), 0) AS y"
+    else:
+        mode = "revenue"
+        select_clause = "SUM(revenue) AS y"
+
+    where = [
+        "date >= (SELECT MAX(date) - (:months * INTERVAL '1 month') FROM invoices)"
+    ]
+    params: dict[str, Any] = {"months": months}
+    if cluster:
+        where.append("commodity_group = :cluster")
+        params["cluster"] = cluster
+
+    rows = db.execute(
+        text(
+            f"""
+            SELECT DATE_TRUNC('month', date)::date AS month, {select_clause}
+            FROM invoices
+            WHERE {' AND '.join(where)}
+            GROUP BY DATE_TRUNC('month', date)
+            ORDER BY month
+            """
+        ),
+        params,
+    ).fetchall()
+    out: dict[str, float] = {}
+    for r in rows:
+        d = r[0]
+        v = r[1]
+        if d is None or v is None:
+            continue
+        out[f"{d.year:04d}-{d.month:02d}"] = float(v)
+    return out
+
+
 def _wma_project(history: list[float], n_periods: int = 12) -> list[float]:
     """Project n_periods forward using a 4-step weighted moving average
     (weights 0.4 / 0.3 / 0.2 / 0.1, most-recent-first)."""

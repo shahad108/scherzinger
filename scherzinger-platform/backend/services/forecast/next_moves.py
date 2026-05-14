@@ -22,19 +22,36 @@ def build_next_moves(
     moves: list[dict[str, Any]] = []
     for cluster, sig in cluster_signals.items():
         impact = float(sig.get("forecast_impact_eur", 0))
+        headline = _headline_for(cluster, sig)
+        # Build the intent payload. ``intent_context`` may be a string
+        # (legacy callers / tests) or a dict (v2.2 composer). When it's a
+        # dict we merge in the cluster + headline so Phase B's drawer has
+        # everything it needs in one place without re-deriving fields.
+        raw_ctx = sig.get("intent_context", "next-cycle")
+        if isinstance(raw_ctx, dict):
+            ctx: dict[str, Any] = dict(raw_ctx)
+            ctx.setdefault("cluster", cluster)
+            ctx.setdefault("headline", headline)
+            ctx.setdefault("sourceScreen", "forecasting")
+            ctx.setdefault("sourceKind", "next-cycle-move")
+        else:
+            ctx = {
+                "cluster": cluster,
+                "context": raw_ctx,
+                "headline": headline,
+                "sourceScreen": "forecasting",
+                "sourceKind": "next-cycle-move",
+            }
         moves.append({
             "id": f"move-{cluster.lower()}",
             "rank": 0,  # filled after sort
             "cluster": cluster,
-            "headline": _headline_for(cluster, sig),
+            "headline": headline,
             "forecastImpactEur": impact,
             "sourceSignal": sig.get("signal", "anomaly"),
             "actionIntent": {
                 "kind": sig.get("intent_kind", "open_studio"),
-                "payload": {
-                    "cluster": cluster,
-                    "context": sig.get("intent_context", "next-cycle"),
-                },
+                "payload": ctx,
             },
         })
     moves.sort(key=lambda m: m["forecastImpactEur"], reverse=True)

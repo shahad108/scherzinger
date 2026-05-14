@@ -8,6 +8,9 @@ DB session is unavailable so screens endpoint never fails because of this card.
 from __future__ import annotations
 from typing import Any
 
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 # Step ordering -- must remain stable; frontend renders in this order.
 STEP_ORDER = ["list", "quoted", "booked", "invoiced", "db2"]
 
@@ -71,3 +74,154 @@ def build_pocket_waterfall(
         "perCluster": bands,
         "unit": "pct_of_list" if list_price == 100.0 else "eur_total",
     }
+
+
+def build_pocket_waterfall_from_db(
+    db: Session | None,
+    *,
+    cluster: str | None = None,
+    months: int = 12,
+) -> dict[str, Any]:
+    """Live variant that gathers step values from the invoice + quote ledgers,
+    then delegates to ``build_pocket_waterfall`` for the pure shape.
+
+    Step derivation:
+      * ``list``     — Σ list_price × quantity from invoices over the
+                       trailing window (uses ``list_price_per_unit`` when
+                       present, otherwise reconstructs from the line as
+                       ``revenue / quantity`` — i.e. the realised price is
+                       taken as both list and quoted).
+      * ``quoted``   — Σ revenue from quotes (won + lost + open) over the
+                       same trailing window.
+      * ``booked``   — Σ revenue from won quotes (or invoiced revenue when
+                       quote linkage is missing).
+      * ``invoiced`` — Σ revenue from invoices over the trailing window.
+      * ``db2``      — Σ db2_total from invoices (pocket margin in EUR).
+
+    The function falls back to the seeded defaults whenever a query fails
+    so the screen endpoint never breaks because of this card.
+    """
+    if db is None:
+        return build_pocket_waterfall()
+
+    try:
+        # Defensive rollback if a prior block poisoned the transaction.
+        try:
+            db.rollback()
+        except Exception:
+            pass
+
+        cluster_clause_i = ""
+        cluster_clause_q = ""
+        params: dict[str, Any] = {"months": months}
+        if cluster:
+            cluster_clause_i = "AND i.commodity_group = :cluster"
+            cluster_clause_q = "AND q.commodity_group = :cluster"
+            params["cluster"] = cluster
+
+        # "List" is not stored on the invoice line; we approximate it as the
+        # per-article 95th-percentile realised unit-price × the line quantity.
+        # That's the price the article *could* fetch, before customer-specific
+        # concessions — the typical interpretation of "list" in a pocket
+        # waterfall when no separate list-price book is available.
+        inv_extras = db.execute(text(f"""
+            WITH per_article AS (
+              SELECT i.article_id,
+                     PERCENTILE_CONT(0.95) WITHIN GROUP (
+                       ORDER BY (i.revenue::float / NULLIF(i.quantity, 0))
+                     ) AS p95_price
+              FROM invoices i
+              WHERE i.date >= (SELECT MAX(date) - (:months * INTERVAL '1 month') FROM invoices)
+                AND i.quantity > 0
+                {cluster_clause_i}
+              GROUP BY i.article_id
+            )
+            SELECT COALESCE(SUM(pa.p95_price * i.quantity), 0) AS list_total
+            FROM invoices i
+            JOIN per_article pa ON pa.article_id = i.article_id
+            WHERE i.date >= (SELECT MAX(date) - (:months * INTERVAL '1 month') FROM invoices)
+              AND i.quantity > 0
+              {cluster_clause_i}
+        """), params).fetchone()
+        list_total_approx = float(inv_extras[0] or 0) if inv_extras else 0.0
+
+        inv = db.execute(text(f"""
+            SELECT
+              COALESCE(SUM(i.revenue), 0) AS invoiced_total,
+              COALESCE(SUM(i.db2_total), 0) AS db2_total
+            FROM invoices i
+            WHERE i.date >= (SELECT MAX(date) - (:months * INTERVAL '1 month') FROM invoices)
+              {cluster_clause_i}
+        """), params).fetchone()
+        list_total = list_total_approx
+        invoiced_total = float(inv[0] or 0) if inv else 0.0
+        db2_total = float(inv[1] or 0) if inv else 0.0
+
+        qt = db.execute(text(f"""
+            SELECT
+              COALESCE(SUM(q.revenue), 0) AS quoted_total,
+              COALESCE(SUM(CASE WHEN q.is_won THEN q.revenue ELSE 0 END), 0) AS booked_total
+            FROM quotes q
+            WHERE q.date >= (SELECT MAX(date) - (:months * INTERVAL '1 month') FROM quotes)
+              AND q.status NOT IN ('cancelled')
+              {cluster_clause_q}
+        """), params).fetchone()
+        quoted_total = float(qt[0] or 0) if qt else 0.0
+        booked_total = float(qt[1] or 0) if qt else 0.0
+
+        # If the list/quoted are zero but invoiced isn't (e.g. no quote
+        # ledger rows for this cluster window), back-fill list = invoiced so
+        # the waterfall still renders monotonically rather than flat-line.
+        if quoted_total <= 0 and invoiced_total > 0:
+            quoted_total = invoiced_total
+        if booked_total <= 0 and invoiced_total > 0:
+            booked_total = invoiced_total
+        if list_total <= 0 and invoiced_total > 0:
+            list_total = invoiced_total
+
+        # Enforce monotonic-down ordering for the waterfall — if upstream is
+        # smaller than downstream the chart looks nonsensical.
+        quoted_total = min(quoted_total, list_total) if list_total > 0 else quoted_total
+        booked_total = min(booked_total, quoted_total) if quoted_total > 0 else booked_total
+        invoiced_total = min(invoiced_total, booked_total) if booked_total > 0 else invoiced_total
+        db2_total = min(db2_total, invoiced_total) if invoiced_total > 0 else db2_total
+
+        # Per-cluster net-price histograms (price = revenue / quantity).
+        cluster_filter_p = ""
+        ppct_params: dict[str, Any] = {"months": months}
+        if cluster:
+            cluster_filter_p = "AND commodity_group = :cluster"
+            ppct_params["cluster"] = cluster
+        price_rows = db.execute(text(f"""
+            SELECT commodity_group, revenue, quantity
+            FROM invoices
+            WHERE date >= (SELECT MAX(date) - (:months * INTERVAL '1 month') FROM invoices)
+              AND quantity > 0
+              AND revenue IS NOT NULL
+              {cluster_filter_p}
+        """), ppct_params).fetchall()
+
+        per_cluster: dict[str, list[float]] = {}
+        for r in price_rows:
+            cl = str(r[0] or "—")
+            try:
+                rev = float(r[1] or 0)
+                qty = float(r[2] or 0)
+                if qty <= 0:
+                    continue
+                per_cluster.setdefault(cl, []).append(rev / qty)
+            except (TypeError, ValueError):
+                continue
+        # Cap each cluster's sample for stability.
+        per_cluster = {k: v[:500] for k, v in per_cluster.items() if v}
+
+        return build_pocket_waterfall(
+            list_price=list_total,
+            quoted=quoted_total,
+            booked=booked_total,
+            invoiced=invoiced_total,
+            db2=db2_total,
+            per_cluster_prices=per_cluster,
+        )
+    except Exception:
+        return build_pocket_waterfall()

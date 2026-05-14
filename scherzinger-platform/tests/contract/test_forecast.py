@@ -38,6 +38,13 @@ def test_forecast_top_level_shape(client: TestClient) -> None:
         "calibration",
         # Phase 7 — Market direction.
         "marketDirection",
+        # v2.1 — plan-first, pocket-margin, prescriptive bridge.
+        "planTracking",
+        "pocketWaterfall",
+        "bias",
+        "nextMoves",
+        "dataThrough",
+        "filterScope",
     }
     assert set(body.keys()) == expected
     assert {"customer", "sku"} <= set(body["pareto"].keys())
@@ -47,6 +54,47 @@ def test_forecast_top_level_shape(client: TestClient) -> None:
     # Tornado + distributions always non-empty (seed fallback).
     assert body["tornado"]["bars"]
     assert body["distributions"]["rows"]
+
+
+def test_forecast_v22_real_data_wired(client: TestClient) -> None:
+    """v2.2 Phase A gate: the v2.1 cards must be fed by real data.
+
+    * planTracking — at minimum the plan rows are loaded and PVM
+      attribution is computed from the live invoice ledger.
+    * pocketWaterfall — perCluster bands derived from invoice prices.
+    * bias.rows — per-cluster signed-error series from the walk-forward
+      fallback (margin vs trailing-mean baseline).
+    * nextMoves — at least one ranked move with an action intent.
+    * hero.series — at least one point carries a ``pipelineP50`` value
+      sourced from the live open-quote book.
+    """
+    body = client.get(URL).json()
+
+    pt = body["planTracking"]
+    assert pt["points"], "planTracking.points must be populated from plan.json"
+    # PVM attribution is computed from real invoices; should be a 4-key dict.
+    attr = pt["recentMonthAttribution"]
+    assert attr is not None, "recentMonthAttribution must be populated from real invoices"
+    assert {"price", "volume", "mix", "cost"} <= set(attr.keys())
+
+    pw = body["pocketWaterfall"]
+    assert pw["steps"], "pocketWaterfall.steps must always be present"
+    assert pw["perCluster"], "pocketWaterfall.perCluster must be non-empty from live invoice prices"
+
+    bias = body["bias"]
+    assert bias["rows"], "bias.rows must be non-empty (walk-forward signed errors)"
+
+    next_moves = body["nextMoves"]
+    assert next_moves, "nextMoves must be non-empty (price-floor / pareto / cost signals)"
+    for m in next_moves:
+        assert m["actionIntent"]["kind"], "every move must carry an intent kind"
+        payload = m["actionIntent"]["payload"]
+        assert payload.get("sourceScreen") == "forecasting"
+        assert payload.get("sourceKind") == "next-cycle-move"
+
+    series = body["hero"]["series"]
+    pp50_points = [p for p in series if isinstance(p, dict) and p.get("pipelineP50") is not None]
+    assert pp50_points, "expected ≥1 hero series point with pipelineP50 from the open-quote book"
 
 
 def test_forecast_persona_till_404(client: TestClient) -> None:
