@@ -703,6 +703,14 @@ async def build_forecast(
     except Exception as e:  # pragma: no cover - safety net
         _log.warning("erosion_projection compose failed: %s", e)
 
+    # v2.2 Phase F — at-risk revenue, per tier, next 12mo. Consumes the
+    # already-composed pareto + customers blocks (no extra DB hit).
+    try:
+        from .at_risk_revenue import build_at_risk_revenue
+        payload["atRiskRevenue"] = build_at_risk_revenue(payload)
+    except Exception as e:  # pragma: no cover - safety net
+        _log.warning("at_risk_revenue compose failed: %s", e)
+
     # Canonical freshness signal — prefer methodology's data-through value,
     # fall back to "now" so the freshness chip always has *something* to render.
     try:

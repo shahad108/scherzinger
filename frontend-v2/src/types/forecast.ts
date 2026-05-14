@@ -179,6 +179,22 @@ export interface ErosionProjection {
   rows: ErosionProjectionRow[];
 }
 
+// v2.2 Phase F — At-Risk Revenue tier-stacked bar.
+export interface AtRiskTierRow {
+  tier: string;
+  forecastEur: number;
+  atRiskEur: number;
+  safeEur: number;
+  atRiskShare: number;
+  customerCount: number;
+}
+
+export interface AtRiskRevenue {
+  tiers: AtRiskTierRow[];
+  totalForecastEur: number;
+  totalAtRiskEur: number;
+}
+
 export interface FilterScope {
   tier?: string;
   family?: string;
@@ -835,6 +851,8 @@ export interface ForecastShell {
   winLoss?: WinLossPanel;
   // v2.2 Phase E — list-price erosion projection.
   erosionProjection?: ErosionProjection;
+  // v2.2 Phase F — at-risk revenue tier-stacked bar.
+  atRiskRevenue?: AtRiskRevenue;
   dataThrough?: string;          // canonical ISO timestamp for freshness chip
   filterScope?: FilterScope;     // mirrors the active URL params so cards can render unfiltered badges
 }

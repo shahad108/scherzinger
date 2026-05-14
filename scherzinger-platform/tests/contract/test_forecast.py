@@ -47,6 +47,8 @@ def test_forecast_top_level_shape(client: TestClient) -> None:
         "winLoss",
         # v2.2 Phase E — list-price erosion projection.
         "erosionProjection",
+        # v2.2 Phase F — at-risk revenue tier-stacked aggregate.
+        "atRiskRevenue",
         "dataThrough",
         "filterScope",
     }
