@@ -4,6 +4,39 @@ export type Tier = 'A' | 'B' | 'C' | 'D';
 export type ClusterConf = 'green' | 'amber' | 'red';
 export type TrendDir = 'up' | 'down' | 'flat';
 
+// Forecast override types — v2 redesign (click-to-actual + ML feedback)
+export type OverrideSource = 'erp' | 'manual' | 'contracted' | 'other';
+export type OverrideConfidence = 'low' | 'medium' | 'high';
+
+export interface ForecastOverride {
+  id: string;
+  month: string;            // YYYY-MM
+  cluster: string | null;
+  mode: ForecastMode;
+  actual: number;
+  modelP50: number;
+  adjustmentPct: number;
+  source: OverrideSource;
+  confidence: OverrideConfidence;
+  reason: string;
+  author: string;
+  createdAt: string;
+  fvaDelta: number | null;
+}
+
+export interface HeroKPI {
+  forecast12mo: { value: number; unit: 'EUR' | 'pct' | 'units' };
+  varianceVsPlan: { value: number; pct: number; trend: TrendDir };
+  mape: { value: number; window: string };
+  fva: { score: number; verdict: 'helping' | 'neutral' | 'hurting'; n: number };
+}
+
+export interface PVMBar {
+  factor: 'price' | 'volume' | 'mix' | 'churn' | 'fx' | 'other';
+  delta: number;
+  pctOfTotal: number;
+}
+
 export interface ForecastHeader {
   greeting: string;
   subPill: string;
