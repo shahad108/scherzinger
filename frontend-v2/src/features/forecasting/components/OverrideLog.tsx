@@ -6,7 +6,23 @@
 
 import { Accordion } from '@/components/Accordion';
 import { useForecastOverrides, useDeleteOverride } from '@/data/api/useForecastOverrides';
-import type { ForecastOverride } from '@/types/forecast';
+import type { ForecastOverride, FvaSummary } from '@/types/forecast';
+
+interface OverrideLogProps {
+  fvaSummary?: FvaSummary;
+}
+
+// "2026Q2" → "Q2 2026" for human-friendly display.
+function formatQuarter(period: string): string {
+  const m = /^(\d{4})Q([1-4])$/.exec(period);
+  if (!m) return period;
+  return `Q${m[2]} ${m[1]}`;
+}
+
+function formatSignedPp(pp: number): string {
+  const sign = pp > 0 ? '+' : pp < 0 ? '−' : '±';
+  return `${sign}${Math.abs(pp).toFixed(1)}pp`;
+}
 
 function formatNumber(n: number): string {
   return n.toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -79,13 +95,29 @@ function OverrideRow({ o }: { o: ForecastOverride }) {
   );
 }
 
-export function OverrideLog() {
+export function OverrideLog({ fvaSummary }: OverrideLogProps = {}) {
   // Phase 9: surface fetch errors instead of masking them behind the empty
   // state — otherwise a 401 / 500 looks like "no overrides yet" and Frank
   // thinks his click-to-actual did nothing.
   const { data, isLoading, isError, refetch } = useForecastOverrides();
   const items: ForecastOverride[] = data?.items ?? [];
   const count = items.length;
+
+  // v2.2 Phase G — tone-coded summary strip above the audit table.
+  const summaryTone =
+    fvaSummary === undefined
+      ? null
+      : fvaSummary.netFvaDeltaPp > 0
+      ? 'pos'
+      : fvaSummary.netFvaDeltaPp < 0
+      ? 'neg'
+      : 'flat';
+  const summaryClasses =
+    summaryTone === 'pos'
+      ? 'border-[var(--accent-green-deep)]/30 bg-[var(--accent-green)]/10 text-[var(--accent-green-deep)]'
+      : summaryTone === 'neg'
+      ? 'border-[var(--rose-deep)]/30 bg-[var(--rose)]/10 text-[var(--rose-deep)]'
+      : 'border-[var(--hairline)] bg-[var(--surface-soft)] text-[var(--ink-2)]';
 
   return (
     <Accordion
@@ -94,6 +126,24 @@ export function OverrideLog() {
       defaultOpen={false}
       badge={count > 0 ? `${count}` : undefined}
     >
+      {fvaSummary && (
+        <div
+          data-testid="override-fva-summary"
+          data-tone={summaryTone}
+          className={`mb-3 rounded-md border px-3 py-2 text-[12.5px] font-medium ${summaryClasses}`}
+        >
+          This quarter ({formatQuarter(fvaSummary.period)}):{' '}
+          <span data-testid="override-fva-summary-entered">{fvaSummary.entered}</span>{' '}
+          entered ·{' '}
+          <span data-testid="override-fva-summary-improved">{fvaSummary.improved}</span>{' '}
+          improved ·{' '}
+          <span data-testid="override-fva-summary-worsened">{fvaSummary.worsened}</span>{' '}
+          worsened · net FVA Δ{' '}
+          <span data-testid="override-fva-summary-net">
+            {formatSignedPp(fvaSummary.netFvaDeltaPp)}
+          </span>
+        </div>
+      )}
       {isLoading ? (
         <div className="py-4 text-[12.5px] text-[var(--muted)]">Loading overrides…</div>
       ) : isError ? (

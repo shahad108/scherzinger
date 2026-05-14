@@ -403,7 +403,7 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
       </Accordion>
       <AtRiskRevenueBar data={data.atRiskRevenue} filterScope={data.filterScope} />
       <ParetoLayer data={data.pareto} showAll={showAll} />
-      <OverrideLog />
+      <OverrideLog fvaSummary={data.fvaSummary} />
       {data.methodology && (
         <>
           <AssumptionsFooter

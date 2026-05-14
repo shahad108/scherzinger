@@ -49,6 +49,8 @@ def test_forecast_top_level_shape(client: TestClient) -> None:
         "erosionProjection",
         # v2.2 Phase F — at-risk revenue tier-stacked aggregate.
         "atRiskRevenue",
+        # v2.2 Phase G — FVA override drill-down summary.
+        "fvaSummary",
         "dataThrough",
         "filterScope",
     }

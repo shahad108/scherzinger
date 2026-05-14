@@ -711,6 +711,14 @@ async def build_forecast(
     except Exception as e:  # pragma: no cover - safety net
         _log.warning("at_risk_revenue compose failed: %s", e)
 
+    # v2.2 Phase G — FVA override drill-down summary. Aggregates the override
+    # store (no new endpoint — surfaced inline on the composed payload).
+    try:
+        from .overrides import summarize_fva
+        payload["fvaSummary"] = summarize_fva()
+    except Exception as e:  # pragma: no cover - safety net
+        _log.warning("fva_summary compose failed: %s", e)
+
     # Canonical freshness signal — prefer methodology's data-through value,
     # fall back to "now" so the freshness chip always has *something* to render.
     try:

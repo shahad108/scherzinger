@@ -152,3 +152,76 @@ def delete_override(override_id: str) -> None:
         if len(filtered) == len(rows):
             raise KeyError(override_id)
         _save(filtered)
+
+
+def _current_quarter(today: datetime | None = None) -> str:
+    """Return current quarter label like "2026Q2" from today's UTC date."""
+    d = today or datetime.now(timezone.utc)
+    q = (d.month - 1) // 3 + 1
+    return f"{d.year}Q{q}"
+
+
+def _month_to_quarter(month: str) -> str | None:
+    """Map a YYYY-MM month string to a "YYYYQn" quarter label.
+
+    Returns ``None`` when the input is malformed so callers can skip cleanly.
+    """
+    try:
+        year_s, month_s = month.split("-", 1)
+        year = int(year_s)
+        mo = int(month_s)
+        if not (1 <= mo <= 12):
+            return None
+        q = (mo - 1) // 3 + 1
+        return f"{year}Q{q}"
+    except Exception:
+        return None
+
+
+def summarize_fva(period: str | None = None) -> dict[str, Any]:
+    """Aggregate FVA over a period (defaults to current UTC quarter).
+
+    Pure function — reads overrides via the existing ``_load`` helper and
+    buckets each row's ``fvaDelta`` by sign. ``netFvaDeltaPp`` is the
+    algebraic sum of ``fvaDelta`` across the period, expressed in
+    percentage points (raw fvaDelta is stored in basis points: 100 bps = 1pp),
+    rounded to 1 decimal place.
+    """
+    target = period or _current_quarter()
+    entered = improved = worsened = neutral = 0
+    net_bps_total = 0.0
+    for r in _load():
+        month = r.get("month")
+        if not isinstance(month, str):
+            continue
+        q = _month_to_quarter(month)
+        if q != target:
+            continue
+        entered += 1
+        delta = r.get("fvaDelta")
+        if delta is None:
+            # Treat missing delta as neutral — can't bucket a null.
+            neutral += 1
+            continue
+        try:
+            delta_f = float(delta)
+        except (TypeError, ValueError):
+            neutral += 1
+            continue
+        net_bps_total += delta_f
+        if delta_f > 0:
+            improved += 1
+        elif delta_f < 0:
+            worsened += 1
+        else:
+            neutral += 1
+    # fvaDelta is in basis points → convert to pp (÷100) and round to 1dp.
+    net_pp = round(net_bps_total / 100.0, 1)
+    return {
+        "period": target,
+        "entered": entered,
+        "improved": improved,
+        "worsened": worsened,
+        "neutral": neutral,
+        "netFvaDeltaPp": net_pp,
+    }

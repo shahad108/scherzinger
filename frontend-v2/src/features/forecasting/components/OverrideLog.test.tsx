@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactElement } from 'react';
 import { OverrideLog } from './OverrideLog';
+import type { FvaSummary } from '@/types/forecast';
 
 const fetchMock = vi.fn();
 
@@ -192,5 +193,76 @@ describe('OverrideLog', () => {
     // Resolve to avoid leaving the request hanging.
     fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ items: [] }) });
     resolveDelete({ ok: true });
+  });
+
+  describe('FVA summary strip (Phase G)', () => {
+    const baseSummary: FvaSummary = {
+      period: '2026Q2',
+      entered: 14,
+      improved: 9,
+      worsened: 5,
+      neutral: 0,
+      netFvaDeltaPp: 1.8,
+    };
+
+    it('renders the summary strip when fvaSummary is provided and tone is green for positive net Δ', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ items: [] }),
+      });
+
+      wrap(<OverrideLog fvaSummary={baseSummary} />);
+
+      const button = await screen.findByRole('button', { name: /Override log/i });
+      fireEvent.click(button);
+
+      const strip = await screen.findByTestId('override-fva-summary');
+      expect(strip).toHaveAttribute('data-tone', 'pos');
+      expect(strip).toHaveTextContent(/Q2 2026/);
+      expect(screen.getByTestId('override-fva-summary-entered')).toHaveTextContent('14');
+      expect(screen.getByTestId('override-fva-summary-improved')).toHaveTextContent('9');
+      expect(screen.getByTestId('override-fva-summary-worsened')).toHaveTextContent('5');
+      expect(screen.getByTestId('override-fva-summary-net')).toHaveTextContent('+1.8pp');
+    });
+
+    it('uses negative (red) tone when netFvaDeltaPp is negative', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ items: [] }),
+      });
+
+      wrap(
+        <OverrideLog
+          fvaSummary={{ ...baseSummary, netFvaDeltaPp: -2.3 }}
+        />,
+      );
+
+      const button = await screen.findByRole('button', { name: /Override log/i });
+      fireEvent.click(button);
+
+      const strip = await screen.findByTestId('override-fva-summary');
+      expect(strip).toHaveAttribute('data-tone', 'neg');
+      // formatted with mathematical minus '−' + magnitude
+      expect(screen.getByTestId('override-fva-summary-net').textContent).toMatch(
+        /−2\.3pp/,
+      );
+    });
+
+    it('does not render the strip when fvaSummary is undefined (back-compat)', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ items: [] }),
+      });
+
+      wrap(<OverrideLog />);
+
+      const button = await screen.findByRole('button', { name: /Override log/i });
+      fireEvent.click(button);
+
+      // Wait for the accordion content (empty state) to render so we know
+      // the open transition has completed before asserting absence.
+      await screen.findByTestId('override-log-empty');
+      expect(screen.queryByTestId('override-fva-summary')).toBeNull();
+    });
   });
 });

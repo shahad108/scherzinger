@@ -179,6 +179,16 @@ export interface ErosionProjection {
   rows: ErosionProjectionRow[];
 }
 
+// v2.2 Phase G — FVA override drill-down summary.
+export interface FvaSummary {
+  period: string;
+  entered: number;
+  improved: number;
+  worsened: number;
+  neutral: number;
+  netFvaDeltaPp: number;
+}
+
 // v2.2 Phase F — At-Risk Revenue tier-stacked bar.
 export interface AtRiskTierRow {
   tier: string;
@@ -853,6 +863,8 @@ export interface ForecastShell {
   erosionProjection?: ErosionProjection;
   // v2.2 Phase F — at-risk revenue tier-stacked bar.
   atRiskRevenue?: AtRiskRevenue;
+  // v2.2 Phase G — FVA override drill-down summary.
+  fvaSummary?: FvaSummary;
   dataThrough?: string;          // canonical ISO timestamp for freshness chip
   filterScope?: FilterScope;     // mirrors the active URL params so cards can render unfiltered badges
 }
