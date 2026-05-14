@@ -507,7 +507,9 @@ export function HeroForecast({
             {/* v2.1 — pipeline-implied P50 (open-quote book × win_prob).
                 Lighter rose, dashed, no dots. Renders only where the
                 backend supplied a value; connectNulls=false keeps the
-                line broken across missing months. */}
+                line broken across missing months. style.pointerEvents=none
+                so it never competes with the primary line for activeDot
+                hover detection. */}
             <Line
               type="monotone"
               dataKey="pipelineP50"
@@ -519,6 +521,7 @@ export function HeroForecast({
               connectNulls={false}
               isAnimationActive={false}
               name="Pipeline P50"
+              style={{ pointerEvents: 'none' }}
             />
 
           </ComposedChart>

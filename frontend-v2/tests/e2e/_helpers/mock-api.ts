@@ -1,3 +1,61 @@
+// v2.1 — fixture extras for the new components (PlanTrackingStrip,
+// PocketWaterfallCard, BiasCard, NextCycleMovesStrip) and the canonical
+// dataThrough timestamp + filterScope. Kept here rather than in
+// `src/data/mocks/forecast.json` so the unit tests' fixture stays minimal.
+function v21FixtureExtras() {
+  return {
+    dataThrough: new Date().toISOString(),
+    filterScope: { tier: null, family: null, cluster: null, scenarioId: null },
+    planTracking: {
+      points: [
+        { month: '2026-01', plan: 510_000, actual: 480_000 },
+        { month: '2026-02', plan: 545_000, actual: 530_000 },
+        { month: '2026-03', plan: 470_000, actual: 458_000 },
+        { month: '2026-04', plan: 530_000, actual: null },
+        { month: '2026-05', plan: 555_000, actual: null },
+        { month: '2026-06', plan: 600_000, actual: null },
+      ],
+      cumulativeGapEur: -57_000,
+      cumulativeGapPct: -3.7,
+      recentMonthAttribution: { price: -95_000, volume: -40_000, mix: -25_000, cost: 20_000 },
+      resetLog: [
+        { at: '2026-02-12T09:00:00Z', by: 'Manuel', reason: 'Steel S355 spike priced in', priorValue: 510_000 },
+      ],
+    },
+    pocketWaterfall: {
+      steps: [
+        { name: 'list', value: 100, leakagePct: null },
+        { name: 'quoted', value: 88, leakagePct: 12 },
+        { name: 'booked', value: 80, leakagePct: 9.09 },
+        { name: 'invoiced', value: 76, leakagePct: 5 },
+        { name: 'db2', value: 18, leakagePct: 76.32 },
+      ],
+      perCluster: [
+        { cluster: 'BKAES', histogram: [{ bin: '70', count: 1 }, { bin: '80', count: 4 }, { bin: '90', count: 2 }], median: 80, p10: 72, p90: 92 },
+        { cluster: 'BKAGG', histogram: [{ bin: '60', count: 2 }, { bin: '70', count: 3 }, { bin: '80', count: 1 }], median: 68, p10: 60, p90: 78 },
+        { cluster: 'BKAIZ', histogram: [{ bin: '75', count: 2 }, { bin: '82', count: 5 }, { bin: '90', count: 1 }], median: 82, p10: 75, p90: 90 },
+        { cluster: 'MBDIV', histogram: [{ bin: '65', count: 1 }, { bin: '75', count: 3 }, { bin: '85', count: 2 }], median: 75, p10: 67, p90: 84 },
+      ],
+      unit: 'pct_of_list' as const,
+    },
+    bias: {
+      rows: [
+        { cluster: 'BKAES', cmeOverMad: 1.2, hitRatePct: 78, trailing6moDirection: 'flat' as const },
+        { cluster: 'BKAGG', cmeOverMad: 3.5, hitRatePct: 65, trailing6moDirection: 'over' as const },
+        { cluster: 'BKAIZ', cmeOverMad: -1.0, hitRatePct: 82, trailing6moDirection: 'flat' as const },
+        { cluster: 'MBDIV', cmeOverMad: -4.5, hitRatePct: 50, trailing6moDirection: 'under' as const },
+      ],
+      windowMonths: 6,
+      footnote: 'Tracking signal = cumulative ME / MAD. |value| > 4 conventionally flags bias.',
+    },
+    nextMoves: [
+      { id: 'm1', rank: 1, cluster: 'BKAGG', headline: 'BKAGG cluster: 12 SKUs below cost-floor', forecastImpactEur: 420_000, sourceSignal: 'cost crossing list price', actionIntent: { kind: 'open_studio', payload: { cluster: 'BKAGG' } } },
+      { id: 'm2', rank: 2, cluster: null, headline: '38% of quotes lost to PA-code last 90d', forecastImpactEur: 280_000, sourceSignal: 'win-loss · price too high', actionIntent: { kind: 'open_quotes', payload: { reason: 'PA' } } },
+      { id: 'm3', rank: 3, cluster: 'BKAES', headline: 'BKAES: 8 renewals overdue', forecastImpactEur: 180_000, sourceSignal: 'renewal queue', actionIntent: { kind: 'open_renewals', payload: { cluster: 'BKAES' } } },
+    ],
+  };
+}
+
 // Phase 7 helper: deterministic API mocking for the v2 dev server.
 //
 // We can't depend on the FastAPI backend being up in the test environment, so
@@ -83,7 +141,9 @@ export async function installForecastMocks(page: Page): Promise<MockState> {
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(forecastFixture),
+      // v2.1 — merge in plan-tracking / pocket-waterfall / bias / next-moves /
+      // dataThrough / filterScope so the new components render in visual specs.
+      body: JSON.stringify({ ...forecastFixture, ...v21FixtureExtras() }),
     }),
   );
   await page.route('**/api/v1/screens/action-center**', (route) =>

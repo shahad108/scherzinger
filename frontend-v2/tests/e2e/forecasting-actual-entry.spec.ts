@@ -22,28 +22,44 @@ test.describe('Frank — Forecasting v2 click-to-actual', () => {
     await installForecastMocks(page);
   });
 
-  test('layout puts KPI strip + hero in first viewport', async ({ page }) => {
+  test('v2.1 layout: PlanTrackingStrip first, then KPIs, then hero in first two viewports', async ({ page }) => {
     await gotoForecasting(page);
+    const plan = page.getByTestId('plan-tracking-strip');
     const kpi = page.getByTestId('hero-kpi-strip');
+    await expect(plan).toBeVisible();
     await expect(kpi).toBeVisible();
 
-    // Hero title lives inside HeroForecast — it's the load-bearing chart
-    // heading and the y-coord we want to assert lives above the fold.
+    // v2.1: PlanTrackingStrip must come BEFORE the KPI strip in the DOM.
+    const planY = (await plan.boundingBox())?.y ?? 9999;
+    const kpiY = (await kpi.boundingBox())?.y ?? 0;
+    expect(planY).toBeLessThan(kpiY);
+
+    // Hero title still needs to be within the first ~2 viewports. Plan
+    // tracking + KPI strip together push it down, so we relax from 900 → 1500.
     const heroTitle = page.getByTestId('hero-title');
     await expect(heroTitle).toBeVisible();
     const heroBox = await heroTitle.boundingBox();
-    expect(heroBox?.y ?? 9999).toBeLessThan(900);
+    expect(heroBox?.y ?? 9999).toBeLessThan(1500);
   });
 
   test('click month opens entry panel, FVA warns small, save persists diamond', async ({
     page,
   }) => {
+    // v2.1 added 5 sections above HeroForecast (PlanTrackingStrip and the KPI
+    // strip pushed it down significantly). The scroll + activeDot sweep can
+    // take longer than the 30s default, so we relax the deadline.
+    test.setTimeout(60_000);
     await gotoForecasting(page);
 
     // Wait for the chart to render. ResponsiveContainer mounts the SVG
     // asynchronously; if we click too early the activeDot won't exist.
+    // v2.1 — multiple Recharts surfaces are on the page now (PlanTrackingStrip,
+    // HeroForecast, etc.); resolve the HERO chart specifically via the
+    // hero-title test id.
     await expect(page.getByTestId('hero-kpi-strip')).toBeVisible();
-    const chartSvg = page.locator('.recharts-surface').first();
+    await expect(page.getByTestId('hero-title')).toBeVisible();
+    const heroSection = page.getByTestId('hero-title').locator('xpath=ancestor::div[contains(@class,"hero-card")][1]');
+    const chartSvg = heroSection.locator('.recharts-surface').first();
     await expect(chartSvg).toBeVisible();
 
     // Open the actual-entry panel. The primary line uses `dot={false}` so
@@ -118,7 +134,9 @@ test.describe('Frank — Forecasting v2 click-to-actual', () => {
  * `.recharts-active-dot` is rendered, then click it.
  */
 async function openEntryPanelViaChart(page: import('@playwright/test').Page) {
-  const chartSvg = page.locator('.recharts-surface').first();
+  // v2.1 — multiple Recharts surfaces on the page; scope to the hero chart.
+  const heroSection = page.getByTestId('hero-title').locator('xpath=ancestor::div[contains(@class,"hero-card")][1]');
+  const chartSvg = heroSection.locator('.recharts-surface').first();
   // The chart sits below a 900px viewport; scroll into view first.
   await chartSvg.scrollIntoViewIfNeeded();
   await page.waitForTimeout(200);
@@ -129,7 +147,9 @@ async function openEntryPanelViaChart(page: import('@playwright/test').Page) {
   const box = await chartSvg.boundingBox();
   if (!box) throw new Error('chart svg has no bounding box');
 
-  const activeDot = page.locator('.recharts-active-dot');
+  // Scope active-dot lookup to the hero chart too, otherwise we'd false-match
+  // on PlanTrackingStrip's chart that now also lives on the page.
+  const activeDot = heroSection.locator('.recharts-active-dot');
 
   // Sweep x and y with Playwright's mouse. Recharts surfaces an
   // activeDot when the cursor is over the primary forecast line. Once

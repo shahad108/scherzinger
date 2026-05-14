@@ -33,6 +33,7 @@ test.describe('Frank — Forecasting v2 visual baseline', () => {
   });
 
   test('panel open state', async ({ page }) => {
+    test.setTimeout(60_000);  // v2.1 — chart sits below more components now
     await gotoForecasting(page);
     await page.waitForSelector('[data-testid="hero-kpi-strip"]');
 
@@ -50,12 +51,18 @@ test.describe('Frank — Forecasting v2 visual baseline', () => {
 });
 
 async function openPanel(page: import('@playwright/test').Page) {
-  const chartSvg = page.locator('.recharts-surface').first();
+  // v2.1 — multiple Recharts surfaces on the page now; scope to the hero
+  // chart via its testid + nearest `.hero-card` ancestor div, otherwise we
+  // would pick PlanTrackingStrip's chart instead.
+  const heroSection = page
+    .getByTestId('hero-title')
+    .locator('xpath=ancestor::div[contains(@class,"hero-card")][1]');
+  const chartSvg = heroSection.locator('.recharts-surface').first();
   await chartSvg.scrollIntoViewIfNeeded();
   await page.waitForTimeout(200);
   const box = await chartSvg.boundingBox();
   if (!box) return;
-  const activeDot = page.locator('.recharts-active-dot');
+  const activeDot = heroSection.locator('.recharts-active-dot');
   for (let py = 30; py <= 80; py += 10) {
     const y = box.y + (box.height * py) / 100;
     for (let px = 92; px >= 35; px -= 4) {
