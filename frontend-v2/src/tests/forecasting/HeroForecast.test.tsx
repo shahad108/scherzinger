@@ -22,6 +22,14 @@ vi.mock('@/data/api/useForecastOverrides', () => ({
   useForecastOverrides: () => ({ data: { items: [] } }),
 }));
 
+// Phase H — same treatment for the annotations hook so this intervals test
+// doesn't need a QueryClientProvider.
+vi.mock('@/data/api/useForecastAnnotations', () => ({
+  useForecastAnnotations: () => ({ data: { items: [] } }),
+  useCreateAnnotation: () => ({ mutateAsync: vi.fn(), isPending: false, isError: false }),
+  useDeleteAnnotation: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 const hero: ForecastHero = {
   caption: 'Walk-forward · solid = P50 · shaded = band',
   series: [

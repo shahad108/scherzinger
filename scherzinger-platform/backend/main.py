@@ -10,6 +10,7 @@ from backend.api.v1 import (
     costs,
     dashboard,
     forecast as forecast_blocks,
+    forecast_annotations,
     forecast_overrides,
     forecasts,
     margins,
@@ -109,6 +110,13 @@ app.include_router(models_registry.router, prefix="/api/v1")
 
 # Forecasting Phase 5: scenario library CRUD + share.
 app.include_router(scenarios.router, prefix="/api/v1")
+
+# Forecasting v2.2 Phase H: annotation / comment layer.
+app.include_router(
+    forecast_annotations.router,
+    prefix="/api/v1",
+    tags=["forecast-annotations"],
+)
 
 
 @app.get("/health")

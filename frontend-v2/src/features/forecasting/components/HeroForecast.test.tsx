@@ -11,6 +11,14 @@ vi.mock('@/data/api/useForecastOverrides', () => ({
   useForecastOverrides: () => ({ data: { items: [] } }),
 }));
 
+// Phase H — annotations are similarly fetched on mount; mock the hook so the
+// test never hits the network.
+vi.mock('@/data/api/useForecastAnnotations', () => ({
+  useForecastAnnotations: () => ({ data: { items: [] } }),
+  useCreateAnnotation: () => ({ mutateAsync: vi.fn(), isPending: false, isError: false }),
+  useDeleteAnnotation: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 function wrap(ui: ReactElement) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
@@ -77,6 +85,14 @@ describe('HeroForecast v2', () => {
     const onPointClick = vi.fn();
     wrap(<HeroForecast hero={makeHero()} mode="revenue" onPointClick={onPointClick} />);
     expect(screen.getByTestId('hero-title')).toBeInTheDocument();
+  });
+
+  it('exposes a keyboard-reachable "Add note" button (disabled until hover)', () => {
+    wrap(<HeroForecast hero={makeHero()} mode="revenue" />);
+    const addBtn = screen.getByTestId('hero-add-annotation');
+    // Without a hovered month the button is disabled — accessibility fallback
+    // is reachable but cannot fire blindly.
+    expect(addBtn).toBeDisabled();
   });
 });
 

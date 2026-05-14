@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   Area,
   ComposedChart,
@@ -13,7 +13,9 @@ import {
 } from 'recharts';
 import type { ForecastHero, ForecastIntervals, ForecastMode } from '@/types/forecast';
 import { useForecastOverrides } from '@/data/api/useForecastOverrides';
+import { useForecastAnnotations } from '@/data/api/useForecastAnnotations';
 import { ActualEntryPanel } from './ActualEntryPanel';
+import { AnnotationPopover } from './AnnotationPopover';
 
 interface Props {
   hero: ForecastHero;
@@ -143,6 +145,29 @@ export function HeroForecast({
   // signal. Toggle restores the full series on demand.
   const [showFullHistory, setShowFullHistory] = useState(false);
 
+  // Phase H (v2.2) — annotation popover state. Right-clicking a month on the
+  // chart opens a small popover scoped to that month. A keyboard-accessible
+  // "Add note" button on the most-recently-hovered month is the non-mouse
+  // fallback (Phase K accessibility audit hooks into this).
+  const [annotation, setAnnotation] = useState<
+    | { month: string; anchor: { x: number; y: number } }
+    | null
+  >(null);
+  const [hoverMonth, setHoverMonth] = useState<string | null>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+
+  // Pull all annotations once; we filter to months for the pin glyphs and pass
+  // the active month through to the popover so it can re-filter and refresh.
+  const { data: annotationsData } = useForecastAnnotations({});
+  const annotatedMonths = useMemo(() => {
+    const items = annotationsData?.items ?? [];
+    return new Set(
+      items
+        .filter((a) => a.target.kind === 'month')
+        .map((a) => a.target.value),
+    );
+  }, [annotationsData]);
+
   // Phase 3.4 — fetch saved overrides and project them as diamond glyphs onto
   // the chart. Filtered to the active mode (a margin override doesn't belong
   // on a revenue chart). Hook tolerates a missing/empty backend (returns
@@ -210,6 +235,20 @@ export function HeroForecast({
   // chart's own p50 line so they snap to the visible band regardless of where
   // the user's actual landed (the actual value already shows via the actual
   // dot — the diamond is the "this month was overridden" signal).
+  // Phase H — annotation pin markers (one per annotated month visible on the
+  // chart). Pinned to the same Y position as override diamonds so they share
+  // the visible band.
+  const annotationMarkers = useMemo(
+    () =>
+      chartData
+        .filter((p) => annotatedMonths.has(p.month))
+        .map((p) => ({
+          month: p.month,
+          annotationY: p.actual ?? p.primary,
+        })),
+    [chartData, annotatedMonths],
+  );
+
   const overrideMarkers = useMemo(
     () =>
       chartData
@@ -356,9 +395,28 @@ export function HeroForecast({
         </div>
       </div>
 
-      <div style={{ height: 340, position: 'relative' }}>
+      <div
+        ref={chartContainerRef}
+        style={{ height: 340, position: 'relative' }}
+        onContextMenu={(e) => {
+          // Phase H — right-click anywhere on the chart opens the annotation
+          // popover for the currently-hovered month. We suppress the OS
+          // context menu so the popover replaces it cleanly.
+          if (!hoverMonth) return;
+          e.preventDefault();
+          setAnnotation({ month: hoverMonth, anchor: { x: e.clientX, y: e.clientY } });
+        }}
+      >
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 12, right: 16, left: 0, bottom: 8 }}>
+          <ComposedChart
+            data={chartData}
+            margin={{ top: 12, right: 16, left: 0, bottom: 8 }}
+            onMouseMove={(state: { activeLabel?: string } | undefined) => {
+              const m = state?.activeLabel ?? null;
+              if (m !== hoverMonth) setHoverMonth(m);
+            }}
+            onMouseLeave={() => setHoverMonth(null)}
+          >
             <defs>
               {/*
                 Phase 3 (forecast redesign v2) — moved bands from the legacy
@@ -504,6 +562,18 @@ export function HeroForecast({
                 name="Override"
               />
             )}
+            {/* Phase H — annotation pin glyphs. Visually distinct from the
+                override diamond (small inverted triangle, rose accent) so the
+                two layers can co-exist without confusion. */}
+            {annotationMarkers.length > 0 && (
+              <Scatter
+                data={annotationMarkers}
+                dataKey="annotationY"
+                shape={PinShape}
+                isAnimationActive={false}
+                name="Annotation"
+              />
+            )}
             {/* v2.1 — pipeline-implied P50 (open-quote book × win_prob).
                 Lighter rose, dashed, no dots. Renders only where the
                 backend supplied a value; connectNulls=false keeps the
@@ -527,6 +597,60 @@ export function HeroForecast({
           </ComposedChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Phase H — keyboard-reachable annotation entry point. Right-click on
+          the chart is the discoverable path; this button is the accessible
+          fallback. Disabled until the user has hovered a month so the action
+          has an unambiguous target. */}
+      <div
+        style={{
+          marginTop: 6,
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <button
+          type="button"
+          data-testid="hero-add-annotation"
+          onClick={(e) => {
+            if (!hoverMonth) return;
+            const rect = chartContainerRef.current?.getBoundingClientRect();
+            setAnnotation({
+              month: hoverMonth,
+              anchor: {
+                x: e.clientX || (rect ? rect.right - 320 : 0),
+                y: e.clientY || (rect ? rect.bottom : 0),
+              },
+            });
+          }}
+          disabled={!hoverMonth}
+          aria-label={hoverMonth ? `Add note for ${hoverMonth}` : 'Hover a month to add a note'}
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--hairline)',
+            borderRadius: 6,
+            padding: '3px 9px',
+            fontSize: 10.5,
+            fontWeight: 600,
+            color: hoverMonth ? 'var(--ink-2)' : 'var(--muted)',
+            cursor: hoverMonth ? 'pointer' : 'not-allowed',
+            letterSpacing: '0.02em',
+            fontFamily: 'inherit',
+          }}
+        >
+          + Add note {hoverMonth ? `(${hoverMonth})` : ''}
+        </button>
+      </div>
+
+      {annotation && (
+        <AnnotationPopover
+          anchor={annotation.anchor}
+          target={{ kind: 'month', value: annotation.month }}
+          onClose={() => setAnnotation(null)}
+        />
+      )}
 
       {hero.intervals && <IntervalsPanel intervals={hero.intervals} showP95={showP95} />}
 
@@ -632,6 +756,37 @@ function DiamondShape(props: { cx?: number; cy?: number }) {
       strokeWidth={1.5}
       data-testid="hero-override-diamond"
     />
+  );
+}
+
+// Phase H — annotation pin glyph. Rendered above the override diamonds when
+// both exist on the same month (they offset visually by virtue of being
+// drawn on slightly different y-targets via the Scatter dataKey).
+function PinShape(props: { cx?: number; cy?: number }) {
+  const { cx, cy } = props;
+  if (cx == null || cy == null) return null;
+  // Pin sits 12px above the line — small filled head + short stem so it reads
+  // as a separate layer from the override diamonds.
+  const headY = cy - 14;
+  return (
+    <g data-testid="hero-annotation-pin">
+      <line
+        x1={cx}
+        y1={cy}
+        x2={cx}
+        y2={headY + 2}
+        stroke="var(--rose-deep, #a04055)"
+        strokeWidth={1.5}
+      />
+      <circle
+        cx={cx}
+        cy={headY}
+        r={4}
+        fill="var(--rose-deep, #a04055)"
+        stroke="#fff"
+        strokeWidth={1.5}
+      />
+    </g>
   );
 }
 

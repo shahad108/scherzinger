@@ -24,6 +24,23 @@ export interface ForecastOverride {
   fvaDelta: number | null;
 }
 
+// Forecast annotation types — v2.2 Phase H (comment layer)
+export type AnnotationTargetKind = 'month' | 'cluster';
+
+export interface AnnotationTarget {
+  kind: AnnotationTargetKind;
+  /** YYYY-MM for `month`; cluster code for `cluster`. */
+  value: string;
+}
+
+export interface ForecastAnnotation {
+  id: string;
+  target: AnnotationTarget;
+  body: string;
+  author: string;
+  createdAt: string;
+}
+
 export interface HeroKPI {
   forecast12mo: { value: number; unit: 'EUR' | 'pct' | 'units' };
   varianceVsPlan: { value: number; pct: number; trend: TrendDir };
