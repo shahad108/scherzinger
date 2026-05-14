@@ -265,6 +265,12 @@ function AggregateViewV1({ data, article, mode, showAll }: Omit<AggregateProps, 
 }
 
 function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 'layoutV2'>) {
+  // Phase 9: when a cluster filter (?cluster=BKAES) is active, any override the
+  // user creates from the hero chart must be tagged with that cluster — not
+  // attributed to the aggregate. We read the param here and pass it through to
+  // HeroForecast → ActualEntryPanel.
+  const [clusterParams] = useSearchParams();
+  const activeCluster = clusterParams.get('cluster') ?? null;
   // Derive KPI inputs from the existing ForecastHero shape. Optional new fields
   // (forecast12moTotal, varianceVsPlanPct, mapeTrailing6mo, fva) are honored
   // when present, otherwise computed from `series` or filled with safe zeros.
@@ -289,7 +295,7 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
         fva={fva}
         mode={mode}
       />
-      <HeroForecast hero={data.hero} mode={mode} enableActualEntry />
+      <HeroForecast hero={data.hero} mode={mode} cluster={activeCluster} enableActualEntry />
       {data.pvm && (
         <PVMWaterfall
           periodLabel={data.pvm.periodLabel}

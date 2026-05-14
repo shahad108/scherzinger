@@ -39,6 +39,15 @@ interface Props {
    * internal state. AggregateViewV2 sets this to true.
    */
   enableActualEntry?: boolean;
+  /**
+   * Phase 9 fix: when a cluster filter is active on the page (?cluster=BKAES),
+   * the active cluster is threaded down here so that overrides created via
+   * the hero chart are attributed to that cluster rather than the aggregate.
+   * Diamond markers are also filtered by this cluster (an aggregate override
+   * doesn't belong on a cluster-filtered chart, and vice versa). `null` means
+   * "aggregate view".
+   */
+  cluster?: string | null;
 }
 
 type BandMode = 'p80' | 'p80+p95';
@@ -106,7 +115,13 @@ function formatTooltip(mode: ForecastMode, v: number): string {
   return `€${v.toFixed(0)}`;
 }
 
-export function HeroForecast({ hero, mode, onPointClick, enableActualEntry = false }: Props) {
+export function HeroForecast({
+  hero,
+  mode,
+  onPointClick,
+  enableActualEntry = false,
+  cluster = null,
+}: Props) {
   const [bandMode, setBandMode] = useState<BandMode>('p80+p95');
   const showP95 = bandMode === 'p80+p95';
   // Phase 4 (forecast redesign v2) — clicking a forecast point opens the
@@ -135,8 +150,14 @@ export function HeroForecast({ hero, mode, onPointClick, enableActualEntry = fal
   const { data: overridesData } = useForecastOverrides({});
   const overrideMonths = useMemo(() => {
     const items = overridesData?.items ?? [];
-    return new Set(items.filter((o) => o.mode === mode).map((o) => o.month));
-  }, [overridesData, mode]);
+    // Phase 9 fix: filter by both mode AND active cluster so an aggregate
+    // override doesn't bleed into a cluster-filtered view (and vice versa).
+    return new Set(
+      items
+        .filter((o) => o.mode === mode && (o.cluster ?? null) === (cluster ?? null))
+        .map((o) => o.month),
+    );
+  }, [overridesData, mode, cluster]);
 
   // Round 4 fix: backend now ships REAL per-mode series sourced from invoices
   // (real_hero.py). No heuristic rescale needed. Identity function.
@@ -561,7 +582,7 @@ export function HeroForecast({ hero, mode, onPointClick, enableActualEntry = fal
           return (
             <ActualEntryPanel
               month={editingMonth}
-              cluster={null}
+              cluster={cluster ?? null}
               mode={mode}
               modelP50={p50}
               band80={[p80Low, p80High]}
