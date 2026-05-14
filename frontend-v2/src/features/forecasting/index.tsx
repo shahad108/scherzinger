@@ -24,7 +24,6 @@ import { CommodityTrajectoriesCard } from './components/CommodityTrajectoriesCar
 import { CustomerForecastDetail } from './components/PerCustomerTab';
 import { ScenarioLibrary } from './components/ScenarioLibrary';
 import { ScenarioActiveBanner } from './components/ScenarioActiveBanner';
-import { ScenarioCompareView } from './components/ScenarioCompareView';
 import { QuoteToRevenueBridge } from './components/QuoteToRevenueBridge';
 import { CalibrationCard } from './components/CalibrationCard';
 import { MarketDirectionStrip } from './components/MarketDirectionStrip';
@@ -190,7 +189,6 @@ export default function ForecastingPage() {
       {scenarioId && (
         <ScenarioActiveBanner scenarioId={scenarioId} applied={data.scenarioApplied} />
       )}
-      <ScenarioCompareView modeParam={modeParam} horizonParam={horizonParam} />
       <ModeToggle active={modeParam} horizonMonths={horizonParam as 3 | 6 | 12} />
 
       <AggregateView data={data} article={article} mode={modeParam} showAll={showAll} layoutV2={layoutV2} />
