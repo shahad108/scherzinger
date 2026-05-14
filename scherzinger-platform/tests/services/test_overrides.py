@@ -106,6 +106,67 @@ def test_concurrent_create_no_loss(tmp_store):
     assert len(overrides.list_overrides()) == 20
 
 
+@pytest.mark.parametrize(
+    "adj, expected",
+    [
+        (0.00, -25),  # exactly zero → "small" band
+        (0.04, -25),  # under 5%
+        (0.05, 0),  # 5% boundary → neutral
+        (0.09, 0),  # still neutral
+        (0.10, 15),  # 10% boundary → small positive
+        (0.19, 15),  # still in small-positive band
+        (0.20, 40),  # 20% boundary → large
+        (0.50, 40),  # large
+        (-0.06, 0),  # sign irrelevant — magnitude only
+        (-0.25, 40),  # large negative still scores +40
+    ],
+)
+def test_score_fva_bands(adj, expected):
+    assert overrides._score_fva(adj) == expected
+
+
+def test_create_override_assigns_fva_delta(tmp_store):
+    """Heuristic stub: a +6.2% adjustment lands in the neutral band → 0 bps."""
+    row = overrides.create_override(
+        {
+            "month": "2026-08",
+            "cluster": None,
+            "mode": "revenue",
+            "actual": 650000,
+            "modelP50": 612000,
+            "source": "manual",
+            "confidence": "medium",
+            "reason": "neutral-band adjustment",
+            "author": "Frank",
+        }
+    )
+    # (650000 - 612000) / 612000 ≈ 6.2% → neutral band
+    assert row["fvaDelta"] == 0
+
+
+def test_update_override_recomputes_fva_delta(tmp_store):
+    """When `actual` changes, fvaDelta must follow the new adjustment band."""
+    row = overrides.create_override(
+        {
+            "month": "2026-08",
+            "cluster": None,
+            "mode": "revenue",
+            "actual": 612000,  # 0% adj → -25 bps
+            "modelP50": 612000,
+            "source": "manual",
+            "confidence": "medium",
+            "reason": "starts in small band",
+            "author": "Frank",
+        }
+    )
+    assert row["fvaDelta"] == -25
+
+    # Bump actual into the large-adjustment band (+25%).
+    updated = overrides.update_override(row["id"], {"actual": 765000})
+    assert updated["adjustmentPct"] == pytest.approx(0.25, abs=1e-6)
+    assert updated["fvaDelta"] == 40
+
+
 def test_reason_too_short_rejected(tmp_store):
     with pytest.raises(ValueError):
         overrides.create_override(

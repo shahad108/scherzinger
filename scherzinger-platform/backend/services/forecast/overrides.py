@@ -38,6 +38,33 @@ def _save(rows: Iterable[dict[str, Any]]) -> None:
     STORE_PATH.write_text(json.dumps(list(rows), indent=2))
 
 
+def _score_fva(abs_adj_pct: float) -> int:
+    """Heuristic stub for forecast-value-add delta (basis points).
+
+    The real number will come from re-running the walk-forward backtest
+    cycle with overrides applied — see the "Open follow-ups" section of
+    docs/superpowers/specs/2026-05-14-frank-forecasting-redesign-design.md.
+    Until that cycle is in place we score based on the absolute size of the
+    adjustment, drawing on the Fildes/Goodwin "small-adjustments-hurt"
+    finding:
+
+      |adj| < 5%          → -25 bps (small overrides usually noise)
+      5% <= |adj| < 10%   → 0 bps (neutral)
+      10% <= |adj| < 20%  → +15 bps (informed adjustment likely helps)
+      |adj| >= 20%        → +40 bps (large adjustment, likely material info)
+
+    Sign of the adjustment is irrelevant — only magnitude matters.
+    """
+    a = abs(abs_adj_pct)
+    if a < 0.05:
+        return -25
+    if a < 0.10:
+        return 0
+    if a < 0.20:
+        return 15
+    return 40
+
+
 def _validate_payload(payload: dict[str, Any]) -> None:
     reason = (payload.get("reason") or "").strip()
     if len(reason) < MIN_REASON_LEN:
@@ -69,6 +96,7 @@ def create_override(payload: dict[str, Any]) -> dict[str, Any]:
     _validate_payload(payload)
     model_p50 = float(payload["modelP50"])
     actual = float(payload["actual"])
+    adjustment_pct = (actual - model_p50) / model_p50 if model_p50 else 0.0
     row = {
         "id": str(uuid.uuid4()),
         "month": payload["month"],
@@ -76,7 +104,7 @@ def create_override(payload: dict[str, Any]) -> dict[str, Any]:
         "mode": payload["mode"],
         "actual": actual,
         "modelP50": model_p50,
-        "adjustmentPct": (actual - model_p50) / model_p50 if model_p50 else 0.0,
+        "adjustmentPct": adjustment_pct,
         "source": payload["source"],
         "confidence": payload["confidence"],
         "reason": payload["reason"].strip(),
@@ -84,7 +112,9 @@ def create_override(payload: dict[str, Any]) -> dict[str, Any]:
         # for direct service callers (e.g. seed scripts / future batch jobs).
         "author": payload.get("author") or "unknown",
         "createdAt": datetime.now(timezone.utc).isoformat(),
-        "fvaDelta": None,
+        # Heuristic stub until the walk-forward backtest ingests overrides
+        # (see _score_fva docstring + spec follow-ups).
+        "fvaDelta": _score_fva(adjustment_pct),
     }
     with _LOCK:
         rows = _load()
@@ -107,6 +137,8 @@ def update_override(override_id: str, patch: dict[str, Any]) -> dict[str, Any]:
                 )
                 if "actual" in patch and r["modelP50"]:
                     r["adjustmentPct"] = (float(r["actual"]) - r["modelP50"]) / r["modelP50"]
+                    # Recompute heuristic fvaDelta when actual changes.
+                    r["fvaDelta"] = _score_fva(r["adjustmentPct"])
                 _validate_payload({**r, **patch})
                 _save(rows)
                 return r
