@@ -25,6 +25,16 @@ from .methodology import get_methodology
 from .quote_to_revenue import get_quote_to_revenue
 from .seasonal_overlay import get_seasonal_overlay
 from .tornado import get_tornado
+# v2.1 — plan-first, pocket-margin, prescriptive bridge.
+from .plan_tracking import build_plan_tracking
+from .pocket_waterfall import build_pocket_waterfall
+from .bias import build_bias
+from .next_moves import build_next_moves
+from .pipeline_p50 import build_pipeline_p50
+import datetime as _dt
+import logging as _logging
+
+_log = _logging.getLogger(__name__)
 
 CACHE_TTL_SECONDS = 60
 _CACHE: dict[tuple[Any, ...], tuple[float, dict[str, Any]]] = {}
@@ -204,5 +214,62 @@ async def build_forecast(
         # Phase 7 — Market direction widget.
         "marketDirection": market_direction,
     }
+
+    # === v2.1 additions — all optional, render only when supplied.
+    # Each compose call is independently guarded so a failure in any single
+    # field cannot break the response. Graceful degradation is the contract.
+    try:
+        payload["planTracking"] = build_plan_tracking(
+            mode=active_mode,
+            cluster=cluster,
+            actuals_by_month={},  # TODO p1c-followup: populate from real_hero invoice query
+            pvm_attribution=None,
+        )
+    except Exception as e:  # pragma: no cover - safety net
+        _log.warning("plan_tracking compose failed: %s", e)
+
+    try:
+        payload["pocketWaterfall"] = build_pocket_waterfall()
+    except Exception as e:  # pragma: no cover - safety net
+        _log.warning("pocket_waterfall compose failed: %s", e)
+
+    try:
+        payload["bias"] = build_bias(cluster_errors={})
+    except Exception as e:  # pragma: no cover - safety net
+        _log.warning("bias compose failed: %s", e)
+
+    try:
+        payload["nextMoves"] = build_next_moves(cluster_signals={})
+    except Exception as e:  # pragma: no cover - safety net
+        _log.warning("next_moves compose failed: %s", e)
+
+    try:
+        pp50 = build_pipeline_p50(open_quotes=[])
+        pp50_map = {p["month"]: p["pipelineP50"] for p in pp50}
+        series = payload.get("hero", {}).get("series") or []
+        for point in series:
+            if isinstance(point, dict) and point.get("month") in pp50_map:
+                point["pipelineP50"] = pp50_map[point["month"]]
+    except Exception as e:  # pragma: no cover - safety net
+        _log.warning("pipeline_p50 compose failed: %s", e)
+
+    # Canonical freshness signal — prefer methodology's data-through value,
+    # fall back to "now" so the freshness chip always has *something* to render.
+    try:
+        m_assumptions = (methodology or {}).get("assumptions") or []
+        dt_value = next((a.get("value") for a in m_assumptions if a.get("label") == "Data-through"), None)
+        payload["dataThrough"] = dt_value or _dt.datetime.utcnow().isoformat() + "Z"
+    except Exception:  # pragma: no cover - safety net
+        payload["dataThrough"] = _dt.datetime.utcnow().isoformat() + "Z"
+
+    # Filter scope — lets cards display "(unfiltered)" badges when the active
+    # filter cannot be honored by their data source.
+    payload["filterScope"] = {
+        "tier": tier,
+        "family": family,
+        "cluster": cluster,
+        "scenarioId": None,  # scenario_id is not currently plumbed into this composer
+    }
+
     _CACHE[key] = (now, payload)
     return payload
