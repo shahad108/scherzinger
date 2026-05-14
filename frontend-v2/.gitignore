@@ -8,3 +8,8 @@ dist-demo
 .vite
 coverage
 *.tsbuildinfo
+# Playwright (Phase 7) — keep specs + snapshot baselines, drop run artefacts.
+playwright-report
+test-results
+blob-report
+.playwright
