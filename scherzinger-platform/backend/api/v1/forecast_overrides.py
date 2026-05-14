@@ -1,8 +1,9 @@
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
+from backend.auth.security import AuthContext, require_auth
 from backend.services.forecast import overrides as svc
 
 router = APIRouter(prefix="/forecast/overrides", tags=["forecast-overrides"])
@@ -27,21 +28,34 @@ class OverridePatch(BaseModel):
     reason: str | None = Field(default=None, min_length=10)
 
 
+# GET stays open to mirror other forecast read endpoints. Writes require auth.
 @router.get("")
 def list_overrides(month: str | None = None, cluster: str | None = None):
     return {"items": svc.list_overrides(month=month, cluster=cluster)}
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-def create_override(body: OverrideIn):
+def create_override(
+    body: OverrideIn,
+    ctx: AuthContext = Depends(require_auth),
+):
     try:
-        return svc.create_override(body.model_dump())
+        payload = body.model_dump()
+        # Stamp the authenticated user as the author unless the client provided
+        # a non-default override; never trust a fully-anonymous "Frank" string.
+        if not payload.get("author") or payload.get("author") == "Frank":
+            payload["author"] = ctx.name or ctx.email or "Frank"
+        return svc.create_override(payload)
     except ValueError as e:
         raise HTTPException(400, str(e))
 
 
 @router.patch("/{override_id}")
-def update_override(override_id: str, body: OverridePatch):
+def update_override(
+    override_id: str,
+    body: OverridePatch,
+    ctx: AuthContext = Depends(require_auth),
+):
     try:
         return svc.update_override(
             override_id,
@@ -54,6 +68,12 @@ def update_override(override_id: str, body: OverridePatch):
 
 
 @router.delete("/{override_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_override(override_id: str):
-    svc.delete_override(override_id)
+def delete_override(
+    override_id: str,
+    ctx: AuthContext = Depends(require_auth),
+):
+    try:
+        svc.delete_override(override_id)
+    except KeyError:
+        raise HTTPException(404, "override not found")
     return None

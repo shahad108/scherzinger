@@ -3,10 +3,16 @@
 This is intentionally a flat-file backend (data/forecast-overrides.json).
 A future PR will migrate this to a proper table on the analytics warehouse,
 at which point only this file changes — callers see the same API.
+
+Concurrency note: writes are guarded by a module-level RLock so concurrent
+POST/PATCH/DELETE requests inside a single Uvicorn worker can't clobber each
+other's _load → mutate → _save sequence. Multi-worker deployments would need
+a real file lock (e.g. fcntl/portalocker); tracked as a follow-up.
 """
 from __future__ import annotations
 
 import json
+import threading
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,6 +20,11 @@ from typing import Any, Iterable
 
 STORE_PATH = Path(__file__).resolve().parents[2] / "data" / "forecast-overrides.json"
 MIN_REASON_LEN = 10
+
+# Guards _load → mutate → _save sequences so concurrent writers in a single
+# Uvicorn worker don't lose updates. Re-entrant so helpers can safely call
+# locked helpers without deadlocking.
+_LOCK = threading.RLock()
 
 
 def _load() -> list[dict[str, Any]]:
@@ -73,32 +84,37 @@ def create_override(payload: dict[str, Any]) -> dict[str, Any]:
         "createdAt": datetime.now(timezone.utc).isoformat(),
         "fvaDelta": None,
     }
-    rows = _load()
-    rows.append(row)
-    _save(rows)
+    with _LOCK:
+        rows = _load()
+        rows.append(row)
+        _save(rows)
     return row
 
 
 def update_override(override_id: str, patch: dict[str, Any]) -> dict[str, Any]:
-    rows = _load()
-    for r in rows:
-        if r["id"] == override_id:
-            r.update(
-                {
-                    k: v
-                    for k, v in patch.items()
-                    if k in {"actual", "source", "confidence", "reason"}
-                }
-            )
-            if "actual" in patch and r["modelP50"]:
-                r["adjustmentPct"] = (float(r["actual"]) - r["modelP50"]) / r["modelP50"]
-            _validate_payload({**r, **patch})
-            _save(rows)
-            return r
-    raise KeyError(override_id)
+    with _LOCK:
+        rows = _load()
+        for r in rows:
+            if r["id"] == override_id:
+                r.update(
+                    {
+                        k: v
+                        for k, v in patch.items()
+                        if k in {"actual", "source", "confidence", "reason"}
+                    }
+                )
+                if "actual" in patch and r["modelP50"]:
+                    r["adjustmentPct"] = (float(r["actual"]) - r["modelP50"]) / r["modelP50"]
+                _validate_payload({**r, **patch})
+                _save(rows)
+                return r
+        raise KeyError(override_id)
 
 
 def delete_override(override_id: str) -> None:
-    rows = _load()
-    rows = [r for r in rows if r["id"] != override_id]
-    _save(rows)
+    with _LOCK:
+        rows = _load()
+        filtered = [r for r in rows if r["id"] != override_id]
+        if len(filtered) == len(rows):
+            raise KeyError(override_id)
+        _save(filtered)
