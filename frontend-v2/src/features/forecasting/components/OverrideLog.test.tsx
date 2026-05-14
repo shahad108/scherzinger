@@ -96,6 +96,37 @@ describe('OverrideLog', () => {
     });
   });
 
+  it('shows a retry-able error block when the list fetch fails', async () => {
+    // First load: simulate a 500 → useQuery treats !ok as error (the hook
+    // throws on non-ok responses; see useForecastOverrides).
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: async () => ({ detail: 'boom' }),
+    });
+
+    wrap(<OverrideLog />);
+
+    const button = await screen.findByRole('button', { name: /Override log/i });
+    fireEvent.click(button);
+
+    const errorBlock = await screen.findByTestId('override-log-error');
+    expect(errorBlock).toHaveTextContent(/Couldn’t load overrides/i);
+    // Empty-state must NOT also be rendered — that's what was masking errors.
+    expect(screen.queryByTestId('override-log-empty')).toBeNull();
+
+    // Clicking Retry triggers refetch — mock the next call returning items.
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ items: [] }),
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Retry/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('override-log-error')).toBeNull();
+    });
+  });
+
   it('does not disable other rows while one delete is in flight', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,

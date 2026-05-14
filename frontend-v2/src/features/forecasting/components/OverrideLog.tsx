@@ -80,7 +80,10 @@ function OverrideRow({ o }: { o: ForecastOverride }) {
 }
 
 export function OverrideLog() {
-  const { data, isLoading } = useForecastOverrides();
+  // Phase 9: surface fetch errors instead of masking them behind the empty
+  // state — otherwise a 401 / 500 looks like "no overrides yet" and Frank
+  // thinks his click-to-actual did nothing.
+  const { data, isLoading, isError, refetch } = useForecastOverrides();
   const items: ForecastOverride[] = data?.items ?? [];
   const count = items.length;
 
@@ -93,6 +96,21 @@ export function OverrideLog() {
     >
       {isLoading ? (
         <div className="py-4 text-[12.5px] text-[var(--muted)]">Loading overrides…</div>
+      ) : isError ? (
+        <div
+          data-testid="override-log-error"
+          role="alert"
+          className="my-3 flex items-center justify-between gap-3 rounded-md border border-[var(--rose-deep)]/30 bg-[var(--rose)]/10 px-3 py-2 text-[12.5px] text-[var(--rose-deep)]"
+        >
+          <span>Couldn’t load overrides — please retry.</span>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="inline-flex items-center rounded-md border border-[var(--rose-deep)]/40 bg-white px-2 py-1 text-[11px] font-semibold text-[var(--rose-deep)] hover:bg-[var(--rose)]/20"
+          >
+            Retry
+          </button>
+        </div>
       ) : count === 0 ? (
         <div
           data-testid="override-log-empty"
