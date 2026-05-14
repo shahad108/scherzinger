@@ -151,6 +151,34 @@ export interface WinLossPanel {
   rows: WinLossRow[];
 }
 
+// v2.2 Phase E — forward list-price erosion projection per cluster.
+export interface ErosionProjectionPoint {
+  month: string;          // YYYY-MM
+  listPrice: number;
+  floor: number;
+}
+
+export interface ErosionCadence {
+  updatesEveryMonths: number | null;
+  benchmarkMonths: number;
+}
+
+export interface ErosionProjectionRow {
+  cluster: string;
+  currentListPrice: number;
+  currentFloor: number;
+  monthlyListSlope: number;
+  monthlyCostSlope: number;
+  projection: ErosionProjectionPoint[];
+  crossoverMonth: string | null;
+  cadence: ErosionCadence;
+}
+
+export interface ErosionProjection {
+  horizonMonths: number;
+  rows: ErosionProjectionRow[];
+}
+
 export interface FilterScope {
   tier?: string;
   family?: string;
@@ -805,6 +833,8 @@ export interface ForecastShell {
   nextMoves?: NextMove[];
   // v2.2 Phase D — PA/PR rejection-code lens.
   winLoss?: WinLossPanel;
+  // v2.2 Phase E — list-price erosion projection.
+  erosionProjection?: ErosionProjection;
   dataThrough?: string;          // canonical ISO timestamp for freshness chip
   filterScope?: FilterScope;     // mirrors the active URL params so cards can render unfiltered badges
 }

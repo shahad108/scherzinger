@@ -39,6 +39,7 @@ import { PlanTrackingStrip } from './components/PlanTrackingStrip';
 import { PocketWaterfallCard } from './components/PocketWaterfallCard';
 import { BiasCard } from './components/BiasCard';
 import { WinLossDriverCard } from './components/WinLossDriverCard';
+import { ErosionProjectionCard } from './components/ErosionProjectionCard';
 import { NextCycleMovesStrip } from './components/NextCycleMovesStrip';
 import { DiagnosticsAccordionToggle } from './components/DiagnosticsAccordionToggle';
 import type { ForecastMode, ForecastShell } from '@/types/forecast';
@@ -396,6 +397,7 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
         <div data-focus-target="renewals">
           <PriceFloor rows={data.priceFloor} footnote={data.priceFloorFootnote} highlightArticle={article} />
         </div>
+        <ErosionProjectionCard data={data.erosionProjection} filterScope={data.filterScope} />
         <NewProductForecast data={data.newProduct} />
       </Accordion>
       <ParetoLayer data={data.pareto} showAll={showAll} />

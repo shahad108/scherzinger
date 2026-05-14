@@ -696,6 +696,13 @@ async def build_forecast(
     except Exception as e:  # pragma: no cover - safety net
         _log.warning("win_loss compose failed: %s", e)
 
+    # v2.2 Phase E — forward list-price erosion projection per cluster.
+    try:
+        from .erosion_projection import build_erosion_projection
+        payload["erosionProjection"] = build_erosion_projection(db, cluster=cluster)
+    except Exception as e:  # pragma: no cover - safety net
+        _log.warning("erosion_projection compose failed: %s", e)
+
     # Canonical freshness signal — prefer methodology's data-through value,
     # fall back to "now" so the freshness chip always has *something* to render.
     try:

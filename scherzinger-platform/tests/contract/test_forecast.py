@@ -45,6 +45,8 @@ def test_forecast_top_level_shape(client: TestClient) -> None:
         "nextMoves",
         # v2.2 Phase D — PA/PR rejection-code lens.
         "winLoss",
+        # v2.2 Phase E — list-price erosion projection.
+        "erosionProjection",
         "dataThrough",
         "filterScope",
     }
