@@ -37,6 +37,90 @@ export interface PVMBar {
   pctOfTotal: number;
 }
 
+// === v2.1 — plan-first, pocket-margin, prescriptive bridge ===
+
+export interface PlanPoint {
+  month: string;            // YYYY-MM
+  plan: number;
+  actual: number | null;    // null for future months
+}
+
+export interface PlanResetEntry {
+  at: string;               // ISO datetime
+  by: string;
+  reason: string;
+  priorValue: number;
+}
+
+export interface PlanVarianceAttribution {
+  price: number;
+  volume: number;
+  mix: number;
+  cost: number;
+  other?: number;
+}
+
+export interface PlanTracking {
+  points: PlanPoint[];
+  cumulativeGapEur: number;
+  cumulativeGapPct: number;
+  recentMonthAttribution: PlanVarianceAttribution | null;
+  resetLog: PlanResetEntry[];
+}
+
+export interface PocketStep {
+  name: 'list' | 'quoted' | 'booked' | 'invoiced' | 'db2';
+  value: number;
+  leakagePct?: number | null;
+}
+
+export interface PocketClusterBand {
+  cluster: string;
+  histogram: { bin: string; count: number }[];
+  median: number;
+  p10: number;
+  p90: number;
+}
+
+export interface PocketWaterfall {
+  steps: PocketStep[];
+  perCluster: PocketClusterBand[];
+  unit: 'eur_per_unit' | 'eur_total' | 'pct_of_list';
+}
+
+export interface BiasRow {
+  cluster: string;
+  cmeOverMad: number;
+  hitRatePct: number;
+  trailing6moDirection: 'over' | 'under' | 'flat';
+}
+
+export interface BiasPanel {
+  rows: BiasRow[];
+  windowMonths: number;
+  footnote?: string;
+}
+
+export interface NextMove {
+  id: string;
+  rank: number;
+  cluster: string | null;
+  headline: string;
+  forecastImpactEur: number;
+  sourceSignal: string;
+  actionIntent: {
+    kind: string;
+    payload: Record<string, unknown>;
+  };
+}
+
+export interface FilterScope {
+  tier?: string;
+  family?: string;
+  cluster?: string;
+  scenarioId?: string;
+}
+
 export interface ForecastHeader {
   greeting: string;
   subPill: string;
@@ -57,6 +141,8 @@ export interface ForecastSeriesPoint {
   p80High?: number;
   p95Low?: number;
   p95High?: number;
+  // v2.1 — pipeline-implied P50 (open quotes × win_prob aggregated by close month).
+  pipelineP50?: number;
 }
 
 export interface ForecastIntervalBand {
@@ -674,4 +760,12 @@ export interface ForecastShell {
   // only renders the waterfall when this payload is present. The BFF will
   // populate this in a follow-up; today mocks omit it.
   pvm?: { periodLabel: string; bars: PVMBar[] };
+  // v2.1 — plan-first, pocket-margin, prescriptive bridge. All optional;
+  // the v2 shell renders these only when populated (graceful degradation).
+  planTracking?: PlanTracking;
+  pocketWaterfall?: PocketWaterfall;
+  bias?: BiasPanel;
+  nextMoves?: NextMove[];
+  dataThrough?: string;          // canonical ISO timestamp for freshness chip
+  filterScope?: FilterScope;     // mirrors the active URL params so cards can render unfiltered badges
 }
