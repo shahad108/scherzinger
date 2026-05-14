@@ -32,6 +32,8 @@ import { BriefingButton } from './components/BriefingButton';
 import { HeroKPIStrip } from './components/HeroKPIStrip';
 import { PVMWaterfall } from './components/PVMWaterfall';
 import { TopSKUsForecastTable } from './components/TopSKUsForecastTable';
+import { OverrideLog } from './components/OverrideLog';
+import { Accordion } from '@/components/Accordion';
 import type { ForecastMode, ForecastShell } from '@/types/forecast';
 
 const QUEUE_TO_BLOCK: Record<string, string> = {
@@ -290,28 +292,33 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
       {data.activeScenarioId && (
         <ScenarioActiveBanner scenarioId={data.activeScenarioId} applied={data.scenarioApplied} />
       )}
-      {/* slot 9: Drivers accordion — filled in Phase 6 */}
-      {data.tornado && <TornadoCard tornado={data.tornado} />}
-      {data.distributions && (
-        <DistributionGrid distributions={data.distributions} clusters={data.clusters} />
-      )}
-      {data.calibration && <CalibrationCard data={data.calibration} />}
-      <WalkForward panel={data.walkForward} />
-      {data.marginTrajectory && <MarginTrajectoryCard data={data.marginTrajectory} />}
-      {data.costDecomposition && <CostDecompositionCard data={data.costDecomposition} />}
-      {data.seasonalOverlay && <SeasonalOverlayCard data={data.seasonalOverlay} />}
-      {data.commodityTrajectories && (
-        <CommodityTrajectoriesCard data={data.commodityTrajectories} />
-      )}
-      <InputCostTrajectory data={data.inputCost} />
-      {data.quoteToRevenue && <QuoteToRevenueBridge data={data.quoteToRevenue} />}
-      {/* slot 10: Renewals/NewProduct accordion — filled in Phase 6 */}
-      <div id="block-renewals" data-focus-target="renewals">
-        <PriceFloor rows={data.priceFloor} footnote={data.priceFloorFootnote} highlightArticle={article} />
-      </div>
-      <NewProductForecast data={data.newProduct} />
+      {/* slot 9: Drivers accordion — Phase 6 */}
+      <Accordion title="Drivers & accuracy" defaultOpen={false}>
+        {data.tornado && <TornadoCard tornado={data.tornado} />}
+        {data.distributions && (
+          <DistributionGrid distributions={data.distributions} clusters={data.clusters} />
+        )}
+        {data.calibration && <CalibrationCard data={data.calibration} />}
+        <WalkForward panel={data.walkForward} />
+        {data.marginTrajectory && <MarginTrajectoryCard data={data.marginTrajectory} />}
+        {data.costDecomposition && <CostDecompositionCard data={data.costDecomposition} />}
+        {data.seasonalOverlay && <SeasonalOverlayCard data={data.seasonalOverlay} />}
+        {data.commodityTrajectories && (
+          <CommodityTrajectoriesCard data={data.commodityTrajectories} />
+        )}
+        <InputCostTrajectory data={data.inputCost} />
+        {data.quoteToRevenue && <QuoteToRevenueBridge data={data.quoteToRevenue} />}
+      </Accordion>
+      {/* slot 10: Renewals/NewProduct accordion — Phase 6 */}
+      <Accordion title="Renewals & new product" id="block-renewals" defaultOpen={false}>
+        <div data-focus-target="renewals">
+          <PriceFloor rows={data.priceFloor} footnote={data.priceFloorFootnote} highlightArticle={article} />
+        </div>
+        <NewProductForecast data={data.newProduct} />
+      </Accordion>
       <ParetoLayer data={data.pareto} showAll={showAll} />
-      {/* slot 11: OverrideLog — filled in Phase 6 */}
+      {/* slot 11: OverrideLog — Phase 6 */}
+      <OverrideLog />
       {data.methodology && (
         <>
           <AssumptionsFooter
