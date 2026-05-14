@@ -65,8 +65,19 @@ function Chip({ label, pct, tone, testid }: ChipProps) {
 }
 
 function Sparkline({ row }: { row: WinLossRow }) {
+  // a11y: Recharts surfaces no text; screen readers see an empty SVG.
+  // Mirror the chips' content in an aria-label so the row stays useful.
+  const last = row.monthlySparkline[row.monthlySparkline.length - 1];
+  const ariaLabel = last
+    ? `Trailing PA ${last.paPct.toFixed(1)}%, PR ${last.prPct.toFixed(1)}% for ${row.cluster}`
+    : `Trailing PA/PR for ${row.cluster} — no sparkline data`;
   return (
-    <div className="h-9 w-32" data-testid="win-loss-sparkline">
+    <div
+      className="h-9 w-32"
+      data-testid="win-loss-sparkline"
+      role="img"
+      aria-label={ariaLabel}
+    >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={row.monthlySparkline} margin={{ top: 2, right: 4, left: 0, bottom: 2 }}>
           <Tooltip
