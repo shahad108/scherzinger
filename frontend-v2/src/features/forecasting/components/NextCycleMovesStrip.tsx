@@ -38,7 +38,12 @@ export function NextCycleMovesStrip({ moves }: Props) {
           <div className="font-display text-[16px] font-bold tracking-tight">Top {moves.length} moves tied to the current forecast</div>
         </div>
       </header>
-      <div className="flex gap-3 overflow-x-auto pb-2">
+      <div
+        role="region"
+        aria-label={`Top ${moves.length} recommended moves — scroll horizontally to view all`}
+        tabIndex={0}
+        className="flex gap-3 overflow-x-auto pb-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--rose-deep)]"
+      >
         {moves.map((move) => (
           <article
             key={move.id}
