@@ -30,6 +30,8 @@ import { CalibrationCard } from './components/CalibrationCard';
 import { MarketDirectionStrip } from './components/MarketDirectionStrip';
 import { BriefingButton } from './components/BriefingButton';
 import { HeroKPIStrip } from './components/HeroKPIStrip';
+import { PVMWaterfall } from './components/PVMWaterfall';
+import { TopSKUsForecastTable } from './components/TopSKUsForecastTable';
 import type { ForecastMode, ForecastShell } from '@/types/forecast';
 
 const QUEUE_TO_BLOCK: Record<string, string> = {
@@ -269,8 +271,20 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
         mode={mode}
       />
       <HeroForecast hero={data.hero} mode={mode} />
-      {/* slot 5: PVMWaterfall — filled in Phase 5 */}
-      {/* slot 6: TopSKUsForecastTable — filled in Phase 5 */}
+      {data.pvm && (
+        <PVMWaterfall
+          periodLabel={data.pvm.periodLabel}
+          bars={data.pvm.bars}
+          mode={mode}
+        />
+      )}
+      {data.pareto?.sku?.rows?.length ? (
+        <TopSKUsForecastTable
+          rows={data.pareto.sku.rows}
+          limit={10}
+          footnote={data.pareto.sku.footnote}
+        />
+      ) : null}
       <ClusterLens clusters={data.clusters} />
       <ScenarioLibrary />
       {data.activeScenarioId && (
