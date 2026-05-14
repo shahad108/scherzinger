@@ -1,6 +1,12 @@
 /**
- * Phase 4 — per-customer tab renders the top-at-risk table; clicking Open
+ * Phase 4 — per-customer table renders the top-at-risk rows; clicking Open
  * opens the detail drawer.
+ *
+ * Phase J (v2.2) — the top-level "Per customer" tab was removed. The
+ * `PerCustomerTab` table view is still tested standalone (it's the same
+ * data shape the drill-in renders) and a new test asserts that clicking a
+ * customer in the ParetoLayer (via the full ForecastingPage) opens the
+ * `CustomerForecastDetail` drawer scoped to that customer.
  */
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -19,7 +25,7 @@ function withProviders(ui: React.ReactNode, route = '/forecasting') {
   );
 }
 
-describe('Per-customer tab (Phase 4)', () => {
+describe('Per-customer table (Phase 4)', () => {
   it('lists the top 5 at-risk customers from the seed', async () => {
     render(withProviders(<PerCustomerTab />));
     await waitFor(() => expect(screen.getByTestId('customer-row-101487')).toBeInTheDocument());
@@ -44,20 +50,29 @@ describe('Per-customer tab (Phase 4)', () => {
     });
     expect(screen.getByTestId('customer-row-101154')).toBeInTheDocument();
   });
+});
 
-  it('forecasting page tabs switch between Aggregate and Per customer', async () => {
+describe('Customer drill-in via ParetoLayer (Phase J)', () => {
+  it('forecasting page no longer renders the top-level tablist', async () => {
     render(withProviders(<ForecastingPage />));
-    await waitFor(() => expect(screen.getByTestId('forecast-tabs')).toBeInTheDocument());
-    expect(screen.getByTestId('forecast-tab-aggregate')).toHaveAttribute(
-      'aria-selected',
-      'true',
+    // Wait for any pareto row to render so we know the page hydrated.
+    await waitFor(() =>
+      expect(screen.getByTestId('pareto-customer-detail-101580')).toBeInTheDocument(),
     );
-    fireEvent.click(screen.getByTestId('forecast-tab-customers'));
-    await waitFor(() => expect(screen.getByTestId('per-customer-tab')).toBeInTheDocument());
-    expect(screen.getByTestId('forecast-tab-customers')).toHaveAttribute(
-      'aria-selected',
-      'true',
+    expect(screen.queryByTestId('forecast-tabs')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('forecast-tab-customers')).not.toBeInTheDocument();
+  });
+
+  it('clicking a ParetoLayer customer opens the CustomerForecastDetail drawer scoped to that id', async () => {
+    render(withProviders(<ForecastingPage />));
+    await waitFor(() =>
+      expect(screen.getByTestId('pareto-customer-detail-101580')).toBeInTheDocument(),
     );
+    fireEvent.click(screen.getByTestId('pareto-customer-detail-101580'));
+    const drawer = await screen.findByTestId('customer-detail');
+    expect(drawer).toBeInTheDocument();
+    // Drawer should mention the chosen customer id in its header.
+    expect(within(drawer).getAllByText(/101580/).length).toBeGreaterThan(0);
   });
 });
 

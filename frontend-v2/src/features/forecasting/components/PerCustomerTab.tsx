@@ -1,5 +1,11 @@
 // Phase 4 — "Top customers at decline risk" + drilled-in detail.
-// Used as a tab on /forecasting (via routing in features/forecasting/index.tsx).
+//
+// v2.2 Phase J: this component is no longer mounted as a top-level tab on
+// /forecasting. The customer drill-in (`CustomerForecastDetail`) is now
+// reached from the ParetoLayer customer rows via a `?customer=<id>` URL
+// param; the page mounts `<CustomerForecastDetail />` at the shell level.
+// The `PerCustomerTab` table view stays exported because it still drives
+// the standalone unit tests in `src/tests/forecasting/per-customer.test.tsx`.
 
 import { useState } from 'react';
 import {
@@ -17,6 +23,16 @@ import { useForecastCustomers, useForecastCustomerDetail } from '@/data/api/useF
 import type { CustomerAtRiskRow } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
 import { RiskTierChip } from './RiskTierChip';
+
+// AUC-ROC accuracy data for the customer churn classifier. Surfaced both in
+// the PerCustomerTab header and in the standalone CustomerForecastDetail
+// drill-in so the metric stays visible regardless of entry path.
+const CHURN_AUC_DATA = {
+  metric: 'auc_roc' as const,
+  value: 0.93,
+  n: 482,
+  horizonMonths: 12,
+};
 
 const RISK_FILTERS = ['high', 'medium', 'low', 'all'] as const;
 
@@ -38,7 +54,7 @@ export function PerCustomerTab() {
         </div>
         <div className="flex items-center gap-2">
           <AccuracyBadge
-            data={{ metric: 'auc_roc', value: 0.93, n: 482, horizonMonths: 12 }}
+            data={CHURN_AUC_DATA}
             entityType="customer"
             drawerTitle="Customer churn classifier — lineage"
           />
@@ -157,7 +173,23 @@ interface DetailProps {
   previewRow?: CustomerAtRiskRow;
 }
 
-function CustomerForecastDetail({ customerId, onClose, previewRow }: DetailProps) {
+/**
+ * Customer drill-in drawer. Reachable from two entry points after Phase J:
+ *   1. `<PerCustomerTab />` "Open" buttons (standalone usage in tests).
+ *   2. ParetoLayer customer rows via the `?customer=<id>` URL param routed
+ *      through `ForecastingPage`.
+ *
+ * The churn classifier AUC-ROC 0.93 accuracy badge is rendered in the
+ * drawer header so the metric is visible regardless of which entry the
+ * user took.
+ */
+export function CustomerForecastDetail({ customerId, onClose, previewRow }: DetailProps) {
+  // Pull a fallback preview row from the customers list query if the caller
+  // didn't pass one (e.g. when opened from ParetoLayer where we only know
+  // the customerId from the URL).
+  const { data: customersData } = useForecastCustomers({ risk_filter: 'all' });
+  const resolvedPreview =
+    previewRow ?? customersData?.topAtRisk.find((c) => c.customerId === customerId);
   const { data } = useForecastCustomerDetail(customerId);
   const distributions = data?.distributions ?? {};
   const history = data?.historicalRevenue ?? [];
@@ -177,7 +209,7 @@ function CustomerForecastDetail({ customerId, onClose, previewRow }: DetailProps
         className="absolute inset-0 bg-black/30"
       />
       <aside className="relative ml-auto h-full w-full max-w-[560px] overflow-y-auto bg-white shadow-2xl">
-        <header className="sticky top-0 flex items-start justify-between border-b border-[var(--border)] bg-white px-5 py-4">
+        <header className="sticky top-0 flex items-start justify-between gap-2 border-b border-[var(--border)] bg-white px-5 py-4">
           <div>
             <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted)]">
               Customer detail
@@ -186,33 +218,40 @@ function CustomerForecastDetail({ customerId, onClose, previewRow }: DetailProps
               {data?.customerName ?? `Customer ${customerId}`}
             </h2>
           </div>
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={onClose}
-            className="grid h-8 w-8 place-items-center rounded-md text-[var(--muted)] hover:bg-[var(--surface-sunken)]"
-          >
-            ×
-          </button>
+          <div className="flex items-center gap-2">
+            <AccuracyBadge
+              data={CHURN_AUC_DATA}
+              entityType="customer"
+              drawerTitle="Customer churn classifier — lineage"
+            />
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={onClose}
+              className="grid h-8 w-8 place-items-center rounded-md text-[var(--muted)] hover:bg-[var(--surface-sunken)]"
+            >
+              ×
+            </button>
+          </div>
         </header>
 
         <div className="p-5 space-y-5">
-          {previewRow && (
-            <section className="flex flex-wrap items-center gap-2">
+          {resolvedPreview && (
+            <section className="flex flex-wrap items-center gap-2" data-testid="customer-detail-risk-summary">
               <RiskTierChip
-                tier={previewRow.riskTier}
-                pChurn={previewRow.pChurn4Q}
-                pDecline={previewRow.pMajorDecline}
+                tier={resolvedPreview.riskTier}
+                pChurn={resolvedPreview.pChurn4Q}
+                pDecline={resolvedPreview.pMajorDecline}
               />
               <span className="tag-chip">
-                P(churn 4Q): {previewRow.pChurn4Q != null
-                  ? `${(previewRow.pChurn4Q * 100).toFixed(0)}%`
+                P(churn 4Q): {resolvedPreview.pChurn4Q != null
+                  ? `${(resolvedPreview.pChurn4Q * 100).toFixed(0)}%`
                   : '—'}
               </span>
               <span className="tag-chip">
                 P(major decline):{' '}
-                {previewRow.pMajorDecline != null
-                  ? `${(previewRow.pMajorDecline * 100).toFixed(0)}%`
+                {resolvedPreview.pMajorDecline != null
+                  ? `${(resolvedPreview.pMajorDecline * 100).toFixed(0)}%`
                   : '—'}
               </span>
             </section>

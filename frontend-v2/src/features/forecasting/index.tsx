@@ -21,7 +21,7 @@ import { MarginTrajectoryCard } from './components/MarginTrajectoryCard';
 import { CostDecompositionCard } from './components/CostDecompositionCard';
 import { SeasonalOverlayCard } from './components/SeasonalOverlayCard';
 import { CommodityTrajectoriesCard } from './components/CommodityTrajectoriesCard';
-import { PerCustomerTab } from './components/PerCustomerTab';
+import { CustomerForecastDetail } from './components/PerCustomerTab';
 import { ScenarioLibrary } from './components/ScenarioLibrary';
 import { ScenarioActiveBanner } from './components/ScenarioActiveBanner';
 import { ScenarioCompareView } from './components/ScenarioCompareView';
@@ -50,8 +50,6 @@ const QUEUE_TO_BLOCK: Record<string, string> = {
   price_floor: 'block-renewals',
 };
 
-type ForecastTab = 'aggregate' | 'customers';
-
 export default function ForecastingPage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
@@ -61,7 +59,9 @@ export default function ForecastingPage() {
 
   const modeParam = (params.get('mode') as ForecastMode | null) ?? 'revenue';
   const horizonParam = Number(params.get('horizon')) || 12;
-  const tab = ((params.get('tab') as ForecastTab) ?? 'aggregate') as ForecastTab;
+  // v2.2 Phase J — the customer drill-in (formerly the "Per customer" tab)
+  // is now reached via `?customer=<id>` set by ParetoLayer customer rows.
+  const customerParam = params.get('customer');
 
   const scenarioId = params.get('scenario_id') ?? undefined;
   // Phase 4.5 audit fix: plumb header filter pills (tier/family/cluster) into
@@ -92,6 +92,15 @@ export default function ForecastingPage() {
   // distributions from `data` so the scenario perturbation propagates.
   // (The dedicated `/forecast/tornado` and `/forecast/distributions` hooks
   // remain available for components that want independent invalidation.)
+
+  // v2.2 Phase J — strip the legacy `?tab=customers` param. The customer
+  // view is no longer a top-level tab; we simply drop the param on mount.
+  useEffect(() => {
+    if (!params.has('tab')) return;
+    const next = new URLSearchParams(params);
+    next.delete('tab');
+    setParams(next, { replace: true });
+  }, [params, setParams]);
 
   useEffect(() => {
     if (!data || !queue) return;
@@ -125,10 +134,9 @@ export default function ForecastingPage() {
     return <ForecastSkeleton />;
   }
 
-  const setTab = (next: ForecastTab) => {
+  const closeCustomerDetail = () => {
     const p = new URLSearchParams(params);
-    if (next === 'aggregate') p.delete('tab');
-    else p.set('tab', next);
+    p.delete('customer');
     setParams(p, { replace: true });
   };
 
@@ -185,36 +193,18 @@ export default function ForecastingPage() {
       <ScenarioCompareView modeParam={modeParam} horizonParam={horizonParam} />
       <ModeToggle active={modeParam} horizonMonths={horizonParam as 3 | 6 | 12} />
 
-      <div role="tablist" aria-label="Forecast view" className="mb-4 inline-flex items-center gap-1 rounded-full bg-white p-1 shadow-[inset_0_0_0_1px_var(--hairline)]" data-testid="forecast-tabs">
-        {(['aggregate', 'customers'] as ForecastTab[]).map((t) => {
-          const isActive = t === tab;
-          return (
-            <button
-              key={t}
-              role="tab"
-              type="button"
-              data-testid={`forecast-tab-${t}`}
-              aria-selected={isActive}
-              onClick={() => setTab(t)}
-              className={
-                isActive
-                  ? 'rounded-full bg-[var(--rose-bg)] px-4 py-1.5 text-[12.5px] font-semibold text-[var(--rose-deep)]'
-                  : 'rounded-full px-4 py-1.5 text-[12.5px] font-semibold text-[var(--muted)] hover:bg-[var(--surface-soft)]'
-              }
-            >
-              {t === 'aggregate' ? 'Aggregate & clusters' : 'Per customer'}
-            </button>
-          );
-        })}
-      </div>
-
-      {tab === 'customers' ? (
-        <PerCustomerTab />
-      ) : (
-        <AggregateView data={data} article={article} mode={modeParam} showAll={showAll} layoutV2={layoutV2} />
-      )}
+      <AggregateView data={data} article={article} mode={modeParam} showAll={showAll} layoutV2={layoutV2} />
 
       <CrossLinkStrip />
+
+      {/* v2.2 Phase J — customer drill-in (formerly the "Per customer" tab).
+          Triggered by ParetoLayer customer-row clicks setting ?customer=<id>. */}
+      {customerParam && (
+        <CustomerForecastDetail
+          customerId={customerParam}
+          onClose={closeCustomerDetail}
+        />
+      )}
     </section>
   );
 }

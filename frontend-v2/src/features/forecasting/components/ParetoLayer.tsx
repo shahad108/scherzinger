@@ -63,9 +63,22 @@ function useParetoActions() {
   return { openStudio, queueAction };
 }
 
+// v2.2 Phase J — open the customer drill-in drawer via the `?customer=<id>`
+// URL param. The forecasting page shell listens for this param and renders
+// `<CustomerForecastDetail />` (the former PerCustomerTab drawer).
+function useOpenCustomerDetail() {
+  const [params, setParams] = useSearchParams();
+  return (customerId: string) => {
+    const next = new URLSearchParams(params);
+    next.set('customer', customerId);
+    setParams(next, { replace: false });
+  };
+}
+
 function CustomerTable({ rows }: { rows: CustomerRow[] }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const { openStudio } = useParetoActions();
+  const openCustomerDetail = useOpenCustomerDetail();
 
   return (
     <div className="sku-card">
@@ -106,7 +119,28 @@ function CustomerTable({ rows }: { rows: CustomerRow[] }) {
                     <td>
                       {hasDrill && <span className="exp-arrow">▶</span>}
                       <span className={`tier-chip ${r.tier}`}>{r.tier}</span>
-                      <b>{r.customerId}</b>
+                      <button
+                        type="button"
+                        data-testid={`pareto-customer-detail-${r.customerId}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openCustomerDetail(r.customerId);
+                        }}
+                        title={`Open customer detail for ${r.customerId}`}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          padding: 0,
+                          font: 'inherit',
+                          color: 'var(--rose-deep)',
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                          textDecoration: 'underline',
+                          textUnderlineOffset: 2,
+                        }}
+                      >
+                        {r.customerId}
+                      </button>
                       <ClusterChip label={r.cluster.label} conf={r.cluster.conf} />
                       {r.belowBand && (
                         <span
