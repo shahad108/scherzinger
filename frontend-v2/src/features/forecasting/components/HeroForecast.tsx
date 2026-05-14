@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import type { ForecastHero, ForecastIntervals, ForecastMode } from '@/types/forecast';
 import { useForecastOverrides } from '@/data/api/useForecastOverrides';
+import { ActualEntryPanel } from './ActualEntryPanel';
 
 interface Props {
   hero: ForecastHero;
@@ -76,6 +77,15 @@ function formatTooltip(mode: ForecastMode, v: number): string {
 export function HeroForecast({ hero, mode, onPointClick }: Props) {
   const [bandMode, setBandMode] = useState<BandMode>('p80+p95');
   const showP95 = bandMode === 'p80+p95';
+  // Phase 4 (forecast redesign v2) — clicking a forecast point opens the
+  // ActualEntryPanel for that month. We track the active month internally so
+  // the hero owns its own panel state; the optional `onPointClick` prop still
+  // fires for external listeners that want to react to clicks (analytics etc.).
+  const [editingMonth, setEditingMonth] = useState<string | null>(null);
+  const handlePointClick = (month: string) => {
+    setEditingMonth(month);
+    onPointClick?.(month);
+  };
   // Phase 3 (forecast redesign v2): cap history to 6mo by default. Frank told
   // us the early history months were eating screen real estate without adding
   // signal. Toggle restores the full series on demand.
@@ -352,20 +362,18 @@ export function HeroForecast({ hero, mode, onPointClick }: Props) {
               labelFormatter={(label) => (
                 <span>
                   {label}
-                  {onPointClick && (
-                    <span
-                      data-testid="hero-tooltip-click-hint"
-                      style={{
-                        display: 'block',
-                        marginTop: 2,
-                        fontSize: 10,
-                        fontWeight: 500,
-                        color: 'var(--muted)',
-                      }}
-                    >
-                      Click to enter actual →
-                    </span>
-                  )}
+                  <span
+                    data-testid="hero-tooltip-click-hint"
+                    style={{
+                      display: 'block',
+                      marginTop: 2,
+                      fontSize: 10,
+                      fontWeight: 500,
+                      color: 'var(--muted)',
+                    }}
+                  >
+                    Click to enter actual →
+                  </span>
                 </span>
               )}
             />
@@ -400,24 +408,20 @@ export function HeroForecast({ hero, mode, onPointClick }: Props) {
               strokeWidth={2}
               strokeLinecap="round"
               dot={false}
-              activeDot={
-                onPointClick
-                  ? {
-                      r: 5,
-                      fill: '#3e5d80',
-                      cursor: 'pointer',
-                      // Recharts passes the dot payload (including `month`)
-                      // as the second arg of `onClick`. We tolerate both
-                      // shapes — some Recharts versions pass it on the
-                      // event target's `payload` property.
-                      onClick: (_evt: unknown, payload: unknown) => {
-                        const p = payload as { payload?: { month?: string }; month?: string } | undefined;
-                        const month = p?.payload?.month ?? p?.month;
-                        if (month) onPointClick(month);
-                      },
-                    }
-                  : { r: 4, fill: '#3e5d80' }
-              }
+              activeDot={{
+                r: 5,
+                fill: '#3e5d80',
+                cursor: 'pointer',
+                // Recharts passes the dot payload (including `month`) as the
+                // second arg of `onClick`. We tolerate both shapes — some
+                // Recharts versions pass it on the event target's `payload`
+                // property.
+                onClick: (_evt: unknown, payload: unknown) => {
+                  const p = payload as { payload?: { month?: string }; month?: string } | undefined;
+                  const month = p?.payload?.month ?? p?.month;
+                  if (month) handlePointClick(month);
+                },
+              }}
               isAnimationActive={false}
             />
             <Line
@@ -501,6 +505,34 @@ export function HeroForecast({ hero, mode, onPointClick }: Props) {
           ))}
         </div>
       </div>
+
+      {/*
+        Phase 4 (forecast redesign v2) — ActualEntryPanel. The panel is fixed
+        on the right edge and lifts out of normal flow, but rendering it here
+        keeps the component tree co-located with the chart that owns the
+        `editingMonth` state.
+      */}
+      {editingMonth &&
+        (() => {
+          const pt = hero.series.find((p) => p.month === editingMonth);
+          if (!pt) return null;
+          const p50 = pt.p50 ?? pt.primary ?? 0;
+          const p80Low = pt.p80Low ?? pt.low ?? p50;
+          const p80High = pt.p80High ?? pt.high ?? p50;
+          const p95Low = pt.p95Low ?? pt.low ?? p50;
+          const p95High = pt.p95High ?? pt.high ?? p50;
+          return (
+            <ActualEntryPanel
+              month={editingMonth}
+              cluster={null}
+              mode={mode}
+              modelP50={p50}
+              band80={[p80Low, p80High]}
+              band95={[p95Low, p95High]}
+              onClose={() => setEditingMonth(null)}
+            />
+          );
+        })()}
     </div>
   );
 }
