@@ -169,6 +169,53 @@ describe('ActualEntryPanel', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it('exposes aria-modal="true" for assistive tech', () => {
+    wrap(
+      <ActualEntryPanel
+        month="2026-08"
+        mode="revenue"
+        cluster={null}
+        modelP50={612000}
+        band80={[587000, 638000]}
+        band95={[561000, 672000]}
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.getByTestId('actual-entry-panel')).toHaveAttribute('aria-modal', 'true');
+  });
+
+  it('traps focus inside the dialog when tabbing past the last element', () => {
+    wrap(
+      <ActualEntryPanel
+        month="2026-08"
+        mode="revenue"
+        cluster={null}
+        modelP50={612000}
+        band80={[587000, 638000]}
+        band95={[561000, 672000]}
+        onClose={() => {}}
+      />,
+    );
+    const panel = screen.getByTestId('actual-entry-panel');
+    const focusables = panel.querySelectorAll<HTMLElement>(
+      'button, input, select, textarea, [href], [tabindex]:not([tabindex="-1"])',
+    );
+    const list = Array.from(focusables).filter((el) => !el.hasAttribute('disabled'));
+    const first = list[0];
+    const last = list[list.length - 1];
+
+    // Tab from last element should cycle back to first.
+    last.focus();
+    expect(document.activeElement).toBe(last);
+    fireEvent.keyDown(panel, { key: 'Tab' });
+    expect(document.activeElement).toBe(first);
+
+    // Shift+Tab from first element should cycle to last.
+    first.focus();
+    fireEvent.keyDown(panel, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(last);
+  });
+
   it('closes on Escape key', () => {
     const onClose = vi.fn();
     wrap(

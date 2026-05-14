@@ -95,4 +95,71 @@ describe('OverrideLog', () => {
       expect(String(deleteCall![0])).toContain('/api/v1/forecast/overrides/ov1');
     });
   });
+
+  it('does not disable other rows while one delete is in flight', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        items: [
+          {
+            id: 'ov1',
+            month: '2026-08',
+            cluster: null,
+            mode: 'revenue',
+            actual: 650000,
+            modelP50: 612000,
+            adjustmentPct: 0.062,
+            source: 'manual',
+            confidence: 'medium',
+            reason: 'first row',
+            author: 'frank',
+            createdAt: '2026-05-14T00:00:00Z',
+            fvaDelta: null,
+          },
+          {
+            id: 'ov2',
+            month: '2026-09',
+            cluster: null,
+            mode: 'revenue',
+            actual: 700000,
+            modelP50: 660000,
+            adjustmentPct: 0.06,
+            source: 'manual',
+            confidence: 'medium',
+            reason: 'second row',
+            author: 'frank',
+            createdAt: '2026-05-14T00:00:00Z',
+            fvaDelta: null,
+          },
+        ],
+      }),
+    });
+
+    wrap(<OverrideLog />);
+
+    const button = await screen.findByRole('button', { name: /Override log/i });
+    fireEvent.click(button);
+
+    await screen.findByTestId('override-row-ov1');
+    await screen.findByTestId('override-row-ov2');
+
+    // Stall the DELETE for ov1 so we can observe in-flight state.
+    let resolveDelete: (v: unknown) => void = () => {};
+    fetchMock.mockImplementationOnce(
+      () => new Promise((resolve) => { resolveDelete = resolve; }),
+    );
+
+    fireEvent.click(screen.getByTestId('override-delete-ov1'));
+
+    // ov1's delete button reflects in-flight state…
+    await waitFor(() => {
+      expect(screen.getByTestId('override-delete-ov1')).toBeDisabled();
+    });
+    // …but ov2's button remains enabled (per-row mutation hook).
+    expect(screen.getByTestId('override-delete-ov2')).not.toBeDisabled();
+
+    // Resolve to avoid leaving the request hanging.
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ items: [] }) });
+    resolveDelete({ ok: true });
+  });
 });

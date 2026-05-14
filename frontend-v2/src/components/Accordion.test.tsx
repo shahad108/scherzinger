@@ -1,5 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 import { Accordion } from './Accordion';
 
 describe('Accordion', () => {
@@ -41,6 +41,65 @@ describe('Accordion', () => {
       </Accordion>,
     );
     expect(screen.getByTestId('accordion-badge')).toHaveTextContent('3 active');
+  });
+
+  it('opens on a matching `accordion:open` window event (deep-link)', () => {
+    render(
+      <Accordion title="Renewals" id="block-renewals">
+        <div data-testid="inner">renewals content</div>
+      </Accordion>,
+    );
+    const button = screen.getByRole('button', { name: /Renewals/i });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('accordion:open', { detail: { id: 'block-renewals' } }),
+      );
+    });
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByTestId('inner')).toBeInTheDocument();
+  });
+
+  it('ignores `accordion:open` events targeted at a different id', () => {
+    render(
+      <Accordion title="Other" id="block-other">
+        <div data-testid="inner">other</div>
+      </Accordion>,
+    );
+    const button = screen.getByRole('button', { name: /Other/i });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('accordion:open', { detail: { id: 'block-renewals' } }),
+      );
+    });
+    // Still closed — id did not match.
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('supports controlled `open` + `onOpenChange`', () => {
+    const onOpenChange = vi.fn();
+    const { rerender } = render(
+      <Accordion title="Controlled" open={false} onOpenChange={onOpenChange}>
+        <div data-testid="inner">x</div>
+      </Accordion>,
+    );
+    const button = screen.getByRole('button', { name: /Controlled/i });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(button);
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+    // Open state stays false because we didn't re-render with a new prop.
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+
+    rerender(
+      <Accordion title="Controlled" open onOpenChange={onOpenChange}>
+        <div data-testid="inner">x</div>
+      </Accordion>,
+    );
+    expect(button).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('toggles on Enter and Space keys for accessibility', () => {

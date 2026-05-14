@@ -47,10 +47,23 @@ export function ActualEntryPanel({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const createMut = useCreateOverride();
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
 
-  // Focus the first input on mount.
+  // Focus the first input on mount and restore the previously focused element
+  // on unmount (dialog focus-restoration pattern).
   useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     firstFieldRef.current?.focus();
+    return () => {
+      // Restore focus only if the previously focused element is still attached.
+      if (previouslyFocused && document.body.contains(previouslyFocused)) {
+        try {
+          previouslyFocused.focus();
+        } catch {
+          /* element no longer focusable — ignore */
+        }
+      }
+    };
   }, []);
 
   // ESC closes the panel.
@@ -61,6 +74,39 @@ export function ActualEntryPanel({
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  // Focus trap — cycle Tab/Shift-Tab at the boundaries so focus stays inside
+  // the dialog (matches aria-modal="true" semantics).
+  useEffect(() => {
+    const node = panelRef.current;
+    if (!node) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const focusables = node.querySelectorAll<HTMLElement>(
+        'button, input, select, textarea, [href], [tabindex]:not([tabindex="-1"])',
+      );
+      const list = Array.from(focusables).filter(
+        (el) => !el.hasAttribute('disabled') && el.tabIndex !== -1,
+      );
+      if (list.length === 0) return;
+      const first = list[0];
+      const last = list[list.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey) {
+        if (active === first || !node.contains(active)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (active === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    node.addEventListener('keydown', onKey);
+    return () => node.removeEventListener('keydown', onKey);
+  }, []);
 
   const parsed = Number(actual);
   const reasonOk = reason.trim().length >= MIN_REASON;
@@ -100,7 +146,9 @@ export function ActualEntryPanel({
 
   return (
     <div
+      ref={panelRef}
       role="dialog"
+      aria-modal="true"
       aria-label="Enter actual value"
       data-testid="actual-entry-panel"
       className="fixed right-0 top-0 z-50 h-screen w-[420px] overflow-y-auto border-l border-[var(--hairline)] bg-white shadow-2xl"

@@ -85,14 +85,28 @@ export default function ForecastingPage() {
     if (!data || !queue) return;
     const blockId = QUEUE_TO_BLOCK[queue];
     if (!blockId) return;
-    const el = document.getElementById(blockId);
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    el.dataset.focusPulse = '1';
+    // Phase 8 review (finding 6): the renewals block now lives inside a
+    // collapsed Accordion. Tell the matching accordion to open before we try
+    // to scroll its panel into view. Accordions whose `id !== blockId` ignore
+    // the event.
+    window.dispatchEvent(
+      new CustomEvent('accordion:open', { detail: { id: blockId } }),
+    );
+    // Let React commit the open-state before measuring scroll target.
+    const raf = window.requestAnimationFrame(() => {
+      const el = document.getElementById(blockId);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.dataset.focusPulse = '1';
+    });
     const t = window.setTimeout(() => {
-      delete el.dataset.focusPulse;
+      const el = document.getElementById(blockId);
+      if (el) delete el.dataset.focusPulse;
     }, 2200);
-    return () => window.clearTimeout(t);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.clearTimeout(t);
+    };
   }, [data, queue]);
 
   if (isLoading || !data) {
@@ -272,7 +286,7 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
         fva={fva}
         mode={mode}
       />
-      <HeroForecast hero={data.hero} mode={mode} />
+      <HeroForecast hero={data.hero} mode={mode} enableActualEntry />
       {data.pvm && (
         <PVMWaterfall
           periodLabel={data.pvm.periodLabel}
@@ -288,7 +302,9 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
         />
       ) : null}
       <ClusterLens clusters={data.clusters} />
-      <ScenarioLibrary />
+      {/* ScenarioLibrary is rendered once at the page-shell level (see
+          ForecastingPage). Phase 8 review removed the duplicate that used to
+          live here. */}
       {data.activeScenarioId && (
         <ScenarioActiveBanner scenarioId={data.activeScenarioId} applied={data.scenarioApplied} />
       )}

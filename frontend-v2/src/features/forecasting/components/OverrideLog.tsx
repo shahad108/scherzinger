@@ -29,9 +29,58 @@ function formatDate(iso: string): string {
   }
 }
 
+// Phase 8 review (finding 8): factored out into its own component so each row
+// owns its own `useDeleteOverride` mutation. Previously a single mutation hook
+// was shared across all rows, so clicking Delete on one row disabled every
+// other row's button until the mutation settled.
+function OverrideRow({ o }: { o: ForecastOverride }) {
+  const del = useDeleteOverride();
+  return (
+    <tr
+      data-testid={`override-row-${o.id}`}
+      className="border-b border-[var(--hairline)] align-top text-[var(--ink-2)]"
+    >
+      <td className="py-2 pr-3 font-mono">{o.month}</td>
+      <td className="py-2 pr-3">{o.cluster ?? '—'}</td>
+      <td className="py-2 pr-3 capitalize">{o.mode}</td>
+      <td className="py-2 pr-3 text-right font-mono">{formatNumber(o.modelP50)}</td>
+      <td className="py-2 pr-3 text-right font-mono">{formatNumber(o.actual)}</td>
+      <td
+        className={`py-2 pr-3 text-right font-mono ${
+          o.adjustmentPct > 0
+            ? 'text-[var(--accent-green-deep)]'
+            : o.adjustmentPct < 0
+            ? 'text-[var(--rose-deep)]'
+            : ''
+        }`}
+      >
+        {formatPct(o.adjustmentPct)}
+      </td>
+      <td className="py-2 pr-3 capitalize">{o.source}</td>
+      <td className="py-2 pr-3 capitalize">{o.confidence}</td>
+      <td className="max-w-[260px] truncate py-2 pr-3" title={o.reason}>
+        {o.reason}
+      </td>
+      <td className="py-2 pr-3">{o.author}</td>
+      <td className="py-2 pr-3">{formatDate(o.createdAt)}</td>
+      <td className="py-2 pr-3 text-right">
+        <button
+          type="button"
+          data-testid={`override-delete-${o.id}`}
+          aria-label={`Delete override for ${o.month}`}
+          onClick={() => del.mutate(o.id)}
+          disabled={del.isPending}
+          className="inline-flex items-center rounded-md border border-[var(--hairline)] bg-white px-2 py-1 text-[11px] font-semibold text-[var(--ink-2)] hover:bg-[var(--surface-soft)] disabled:opacity-50"
+        >
+          {del.isPending ? 'Deleting…' : 'Delete'}
+        </button>
+      </td>
+    </tr>
+  );
+}
+
 export function OverrideLog() {
   const { data, isLoading } = useForecastOverrides();
-  const del = useDeleteOverride();
   const items: ForecastOverride[] = data?.items ?? [];
   const count = items.length;
 
@@ -72,47 +121,7 @@ export function OverrideLog() {
             </thead>
             <tbody data-testid="override-log-rows">
               {items.map((o) => (
-                <tr
-                  key={o.id}
-                  data-testid={`override-row-${o.id}`}
-                  className="border-b border-[var(--hairline)] align-top text-[var(--ink-2)]"
-                >
-                  <td className="py-2 pr-3 font-mono">{o.month}</td>
-                  <td className="py-2 pr-3">{o.cluster ?? '—'}</td>
-                  <td className="py-2 pr-3 capitalize">{o.mode}</td>
-                  <td className="py-2 pr-3 text-right font-mono">{formatNumber(o.modelP50)}</td>
-                  <td className="py-2 pr-3 text-right font-mono">{formatNumber(o.actual)}</td>
-                  <td
-                    className={`py-2 pr-3 text-right font-mono ${
-                      o.adjustmentPct > 0
-                        ? 'text-[var(--accent-green-deep)]'
-                        : o.adjustmentPct < 0
-                        ? 'text-[var(--rose-deep)]'
-                        : ''
-                    }`}
-                  >
-                    {formatPct(o.adjustmentPct)}
-                  </td>
-                  <td className="py-2 pr-3 capitalize">{o.source}</td>
-                  <td className="py-2 pr-3 capitalize">{o.confidence}</td>
-                  <td className="max-w-[260px] truncate py-2 pr-3" title={o.reason}>
-                    {o.reason}
-                  </td>
-                  <td className="py-2 pr-3">{o.author}</td>
-                  <td className="py-2 pr-3">{formatDate(o.createdAt)}</td>
-                  <td className="py-2 pr-3 text-right">
-                    <button
-                      type="button"
-                      data-testid={`override-delete-${o.id}`}
-                      aria-label={`Delete override for ${o.month}`}
-                      onClick={() => del.mutate(o.id)}
-                      disabled={del.isPending}
-                      className="inline-flex items-center rounded-md border border-[var(--hairline)] bg-white px-2 py-1 text-[11px] font-semibold text-[var(--ink-2)] hover:bg-[var(--surface-soft)] disabled:opacity-50"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+                <OverrideRow key={o.id} o={o} />
               ))}
             </tbody>
           </table>

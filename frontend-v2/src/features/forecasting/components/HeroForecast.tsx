@@ -32,6 +32,13 @@ interface Props {
    * so existing call sites (AggregateViewV1) continue to compile.
    */
   onPointClick?: (month: string) => void;
+  /**
+   * Phase 8 review — only V2 contexts should open the ActualEntryPanel. V1
+   * keeps the hero read-only. When this flag is false (default), the click
+   * handler, tooltip hint, and panel are all suppressed regardless of any
+   * internal state. AggregateViewV2 sets this to true.
+   */
+  enableActualEntry?: boolean;
 }
 
 type BandMode = 'p80' | 'p80+p95';
@@ -74,15 +81,20 @@ function formatTooltip(mode: ForecastMode, v: number): string {
   return `€${v.toFixed(0)}`;
 }
 
-export function HeroForecast({ hero, mode, onPointClick }: Props) {
+export function HeroForecast({ hero, mode, onPointClick, enableActualEntry = false }: Props) {
   const [bandMode, setBandMode] = useState<BandMode>('p80+p95');
   const showP95 = bandMode === 'p80+p95';
   // Phase 4 (forecast redesign v2) — clicking a forecast point opens the
-  // ActualEntryPanel for that month. We track the active month internally so
-  // the hero owns its own panel state; the optional `onPointClick` prop still
-  // fires for external listeners that want to react to clicks (analytics etc.).
+  // ActualEntryPanel for that month. Only active when `enableActualEntry` is
+  // true (V2 contexts); V1 keeps the chart read-only.
   const [editingMonth, setEditingMonth] = useState<string | null>(null);
   const handlePointClick = (month: string) => {
+    if (!enableActualEntry) {
+      // Still let V1 callers wire analytics via onPointClick, but don't open
+      // the panel.
+      onPointClick?.(month);
+      return;
+    }
     setEditingMonth(month);
     onPointClick?.(month);
   };
@@ -354,26 +366,26 @@ export function HeroForecast({ hero, mode, onPointClick }: Props) {
                 if (n === 'overrideY') return [formatTooltip(mode, value), 'Override'];
                 return [formatTooltip(mode, value), n];
               }}
-              // Phase 3.3 — when a click handler is supplied, append a small
-              // hint under the tooltip rows so Frank knows the chart is
-              // interactive. We compose via the `content` prop's default-ish
-              // wrapper using `wrapperStyle`-friendly content trick: simpler
-              // to render the hint as a labelFormatter suffix.
+              // Phase 3.3 — show the "Click to enter actual" hint only when
+              // the chart is actually interactive (V2 contexts). V1 keeps the
+              // hero read-only, so showing the hint there was misleading.
               labelFormatter={(label) => (
                 <span>
                   {label}
-                  <span
-                    data-testid="hero-tooltip-click-hint"
-                    style={{
-                      display: 'block',
-                      marginTop: 2,
-                      fontSize: 10,
-                      fontWeight: 500,
-                      color: 'var(--muted)',
-                    }}
-                  >
-                    Click to enter actual →
-                  </span>
+                  {enableActualEntry && (
+                    <span
+                      data-testid="hero-tooltip-click-hint"
+                      style={{
+                        display: 'block',
+                        marginTop: 2,
+                        fontSize: 10,
+                        fontWeight: 500,
+                        color: 'var(--muted)',
+                      }}
+                    >
+                      Click to enter actual →
+                    </span>
+                  )}
                 </span>
               )}
             />
@@ -512,7 +524,7 @@ export function HeroForecast({ hero, mode, onPointClick }: Props) {
         keeps the component tree co-located with the chart that owns the
         `editingMonth` state.
       */}
-      {editingMonth &&
+      {enableActualEntry && editingMonth &&
         (() => {
           const pt = hero.series.find((p) => p.month === editingMonth);
           if (!pt) return null;

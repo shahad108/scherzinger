@@ -6,8 +6,18 @@
 //
 // Visual style follows the Pryzm 2026 design language: rounded-[12px] card,
 // hairline border, white surface, font-display title.
+//
+// Phase 8 review (finding 6): supports two extra patterns so deep-links can
+// open a specific accordion programmatically.
+//   1. Controlled mode: pass `open` + `onOpenChange` to drive open state from
+//      a parent.
+//   2. Event mode: any caller can `window.dispatchEvent(
+//        new CustomEvent('accordion:open', { detail: { id: '<id>' } }))` and
+//      the accordion whose `id` matches will open itself. This lets the
+//      deep-link `useEffect` in ForecastingPage pop the renewals block open
+//      before scrolling into view.
 
-import { useCallback, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 
@@ -15,7 +25,12 @@ interface Props {
   title: string;
   badge?: ReactNode;
   defaultOpen?: boolean;
+  /** Optional DOM id — also used as the match key for accordion:open events. */
   id?: string;
+  /** Controlled-mode open state. If provided, internal state is ignored. */
+  open?: boolean;
+  /** Fires whenever open changes (controlled or uncontrolled). */
+  onOpenChange?: (next: boolean) => void;
   children: ReactNode;
 }
 
@@ -24,14 +39,28 @@ export function Accordion({
   badge,
   defaultOpen = false,
   id,
+  open: openProp,
+  onOpenChange,
   children,
 }: Props) {
-  const [open, setOpen] = useState<boolean>(defaultOpen);
+  const [internalOpen, setInternalOpen] = useState<boolean>(defaultOpen);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? (openProp as boolean) : internalOpen;
   const reactId = useId();
   const panelId = `accordion-panel-${id ?? reactId}`;
   const buttonId = `accordion-button-${id ?? reactId}`;
 
-  const toggle = useCallback(() => setOpen((v) => !v), []);
+  const setOpen = useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      const resolved =
+        typeof next === 'function' ? (next as (p: boolean) => boolean)(open) : next;
+      if (!isControlled) setInternalOpen(resolved);
+      onOpenChange?.(resolved);
+    },
+    [isControlled, onOpenChange, open],
+  );
+
+  const toggle = useCallback(() => setOpen((v) => !v), [setOpen]);
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent<HTMLButtonElement>) => {
@@ -42,6 +71,20 @@ export function Accordion({
     },
     [toggle],
   );
+
+  // Listen for cross-component "open this accordion" events. Keyed by `id` so
+  // unrelated accordions ignore the signal.
+  useEffect(() => {
+    if (!id) return;
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ id?: string }>).detail;
+      if (detail && detail.id === id) {
+        setOpen(true);
+      }
+    };
+    window.addEventListener('accordion:open', handler as EventListener);
+    return () => window.removeEventListener('accordion:open', handler as EventListener);
+  }, [id, setOpen]);
 
   return (
     <section
