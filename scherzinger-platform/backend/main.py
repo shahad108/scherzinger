@@ -10,6 +10,7 @@ from backend.api.v1 import (
     costs,
     dashboard,
     forecast as forecast_blocks,
+    forecast_overrides,
     forecasts,
     margins,
     models_registry,
@@ -65,6 +66,8 @@ app.include_router(quality.router, prefix="/api/v1", tags=["data-quality"])
 app.include_router(forecasts.router, prefix="/api/v1", tags=["forecasts"])
 # Phase 1 simulator surface — tornado + per-entity distributions.
 app.include_router(forecast_blocks.router, prefix="/api/v1")
+# Forecasting redesign Phase 1 — manual override CRUD (click-to-actual + ML feedback).
+app.include_router(forecast_overrides.router, prefix="/api/v1", tags=["forecast-overrides"])
 app.include_router(risk.router, prefix="/api/v1", tags=["risk"])
 app.include_router(costs.router, prefix="/api/v1", tags=["costs"])
 app.include_router(benchmarks.router, prefix="/api/v1", tags=["benchmarks"])
