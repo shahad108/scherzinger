@@ -380,7 +380,7 @@
       { "label": "Seasonality", "value": "3-year monthly indices from seasonal_patterns table", "note": "Aug peak · Dec trough · Mar fiscal-year-end bump." },
       { "label": "Cost-trend method", "value": "4-quarter weighted MA + residual stdev band", "note": "M11 leak-free residuals." },
       { "label": "Win rate (Quote-to-Revenue)", "value": "62.4% trailing 90d", "note": "Computed over quote_invoice_links table." },
-      { "label": "Data-through", "value": "2026-04-30", "note": "Latest invoice / market series ingest." }
+      { "label": "Data-through", "value": "2025-12-17", "note": "Latest invoice / market series ingest." }
     ],
     "models": [
       { "modelName": "margin_walk_forward_v3", "version": "v3.2", "trainedAt": "2026-05-10T08:00:00Z", "holdoutMonths": 6, "entityType": "commodity_group", "metric": "mape_db2_margin", "metricValue": 0.0688, "nObservations": 36, "notes": "M3 nested CV + M9 customer-grouped CV." },

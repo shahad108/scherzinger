@@ -84,6 +84,12 @@ def get_calibration(db: Session | None) -> dict[str, Any]:
     if db is None:
         return _seed()
 
+    # Defensive: if a prior block in the pipeline raised, the transaction
+    # may be poisoned. Rollback once before our own queries.
+    try:
+        db.rollback()
+    except Exception:
+        pass
     try:
         winner = _pick_winner(db)
         rows = db.execute(
@@ -104,8 +110,10 @@ def get_calibration(db: Session | None) -> dict[str, Any]:
         return _seed()
 
     out_rows = []
+    seen_clusters: set[str] = set()
     for r in rows:
         cluster_id = r[0]
+        seen_clusters.add(cluster_id)
         mape = float(r[1]) if r[1] is not None else None
         directional = float(r[2]) if r[2] is not None else None
         mape_pct = round(mape * 100, 2) if mape is not None else None
@@ -121,6 +129,34 @@ def get_calibration(db: Session | None) -> dict[str, Any]:
                 # (if anyone is still on it) doesn't crash. We map it to
                 # 100% − MAPE as a soft proxy (NOT a real CI hit rate).
                 "actualHitRatePct": (round(100 - mape_pct, 1) if mape_pct is not None else None),
+                "note": None,
+            }
+        )
+
+    # Surface MBDIV even though it has no backtest_results row — the user
+    # otherwise has no signal that the cluster is known but unmeasured.
+    try:
+        mbdiv_known = db.execute(
+            text(
+                """
+                SELECT 1 FROM margin_forecasts
+                WHERE entity_type='commodity_group' AND entity_id='MBDIV'
+                LIMIT 1
+                """
+            )
+        ).fetchone()
+    except Exception:
+        mbdiv_known = None
+    if mbdiv_known and "MBDIV" not in seen_clusters:
+        out_rows.append(
+            {
+                "clusterId": "MBDIV",
+                "mapePct": None,
+                "directionalPct": None,
+                "nBacktests": None,
+                "tone": "amber",
+                "actualHitRatePct": None,
+                "note": "not enough backtest history",
             }
         )
 

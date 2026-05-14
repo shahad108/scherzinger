@@ -5,7 +5,7 @@
 // p5/p95 range bar, and a "P-below-threshold" severity chip.
 
 import { useMemo, useState, type KeyboardEvent } from 'react';
-import type { DistributionRow, ForecastDistributions } from '@/types/forecast';
+import type { ClusterCard, DistributionRow, ForecastDistributions } from '@/types/forecast';
 import { AccuracyBadge } from './AccuracyBadge';
 import { DistributionDrawer } from './DistributionDrawer';
 import {
@@ -18,9 +18,18 @@ import {
 interface Props {
   distributions: ForecastDistributions;
   initialLimit?: number;
+  // Phase 4.5: per-cluster MAPE comes from `clusters` (DB-backed backtest).
+  clusters?: ClusterCard[];
 }
 
-export function DistributionGrid({ distributions, initialLimit = 4 }: Props) {
+export function DistributionGrid({ distributions, initialLimit = 4, clusters }: Props) {
+  // Phase 4.5 audit fix #4: map per-entity MAPE from the cluster payload
+  // instead of hardcoding 0.0688 on every card.
+  const mapeByCluster = useMemo(() => {
+    const map = new Map<string, number | null>();
+    (clusters ?? []).forEach((c) => map.set(c.id, c.mape ?? null));
+    return map;
+  }, [clusters]);
   const [showAll, setShowAll] = useState(false);
   const [activeRow, setActiveRow] = useState<DistributionRow | null>(null);
   const rows = distributions.rows;
@@ -142,7 +151,9 @@ export function DistributionGrid({ distributions, initialLimit = 4 }: Props) {
                   <AccuracyBadge
                     data={{
                       metric: 'mape',
-                      value: 0.0688,
+                      value: mapeByCluster.has(row.entityId)
+                        ? mapeByCluster.get(row.entityId) ?? null
+                        : null,
                       n: row.nSimulations,
                       horizonMonths: distributions.horizonMonths,
                       clusterId: row.entityId,

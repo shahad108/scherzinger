@@ -39,8 +39,9 @@ export function SeasonalOverlayCard({ data }: Props) {
           <div className="sub">{data.note}</div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Phase 4.5 audit fix #4: was hardcoded value=0.05. */}
           <AccuracyBadge
-            data={{ metric: 'mape', value: 0.05, n: 36, horizonMonths: 1 }}
+            data={{ metric: 'mape', value: null, n: data.months.length, horizonMonths: 1 }}
             entityType="commodity_group"
             drawerTitle="Seasonal pattern — lineage"
           />

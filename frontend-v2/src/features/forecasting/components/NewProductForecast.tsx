@@ -55,11 +55,13 @@ export function NewProductForecast({ data }: Props) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Phase 4.5 audit fix #4: was hardcoded 0.0688 placeholder.
+              New-product cards don't carry their own MAPE — render "—". */}
           <AccuracyBadge
             data={{
               metric: 'mape',
-              value: 0.0688,
-              n: 36,
+              value: null,
+              n: 0,
               horizonMonths: 12,
               modelId: 'margin_walk_forward_v3',
             }}

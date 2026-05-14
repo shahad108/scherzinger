@@ -26,8 +26,9 @@ export function QuoteToRevenueBridge({ data }: Props) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Phase 4.5 audit fix #4: was hardcoded WAPE 0.21. */}
           <AccuracyBadge
-            data={{ metric: 'wape', value: 0.21, n: 90, horizonMonths: 3 }}
+            data={{ metric: 'wape', value: null, n: 90, horizonMonths: 3 }}
             entityType="commodity_group"
             drawerTitle="Quote-to-Revenue — lineage"
           />

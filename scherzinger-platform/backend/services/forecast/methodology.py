@@ -71,7 +71,20 @@ def _default_sources() -> list[dict[str, str]]:
     ]
 
 
-def _default_assumptions() -> list[dict[str, str]]:
+def _data_through(db: Session | None) -> str:
+    """Return MAX(invoices.date) formatted YYYY-MM-DD, with seed fallback."""
+    if db is None:
+        return "2025-12-17"
+    try:
+        row = db.execute(text("SELECT MAX(date) FROM invoices")).fetchone()
+        if row and row[0] is not None:
+            return row[0].strftime("%Y-%m-%d")
+    except Exception:
+        pass
+    return "2025-12-17"
+
+
+def _default_assumptions(data_through: str = "2025-12-17") -> list[dict[str, str]]:
     return [
         {
             "label": "Growth-rate prior",
@@ -100,7 +113,7 @@ def _default_assumptions() -> list[dict[str, str]]:
         },
         {
             "label": "Data-through",
-            "value": "2026-04-30",
+            "value": data_through,
             "note": "Latest invoice/market series ingest before the snapshot.",
         },
     ]
@@ -148,7 +161,7 @@ def _default_models() -> list[dict[str, Any]]:
 def get_methodology(db: Session | None) -> dict[str, Any]:
     """Compose the methodology payload."""
     sources = _default_sources()
-    assumptions = _default_assumptions()
+    assumptions = _default_assumptions(_data_through(db))
     models: list[dict[str, Any]] = []
 
     if db is not None:

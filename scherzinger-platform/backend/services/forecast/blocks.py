@@ -281,7 +281,9 @@ def _why_band_moves_live(db: Session) -> dict[str, Any] | None:
     }
 
 
-async def hero(*, horizon: int | None, db: Session | None = None) -> dict[str, Any]:
+async def hero(
+    *, horizon: int | None, db: Session | None = None, mode: str = "revenue"
+) -> dict[str, Any]:
     block = dict(load_seed()["hero"])
     if horizon and isinstance(block.get("series"), dict):
         # Phase 7 carries the seed series; the param is wired so callers
@@ -294,6 +296,22 @@ async def hero(*, horizon: int | None, db: Session | None = None) -> dict[str, A
     block["whyBandMovesSource"] = "synthetic"
 
     if db is not None:
+        # Replace the seed series with a real per-mode walk-forward (Round 4 fix).
+        # The seed shipped monthly values 10x too high (€5–8M/mo instead of ~€500K/mo).
+        try:
+            from .real_hero import build_hero as _build_hero_live  # noqa: WPS433
+
+            live = _build_hero_live(db, mode=mode, horizon_months=horizon or 12)
+            if live and live.get("series"):
+                block["series"] = live["series"]
+                block["caption"] = live["caption"]
+                block["mode"] = live["mode"]
+                block["unit"] = live["unit"]
+                block["heroSeriesSource"] = "live"
+                block["intervals"] = live.get("intervals")
+        except Exception:
+            block["heroSeriesSource"] = "seed_fallback"
+
         movers = _hero_movers_live(db)
         if movers:
             block["movers"] = movers
@@ -307,6 +325,11 @@ async def hero(*, horizon: int | None, db: Session | None = None) -> dict[str, A
             block["whyBandMoves"] = why
             block["whyBandMovesSource"] = "live"
 
+    # If we replaced the series with real data we already have proper
+    # intervals from real_hero — skip the re-enrichment which would otherwise
+    # overwrite them with the seed math.
+    if block.get("heroSeriesSource") == "live":
+        return block
     return _enrich_intervals(block)
 
 

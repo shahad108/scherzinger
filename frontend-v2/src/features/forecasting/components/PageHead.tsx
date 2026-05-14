@@ -6,10 +6,17 @@
 
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { ForecastHeader, ForecastMode } from '@/types/forecast';
+import type {
+  ForecastHero,
+  ForecastHeader,
+  ForecastMethodology,
+  ForecastMode,
+} from '@/types/forecast';
 
 interface Props {
   header: ForecastHeader;
+  methodology?: ForecastMethodology;
+  hero?: ForecastHero;
 }
 
 const TITLE_BY_MODE: Record<ForecastMode, string> = {
@@ -25,11 +32,16 @@ const TIERS: { value: 'A' | 'B' | 'C' | 'D'; label: string }[] = [
   { value: 'D', label: 'D · Problematic' },
 ];
 
+// Phase 4.5 audit fix #7: Family ≠ Cluster. The cluster filter shows
+// commodity_group taxonomy (BKAES/BKAGG/BKAIZ/MBDIV). Family is product
+// family — for now show a placeholder taxonomy until the BFF returns a
+// real list via `meta.filterOptions.families`.
+// TODO(backend): wire to real product families from products.business_unit
+// or a dedicated families taxonomy.
 const FAMILIES: { value: string; label: string }[] = [
-  { value: 'BKAES', label: 'BKAES' },
-  { value: 'BKAGG', label: 'BKAGG' },
-  { value: 'BKAIZ', label: 'BKAIZ' },
-  { value: 'MBDIV', label: 'MBDIV' },
+  { value: 'standard', label: 'Standard' },
+  { value: 'specials', label: 'Specials' },
+  { value: 'locked', label: 'Locked' },
 ];
 
 const CLUSTERS: { value: string; label: string }[] = [
@@ -148,7 +160,7 @@ function FilterMenu({ label, paramKey, options }: FilterMenuProps) {
   );
 }
 
-export function PageHead({ header }: Props) {
+export function PageHead({ header, methodology, hero }: Props) {
   const [params] = useSearchParams();
   const mode = (params.get('mode') as ForecastMode | null) ?? 'revenue';
   const horizon = Number(params.get('horizon')) || 12;
@@ -157,6 +169,31 @@ export function PageHead({ header }: Props) {
     () => `${TITLE_BY_MODE[mode]} — Next ${horizon} Months`,
     [mode, horizon],
   );
+
+  // Phase 4.5 audit fix #1: replace hardcoded backend header.stats values
+  // ("Updated Mon 06:14", "Band +€8K WoW") with derived honest values.
+  const stats = useMemo(() => {
+    const out: { label: string; value: string }[] = [];
+
+    // "Updated" → real MAX(invoices.date) from methodology assumptions.
+    const dataThrough = methodology?.assumptions?.find(
+      (a) => a.label === 'Data-through',
+    )?.value;
+    if (dataThrough) {
+      out.push({ label: 'Updated', value: dataThrough });
+    }
+
+    // "Band" → top mover from hero. Show the value (e.g. "+€38.4K WoW")
+    // alongside the customer label. Hide entirely if no movers exist.
+    const topMover = hero?.movers?.[0];
+    if (topMover) {
+      out.push({ label: 'Top mover', value: `${topMover.label} ${topMover.value}` });
+    }
+
+    // Fall back to whatever the backend sent if neither override fired.
+    if (out.length === 0) return header.stats;
+    return out;
+  }, [methodology, hero, header.stats]);
 
   // Header.filters from the backend is now treated as a hint only — we render
   // the canonical (Tier / Family / Cluster) trio so the dropdowns always work
@@ -176,8 +213,8 @@ export function PageHead({ header }: Props) {
           <h1 data-testid="forecast-title">{title}</h1>
           <div className="page-sub">
             <span className="sub-pill">{header.subPill}</span>
-            {header.stats.map((s) => (
-              <span key={s.label} className="sub-stat">
+            {stats.map((s) => (
+              <span key={s.label} className="sub-stat" data-testid={`page-head-stat-${s.label.toLowerCase().replace(/\s+/g, '-')}`}>
                 <b>{s.label}</b> {s.value}
               </span>
             ))}
@@ -188,9 +225,9 @@ export function PageHead({ header }: Props) {
           <FilterMenu label="Tier" paramKey="tier" options={TIERS} />
           <FilterMenu label="Family" paramKey="family" options={FAMILIES} />
           <FilterMenu label="Cluster lens" paramKey="cluster" options={CLUSTERS} />
-          <button type="button" className="btn-primary-rose">
-            Generate forecast briefing →
-          </button>
+          {/* Phase 4.5 audit fix #6: removed duplicate dead "Generate forecast
+              briefing →" header pill. The working BriefingButton component is
+              rendered just below the MarketDirectionStrip and opens the modal. */}
         </div>
       </div>
     </>

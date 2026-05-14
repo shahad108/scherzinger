@@ -19,11 +19,13 @@ describe('RightRail', () => {
     await i18n.changeLanguage('en');
   });
 
-  it('renders notifications, reviewers panel, and sections list from useShell()', async () => {
+  it('renders reviewers panel, sections list from useShell(), and an empty-state notif panel when /notifications returns only seed stubs', async () => {
     render(withProviders(<RightRail />));
-    await waitFor(() => expect(screen.getByText('PRO mode activated')).toBeInTheDocument());
-    expect(screen.getByText('New SKU recommendation')).toBeInTheDocument();
-    expect(screen.getByText('Phase deadline soon')).toBeInTheDocument();
+    // Phase 4.5 audit fix #2: the seed notifications (pro/sku/phase) are
+    // filtered out at the FE, so the rail shows the empty state instead.
+    await waitFor(() => expect(screen.getByTestId('rail-notifs-empty')).toBeInTheDocument());
+    expect(screen.queryByText('PRO mode activated')).not.toBeInTheDocument();
+    expect(screen.queryByText('Phase deadline soon')).not.toBeInTheDocument();
     expect(screen.getByText('Assigned reviewers')).toBeInTheDocument();
     expect(screen.getByText('Sections')).toBeInTheDocument();
     expect(screen.getByText('Movable revenue')).toBeInTheDocument();

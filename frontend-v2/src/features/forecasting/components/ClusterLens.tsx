@@ -73,14 +73,17 @@ export function ClusterLens({ clusters }: Props) {
               <div className="round-tags">
                 <span className={`tag-chip ${toneCls}`}>{c.confidence}</span>
                 <span onClick={(e) => e.stopPropagation()} role="presentation">
+                  {/* Phase 4.5 audit fix #4: read real per-cluster MAPE from
+                      c.mape (backend now ships it). Falls back to "—" when
+                      missing (e.g. small/low-n clusters like MBDIV). */}
                   <AccuracyBadge
                     data={{
                       metric: 'mape',
-                      value: 0.0688,
+                      value: c.mape ?? null,
                       n: 36,
                       horizonMonths: 12,
                       clusterId: c.id,
-                      modelId: 'margin_walk_forward_v3',
+                      modelId: c.model ?? 'margin_walk_forward_v3',
                     }}
                     entityType="commodity_group"
                     entityId={c.id}

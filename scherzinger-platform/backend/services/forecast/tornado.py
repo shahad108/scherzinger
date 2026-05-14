@@ -20,7 +20,46 @@ from sqlalchemy.orm import Session
 from ._seed import load_seed
 
 
-def _seed_bars(metric: str, horizon_months: int) -> dict[str, Any]:
+_LIVE_CLUSTERS = ("BKAES", "BKAGG", "BKAIZ", "MBDIV")
+
+
+def _pick_winner(db: Session) -> str:
+    row = db.execute(
+        text(
+            """
+            SELECT model_type FROM backtest_results
+            WHERE entity_type='overall' AND entity_id='all' AND mape IS NOT NULL
+            ORDER BY mape ASC LIMIT 1
+            """
+        )
+    ).fetchone()
+    return row[0] if row else "ema"
+
+
+def _mape_by_cluster(db: Session | None) -> dict[str, float | None]:
+    """Real per-cluster MAPE (fraction). MBDIV → None (no backtest history)."""
+    out: dict[str, float | None] = {c: None for c in _LIVE_CLUSTERS}
+    if db is None:
+        return out
+    try:
+        winner = _pick_winner(db)
+        rows = db.execute(
+            text(
+                """
+                SELECT entity_id, mape FROM backtest_results
+                WHERE entity_type='commodity_group' AND model_type = :m
+                """
+            ),
+            {"m": winner},
+        ).fetchall()
+        for r in rows:
+            out[r[0]] = float(r[1]) if r[1] is not None else None
+    except Exception:
+        pass
+    return out
+
+
+def _seed_bars(metric: str, horizon_months: int, mape_by_cluster: dict[str, float | None] | None = None) -> dict[str, Any]:
     """Return the seed tornado block, optionally filtered to a metric/horizon."""
     seed = load_seed().get("tornado") or {}
     bars = list(seed.get("bars") or [])
@@ -32,6 +71,7 @@ def _seed_bars(metric: str, horizon_months: int) -> dict[str, Any]:
         "n_simulations": seed.get("n_simulations", 1000),
         "shockMode": seed.get("shockMode", "bootstrap"),
         "bars": bars,
+        "mapeByCluster": mape_by_cluster or {c: None for c in _LIVE_CLUSTERS},
         "source": "seed",
     }
 
@@ -44,8 +84,9 @@ def get_tornado(
     horizon_months: int = 12,
 ) -> dict[str, Any]:
     """Public block helper used by both the BFF composer and the dedicated route."""
+    mape_by_cluster = _mape_by_cluster(db)
     if db is None:
-        return _seed_bars(metric, horizon_months)
+        return _seed_bars(metric, horizon_months, mape_by_cluster)
 
     # Attempt the real path: per-input deltas live in ``monte_carlo_results``
     # rows whose ``parameters->>input`` differs from ``parameters->>baseline``.
@@ -82,10 +123,14 @@ def get_tornado(
             "horizon": horizon_months,
         }).fetchall()
     except Exception:
-        return _seed_bars(metric, horizon_months)
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        return _seed_bars(metric, horizon_months, mape_by_cluster)
 
     if not rows:
-        return _seed_bars(metric, horizon_months)
+        return _seed_bars(metric, horizon_months, mape_by_cluster)
 
     bars: list[dict[str, Any]] = []
     for r in rows:
@@ -109,5 +154,6 @@ def get_tornado(
         "n_simulations": 1000,
         "shockMode": "bootstrap",
         "bars": bars,
+        "mapeByCluster": mape_by_cluster,
         "source": "live",
     }

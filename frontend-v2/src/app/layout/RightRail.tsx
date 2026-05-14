@@ -37,13 +37,21 @@ export function RightRail() {
     staleTime: 30_000,
     retry: 0,
   });
-  const liveNotifs: ShellNotification[] = (notifData?.notifications ?? []).map((n) => ({
-    id: n.id,
-    tone: n.tone,
-    title: n.title,
-    sub: n.sub,
-    unread: n.unread,
-  }));
+  // Phase 4.5 audit fix #2: backend /notifications still returns three seed
+  // stubs (id=pro / sku / phase) with hardcoded titles ("PRO mode activated",
+  // "New SKU recommendation" for article 205418-A, "Phase deadline soon").
+  // Filter them out at the FE so Frank doesn't see fake notifications.
+  // TODO(backend): remove these seed rows from the notifications service.
+  const FAKE_SEED_IDS = new Set(['pro', 'sku', 'phase']);
+  const liveNotifs: ShellNotification[] = (notifData?.notifications ?? [])
+    .filter((n) => !FAKE_SEED_IDS.has(n.id))
+    .map((n) => ({
+      id: n.id,
+      tone: n.tone,
+      title: n.title,
+      sub: n.sub,
+      unread: n.unread,
+    }));
 
   if (isLoading || !data) return <aside className="pz-rail" aria-busy="true" />;
 

@@ -87,7 +87,10 @@ async def build_forecast(
         new_product,
     ) = await asyncio.gather(
         blocks.header(mode=mode),
-        blocks.hero(horizon=horizon, db=db),
+        blocks.hero(
+            horizon=horizon, db=db,
+            mode=(mode if mode in ("revenue", "margin", "volume") else "revenue"),
+        ),
         blocks.input_cost(db=db),
         blocks.pareto(tier=tier),
         blocks.price_floor(family=family),
@@ -149,19 +152,19 @@ async def build_forecast(
     horizon_months = horizon if horizon in (3, 6, 12) else 12
 
     tornado = get_tornado(
-        db=None,
+        db=db,
         entity_type="commodity_group",
         metric=backend_metric,
         horizon_months=horizon_months,
     )
     distributions = get_distributions(
-        db=None,
+        db=db,
         entity_type="commodity_group",
         metric=backend_metric,
         horizon_months=horizon_months,
     )
 
-    methodology = get_methodology(db=None)
+    methodology = get_methodology(db=db)
     margin_trajectory = get_margin_trajectory(db=db)
     cost_decomposition = get_cost_decomposition(db=db)
     seasonal_overlay = get_seasonal_overlay(db=db)

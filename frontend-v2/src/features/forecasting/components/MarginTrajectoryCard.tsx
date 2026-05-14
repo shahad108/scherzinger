@@ -39,8 +39,11 @@ export function MarginTrajectoryCard({ data }: Props) {
           <div className="sub">{data.methodologyNote}</div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Phase 4.5 audit fix #4: MAPE was hardcoded to 0.0688 here.
+              MarginTrajectory payload doesn't carry a model-specific MAPE,
+              so render "—" via value=null until the backend provides one. */}
           <AccuracyBadge
-            data={{ metric: 'mape', value: 0.0688, n: 12, horizonMonths: 12 }}
+            data={{ metric: 'mape', value: null, n: data.historical.length, horizonMonths: 12 }}
             entityType="commodity_group"
             drawerTitle="Margin trajectory — lineage"
           />

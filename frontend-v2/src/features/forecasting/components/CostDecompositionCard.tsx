@@ -37,8 +37,10 @@ export function CostDecompositionCard({ data }: Props) {
             Each layer plotted as % of revenue. The insights below are data-driven trend reads.
           </div>
         </div>
+        {/* Phase 4.5 audit fix #4: was hardcoded value=0.04. CostDecomposition
+            payload doesn't carry its own model MAPE → render "—". */}
         <AccuracyBadge
-          data={{ metric: 'mape', value: 0.04, n: data.quarters.length, horizonMonths: 12 }}
+          data={{ metric: 'mape', value: null, n: data.quarters.length, horizonMonths: 12 }}
           entityType="commodity_group"
           drawerTitle="Cost decomposition — lineage"
         />

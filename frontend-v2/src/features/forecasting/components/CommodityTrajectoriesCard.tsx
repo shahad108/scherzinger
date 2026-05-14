@@ -37,8 +37,9 @@ export function CommodityTrajectoriesCard({ data }: Props) {
             One line per cluster. Trend arrows below the chart show the YoY slope.
           </div>
         </div>
+        {/* Phase 4.5 audit fix #4: was hardcoded value=0.0688 placeholder. */}
         <AccuracyBadge
-          data={{ metric: 'mape', value: 0.0688, n: data.quarters.length, horizonMonths: 12 }}
+          data={{ metric: 'mape', value: null, n: data.quarters.length, horizonMonths: 12 }}
           entityType="commodity_group"
           drawerTitle="Commodity trajectories — lineage"
         />

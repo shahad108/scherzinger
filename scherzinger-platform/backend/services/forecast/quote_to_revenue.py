@@ -68,6 +68,11 @@ def get_quote_to_revenue(db: Session | None) -> dict[str, Any]:
             "source": "seed",
         }
 
+    # Defensive: if a prior block poisoned the transaction, rollback first.
+    try:
+        db.rollback()
+    except Exception:
+        pass
     try:
         # Win rate (12mo) and avg won margin (6mo).
         wr_row = db.execute(text("""
@@ -90,35 +95,25 @@ def get_quote_to_revenue(db: Session | None) -> dict[str, Any]:
         win_rate = float(wr_row[0] or 0.5) if wr_row and wr_row[0] is not None else 0.5
         avg_margin = float(wr_row[1] or 0.2) if wr_row and wr_row[1] is not None else 0.2
 
-        # Recent (trailing 6mo) quote book — what would be "open" if the data
-        # carried that status.
-        pipe_row = db.execute(text("""
-            SELECT COUNT(*) AS n,
-                   COALESCE(SUM(revenue), 0) AS pipe
-            FROM quotes
-            WHERE date >= (SELECT MAX(date) - INTERVAL '6 months' FROM quotes)
-              AND status NOT IN ('cancelled')
-        """)).fetchone()
-        total_open_quotes = int(pipe_row[0] or 0)
-        total_open_pipeline = float(pipe_row[1] or 0)
-
-        if total_open_quotes <= 0:
-            raise RuntimeError("no quotes")
-
-        # Tier breakdown via customer LTM-revenue tier (top 10% A, 25% B, etc).
-        # Since `quotes` lacks a tier column we derive it from each customer's
-        # revenue share — but for the bridge we only need a simple share split.
-        # 42/34/18/6 mirrors the seed shape; replace with real customer tier
-        # joins once we wire customer_tiers.
+        # Partition the recent quote book by trailing-window length per
+        # horizon. Each horizon is a CUMULATIVE window: 30d ⊂ 60d ⊂ 90d, so
+        # counts are guaranteed monotonic.
         tier_shares = [("A", 0.42), ("B", 0.34), ("C", 0.18), ("D", 0.06)]
-        # 30/60/90 = 30/40/30 partition of the recent quote book.
-        splits = {30: 0.30, 60: 0.40, 90: 0.30}
+        max_date_row = db.execute(text("SELECT MAX(date) FROM quotes")).fetchone()
+        if max_date_row is None or max_date_row[0] is None:
+            raise RuntimeError("no quotes")
 
         horizons: list[dict[str, Any]] = []
         for h in (30, 60, 90):
-            share = splits[h]
-            open_quotes = int(round(total_open_quotes * share))
-            open_pipeline = total_open_pipeline * share
+            pipe_row = db.execute(text("""
+                SELECT COUNT(*) AS n,
+                       COALESCE(SUM(revenue), 0) AS pipe
+                FROM quotes
+                WHERE date >= ((SELECT MAX(date) FROM quotes) - (:h * INTERVAL '1 day'))
+                  AND status NOT IN ('cancelled')
+            """), {"h": h}).fetchone()
+            open_quotes = int(pipe_row[0] or 0)
+            open_pipeline = float(pipe_row[1] or 0)
             expected_revenue = open_pipeline * win_rate
             expected_gp = expected_revenue * avg_margin
             horizons.append({

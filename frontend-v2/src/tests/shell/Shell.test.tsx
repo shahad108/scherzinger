@@ -27,7 +27,9 @@ describe('Shell', () => {
 
   it('mounts TopBar, Sidebar, Outlet, and RightRail together', async () => {
     render(withProviders(<Shell />));
-    await waitFor(() => expect(screen.getByText('PRO mode activated')).toBeInTheDocument());
+    // Phase 4.5 audit fix #2: fake seed notifications (PRO mode / SKU /
+    // Phase deadline) are filtered out, so the rail renders the empty state.
+    await waitFor(() => expect(screen.getByTestId('rail-notifs-empty')).toBeInTheDocument());
     expect(screen.getByLabelText('Pryzm')).toBeInTheDocument();
     expect(screen.getByText('Workspace')).toBeInTheDocument();
     expect(screen.getByText('Outlet content')).toBeInTheDocument();

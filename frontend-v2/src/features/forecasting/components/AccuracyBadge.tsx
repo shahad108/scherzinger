@@ -9,7 +9,8 @@ import type { AccuracyBadgeData } from '@/types/forecast';
 import { LineageDrawer } from './LineageDrawer';
 
 interface Props {
-  data: AccuracyBadgeData;
+  // value=null renders "—" instead of a fake percentage.
+  data: Omit<AccuracyBadgeData, 'value'> & { value: number | null };
   entityType?: string;
   entityId?: string;
   modelId?: string;
@@ -23,7 +24,8 @@ const METRIC_LABEL: Record<AccuracyBadgeData['metric'], string> = {
   wape: 'WAPE',
 };
 
-function formatValue(metric: AccuracyBadgeData['metric'], value: number): string {
+function formatValue(metric: AccuracyBadgeData['metric'], value: number | null): string {
+  if (value === null || !Number.isFinite(value)) return '—';
   if (metric === 'mape' || metric === 'wape') return `${(value * 100).toFixed(1)}%`;
   if (metric === 'auc_roc') return value.toFixed(2);
   if (metric === 'calibration_p80_hit') return `${(value * 100).toFixed(0)}%`;

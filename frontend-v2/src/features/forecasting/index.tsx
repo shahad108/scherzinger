@@ -102,7 +102,7 @@ export default function ForecastingPage() {
 
   return (
     <section id="screen-forecast" className="mx-auto max-w-[1400px] px-8 py-6">
-      <PageHead header={data.header} />
+      <PageHead header={data.header} methodology={data.methodology} hero={data.hero} />
       {data.marketDirection && <MarketDirectionStrip data={data.marketDirection} />}
       <div className="mb-3 flex items-center justify-end">
         <BriefingButton />
@@ -198,7 +198,9 @@ function AggregateView({ data, article, mode, showAll }: AggregateProps) {
   return (
     <>
       {data.tornado && <TornadoCard tornado={data.tornado} />}
-      {data.distributions && <DistributionGrid distributions={data.distributions} />}
+      {data.distributions && (
+        <DistributionGrid distributions={data.distributions} clusters={data.clusters} />
+      )}
       {data.quoteToRevenue && <QuoteToRevenueBridge data={data.quoteToRevenue} />}
       {data.marginTrajectory && <MarginTrajectoryCard data={data.marginTrajectory} />}
       {data.costDecomposition && <CostDecompositionCard data={data.costDecomposition} />}

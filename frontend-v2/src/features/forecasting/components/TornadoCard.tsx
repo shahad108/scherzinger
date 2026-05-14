@@ -43,10 +43,11 @@ export function TornadoCard({ tornado }: Props) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Phase 4.5 audit fix #4: was hardcoded value=0.81. */}
           <AccuracyBadge
             data={{
               metric: 'calibration_p80_hit',
-              value: 0.81,
+              value: null,
               n: tornado.n_simulations,
               horizonMonths: tornado.horizonMonths,
               modelId: 'monte_carlo_simulator_v2',

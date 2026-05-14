@@ -76,6 +76,14 @@ export interface ClusterCard {
   bandText: string;
   confidence: string;
   tone: 'status' | 'amber' | 'red';
+  // Phase 4.5: real per-cluster backtest MAPE from the backend (0-1).
+  mape?: number | null;
+  directional?: number | null;
+  predictedMargin?: number;
+  predictedLow?: number;
+  predictedHigh?: number;
+  ltmRevenue?: number;
+  model?: string;
 }
 
 export interface BacktestKpi {
@@ -268,6 +276,8 @@ export interface ForecastTornado {
   shockMode: ShockMode;
   source: 'seed' | 'live';
   bars: TornadoBar[];
+  /** Real per-cluster MAPE (fraction) from backtest_results. MBDIV → null. */
+  mapeByCluster?: Record<string, number | null>;
 }
 
 export interface DistributionRow {
@@ -285,6 +295,8 @@ export interface DistributionRow {
   thresholdKind: string;
   shockMode: ShockMode;
   nSimulations: number;
+  /** Real per-cluster MAPE (fraction) from backtest_results. Null when no history. */
+  mape?: number | null;
 }
 
 export interface ForecastDistributions {
@@ -537,6 +549,8 @@ export interface CalibrationRow {
   tone: 'green' | 'amber' | 'red';
   mapePct?: number | null;
   directionalPct?: number | null;
+  /** Free-form note when the cluster is known but has no backtest history. */
+  note?: string | null;
 }
 
 export interface CalibrationPayload {

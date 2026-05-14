@@ -23,57 +23,80 @@ const MODE_TITLE: Record<ForecastMode, string> = {
 };
 
 function formatY(mode: ForecastMode, v: number): string {
-  if (mode === 'margin') return `${v.toFixed(1)}%`;
+  if (mode === 'margin') {
+    // Backend ships margin as ratio (0..1). Render as percent.
+    const pct = v <= 1.5 ? v * 100 : v;
+    return `${pct.toFixed(1)}%`;
+  }
   if (mode === 'volume') {
-    // The BFF reports volume in millions of units when the hero series is at
-    // portfolio scale; keep the same convention as revenue (the series-domain
-    // values are already in scaled units). Fall back to integer otherwise.
-    if (Math.abs(v) >= 1) return `${v.toFixed(1)}M`;
+    if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+    if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
     return v.toFixed(0);
   }
-  return `€${v.toFixed(1)}M`;
+  // revenue (EUR)
+  if (Math.abs(v) >= 1_000_000) return `€${(v / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(v) >= 1_000) return `€${(v / 1_000).toFixed(0)}K`;
+  return `€${v.toFixed(0)}`;
 }
 
 function formatTooltip(mode: ForecastMode, v: number): string {
-  if (mode === 'margin') return `${v.toFixed(2)}%`;
-  if (mode === 'volume') return Math.abs(v) >= 1 ? `${v.toFixed(2)}M units` : `${v.toFixed(0)} units`;
-  return `€${v.toFixed(2)}M`;
+  if (mode === 'margin') {
+    const pct = v <= 1.5 ? v * 100 : v;
+    return `${pct.toFixed(2)}%`;
+  }
+  if (mode === 'volume') {
+    if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M units`;
+    if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(1)}K units`;
+    return `${v.toFixed(0)} units`;
+  }
+  if (Math.abs(v) >= 1_000_000) return `€${(v / 1_000_000).toFixed(2)}M`;
+  if (Math.abs(v) >= 1_000) return `€${(v / 1_000).toFixed(1)}K`;
+  return `€${v.toFixed(0)}`;
 }
 
 export function HeroForecast({ hero, mode }: Props) {
   const [bandMode, setBandMode] = useState<BandMode>('p80+p95');
   const showP95 = bandMode === 'p80+p95';
 
+  // Round 4 fix: backend now ships REAL per-mode series sourced from invoices
+  // (real_hero.py). No heuristic rescale needed. Identity function.
+  const scale = useMemo(() => (v: number) => v, []);
+  const isApprox = false;
+
   // Tuple-array Area gives a true range-band between bounds without
   // forcing a 0-baseline, so we can keep the y-domain tight.
   const chartData = useMemo(
     () =>
       hero.series.map((p) => {
-        const p80Low = p.p80Low ?? p.low;
-        const p80High = p.p80High ?? p.high;
-        const p95Low = p.p95Low ?? p80Low;
-        const p95High = p.p95High ?? p80High;
+        const p80Low = scale(p.p80Low ?? p.low);
+        const p80High = scale(p.p80High ?? p.high);
+        const p95Low = scale(p.p95Low ?? p.low);
+        const p95High = scale(p.p95High ?? p.high);
         return {
           month: p.month,
           p80: [p80Low, p80High] as [number, number],
           p95: [p95Low, p95High] as [number, number],
-          primary: p.p50 ?? p.primary,
-          actual: p.actual,
+          primary: scale(p.p50 ?? p.primary),
+          actual: p.actual != null ? scale(p.actual) : undefined,
         };
       }),
-    [hero.series],
+    [hero.series, scale],
   );
 
   const lowestBound = useMemo(
-    () => Math.min(...hero.series.map((p) => p.p95Low ?? p.low)),
-    [hero.series],
+    () => Math.min(...hero.series.map((p) => scale(p.p95Low ?? p.low))),
+    [hero.series, scale],
   );
   const highestBound = useMemo(
-    () => Math.max(...hero.series.map((p) => p.p95High ?? p.high)),
-    [hero.series],
+    () => Math.max(...hero.series.map((p) => scale(p.p95High ?? p.high))),
+    [hero.series, scale],
   );
-  const yMin = lowestBound - 0.4;
-  const yMax = highestBound + 0.4;
+  // Round 4: scale-aware padding now that the series is real per mode.
+  // Margin comes back as ratio 0..1 (so 0.05 = 5pp); revenue/volume in absolute units.
+  const span = Math.max(highestBound - lowestBound, 1e-9);
+  const pad = span * 0.08; // 8% headroom on each side
+  const yMin = mode === 'margin' ? Math.max(0, lowestBound - pad) : lowestBound - pad;
+  const yMax = highestBound + pad;
 
   const movablePct = hero.movableLockedSplit.movablePct;
 
@@ -105,9 +128,31 @@ export function HeroForecast({ hero, mode }: Props) {
             data-testid="hero-title"
           >
             {MODE_TITLE[mode]}
+            {isApprox && (
+              <span
+                data-testid="hero-approx-badge"
+                style={{
+                  marginLeft: 8,
+                  display: 'inline-block',
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: 'var(--muted)',
+                  background: 'var(--surface-soft)',
+                  border: '1px solid var(--hairline)',
+                  letterSpacing: '0.02em',
+                  textTransform: 'uppercase',
+                }}
+                title="Series approximated from revenue. Backend will ship distinct margin/volume series soon."
+              >
+                approximate
+              </span>
+            )}
           </div>
           <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
             Walk-forward · solid line = P50 · shaded = envelope
+            {isApprox && ' · series approximated from revenue scale'}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
