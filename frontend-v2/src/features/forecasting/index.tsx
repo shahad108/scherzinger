@@ -29,6 +29,7 @@ import { QuoteToRevenueBridge } from './components/QuoteToRevenueBridge';
 import { CalibrationCard } from './components/CalibrationCard';
 import { MarketDirectionStrip } from './components/MarketDirectionStrip';
 import { BriefingButton } from './components/BriefingButton';
+import { HeroKPIStrip } from './components/HeroKPIStrip';
 import type { ForecastMode, ForecastShell } from '@/types/forecast';
 
 const QUEUE_TO_BLOCK: Record<string, string> = {
@@ -57,6 +58,7 @@ export default function ForecastingPage() {
   const familyParam = params.get('family') ?? undefined;
   const clusterParam = params.get('cluster') ?? undefined;
   const showAll = params.get('show_all') === '1';
+  const layoutV2 = params.get('layout') === 'v2';
   const forecastParams = useMemo(
     () => ({
       mode: modeParam,
@@ -179,7 +181,7 @@ export default function ForecastingPage() {
       {tab === 'customers' ? (
         <PerCustomerTab />
       ) : (
-        <AggregateView data={data} article={article} mode={modeParam} showAll={showAll} />
+        <AggregateView data={data} article={article} mode={modeParam} showAll={showAll} layoutV2={layoutV2} />
       )}
 
       <CrossLinkStrip />
@@ -192,9 +194,17 @@ interface AggregateProps {
   article: string | null;
   mode: ForecastMode;
   showAll: boolean;
+  layoutV2: boolean;
 }
 
-function AggregateView({ data, article, mode, showAll }: AggregateProps) {
+function AggregateView({ data, article, mode, showAll, layoutV2 }: AggregateProps) {
+  if (layoutV2) {
+    return <AggregateViewV2 data={data} article={article} mode={mode} showAll={showAll} />;
+  }
+  return <AggregateViewV1 data={data} article={article} mode={mode} showAll={showAll} />;
+}
+
+function AggregateViewV1({ data, article, mode, showAll }: Omit<AggregateProps, 'layoutV2'>) {
   return (
     <>
       {data.tornado && <TornadoCard tornado={data.tornado} />}
@@ -218,6 +228,76 @@ function AggregateView({ data, article, mode, showAll }: AggregateProps) {
         <PriceFloor rows={data.priceFloor} footnote={data.priceFloorFootnote} highlightArticle={article} />
       </div>
       <NewProductForecast data={data.newProduct} />
+      {data.methodology && (
+        <>
+          <AssumptionsFooter
+            assumptions={data.methodology.assumptions}
+            dataThrough={
+              data.methodology.assumptions.find((a) => a.label === 'Data-through')?.value
+            }
+          />
+          <MethodologyPanel methodology={data.methodology} />
+        </>
+      )}
+    </>
+  );
+}
+
+function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 'layoutV2'>) {
+  // Derive KPI inputs from the existing ForecastHero shape. Optional new fields
+  // (forecast12moTotal, varianceVsPlanPct, mapeTrailing6mo, fva) are honored
+  // when present, otherwise computed from `series` or filled with safe zeros.
+  const series = data.hero?.series ?? [];
+  const derivedForecast12mo = series
+    .slice(-12)
+    .reduce((acc, p) => acc + (p.p50 ?? p.primary ?? 0), 0);
+  const forecast12mo = data.hero?.forecast12moTotal ?? derivedForecast12mo;
+  const varianceVsPlanPct = data.hero?.varianceVsPlanPct ?? 0;
+  const mape =
+    data.hero?.mapeTrailing6mo ??
+    (typeof data.walkForward?.target === 'number' ? data.walkForward.target : 0);
+  const fva =
+    data.hero?.fva ?? { score: 0, verdict: 'neutral' as const, n: 0 };
+
+  return (
+    <>
+      <HeroKPIStrip
+        forecast12mo={forecast12mo}
+        varianceVsPlanPct={varianceVsPlanPct}
+        mape={mape}
+        fva={fva}
+        mode={mode}
+      />
+      <HeroForecast hero={data.hero} mode={mode} />
+      {/* slot 5: PVMWaterfall — filled in Phase 5 */}
+      {/* slot 6: TopSKUsForecastTable — filled in Phase 5 */}
+      <ClusterLens clusters={data.clusters} />
+      <ScenarioLibrary />
+      {data.activeScenarioId && (
+        <ScenarioActiveBanner scenarioId={data.activeScenarioId} applied={data.scenarioApplied} />
+      )}
+      {/* slot 9: Drivers accordion — filled in Phase 6 */}
+      {data.tornado && <TornadoCard tornado={data.tornado} />}
+      {data.distributions && (
+        <DistributionGrid distributions={data.distributions} clusters={data.clusters} />
+      )}
+      {data.calibration && <CalibrationCard data={data.calibration} />}
+      <WalkForward panel={data.walkForward} />
+      {data.marginTrajectory && <MarginTrajectoryCard data={data.marginTrajectory} />}
+      {data.costDecomposition && <CostDecompositionCard data={data.costDecomposition} />}
+      {data.seasonalOverlay && <SeasonalOverlayCard data={data.seasonalOverlay} />}
+      {data.commodityTrajectories && (
+        <CommodityTrajectoriesCard data={data.commodityTrajectories} />
+      )}
+      <InputCostTrajectory data={data.inputCost} />
+      {data.quoteToRevenue && <QuoteToRevenueBridge data={data.quoteToRevenue} />}
+      {/* slot 10: Renewals/NewProduct accordion — filled in Phase 6 */}
+      <div id="block-renewals" data-focus-target="renewals">
+        <PriceFloor rows={data.priceFloor} footnote={data.priceFloorFootnote} highlightArticle={article} />
+      </div>
+      <NewProductForecast data={data.newProduct} />
+      <ParetoLayer data={data.pareto} showAll={showAll} />
+      {/* slot 11: OverrideLog — filled in Phase 6 */}
       {data.methodology && (
         <>
           <AssumptionsFooter

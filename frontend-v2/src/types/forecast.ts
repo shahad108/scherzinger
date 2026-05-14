@@ -100,6 +100,12 @@ export interface ForecastHero {
   moversSource?: 'live' | 'synthetic';
   movableLockedSource?: 'live' | 'synthetic';
   whyBandMovesSource?: 'live' | 'synthetic';
+  // Phase 2 (forecast redesign v2) — KPI strip inputs. All optional; the v2
+  // shell falls back to derived/zero values when omitted (mock data is fine).
+  forecast12moTotal?: number;
+  varianceVsPlanPct?: number;
+  mapeTrailing6mo?: number;
+  fva?: { score: number; verdict: 'helping' | 'neutral' | 'hurting'; n: number };
 }
 
 export interface ClusterCard {
