@@ -29,4 +29,12 @@ class WtpBand(BaseModel):
     n_deals: int = Field(ge=0)
     window_days: int = Field(ge=1)
     confidence: ConfidenceLevel
+    anchored_from_cluster: bool = Field(
+        default=False,
+        description=(
+            "True when this band was anchored from cluster comparables "
+            "because the SKU's own won-deal sample was below the n<5 floor. "
+            "Confidence is forced to ``low`` in that case."
+        ),
+    )
     lineage_ref: Optional[LineageRef] = None

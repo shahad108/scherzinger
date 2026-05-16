@@ -46,6 +46,25 @@ _WTP_SQL = text(
 )
 
 
+# Cluster-anchor sample: same won-deal shape but matched on the cluster
+# key (``quotes.commodity_group``) rather than ``article_id``, so we can
+# fall back when the SKU itself has fewer than 5 won deals. Tier filter
+# still applies.
+_WTP_CLUSTER_SQL = text(
+    """
+    SELECT (q.revenue / NULLIF(q.quantity, 0))::numeric AS unit_price
+      FROM quotes q
+     WHERE q.commodity_group = :cluster
+       AND q.is_won = TRUE
+       AND q.revenue IS NOT NULL
+       AND q.quantity IS NOT NULL
+       AND q.quantity > 0
+       AND q.date >= :since
+       AND (:tier IS NULL OR q.business_unit = :tier)
+    """
+)
+
+
 def _bucket(n_deals: int, p10: Decimal, p50: Decimal, p90: Decimal) -> ConfidenceLevel:
     """Confidence rule per Phase 1 spec.
 
@@ -63,18 +82,75 @@ def _bucket(n_deals: int, p10: Decimal, p50: Decimal, p90: Decimal) -> Confidenc
     return ConfidenceLevel.HIGH
 
 
+def _load_cluster_anchor_wtp(
+    *,
+    aid: str,
+    cluster: str,
+    tier: Optional[str],
+    window_days: int,
+    db_session: Session,
+) -> Optional[WtpBand]:
+    """Cluster-anchor fallback: build a WTP band from won deals in the
+    same cluster (``quotes.commodity_group``) rather than the specific
+    SKU. Returns ``None`` when the cluster also has no won-deal sample.
+
+    Confidence is forced to ``low`` regardless of cluster sample size —
+    the SKU itself has thin data, so the anchor is a best-effort proxy.
+    """
+    from datetime import datetime, timezone
+
+    since = (datetime.now(timezone.utc) - timedelta(days=window_days)).date()
+    rows = db_session.execute(
+        _WTP_CLUSTER_SQL, {"cluster": cluster, "tier": tier, "since": since}
+    ).fetchall()
+    prices = [Decimal(str(r[0])) for r in rows if r[0] is not None]
+    if not prices:
+        return None
+
+    arr = np.array([float(p) for p in prices], dtype=float)
+    p10 = Decimal(str(float(np.percentile(arr, 10))))
+    p50 = Decimal(str(float(np.percentile(arr, 50))))
+    p90 = Decimal(str(float(np.percentile(arr, 90))))
+
+    lineage = create_lineage(
+        source_kind=LineageSourceKind.WON_DEAL_SAMPLE,
+        source_id=f"wtp:cluster:{cluster}:tier:{tier or 'all'}",
+        sql=str(_WTP_CLUSTER_SQL),
+        model="cluster_anchor",
+        computed_by="system",
+        session=db_session,
+    )
+    return WtpBand(
+        aid=aid,
+        tier=tier,
+        p10=p10,
+        p50=p50,
+        p90=p90,
+        n_deals=len(prices),
+        window_days=window_days,
+        confidence=ConfidenceLevel.LOW,
+        anchored_from_cluster=True,
+        lineage_ref=_lineage_wire(lineage),
+    )
+
+
 def build_wtp(
     *,
     aid: str,
     tier: Optional[str] = None,
+    cluster: Optional[str] = None,
     window_days: int = 540,
     db_session: Session,
 ) -> Optional[WtpBand]:
     """Return the WTP band for ``aid`` (× ``tier`` if given).
 
-    Returns ``None`` when the won-deal sample is empty — caller should
-    treat that as "no signal" and either fall back to cluster anchors or
-    omit the WTP card.
+    When the SKU's own won-deal sample is thin (``n_deals < 5``) AND a
+    ``cluster`` key is provided, we anchor the band from cluster
+    comparables instead — confidence is forced to ``low`` in that case
+    via ``anchored_from_cluster=True``.
+
+    Returns ``None`` when the won-deal sample is empty AND no cluster
+    anchor is available — caller should treat that as "no signal".
     """
     # Window cutoff — we query ``quotes.date`` which is a Date column.
     from datetime import datetime, timezone
@@ -84,6 +160,30 @@ def build_wtp(
         _WTP_SQL, {"aid": aid, "tier": tier, "since": since}
     ).fetchall()
     prices = [Decimal(str(r[0])) for r in rows if r[0] is not None]
+
+    # Cluster-anchor fallback: SKU has fewer than 5 won deals AND we
+    # were given a cluster to anchor against.
+    if len(prices) < 5 and cluster:
+        anchor = _load_cluster_anchor_wtp(
+            aid=aid,
+            cluster=cluster,
+            tier=tier,
+            window_days=window_days,
+            db_session=db_session,
+        )
+        if anchor is not None:
+            logger.info(
+                "wtp.cluster_anchor aid=%s tier=%s cluster=%s sku_n=%d "
+                "cluster_n=%d — anchored from cluster",
+                aid,
+                tier,
+                cluster,
+                len(prices),
+                anchor.n_deals,
+            )
+            return anchor
+        # Fall through to the SKU-band path if cluster also has no data.
+
     if not prices:
         return None
 
@@ -120,6 +220,7 @@ def build_wtp(
         n_deals=len(prices),
         window_days=window_days,
         confidence=confidence,
+        anchored_from_cluster=False,
         lineage_ref=_lineage_wire(lineage),
     )
 

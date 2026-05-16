@@ -46,7 +46,46 @@ def _find_sku(aid: str) -> dict[str, Any] | None:
     return None
 
 
-def _attach_phase1_signals(workbench: dict[str, Any], aid: str, tier: Optional[str]) -> None:
+def _resolve_envelope(
+    aid: str, db
+) -> tuple[Decimal, Decimal]:
+    """Resolve a (floor, ceiling) envelope for the win-prob curve.
+
+    Prefer ``PriceState.floor``/``ceiling`` when both are present; else
+    apply the 0.85× / 1.20× heuristic against the SKU's ``list_price`` if
+    we have one; else fall back to the canonical demo envelope
+    (€85 — €120) so the contract test still sees 20 grid points.
+
+    Reads ``PriceStateRow`` once and reuses it across the workbench
+    attach so we don't issue duplicate selects.
+    """
+    from sqlalchemy import select
+
+    from backend.models.pricing.pricing_state import PriceStateRow
+
+    row = db.execute(
+        select(PriceStateRow).where(PriceStateRow.aid == aid)
+    ).scalar_one_or_none()
+
+    if row is not None and row.floor is not None and row.ceiling is not None:
+        return row.floor, row.ceiling
+    anchor = (row.list_price if row is not None and row.list_price else None) or (
+        row.current_price if row is not None and row.current_price else None
+    )
+    if anchor is not None and anchor > 0:
+        floor = (anchor * Decimal("0.85")).quantize(Decimal("0.01"))
+        ceiling = (anchor * Decimal("1.20")).quantize(Decimal("0.01"))
+        return floor, ceiling
+    # Demo dataset default: 0.85×100 / 1.20×100.
+    return Decimal("85.00"), Decimal("120.00")
+
+
+def _attach_phase1_signals(
+    workbench: dict[str, Any],
+    aid: str,
+    tier: Optional[str],
+    cluster: Optional[str] = None,
+) -> None:
     """Best-effort: attach recommendation + WTP + curve + competitor.
 
     Each field is optional. We swallow exceptions per spec — the frontend
@@ -57,7 +96,10 @@ def _attach_phase1_signals(workbench: dict[str, Any], aid: str, tier: Optional[s
         with SessionLocal() as db:
             try:
                 rec = recommendation_mod.build_recommendation(
-                    aid=aid, tier=tier, db_session=db
+                    aid=aid,
+                    tier=tier,
+                    cluster=cluster,
+                    db_session=db,
                 )
                 workbench["recommendation"] = rec.model_dump(mode="json")
             except Exception:
@@ -66,26 +108,24 @@ def _attach_phase1_signals(workbench: dict[str, Any], aid: str, tier: Optional[s
                 )
             try:
                 wtp_band = wtp_mod.build_wtp(
-                    aid=aid, tier=tier, window_days=540, db_session=db
+                    aid=aid,
+                    tier=tier,
+                    cluster=cluster,
+                    window_days=540,
+                    db_session=db,
                 )
                 if wtp_band is not None:
                     workbench["wtp"] = wtp_band.model_dump(mode="json")
             except Exception:
                 logger.exception("workbench.wtp failed aid=%s tier=%s", aid, tier)
             try:
-                # Use a heuristic envelope when PriceState isn't available
-                # — keeps the curve renderable for the v3 demo dataset.
-                floor = Decimal("0.85")
-                ceiling = Decimal("1.20")
-                # Default span when no price anchor: 0.85x → 1.20x current
-                # signal. We resolve a current-price proxy from the seed
-                # so the contract test always sees 20 grid points.
+                floor, ceiling = _resolve_envelope(aid, db)
                 curve = elasticity_mod.build_win_prob_curve(
                     aid=aid,
                     tier=tier,
                     points=20,
-                    floor=floor * Decimal("100"),
-                    ceiling=ceiling * Decimal("100"),
+                    floor=floor,
+                    ceiling=ceiling,
                     db_session=db,
                 )
                 if curve is not None:
@@ -137,7 +177,13 @@ async def build_workbench(*, aid: str, tier: Optional[str] = None) -> dict[str, 
             hero["sub"] = short.get("sub", hero.get("sub"))
         workbench["hero"] = hero
     workbench["aid"] = aid
-    _attach_phase1_signals(workbench, aid, tier or str(sku.get("tier") or "") or None)
+    cluster = str(sku.get("cluster") or "") or None
+    _attach_phase1_signals(
+        workbench,
+        aid,
+        tier or str(sku.get("tier") or "") or None,
+        cluster=cluster,
+    )
     return workbench
 
 
