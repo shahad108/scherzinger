@@ -26,6 +26,41 @@ branch_labels = None
 depends_on = None
 
 
+# Enum-as-string allowed values. We store as TEXT (not Postgres ENUM)
+# because adding a value to a PG ENUM in a future migration is far more
+# painful than ALTER-ing a CHECK constraint. The CHECK guards us from
+# bad inserts in the meantime.
+_AUDIT_ACTIONS = (
+    "price_set",
+    "proposal_created",
+    "proposal_approved",
+    "proposal_rejected",
+    "override_added",
+    "alert_triggered",
+    "push_to_quoting",
+    "rollback",
+    "ab_test_created",
+    "ab_test_promoted",
+)
+_AUDIT_TARGET_KINDS = ("sku", "customer", "cluster", "family")
+_LINEAGE_SOURCE_KINDS = (
+    "invoice_ledger",
+    "competitor_feed",
+    "won_deal_sample",
+    "elasticity_model",
+    "cost_ingest",
+    "manual_override",
+    "scheduled_publish",
+    "ab_test_assignment",
+)
+_CUSTOMER_TIERS = ("A", "B", "C", "D")
+
+
+def _in_list_sql(column: str, values: tuple[str, ...]) -> str:
+    quoted = ", ".join(f"'{v}'" for v in values)
+    return f"{column} IN ({quoted})"
+
+
 def upgrade() -> None:
     # --- lineage_refs (must come first; other tables FK into it) ----------
     op.create_table(
@@ -42,6 +77,10 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("computed_by", sa.String(120), nullable=False),
+        sa.CheckConstraint(
+            _in_list_sql("source_kind", _LINEAGE_SOURCE_KINDS),
+            name="ck_lineage_refs_source_kind",
+        ),
     )
     op.create_index("ix_lineage_refs_source_kind", "lineage_refs", ["source_kind"])
     op.create_index("ix_lineage_refs_source_id", "lineage_refs", ["source_id"])
@@ -119,6 +158,10 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.UniqueConstraint("aid", "customer_id", name="uq_customer_on_sku_aid_customer"),
+        sa.CheckConstraint(
+            _in_list_sql("tier", _CUSTOMER_TIERS),
+            name="ck_customer_on_sku_tier",
+        ),
     )
     op.create_index("ix_customer_on_sku_aid", "customer_on_sku", ["aid"])
     op.create_index("ix_customer_on_sku_customer_id", "customer_on_sku", ["customer_id"])
@@ -146,6 +189,14 @@ def upgrade() -> None:
             sa.ForeignKey("lineage_refs.id", ondelete="SET NULL"),
             nullable=True,
         ),
+        sa.CheckConstraint(
+            _in_list_sql("action", _AUDIT_ACTIONS),
+            name="ck_pricing_audit_action",
+        ),
+        sa.CheckConstraint(
+            _in_list_sql("target_kind", _AUDIT_TARGET_KINDS),
+            name="ck_pricing_audit_target_kind",
+        ),
     )
     op.create_index("ix_pricing_audit_at", "pricing_audit", ["at"])
     op.create_index("ix_pricing_audit_actor", "pricing_audit", ["actor"])
@@ -160,6 +211,18 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Drop CHECK constraints first so a partial-rollback that fails inside
+    # drop_table leaves the schema in a clean state. Use ``IF EXISTS`` so a
+    # downgrade against a DB that pre-dates the CHECK additions doesn't
+    # 500 — the migration itself doesn't track partial states.
+    op.execute(
+        "ALTER TABLE pricing_audit "
+        "DROP CONSTRAINT IF EXISTS ck_pricing_audit_target_kind"
+    )
+    op.execute(
+        "ALTER TABLE pricing_audit "
+        "DROP CONSTRAINT IF EXISTS ck_pricing_audit_action"
+    )
     op.drop_index("ix_pricing_audit_target_at", table_name="pricing_audit")
     op.drop_index("ix_pricing_audit_target_id", table_name="pricing_audit")
     op.drop_index("ix_pricing_audit_action", table_name="pricing_audit")
@@ -167,6 +230,10 @@ def downgrade() -> None:
     op.drop_index("ix_pricing_audit_at", table_name="pricing_audit")
     op.drop_table("pricing_audit")
 
+    op.execute(
+        "ALTER TABLE customer_on_sku "
+        "DROP CONSTRAINT IF EXISTS ck_customer_on_sku_tier"
+    )
     op.drop_index("ix_customer_on_sku_customer_id", table_name="customer_on_sku")
     op.drop_index("ix_customer_on_sku_aid", table_name="customer_on_sku")
     op.drop_table("customer_on_sku")
@@ -177,6 +244,10 @@ def downgrade() -> None:
     op.drop_index("ix_price_state_last_set_at", table_name="price_state")
     op.drop_table("price_state")
 
+    op.execute(
+        "ALTER TABLE lineage_refs "
+        "DROP CONSTRAINT IF EXISTS ck_lineage_refs_source_kind"
+    )
     op.drop_index("ix_lineage_refs_source_id", table_name="lineage_refs")
     op.drop_index("ix_lineage_refs_source_kind", table_name="lineage_refs")
     op.drop_table("lineage_refs")
