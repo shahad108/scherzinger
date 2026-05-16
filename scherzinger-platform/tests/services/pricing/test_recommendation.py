@@ -229,6 +229,95 @@ def test_recompute_exists_and_emits_event(monkeypatch) -> None:
     }
 
 
+def _custom_mix_lineage(source_id: str) -> LineageRef:
+    return LineageRef(
+        id=uuid4(),
+        source_kind=LineageSourceKind.WON_DEAL_SAMPLE,
+        source_id=source_id,
+        sql=None,
+        model="customer_mix_v1",
+        computed_at=datetime.now(timezone.utc),
+        computed_by="system",
+    )
+
+
+def test_cluster_and_customer_id_threaded_into_lineage() -> None:
+    """``cluster`` and ``customer_id`` must influence the output or the
+    lineage — they're declared on the signature so they must not lie.
+    Phase 1 routes them into the customer-mix driver's lineage source_id.
+    """
+    session = MagicMock()
+
+    def _fake_customer_mix_lineage(*, aid, cluster, customer_id, db_session):
+        return _custom_mix_lineage(
+            f"rec:{aid}:cust:{customer_id or 'any'}:cluster:{cluster or 'none'}"
+        )
+
+    with patch.object(rec, "_load_cost", return_value=_cost()), patch.object(
+        rec, "_load_price", return_value=_price()
+    ), patch.object(rec, "_load_wtp", return_value=_wtp()), patch.object(
+        rec, "_load_competitor", return_value=_competitor()
+    ), patch.object(
+        rec, "_load_curve", return_value=_curve()
+    ), patch.object(
+        rec, "_persist_lineage", return_value=_lineage()
+    ), patch.object(
+        rec, "_customer_mix_lineage", side_effect=_fake_customer_mix_lineage
+    ):
+        r = rec.build_recommendation(
+            aid="X-1",
+            tier="A",
+            cluster="CL-42",
+            customer_id="CUST-007",
+            db_session=session,
+        )
+
+    # The customer-mix driver's lineage carries the cluster/customer_id
+    # so a downstream auditor can replay the attribution.
+    cust_mix = next(
+        d for d in r.drivers if d.kind.value == "customer_mix"
+    )
+    assert cust_mix.lineage_ref is not None
+    src = cust_mix.lineage_ref.source_id
+    assert "cust:CUST-007" in src, src
+    assert "cluster:CL-42" in src, src
+
+
+def test_customer_id_passed_through_to_wtp_loader() -> None:
+    """``customer_id`` must reach the WTP loader so per-customer WTP can
+    be looked up (today: lineage tag; tomorrow: per-customer band)."""
+    session = MagicMock()
+    captured: dict = {}
+
+    def _capture_wtp(**kwargs):
+        captured.update(kwargs)
+        return _wtp()
+
+    with patch.object(rec, "_load_cost", return_value=_cost()), patch.object(
+        rec, "_load_price", return_value=_price()
+    ), patch.object(rec, "_load_wtp", side_effect=_capture_wtp), patch.object(
+        rec, "_load_competitor", return_value=_competitor()
+    ), patch.object(
+        rec, "_load_curve", return_value=_curve()
+    ), patch.object(
+        rec, "_persist_lineage", return_value=_lineage()
+    ), patch.object(
+        rec,
+        "_customer_mix_lineage",
+        return_value=_custom_mix_lineage("rec:X-1:cust:CUST-007:cluster:CL-42"),
+    ):
+        rec.build_recommendation(
+            aid="X-1",
+            tier="A",
+            cluster="CL-42",
+            customer_id="CUST-007",
+            db_session=session,
+        )
+
+    assert captured.get("customer_id") == "CUST-007"
+    assert captured.get("cluster") == "CL-42"
+
+
 def test_lineage_ref_attached() -> None:
     session = MagicMock()
     with patch.object(rec, "_load_cost", return_value=_cost()), patch.object(

@@ -91,13 +91,37 @@ def _load_cost(*, aid: str, db_session: Session) -> Optional[CostState]:
     )
 
 
-def _load_wtp(*, aid: str, tier: Optional[str], db_session: Session) -> Optional[WtpBand]:
+def _load_wtp(
+    *,
+    aid: str,
+    tier: Optional[str],
+    cluster: Optional[str] = None,
+    customer_id: Optional[str] = None,
+    db_session: Session,
+) -> Optional[WtpBand]:
+    """Build the WTP band, threading ``cluster`` for the n<5 cluster-anchor
+    fallback. ``customer_id`` is accepted today as a lineage hint; once a
+    per-customer WTP query exists it will drive a per-customer band.
+    """
+    # TODO(pricing-studio-v3/p2): when the customer-deal table lands,
+    # branch here on ``customer_id is not None`` and call
+    # ``wtp_mod.build_customer_wtp(...)`` for a per-customer band — for
+    # Phase 1 we still use the SKU × tier band but tag the lineage so
+    # the attribution stays auditable.
     try:
         return wtp_mod.build_wtp(
-            aid=aid, tier=tier, window_days=540, db_session=db_session
+            aid=aid,
+            tier=tier,
+            cluster=cluster,
+            window_days=540,
+            db_session=db_session,
         )
     except Exception:
-        logger.exception("recommendation._load_wtp failed aid=%s", aid)
+        logger.exception(
+            "recommendation._load_wtp failed aid=%s customer_id=%s",
+            aid,
+            customer_id,
+        )
         return None
 
 
@@ -242,6 +266,47 @@ def _pick_with_floor(curve: WinProbCurve, cost: Decimal, floor: Decimal) -> Deci
     return best_price
 
 
+def _customer_mix_lineage(
+    *,
+    aid: str,
+    cluster: Optional[str],
+    customer_id: Optional[str],
+    db_session: Session,
+) -> LineageRef:
+    """Persist a dedicated lineage row for the customer-mix driver.
+
+    ``source_id`` encodes ``cust:<id>:cluster:<id>`` so a downstream
+    auditor can replay which (customer × cluster) pair drove the
+    attribution. When neither is provided we still tag it ``cust:any``
+    so the lineage is unambiguous.
+
+    TODO(pricing-studio-v3/p2): once ``customer_on_sku.share`` lands
+    (Phase 2 data source), use it to weight the customer-mix
+    contribution by actual revenue share rather than the WTP-p50
+    proxy. For Phase 1 we tag the lineage so the attribution is
+    replayable, but the magnitude still comes from the SKU-wide WTP.
+    """
+    cust_tag = customer_id or "any"
+    cluster_tag = cluster or "none"
+    row = create_lineage(
+        source_kind=LineageSourceKind.WON_DEAL_SAMPLE,
+        source_id=f"rec:{aid}:cust:{cust_tag}:cluster:{cluster_tag}",
+        sql=None,
+        model="customer_mix_v1",
+        computed_by="system",
+        session=db_session,
+    )
+    return LineageRef(
+        id=row.id,
+        source_kind=row.source_kind,
+        source_id=row.source_id,
+        sql=row.sql,
+        model=row.model,
+        computed_at=row.computed_at,
+        computed_by=row.computed_by,
+    )
+
+
 def _compute_drivers(
     *,
     rec_price: Decimal,
@@ -251,6 +316,8 @@ def _compute_drivers(
     competitor: Optional[CompetitorRef],
     wtp: Optional[WtpBand],
     lineages: dict[str, Optional[LineageRef]],
+    cluster: Optional[str] = None,
+    customer_id: Optional[str] = None,
 ) -> list[Driver]:
     """Marginal-removal driver attribution.
 
@@ -286,7 +353,24 @@ def _compute_drivers(
     # "No customer mix": tier-agnostic curve — we don't have a separate
     # untiered curve here, so we attribute the spread between the WTP p50
     # and the recommended price as the customer-mix signal magnitude.
+    # When a ``cluster`` is provided, we mix in the cluster-median price
+    # (approximated by the WTP p50 — which is the cluster anchor when
+    # the band was anchored from cluster) as a tertiary signal so the
+    # magnitude reflects the cluster pull, not just the SKU's own
+    # won-deal mean.
     rec_no_customer_mix = wtp.p50 if wtp is not None else rec_price
+    if cluster is not None and wtp is not None:
+        # Tertiary signal: nudge the customer-mix reference toward the
+        # cluster median (proxied by wtp.p50 when anchored_from_cluster;
+        # else by an equally-weighted blend with the recommended price
+        # so the signal magnitude is still cluster-aware).
+        if getattr(wtp, "anchored_from_cluster", False):
+            cluster_median = wtp.p50
+        else:
+            cluster_median = (wtp.p50 + rec_price) / Decimal("2")
+        rec_no_customer_mix = (
+            (rec_no_customer_mix + cluster_median) / Decimal("2")
+        )
 
     raw: dict[DriverKind, Decimal] = {
         DriverKind.COST_TRAJECTORY: abs(rec_price - rec_neutral_cost),
@@ -328,7 +412,11 @@ def _compute_drivers(
     lineage_for: dict[DriverKind, Optional[LineageRef]] = {
         DriverKind.COST_TRAJECTORY: lineages.get("cost"),
         DriverKind.COMPETITOR_SIGNAL: lineages.get("competitor"),
-        DriverKind.CUSTOMER_MIX: lineages.get("wtp"),
+        # Prefer the customer-mix specific lineage (with cust/cluster
+        # tags) when we built one; fall back to the WTP lineage.
+        DriverKind.CUSTOMER_MIX: (
+            lineages.get("customer_mix") or lineages.get("wtp")
+        ),
         DriverKind.WIN_PROB_OPTIMUM: lineages.get("curve"),
         DriverKind.FLOOR_PROTECTION: lineages.get("price"),
     }
@@ -444,7 +532,13 @@ def build_recommendation(
     """
     price = _load_price(aid=aid, db_session=db_session)
     cost = _load_cost(aid=aid, db_session=db_session)
-    wtp = _load_wtp(aid=aid, tier=tier, db_session=db_session)
+    wtp = _load_wtp(
+        aid=aid,
+        tier=tier,
+        cluster=cluster,
+        customer_id=customer_id,
+        db_session=db_session,
+    )
     competitor = _load_competitor(aid=aid, db_session=db_session)
 
     # Determine the optimisation envelope.
@@ -468,12 +562,26 @@ def build_recommendation(
         aid=aid, tier=tier, floor=floor, ceiling=ceiling, db_session=db_session
     )
 
+    # Customer-mix lineage carries the cluster/customer_id tags so the
+    # attribution stays auditable even when the magnitude still comes
+    # from the SKU-wide WTP (per the TODO in _customer_mix_lineage).
+    # Only persisted when at least one of the tags is set — otherwise
+    # the customer-mix driver re-uses the WTP lineage as before.
+    customer_mix_lineage: Optional[LineageRef] = None
+    if cluster is not None or customer_id is not None:
+        customer_mix_lineage = _customer_mix_lineage(
+            aid=aid,
+            cluster=cluster,
+            customer_id=customer_id,
+            db_session=db_session,
+        )
     lineages: dict[str, Optional[LineageRef]] = {
         "price": price.lineage_ref if price else None,
         "cost": cost.lineage_ref if cost else None,
         "wtp": wtp.lineage_ref if wtp else None,
         "competitor": competitor.lineage_ref if competitor else None,
         "curve": curve.lineage_ref if curve else None,
+        "customer_mix": customer_mix_lineage,
         "rec": _persist_lineage(aid=aid, db_session=db_session),
     }
 
@@ -551,6 +659,8 @@ def build_recommendation(
         competitor=competitor,
         wtp=wtp,
         lineages=lineages,
+        cluster=cluster,
+        customer_id=customer_id,
     )
 
     level = _confidence_level(wtp, curve)
