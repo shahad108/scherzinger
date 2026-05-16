@@ -56,34 +56,45 @@ def test_workbench_recommendation_shape(client: TestClient) -> None:
     assert res.status_code == 200, res.text
     body = res.json()
 
-    # `recommendation` is optional but when present must satisfy the
-    # full contract.
-    if "recommendation" in body and body["recommendation"] is not None:
-        rec = body["recommendation"]
-        assert _decimal_like(rec["recommended_price"]), rec["recommended_price"]
-        assert _decimal_like(rec["confidence"]), rec["confidence"]
-        assert "band" in rec
-        band = rec["band"]
-        assert _decimal_like(band["min"])
-        assert _decimal_like(band["target"])
-        assert _decimal_like(band["max"])
-        # min <= target <= max as Decimals.
-        assert Decimal(str(band["min"])) <= Decimal(str(band["target"]))
-        assert Decimal(str(band["target"])) <= Decimal(str(band["max"]))
+    # Phase 1 spec §1.7 acceptance: ``recommendation`` is ALWAYS present
+    # — the recommender returns a low-confidence fallback when inputs
+    # are thin (see test_all_inputs_none_returns_fallback_low_confidence).
+    # A None here is a silent failure, not a valid contract state.
+    assert "recommendation" in body, "recommendation key missing from workbench response"
+    assert body["recommendation"] is not None, (
+        "recommendation must never be None — the fallback path returns a low-"
+        "confidence Recommendation when inputs are missing"
+    )
 
-        assert isinstance(rec["drivers"], list)
-        assert len(rec["drivers"]) >= 1
-        for d in rec["drivers"]:
-            assert "kind" in d and isinstance(d["kind"], str)
-            assert "label" in d and isinstance(d["label"], str)
-            assert _decimal_like(d["contribution_pct"])
-            # lineage_ref is optional per the Pydantic model but the
-            # Phase 1 spec requires every numeric driver to carry one.
-            assert d.get("lineage_ref") is not None, d
+    rec = body["recommendation"]
+    assert _decimal_like(rec["recommended_price"]), rec["recommended_price"]
+    assert _decimal_like(rec["confidence"]), rec["confidence"]
+    assert "band" in rec
+    band = rec["band"]
+    assert _decimal_like(band["min"])
+    assert _decimal_like(band["target"])
+    assert _decimal_like(band["max"])
+    # min <= target <= max as Decimals.
+    assert Decimal(str(band["min"])) <= Decimal(str(band["target"]))
+    assert Decimal(str(band["target"])) <= Decimal(str(band["max"]))
 
-        assert isinstance(rec["rationale_md"], str)
-        assert rec["rationale_md"].strip(), "rationale_md must not be empty"
-        assert rec.get("lineage_ref") is not None
+    assert isinstance(rec["drivers"], list)
+    assert len(rec["drivers"]) >= 1
+    for d in rec["drivers"]:
+        assert "kind" in d and isinstance(d["kind"], str)
+        assert "label" in d and isinstance(d["label"], str)
+        assert _decimal_like(d["contribution_pct"])
+        # lineage_ref is optional per the Pydantic model but the
+        # Phase 1 spec requires every numeric driver to carry one.
+        assert d.get("lineage_ref") is not None, d
+
+    assert isinstance(rec["rationale_md"], str)
+    assert rec["rationale_md"].strip(), "rationale_md must not be empty"
+    assert rec.get("lineage_ref") is not None
+    # confidence_level is required by the model — must be a known bucket.
+    assert rec.get("confidence_level") in {"low", "med", "high"}, rec.get(
+        "confidence_level"
+    )
 
 
 def test_workbench_wtp_shape(client: TestClient) -> None:
@@ -91,17 +102,27 @@ def test_workbench_wtp_shape(client: TestClient) -> None:
     res = client.get(f"{WORKBENCH_URL}/{aid}")
     assert res.status_code == 200
     body = res.json()
-    if "wtp" in body and body["wtp"] is not None:
-        wtp = body["wtp"]
-        assert _decimal_like(wtp["p10"])
-        assert _decimal_like(wtp["p50"])
-        assert _decimal_like(wtp["p90"])
-        assert isinstance(wtp["n_deals"], int)
-        assert wtp["n_deals"] >= 0
-        assert isinstance(wtp["window_days"], int)
-        assert wtp["window_days"] >= 1
-        assert wtp["confidence"] in {"low", "med", "high"}
-        assert wtp.get("lineage_ref") is not None
+    # Phase 1 spec: ``wtp`` is ALWAYS present (even as a thin/low-confidence
+    # band) for any seeded aid. The legacy fixture had an "omit on empty
+    # sample" branch but Phase 1 now anchors from cluster instead of
+    # returning None.
+    assert "wtp" in body, "wtp key missing from workbench response"
+    assert body["wtp"] is not None, (
+        "wtp must never be None — when the SKU's won-deal sample is thin "
+        "we anchor from cluster comparables (anchored_from_cluster=True)"
+    )
+    wtp = body["wtp"]
+    assert _decimal_like(wtp["p10"])
+    assert _decimal_like(wtp["p50"])
+    assert _decimal_like(wtp["p90"])
+    assert isinstance(wtp["n_deals"], int)
+    assert wtp["n_deals"] >= 0
+    assert isinstance(wtp["window_days"], int)
+    assert wtp["window_days"] >= 1
+    assert wtp["confidence"] in {"low", "med", "high"}
+    assert wtp.get("lineage_ref") is not None
+    # New Phase 1 field — must be a bool.
+    assert isinstance(wtp.get("anchored_from_cluster"), bool), wtp
 
 
 def test_workbench_win_prob_curve_shape(client: TestClient) -> None:
@@ -109,18 +130,25 @@ def test_workbench_win_prob_curve_shape(client: TestClient) -> None:
     res = client.get(f"{WORKBENCH_URL}/{aid}")
     assert res.status_code == 200
     body = res.json()
-    if "win_prob_curve" in body and body["win_prob_curve"] is not None:
-        curve = body["win_prob_curve"]
-        assert isinstance(curve["points"], list)
-        assert len(curve["points"]) >= 20
-        for pt in curve["points"]:
-            assert _decimal_like(pt["price"])
-            assert _decimal_like(pt["win_prob"])
-            assert _decimal_like(pt["lower_ci"])
-            assert _decimal_like(pt["upper_ci"])
-            # Win-prob ranges are [0,1].
-            wp = Decimal(str(pt["win_prob"]))
-            assert Decimal("0") <= wp <= Decimal("1"), wp
+    # Phase 1 spec: ``win_prob_curve`` is ALWAYS present with ≥20 grid
+    # points. The seed envelope guarantees a renderable curve even when
+    # the underlying quote sample is thin.
+    assert "win_prob_curve" in body, "win_prob_curve key missing from workbench response"
+    assert body["win_prob_curve"] is not None, (
+        "win_prob_curve must never be None — the seed envelope ensures a "
+        "renderable 20-point curve even on thin samples"
+    )
+    curve = body["win_prob_curve"]
+    assert isinstance(curve["points"], list)
+    assert len(curve["points"]) >= 20
+    for pt in curve["points"]:
+        assert _decimal_like(pt["price"])
+        assert _decimal_like(pt["win_prob"])
+        assert _decimal_like(pt["lower_ci"])
+        assert _decimal_like(pt["upper_ci"])
+        # Win-prob ranges are [0,1].
+        wp = Decimal(str(pt["win_prob"]))
+        assert Decimal("0") <= wp <= Decimal("1"), wp
 
 
 def test_workbench_competitor_ref_shape(client: TestClient) -> None:
@@ -128,9 +156,12 @@ def test_workbench_competitor_ref_shape(client: TestClient) -> None:
     res = client.get(f"{WORKBENCH_URL}/{aid}")
     assert res.status_code == 200
     body = res.json()
-    # `competitor_ref` is allowed to be missing (older payloads) or
-    # explicitly null (no PA/PR rejections in window).
-    if "competitor_ref" in body and body["competitor_ref"] is not None:
+    # ``competitor_ref`` is always present in the response — spec §1.7
+    # requires the key (so the frontend can render <DataMissingBadge/>
+    # for "no competitor data" without ambiguity vs. "not computed").
+    # The value may be None when no PA/PR lost quotes exist in the window.
+    assert "competitor_ref" in body, "competitor_ref key missing from workbench response"
+    if body["competitor_ref"] is not None:
         comp = body["competitor_ref"]
         assert _decimal_like(comp["median_price"])
         assert isinstance(comp["sample_count"], int)

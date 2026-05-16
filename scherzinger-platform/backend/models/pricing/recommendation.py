@@ -85,8 +85,7 @@ class Recommendation(BaseModel):
         le=Decimal("1"),
         description="Model confidence 0.0–1.0.",
     )
-    confidence_level: Optional[ConfidenceLevel] = Field(
-        default=None,
+    confidence_level: ConfidenceLevel = Field(
         description=(
             "Coarse low/med/high bucket. Derived from ``n_deals`` and the "
             "WTP-band width: low if n<5 or (p90-p10)/p50>0.5; high if n≥15 "
