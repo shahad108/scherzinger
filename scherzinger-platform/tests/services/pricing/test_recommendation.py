@@ -229,6 +229,49 @@ def test_recompute_exists_and_emits_event(monkeypatch) -> None:
     }
 
 
+def test_recompute_publishes_failure_event_and_returns_none(monkeypatch) -> None:
+    """MF3: when build_recommendation raises, recompute must
+    (1) log with traceback (logger.exception),
+    (2) publish ``pricing.recommendation_recompute_failed`` on the bus,
+    (3) return None so the cost-ingest path isn't broken.
+    """
+    captured: dict = {}
+
+    def fake_publish_sync(topic, payload, *, aid=None, cluster=None):
+        captured.setdefault("events", []).append(
+            {"topic": topic, "payload": payload, "aid": aid}
+        )
+
+    from backend.services import events as ev_mod
+
+    monkeypatch.setattr(ev_mod, "publish_sync", fake_publish_sync)
+
+    class _SessionCM:
+        def __enter__(self):
+            return MagicMock()
+
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr(rec, "SessionLocal", lambda: _SessionCM())
+
+    def _boom(**kwargs):
+        raise ValueError("synthetic recompute failure")
+
+    monkeypatch.setattr(rec, "build_recommendation", _boom)
+
+    result = rec.recompute("X-1", tier="A")
+    assert result is None
+    events = captured.get("events") or []
+    assert any(
+        ev["topic"] == "pricing.recommendation_recompute_failed"
+        and ev["aid"] == "X-1"
+        and ev["payload"]["aid"] == "X-1"
+        and ev["payload"]["error_class"] == "ValueError"
+        for ev in events
+    ), f"failure event not emitted: events={events}"
+
+
 def test_recompute_forwards_cluster_and_customer_id(monkeypatch) -> None:
     """MF2: recompute must accept ``cluster`` + ``customer_id`` and
     forward them to ``build_recommendation`` — otherwise the cost-ingest

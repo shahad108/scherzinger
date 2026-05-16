@@ -720,8 +720,37 @@ def recompute(
                 db_session=db,
             )
             db.commit()
-    except Exception:
-        logger.exception("recommendation.recompute failed aid=%s", aid)
+    except Exception as exc:
+        # MF3: log with full traceback AND surface the failure on the
+        # SSE bus so subscribers can render a "recompute failed" toast
+        # instead of silently sticking to the stale recommendation.
+        logger.exception(
+            "recommendation.recompute failed aid=%s tier=%s cluster=%s "
+            "customer_id=%s",
+            aid,
+            tier,
+            cluster,
+            customer_id,
+        )
+        try:
+            from backend.services.events import publish_sync
+
+            publish_sync(
+                "pricing.recommendation_recompute_failed",
+                {
+                    "aid": aid,
+                    "error": str(exc),
+                    "error_class": exc.__class__.__name__,
+                },
+                aid=aid,
+            )
+        except Exception:
+            # Best-effort: if the publish itself blows up, don't let
+            # that propagate — the caller (cost-ingest) just gets None.
+            logger.exception(
+                "recommendation.recompute_failed event publish failed aid=%s",
+                aid,
+            )
         return None
 
     payload = _recommendation_to_dict(rec)
