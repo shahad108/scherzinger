@@ -17,11 +17,27 @@ function enrichSkus(data: StudioShell): StudioShell {
   };
 }
 
+/**
+ * Strip undefined/null/empty values from the params object so the BFF
+ * receives only the filters the user actually picked. Stable shape is
+ * important for query-key equality (so cache hits work).
+ */
+function tidyParams(params?: StudioParams): StudioParams | undefined {
+  if (!params) return undefined;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === null || v === '') continue;
+    out[k] = v;
+  }
+  return Object.keys(out).length ? (out as StudioParams) : undefined;
+}
+
 export function useStudio(params?: StudioParams) {
+  const effective = tidyParams(params);
   return useQuery({
-    queryKey: qk.studio(params),
+    queryKey: qk.studio(effective),
     queryFn: async () => {
-      const raw = await apiFetch<StudioShell>('/screens/studio', { params });
+      const raw = await apiFetch<StudioShell>('/screens/studio', { params: effective });
       return enrichSkus(raw);
     },
     staleTime: 60_000,

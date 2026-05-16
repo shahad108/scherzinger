@@ -16,14 +16,34 @@ import { DeepLinkBanner } from './components/DeepLinkBanner';
 import { ProposalContextPanel } from './components/ProposalContextPanel';
 
 export default function PricingStudioPage() {
-  const { data, isLoading } = useStudio();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
+  // Phase 21 — full deep-link filter quartet flows through `useStudio` so a
+  // refresh preserves the exact slice the user landed on.
+  const { data, isLoading } = useStudio({
+    aid: params.get('aid') ?? undefined,
+    tier: params.get('tier') ?? undefined,
+    family: params.get('family') ?? undefined,
+    cluster: params.get('cluster') ?? undefined,
+    scenario_id: params.get('scenario_id') ?? undefined,
+  });
   // Phase 2 — `aid` from the URL drives initial selection so deep links
   // from Action Center / Margin / Forecasting land on the exact SKU.
   // Local state then overrides if the user picks a different SKU.
   const urlAid = params.get('aid');
   const [selectedAid, setSelectedAid] = useState<string | null>(urlAid);
   const [activeOption, setActiveOption] = useState<ActiveOptionView | null>(null);
+
+  // Phase 21 — SKU-picker clicks must update the URL so refresh preserves
+  // the selection. Wrap setSelectedAid + setSearchParams in a single handler
+  // so the existing SkuPicker prop contract is unchanged.
+  const handleSelectSku = (aid: string) => {
+    setSelectedAid(aid);
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('aid', aid);
+      return next;
+    });
+  };
 
   useEffect(() => {
     document.body.classList.add('pz-fullbleed');
@@ -115,7 +135,7 @@ export default function PricingStudioPage() {
           filters={data.filters}
           toggles={data.toggles}
           selectedAid={effectiveAid}
-          onSelect={setSelectedAid}
+          onSelect={handleSelectSku}
         />
 
         <div className="ws-bench">

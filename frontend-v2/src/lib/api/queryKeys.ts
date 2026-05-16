@@ -62,6 +62,12 @@ export type StudioParams = ShellParams & {
   aid?: string;
   filter?: string;
   hide_locked?: boolean;
+  // Phase 21 — deep-link filter quartet. Each is optional and round-trips
+  // through both `useStudio()` and the backend `/screens/studio` endpoint.
+  tier?: string;
+  family?: string;
+  cluster?: string;
+  scenario_id?: string;
 };
 
 export type AiParams = ShellParams;
