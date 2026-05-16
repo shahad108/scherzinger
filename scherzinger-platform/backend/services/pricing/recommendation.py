@@ -45,6 +45,7 @@ from backend.services.competitor.index import build_competitor_ref
 from backend.services.events import publish
 from backend.services.pricing import elasticity as elasticity_mod
 from backend.services.pricing import wtp as wtp_mod
+from backend.services.pricing.envelope import resolve_envelope
 from backend.services.pricing.lineage import create_lineage
 
 logger = logging.getLogger(__name__)
@@ -541,22 +542,10 @@ def build_recommendation(
     )
     competitor = _load_competitor(aid=aid, db_session=db_session)
 
-    # Determine the optimisation envelope.
-    if price is not None and price.floor is not None and price.ceiling is not None:
-        floor = price.floor
-        ceiling = price.ceiling
-    elif price is not None:
-        floor = (price.current_price * Decimal("0.85")).quantize(Decimal("0.01"))
-        ceiling = (price.current_price * Decimal("1.20")).quantize(Decimal("0.01"))
-    elif cost is not None:
-        floor = (cost.unit_cost * Decimal("1.05")).quantize(Decimal("0.01"))
-        ceiling = (cost.unit_cost * Decimal("1.80")).quantize(Decimal("0.01"))
-    else:
-        # No cost, no price — fully degenerate. Set a token envelope so
-        # the curve loader doesn't blow up, and we'll surface a clear
-        # "data missing" rationale.
-        floor = Decimal("1.00")
-        ceiling = Decimal("100.00")
+    # Determine the optimisation envelope — same canonical cascade the
+    # workbench uses when it asks elasticity for the win-prob curve.
+    # See ``backend.services.pricing.envelope`` for the cascade.
+    floor, ceiling = resolve_envelope(price, cost)
 
     curve = _load_curve(
         aid=aid, tier=tier, floor=floor, ceiling=ceiling, db_session=db_session
@@ -596,6 +585,15 @@ def build_recommendation(
             fallback = (cost.unit_cost * Decimal("1.3")).quantize(Decimal("0.01"))
         else:
             fallback = Decimal("0.01")  # last-ditch — never zero
+        # MF1: clamp the fallback price to the curve envelope so the
+        # workbench's curve and the recommended price always live on the
+        # same grid. Without this clamp a low-data SKU with a healthy
+        # WTP sample could land far outside the [floor, ceiling] the
+        # curve was built on (e.g. wtp.p50=727 vs envelope=[85,120]).
+        if fallback < floor:
+            fallback = floor
+        elif fallback > ceiling:
+            fallback = ceiling
         rationale = (
             "**Why this price?**\n"
             "- This is a fallback recommendation; one or more inputs were missing.\n"

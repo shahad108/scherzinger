@@ -30,6 +30,7 @@ from backend.services.competitor.index import build_competitor_ref
 from backend.services.pricing import elasticity as elasticity_mod
 from backend.services.pricing import recommendation as recommendation_mod
 from backend.services.pricing import wtp as wtp_mod
+from backend.services.pricing.envelope import resolve_envelope
 
 from ._seed import load_seed
 
@@ -51,33 +52,27 @@ def _resolve_envelope(
 ) -> tuple[Decimal, Decimal]:
     """Resolve a (floor, ceiling) envelope for the win-prob curve.
 
-    Prefer ``PriceState.floor``/``ceiling`` when both are present; else
-    apply the 0.85× / 1.20× heuristic against the SKU's ``list_price`` if
-    we have one; else fall back to the canonical demo envelope
-    (€85 — €120) so the contract test still sees 20 grid points.
+    Delegates to ``backend.services.pricing.envelope.resolve_envelope`` —
+    the canonical cascade used by BOTH the workbench attach and the
+    recommendation composer's optimiser. Keeping both call sites on the
+    same cascade guarantees the recommended price is on-grid relative to
+    the curve the UI renders.
 
-    Reads ``PriceStateRow`` once and reuses it across the workbench
-    attach so we don't issue duplicate selects.
+    Reads ``PriceStateRow`` and ``CostStateRow`` once and feeds them
+    straight to the canonical resolver.
     """
     from sqlalchemy import select
 
+    from backend.models.pricing.cost_state import CostStateRow
     from backend.models.pricing.pricing_state import PriceStateRow
 
-    row = db.execute(
+    price_row = db.execute(
         select(PriceStateRow).where(PriceStateRow.aid == aid)
     ).scalar_one_or_none()
-
-    if row is not None and row.floor is not None and row.ceiling is not None:
-        return row.floor, row.ceiling
-    anchor = (row.list_price if row is not None and row.list_price else None) or (
-        row.current_price if row is not None and row.current_price else None
-    )
-    if anchor is not None and anchor > 0:
-        floor = (anchor * Decimal("0.85")).quantize(Decimal("0.01"))
-        ceiling = (anchor * Decimal("1.20")).quantize(Decimal("0.01"))
-        return floor, ceiling
-    # Demo dataset default: 0.85×100 / 1.20×100.
-    return Decimal("85.00"), Decimal("120.00")
+    cost_row = db.execute(
+        select(CostStateRow).where(CostStateRow.aid == aid)
+    ).scalar_one_or_none()
+    return resolve_envelope(price_row, cost_row)
 
 
 def _attach_phase1_signals(

@@ -151,6 +151,29 @@ def test_workbench_win_prob_curve_shape(client: TestClient) -> None:
         assert Decimal("0") <= wp <= Decimal("1"), wp
 
 
+def test_recommended_price_within_curve_envelope(client: TestClient) -> None:
+    """MF1 contract: the recommended price must sit inside the curve's
+    price envelope (between the lowest and highest grid point). If this
+    fails the workbench's curve and the recommender are on different
+    grids — exactly the drift the canonical envelope resolver prevents.
+    """
+    aid = _fixture_aid(client)
+    res = client.get(f"{WORKBENCH_URL}/{aid}")
+    assert res.status_code == 200
+    body = res.json()
+    rec = body.get("recommendation")
+    curve = body.get("win_prob_curve")
+    if rec is None or curve is None or not curve.get("points"):
+        pytest.skip("workbench did not surface both recommendation and curve")
+    grid_prices = [Decimal(str(pt["price"])) for pt in curve["points"]]
+    rec_price = Decimal(str(rec["recommended_price"]))
+    assert min(grid_prices) <= rec_price <= max(grid_prices), (
+        f"recommended_price={rec_price} is outside curve envelope "
+        f"[{min(grid_prices)}, {max(grid_prices)}] — workbench and "
+        f"recommender are on different grids"
+    )
+
+
 def test_workbench_competitor_ref_shape(client: TestClient) -> None:
     aid = _fixture_aid(client)
     res = client.get(f"{WORKBENCH_URL}/{aid}")
