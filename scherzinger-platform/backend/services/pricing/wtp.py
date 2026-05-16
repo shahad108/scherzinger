@@ -108,9 +108,13 @@ def _load_cluster_anchor_wtp(
         return None
 
     arr = np.array([float(p) for p in prices], dtype=float)
-    p10 = Decimal(str(float(np.percentile(arr, 10))))
-    p50 = Decimal(str(float(np.percentile(arr, 50))))
-    p90 = Decimal(str(float(np.percentile(arr, 90))))
+    # SF5: float -> Decimal boundary. numpy.percentile returns float64 by
+    # contract; we Decimal(str(float(...))) to avoid the binary-float
+    # gotcha (Decimal(0.1) != Decimal("0.1")) and quantize to 4 decimal
+    # places so wire shape and equality semantics stay deterministic.
+    p10 = Decimal(str(float(np.percentile(arr, 10)))).quantize(Decimal("0.0001"))
+    p50 = Decimal(str(float(np.percentile(arr, 50)))).quantize(Decimal("0.0001"))
+    p90 = Decimal(str(float(np.percentile(arr, 90)))).quantize(Decimal("0.0001"))
 
     lineage = create_lineage(
         source_kind=LineageSourceKind.WON_DEAL_SAMPLE,
@@ -188,9 +192,12 @@ def build_wtp(
         return None
 
     arr = np.array([float(p) for p in prices], dtype=float)
-    p10 = Decimal(str(float(np.percentile(arr, 10))))
-    p50 = Decimal(str(float(np.percentile(arr, 50))))
-    p90 = Decimal(str(float(np.percentile(arr, 90))))
+    # SF5: float -> Decimal boundary (see _load_cluster_anchor_wtp for
+    # the full rationale). Quantize to 4 decimal places so the wire
+    # shape is stable across re-runs.
+    p10 = Decimal(str(float(np.percentile(arr, 10)))).quantize(Decimal("0.0001"))
+    p50 = Decimal(str(float(np.percentile(arr, 50)))).quantize(Decimal("0.0001"))
+    p90 = Decimal(str(float(np.percentile(arr, 90)))).quantize(Decimal("0.0001"))
     confidence = _bucket(len(prices), p10, p50, p90)
 
     if confidence == ConfidenceLevel.LOW:

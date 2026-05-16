@@ -115,9 +115,12 @@ def _build_fallback(
 ) -> WinProbCurve:
     """Flat-50% curve with ``model="fallback_flat"`` lineage."""
     prices = np.linspace(float(floor), float(ceiling), points_n)
+    # SF5: float -> Decimal boundary; quantize to 4 decimal places for
+    # consistency with the logistic path's grid precision.
+    _PRICE_Q = Decimal("0.0001")
     points = [
         CurvePoint(
-            price=Decimal(str(round(p, 4))),
+            price=Decimal(str(float(p))).quantize(_PRICE_Q),
             win_prob=Decimal("0.5"),
             lower_ci=Decimal("0.5"),
             upper_ci=Decimal("0.5"),
@@ -233,6 +236,16 @@ def build_win_prob_curve(
     # If the fit suggests price doesn't affect win-prob (β1 ≈ 0) we
     # enforce a tiny monotone decreasing shape so the band columns are
     # still ordered and the UI sparkline doesn't oscillate.
+    #
+    # SF5: float -> Decimal boundary. ``np.linspace`` / ``_sigmoid``
+    # return float64s; we stringify before constructing Decimal to dodge
+    # the binary-float gotcha, then quantize so the wire shape stays
+    # stable across re-runs. Price grid is quantized to 4 decimal
+    # places (finer than cents because the envelope can straddle cents
+    # at 20 grid points); win-prob / CI to 4 places (was 6 — match
+    # WTP percentile precision so downstream comparisons line up).
+    _PRICE_Q = Decimal("0.0001")
+    _PROB_Q = Decimal("0.0001")
     curve_points: list[CurvePoint] = []
     for i, p in enumerate(grid_prices):
         pm = float(p_means[i])
@@ -240,10 +253,10 @@ def build_win_prob_curve(
         pu = float(max(p_lower[i], p_upper[i]))
         curve_points.append(
             CurvePoint(
-                price=Decimal(str(round(float(p), 4))),
-                win_prob=Decimal(str(round(max(0.0, min(1.0, pm)), 6))),
-                lower_ci=Decimal(str(round(max(0.0, min(1.0, pl)), 6))),
-                upper_ci=Decimal(str(round(max(0.0, min(1.0, pu)), 6))),
+                price=Decimal(str(float(p))).quantize(_PRICE_Q),
+                win_prob=Decimal(str(max(0.0, min(1.0, pm)))).quantize(_PROB_Q),
+                lower_ci=Decimal(str(max(0.0, min(1.0, pl)))).quantize(_PROB_Q),
+                upper_ci=Decimal(str(max(0.0, min(1.0, pu)))).quantize(_PROB_Q),
             )
         )
 
