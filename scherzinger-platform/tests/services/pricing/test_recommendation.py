@@ -400,6 +400,68 @@ def test_customer_id_passed_through_to_wtp_loader() -> None:
     assert captured.get("cluster") == "CL-42"
 
 
+def test_rationale_skips_near_zero_cost_trajectory_line() -> None:
+    """SF7: when the cost-trajectory driver's contribution rounds to ~0%
+    (< 1%), the rationale must NOT render the line — it's noise.
+    """
+    from backend.models.pricing.recommendation import Driver
+
+    near_zero_cost = Driver(
+        kind=DriverKind.COST_TRAJECTORY,
+        label="Cost trajectory",
+        contribution_pct=Decimal("0.005"),  # 0.5% — below 1% threshold
+        lineage_ref=_lineage(),
+    )
+    other_drivers = [
+        Driver(
+            kind=k,
+            label=str(k.value),
+            contribution_pct=Decimal("0.25"),
+            lineage_ref=_lineage(),
+        )
+        for k in (
+            DriverKind.COMPETITOR_SIGNAL,
+            DriverKind.CUSTOMER_MIX,
+            DriverKind.WIN_PROB_OPTIMUM,
+            DriverKind.FLOOR_PROTECTION,
+        )
+    ]
+    rationale = rec._render_rationale(
+        rec_price=Decimal("100.00"),
+        cost=Decimal("70.00"),
+        cost_floor=Decimal("77.00"),
+        safety_margin_pp=Decimal("10"),
+        competitor=_competitor(),
+        wtp=_wtp(),
+        curve=_curve(),
+        drivers=[near_zero_cost, *other_drivers],
+    )
+    assert "Cost trajectory contributes" not in rationale, rationale
+
+
+def test_rationale_keeps_meaningful_cost_trajectory_line() -> None:
+    """Sibling of the SF7 skip test: at 1%+ the line MUST render."""
+    from backend.models.pricing.recommendation import Driver
+
+    meaningful_cost = Driver(
+        kind=DriverKind.COST_TRAJECTORY,
+        label="Cost trajectory",
+        contribution_pct=Decimal("0.20"),
+        lineage_ref=_lineage(),
+    )
+    rationale = rec._render_rationale(
+        rec_price=Decimal("100.00"),
+        cost=Decimal("70.00"),
+        cost_floor=Decimal("77.00"),
+        safety_margin_pp=Decimal("10"),
+        competitor=_competitor(),
+        wtp=_wtp(),
+        curve=_curve(),
+        drivers=[meaningful_cost],
+    )
+    assert "Cost trajectory contributes" in rationale, rationale
+
+
 def test_lineage_ref_attached() -> None:
     session = MagicMock()
     with patch.object(rec, "_load_cost", return_value=_cost()), patch.object(

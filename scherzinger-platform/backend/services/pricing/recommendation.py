@@ -480,8 +480,12 @@ def _render_rationale(
     drivers: list[Driver],
 ) -> str:
     lines = [f"**Why €{rec_price:.2f}?**"]
+    # SF7: skip rationale lines for drivers whose normalised contribution
+    # rounds to ~0% (< 1%). Showing "Cost trajectory contributes 0%" is
+    # noise that clutters the rationale without adding signal.
+    _NEAR_ZERO = Decimal("0.01")
     cost_drv = next((d for d in drivers if d.kind == DriverKind.COST_TRAJECTORY), None)
-    if cost_drv is not None:
+    if cost_drv is not None and cost_drv.contribution_pct >= _NEAR_ZERO:
         pct = (cost_drv.contribution_pct * Decimal("100")).quantize(Decimal("1"))
         lines.append(
             f"- Cost trajectory contributes {pct}%: unit cost at €{cost:.2f}."
