@@ -16,8 +16,23 @@ from backend.models import (
     AbTestAssignment,
     ModelRegistryEntry,
 )
+# Phase 21 (Pricing Studio v3): register canonical pricing tables on Base.metadata.
+from backend.models.pricing import (  # noqa: F401
+    CostStateRow,
+    CustomerOnSkuRow,
+    LineageRefRow,
+    PriceStateRow,
+    PricingAuditEntry,
+)
 
 config = context.config
+
+# Allow runtime override (CI, local dev with no docker) via env var.
+import os
+
+_env_db_url = os.environ.get("DATABASE_URL")
+if _env_db_url:
+    config.set_main_option("sqlalchemy.url", _env_db_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
