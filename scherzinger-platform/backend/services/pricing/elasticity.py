@@ -68,8 +68,19 @@ def _fit_logistic(x: np.ndarray, y: np.ndarray, *, max_iter: int = 50, tol: floa
     ``x`` shape (n,), ``y`` shape (n,) in {0,1}. Returns ``(beta, cov)`` where
     ``beta = [b0, b1]`` and ``cov`` is the asymptotic 2x2 covariance matrix
     or ``None`` if the Hessian was singular.
+
+    SF6: returns ``None`` outright when the sample is degenerate (all-won
+    or all-lost). The logistic likelihood is unbounded in that regime —
+    IRLS will diverge or land on a meaningless saturated fit — so the
+    caller MUST treat ``None`` as "fall back to flat-50%".
     """
     n = len(x)
+    # SF6: degenerate sample — every deal won (y.sum() == n) or every
+    # deal lost (y.sum() == 0). Logistic regression has no MLE on this
+    # data; IRLS will silently converge to ±inf intercepts. Signal
+    # degeneracy by returning None so the caller can fall back.
+    if n == 0 or y.sum() == 0 or y.sum() == n:
+        return None
     X = np.column_stack([np.ones(n), x])  # (n, 2)
     beta = np.zeros(2)
     for _ in range(max_iter):
@@ -205,7 +216,29 @@ def build_win_prob_curve(
     wins = np.array([w for _p, _c, w in samples], dtype=float)
     avg_cost = float(np.mean([c for _p, c, _w in samples]))
 
-    beta, cov = _fit_logistic(margins, wins)
+    fit_result = _fit_logistic(margins, wins)
+    if fit_result is None:
+        # SF6: all-won or all-lost — logistic likelihood is unbounded,
+        # no MLE exists. Fall through to the flat-50% curve so the UI
+        # shows a visible "insufficient signal" badge.
+        logger.warning(
+            "elasticity.degenerate_sample aid=%s tier=%s n=%d wins=%d "
+            "— all-won or all-lost, falling back to flat 50%%",
+            aid,
+            tier,
+            n,
+            int(wins.sum()),
+        )
+        return _build_fallback(
+            aid=aid,
+            tier=tier,
+            points_n=points,
+            floor=floor,
+            ceiling=ceiling,
+            db_session=db_session,
+            n_deals=n,
+        )
+    beta, cov = fit_result
     if cov is None:
         # Degenerate fit — degrade to the flat curve, log it.
         logger.warning("elasticity.singular_hessian aid=%s tier=%s — falling back", aid, tier)

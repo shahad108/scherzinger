@@ -110,6 +110,46 @@ def test_fallback_flat_50_when_sample_small() -> None:
     assert curve.confidence_band is None
 
 
+def test_fallback_flat_50_when_all_won() -> None:
+    """SF6: 10 quotes, all won → logistic likelihood is unbounded.
+    Caller must fall back to the flat-50% curve with confidence_band=None.
+    """
+    deals = [(95.0 + i, 70.0, 1) for i in range(10)]
+    session = _stub_session(deals)
+    floor, ceiling = _floor_ceiling()
+    curve = el.build_win_prob_curve(
+        aid="X-1",
+        tier="A",
+        points=20,
+        floor=floor,
+        ceiling=ceiling,
+        db_session=session,
+    )
+    assert curve is not None
+    assert curve.confidence_band is None
+    for pt in curve.points:
+        assert pt.win_prob == Decimal("0.5")
+
+
+def test_fallback_flat_50_when_all_lost() -> None:
+    """SF6: 10 quotes, all lost → no MLE. Fall back to flat-50%."""
+    deals = [(95.0 + i, 70.0, 0) for i in range(10)]
+    session = _stub_session(deals)
+    floor, ceiling = _floor_ceiling()
+    curve = el.build_win_prob_curve(
+        aid="X-1",
+        tier="A",
+        points=20,
+        floor=floor,
+        ceiling=ceiling,
+        db_session=session,
+    )
+    assert curve is not None
+    assert curve.confidence_band is None
+    for pt in curve.points:
+        assert pt.win_prob == Decimal("0.5")
+
+
 def test_curve_points_span_floor_to_ceiling() -> None:
     deals: list[tuple[float, float, int]] = []
     for _ in range(20):
