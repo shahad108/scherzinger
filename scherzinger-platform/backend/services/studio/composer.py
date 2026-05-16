@@ -60,10 +60,25 @@ async def build_studio_shell(
     filter_value: str | None,
     hide_locked: bool,
     lang: str | None,
+    tier: str | None = None,
+    family: str | None = None,
+    cluster: str | None = None,
+    scenario_id: str | None = None,
 ) -> dict[str, Any]:
     _persona_gate(persona)
 
-    key = (user_id, persona, aid, filter_value, hide_locked, lang)
+    key = (
+        user_id,
+        persona,
+        aid,
+        filter_value,
+        hide_locked,
+        lang,
+        tier,
+        family,
+        cluster,
+        scenario_id,
+    )
     cached = _CACHE.get(key)
     now = time.monotonic()
     if cached is not None and now - cached[0] < CACHE_TTL_SECONDS:
@@ -79,6 +94,22 @@ async def build_studio_shell(
         ] or skus
     if hide_locked:
         skus = [s for s in skus if not str(s.get("status", "")).lower().startswith("locked")]
+
+    # Phase 21 — shell-level filter params. Each is applied as a soft
+    # narrowing pass: if the filter eliminates every SKU we leave the
+    # narrowed-by-previous-step list intact so deep-links never produce
+    # an empty picker.
+    if tier:
+        narrowed = [s for s in skus if str(s.get("tier", "")).upper() == tier.upper()]
+        skus = narrowed or skus
+    if family:
+        narrowed = [s for s in skus if str(s.get("family", "")).upper() == family.upper()]
+        skus = narrowed or skus
+    if cluster:
+        narrowed = [
+            s for s in skus if str(s.get("cluster", "")).lower() == cluster.lower()
+        ]
+        skus = narrowed or skus
 
     # Phase 3 — every SKU row carries the canonical per-SKU recommendation
     # contract under `recommendation`. Same shape as /action-center.skuTable[].
@@ -106,6 +137,14 @@ async def build_studio_shell(
         "comparable": seed["comparable"],
         "crossLinks": seed["crossLinks"],
         "footerNote": seed.get("footerNote", ""),
+        # Phase 21 — echo back applied filters so the UI can confirm a deep
+        # link landed on the intended slice + render the cleared-filter chips.
+        "appliedFilters": {
+            "tier": tier,
+            "family": family,
+            "cluster": cluster,
+            "scenarioId": scenario_id,
+        },
     }
     _CACHE[key] = (now, payload)
     return payload

@@ -282,9 +282,17 @@ async def get_studio(
     filter: str | None = None,
     hide_locked: bool = False,
     lang: str | None = None,
+    tier: str | None = None,
+    family: str | None = None,
+    cluster: str | None = None,
+    scenario_id: str | None = None,
     ctx: AuthContext = Depends(require_auth),
 ):
-    """Phase 8: live composition for Pricing Studio shell."""
+    """Phase 8: live composition for Pricing Studio shell.
+
+    Phase 21 adds the deep-link filter quartet (tier/family/cluster/scenario_id)
+    so the URL round-trips a full slice of the Studio.
+    """
     effective_persona = persona or ctx.persona
     payload = await build_studio_shell(
         user_id=str(ctx.user_id),
@@ -293,6 +301,10 @@ async def get_studio(
         filter_value=filter,
         hide_locked=hide_locked,
         lang=lang,
+        tier=tier,
+        family=family,
+        cluster=cluster,
+        scenario_id=scenario_id,
     )
     raw = json.dumps(payload, sort_keys=True).encode("utf-8")
     etag = '"' + hashlib.sha256(raw).hexdigest()[:16] + '"'

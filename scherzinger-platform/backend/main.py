@@ -9,6 +9,7 @@ from backend.api.v1 import (
     benchmarks,
     costs,
     dashboard,
+    events as pricing_events,
     forecast as forecast_blocks,
     forecast_annotations,
     forecast_overrides,
@@ -117,6 +118,9 @@ app.include_router(
     prefix="/api/v1",
     tags=["forecast-annotations"],
 )
+
+# Phase 21 (Pricing Studio v3): SSE event channel.
+app.include_router(pricing_events.router, prefix="/api/v1")
 
 
 @app.get("/health")
