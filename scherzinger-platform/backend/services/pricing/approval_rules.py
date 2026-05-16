@@ -22,9 +22,17 @@ Decision semantics:
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
+
+# Defensive cap: nested {"and":[{"and":[...]}]} structures would otherwise
+# blow the Python recursion limit and 500 the approval endpoint. 64 is
+# orders of magnitude beyond anything a real rule needs.
+_MAX_RULE_DEPTH = 64
 
 DEFAULT_RULES_PATH = (
     Path(__file__).resolve().parents[3] / "backend" / "data" / "pricing_approval_rules.json"
@@ -99,8 +107,16 @@ _BIN_OPS = {
 }
 
 
-def _eval(node: Any, ctx: dict[str, Any]) -> Any:
-    """Recursive JSON-logic evaluator. Returns the node's truth value."""
+def _eval(node: Any, ctx: dict[str, Any], depth: int = 0) -> Any:
+    """Recursive JSON-logic evaluator. Returns the node's truth value.
+
+    ``depth`` is bumped on each recursive call. Hitting ``_MAX_RULE_DEPTH``
+    raises ``ValueError`` — the public surface treats malformed/abusive
+    rules as not-fired (see ``should_route_for_approval``).
+    """
+    if depth > _MAX_RULE_DEPTH:
+        raise ValueError("rule depth exceeded")
+
     # Primitives — pass through.
     if not isinstance(node, dict):
         return node
@@ -115,19 +131,19 @@ def _eval(node: Any, ctx: dict[str, Any]) -> Any:
     if op in _BIN_OPS:
         if not isinstance(args, list) or len(args) != 2:
             raise ValueError(f"{op!r} expects [a, b], got {args!r}")
-        a = _eval(args[0], ctx)
-        b = _eval(args[1], ctx)
+        a = _eval(args[0], ctx, depth + 1)
+        b = _eval(args[1], ctx, depth + 1)
         return _BIN_OPS[op](a, b)
 
     if op == "and":
         if not isinstance(args, list):
             raise ValueError(f"and expects a list, got {args!r}")
-        return all(_eval(x, ctx) for x in args)
+        return all(_eval(x, ctx, depth + 1) for x in args)
 
     if op == "or":
         if not isinstance(args, list):
             raise ValueError(f"or expects a list, got {args!r}")
-        return any(_eval(x, ctx) for x in args)
+        return any(_eval(x, ctx, depth + 1) for x in args)
 
     raise ValueError(f"unsupported json-logic operator: {op!r}")
 
@@ -140,8 +156,14 @@ def _eval(node: Any, ctx: dict[str, Any]) -> Any:
 _CACHED_RULES: dict[Path, list[dict[str, Any]]] = {}
 
 
-def load_rules(path: Path | str = DEFAULT_RULES_PATH) -> list[dict[str, Any]]:
-    """Load + cache the rules file. Cache key is the absolute path."""
+def _load_rules_from(path: Path | str) -> list[dict[str, Any]]:
+    """Internal: load + cache the rules file. Cache key is the absolute path.
+
+    PRIVATE — do not expose to HTTP-facing call sites. Arbitrary path input
+    would otherwise become an unauthenticated file-read primitive. The
+    public ``should_route_for_approval`` always uses ``DEFAULT_RULES_PATH``.
+    Tests reach in via ``reload_rules`` / ``reset_cache_for_tests``.
+    """
     p = Path(path).resolve()
     if p in _CACHED_RULES:
         return _CACHED_RULES[p]
@@ -157,23 +179,42 @@ def reset_cache_for_tests() -> None:
     _CACHED_RULES.clear()
 
 
-def should_route_for_approval(
-    proposal: Proposal,
-    *,
-    rules_path: Path | str = DEFAULT_RULES_PATH,
-) -> ApprovalDecision:
-    """Apply every rule and aggregate into a single decision."""
-    rules = load_rules(rules_path)
+def reload_rules(path: Path | str = DEFAULT_RULES_PATH) -> list[dict[str, Any]]:
+    """Test helper: invalidate the cache and reload ``path``.
+
+    Only intended for tests that need to point at a fixture rules file.
+    Not callable from any HTTP handler.
+    """
+    _CACHED_RULES.pop(Path(path).resolve(), None)
+    return _load_rules_from(path)
+
+
+def should_route_for_approval(proposal: Proposal) -> ApprovalDecision:
+    """Apply every rule and aggregate into a single decision.
+
+    Rules are loaded from the module-level ``DEFAULT_RULES_PATH``. We do
+    NOT accept a caller-supplied path here — exposing that would turn this
+    helper into an arbitrary file-read sink if it ever reached the HTTP
+    boundary. Tests use ``reload_rules()`` to point at fixtures.
+    """
+    rules = _load_rules_from(DEFAULT_RULES_PATH)
     ctx = proposal.as_context()
     decision = ApprovalDecision()
 
     for rule in rules:
+        rule_id = rule.get("id", "?")
         try:
             fired = bool(_eval(rule["condition"], ctx))
-        except (KeyError, ValueError):
-            # A malformed rule must not silently auto-approve. Treat as
-            # not-fired and surface via the reasons list so ops can debug.
-            decision.reasons.append(f"rule {rule.get('id', '?')} failed to evaluate")
+        except (KeyError, ValueError, TypeError) as exc:
+            # A malformed rule must not silently auto-approve. ``TypeError``
+            # surfaces when comparison operators see mismatched types
+            # (e.g. ``None > 5``). Treat as not-fired, log so silent rule
+            # corruption is visible in ops dashboards, and surface via the
+            # reasons list so the UI can flag it.
+            logger.warning(
+                "approval rule %s evaluation failed: %s", rule_id, exc
+            )
+            decision.reasons.append(f"rule {rule_id} failed to evaluate")
             continue
 
         if not fired:
