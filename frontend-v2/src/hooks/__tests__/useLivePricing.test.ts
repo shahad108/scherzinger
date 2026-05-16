@@ -183,4 +183,50 @@ describe('useLivePricing', () => {
     await waitFor(() => expect(sources.length).toBeGreaterThan(1));
     expect(lastSource).not.toBe(first);
   });
+
+  it('invalidates every studio variant in the cache, not just the active aid', async () => {
+    // Shared QueryClient so both hook instances see the same cache.
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    function sharedWrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: qc }, children);
+    }
+
+    // Mount two hook instances against different studio variants.
+    const hookA = renderHook(() => useLivePricing({ aid: 'AID-1' }), {
+      wrapper: sharedWrapper,
+    });
+    const hookB = renderHook(() => useLivePricing({ aid: 'AID-2' }), {
+      wrapper: sharedWrapper,
+    });
+
+    await waitFor(() => expect(hookA.result.current.data).toBeDefined());
+    await waitFor(() => expect(hookB.result.current.data).toBeDefined());
+
+    // Spy on invalidateQueries on the shared client.
+    const spy = vi.spyOn(qc, 'invalidateQueries');
+
+    await waitFor(() => expect(sources.length).toBeGreaterThanOrEqual(2));
+    act(() => sources[0]!.__open());
+    act(() =>
+      sources[0]!.__dispatch({
+        topic: 'pricing.price_set',
+        aid: 'AID-1',
+        cluster: null,
+        ts: 555,
+        payload: {},
+      }),
+    );
+
+    await waitFor(() =>
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({ queryKey: ['studio'] }),
+      ),
+    );
+
+    spy.mockRestore();
+    hookA.unmount();
+    hookB.unmount();
+  });
 });

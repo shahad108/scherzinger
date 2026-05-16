@@ -13,7 +13,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useStudio } from '@/data/api/useStudio';
-import { qk, type StudioParams } from '@/lib/api/queryKeys';
+import { type StudioParams } from '@/lib/api/queryKeys';
 import { usePricingStream, type PricingStreamEvent } from './usePricingStream';
 
 export interface LivePricingToast {
@@ -62,7 +62,12 @@ export function useLivePricing(params?: StudioParams): UseLivePricingResult {
     lastTopicRef.current = lastEvent.topic;
     setLastTickAt(lastEvent.ts);
 
-    queryClient.invalidateQueries({ queryKey: qk.studio() });
+    // Prefix-match invalidation: TanStack's default is exact-match on the
+    // full key tuple, which would skip every studio variant opened in the
+    // same tab (different aid/tier/cluster filters → different keys).
+    // ``qk.studio`` is shaped ['studio'] / ['studio', params] (see
+    // src/lib/api/queryKeys.ts), so the prefix ['studio'] hits them all.
+    queryClient.invalidateQueries({ queryKey: ['studio'] });
 
     if (
       lastEvent.topic === COST_MOVED_TOPIC &&
