@@ -23,12 +23,25 @@ from __future__ import annotations
 import abc
 import asyncio
 import fnmatch
+import logging
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import AsyncIterator, Optional
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_QUEUE_SIZE = 100
+
+
+def _make_id_gen():
+    n = 0
+    while True:
+        n += 1
+        yield n
+
+
+_SUB_ID_GEN = _make_id_gen()
 
 
 @dataclass
@@ -67,6 +80,11 @@ class _Subscriber:
     aid: Optional[str] = None
     cluster: Optional[str] = None
     dropped: int = 0
+    # Stable id for log correlation across drop warnings.
+    id: int = field(default_factory=lambda: next(_SUB_ID_GEN))
+    # Monotonic timestamp of the most-recent drop warning emitted for
+    # this subscriber. Rate-limited to once per second.
+    _last_drop_log_at: float = 0.0
 
 
 class EventBus(abc.ABC):
@@ -112,6 +130,7 @@ class InProcessEventBus(EventBus):
         """
         try:
             sub.queue.put_nowait(event)
+            return
         except asyncio.QueueFull:
             try:
                 sub.queue.get_nowait()
@@ -119,6 +138,16 @@ class InProcessEventBus(EventBus):
                 sub.queue.put_nowait(event)
             except (asyncio.QueueEmpty, asyncio.QueueFull):
                 sub.dropped += 1
+        # Rate-limited drop warning: at most one log per subscriber per
+        # second so a runaway publisher doesn't drown the log stream.
+        now = time.monotonic()
+        if now - sub._last_drop_log_at >= 1.0:
+            logger.warning(
+                "event bus dropped event on subscription %s (total dropped=%d)",
+                sub.id,
+                sub.dropped,
+            )
+            sub._last_drop_log_at = now
 
     async def publish(
         self,
@@ -281,7 +310,25 @@ def publish_sync(
     so callers from any thread can publish without spinning up an asyncio
     loop just to await ``publish()``. The Redis impl will override this
     with a sync XADD path.
+
+    MUST NOT be called from inside a running event loop. If you have an
+    ``await`` in scope, use ``await publish(...)`` — otherwise the
+    ``asyncio.run(...)`` fallback below would crash, and on the
+    in-process path you'd be issuing ``call_soon_threadsafe`` against
+    your own loop while blocking it. This guard makes the misuse
+    explicit instead of silently confusing.
     """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        # No running loop — safe to proceed. This is the intended path.
+        pass
+    else:
+        raise RuntimeError(
+            "publish_sync cannot be called from an async context — "
+            "use `await publish(...)` instead"
+        )
+
     bus = _bus
     if not isinstance(bus, InProcessEventBus):
         # Fall back to async path on non-in-process buses.

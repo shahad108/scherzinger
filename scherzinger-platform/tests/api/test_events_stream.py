@@ -159,6 +159,110 @@ def test_bounded_queue_drops_oldest_on_overflow() -> None:
 # ---------------------------------------------------------------------------
 
 
+def test_publish_sync_inside_async_context_raises() -> None:
+    """publish_sync MUST NOT be called from a running event loop."""
+
+    async def _run() -> None:
+        events_module.publish_sync("pricing.tick", {"x": 1})
+
+    with pytest.raises(RuntimeError, match="async context"):
+        asyncio.run(_run())
+
+
+def test_drop_emits_control_comment_in_sse_stream() -> None:
+    """When the bounded queue drops events, the next stream yield includes
+    a ``: dropped N events`` control comment so the client can full-refresh.
+    """
+    from starlette.requests import Request
+
+    from backend.api.v1 import events as events_api
+
+    async def _run() -> list[bytes]:
+        # Build a minimal disconnected-after-N-yields request stub. The
+        # _stream generator only touches request.is_disconnected().
+        disconnect_after = {"n": 0}
+
+        class _StubRequest:
+            async def is_disconnected(self) -> bool:
+                disconnect_after["n"] += 1
+                # Allow prime + a few iterations, then disconnect so the
+                # generator exits cleanly.
+                return disconnect_after["n"] > 6
+
+        bus: events_module.InProcessEventBus = events_module.get_bus()  # type: ignore[assignment]
+
+        # Pre-fill the bus subscription so the first iteration sees drops.
+        gen = events_api._stream(
+            request=_StubRequest(),  # type: ignore[arg-type]
+            topic="pricing",
+            aid=None,
+            cluster=None,
+        )
+
+        # Force tiny queue by reaching into the bus right after the
+        # generator opens its subscription. We do this by stepping the
+        # generator once to register the subscription, then publishing
+        # more than queue_size events so the next iteration emits a
+        # ": dropped" comment.
+        chunks: list[bytes] = []
+        # Step 1 — prime line
+        chunks.append(await gen.__anext__())
+        # The subscription has been registered with DEFAULT_QUEUE_SIZE.
+        # Force overflow by publishing more than that.
+        for i in range(events_module.DEFAULT_QUEUE_SIZE + 5):
+            await bus.publish("pricing.tick", {"i": i})
+        # Pump the generator until it ends.
+        try:
+            while True:
+                chunks.append(await gen.__anext__())
+        except StopAsyncIteration:
+            pass
+        return chunks
+
+    chunks = asyncio.run(_run())
+    blob = b"".join(chunks)
+    assert b": dropped " in blob, (
+        f"expected ': dropped' control comment in stream, got: {blob!r}"
+    )
+
+
+def test_subscriber_cleaned_up_on_disconnect() -> None:
+    """The SSE finally: block always unregisters the subscription, so the
+    bus subscriber count returns to zero after a disconnect.
+    """
+    from backend.api.v1 import events as events_api
+
+    async def _run() -> int:
+        disconnect_after = {"n": 0}
+
+        class _StubRequest:
+            async def is_disconnected(self) -> bool:
+                disconnect_after["n"] += 1
+                return disconnect_after["n"] > 1
+
+        bus: events_module.InProcessEventBus = events_module.get_bus()  # type: ignore[assignment]
+        assert bus._subscriber_count() == 0
+        gen = events_api._stream(
+            request=_StubRequest(),  # type: ignore[arg-type]
+            topic="pricing",
+            aid=None,
+            cluster=None,
+        )
+        # Prime
+        await gen.__anext__()
+        # The subscription is now registered.
+        assert bus._subscriber_count() == 1
+        # Pump to exhaust.
+        try:
+            while True:
+                await gen.__anext__()
+        except StopAsyncIteration:
+            pass
+        return bus._subscriber_count()
+
+    assert asyncio.run(_run()) == 0
+
+
 def test_unauthenticated_request_is_rejected(anon_client: TestClient) -> None:
     res = anon_client.get(
         "/api/v1/events/stream",
