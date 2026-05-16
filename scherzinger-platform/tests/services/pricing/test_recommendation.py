@@ -184,6 +184,51 @@ def test_driver_kinds_phase_1_set() -> None:
     assert DriverKind.FLOOR_PROTECTION in kinds
 
 
+def test_recompute_exists_and_emits_event(monkeypatch) -> None:
+    """The live-wiring hook must publish ``pricing.recommendation_updated``
+    with the new payload + aid.
+
+    Wiring into the real cost-ingest service is a follow-on commit (see
+    TODO in ``services/cost_service.py``); this test pins the contract.
+    """
+    captured: dict = {}
+
+    def fake_publish_sync(topic, payload, *, aid=None, cluster=None):
+        captured["topic"] = topic
+        captured["payload"] = payload
+        captured["aid"] = aid
+
+    # The function imports publish_sync lazily, so patch the events
+    # module directly.
+    from backend.services import events as ev_mod
+
+    monkeypatch.setattr(ev_mod, "publish_sync", fake_publish_sync)
+
+    # Stub SessionLocal + the build_recommendation call so recompute
+    # doesn't reach the DB.
+    fake_rec = MagicMock()
+    fake_rec.model_dump.return_value = {"aid": "X-1", "recommended_price": "100.00"}
+
+    class _SessionCM:
+        def __enter__(self):
+            return MagicMock()
+
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr(rec, "SessionLocal", lambda: _SessionCM())
+    monkeypatch.setattr(rec, "build_recommendation", lambda **kwargs: fake_rec)
+
+    result = rec.recompute("X-1", tier="A")
+    assert result is fake_rec
+    assert captured.get("topic") == "pricing.recommendation_updated"
+    assert captured.get("aid") == "X-1"
+    assert captured.get("payload") == {
+        "aid": "X-1",
+        "recommended_price": "100.00",
+    }
+
+
 def test_lineage_ref_attached() -> None:
     session = MagicMock()
     with patch.object(rec, "_load_cost", return_value=_cost()), patch.object(
