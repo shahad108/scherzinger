@@ -25,6 +25,24 @@ class DriverKind(str, Enum):
     WON_DEAL = "won_deal"
     CHURN_RISK = "churn_risk"
     POLICY = "policy"
+    # Phase 1 driver kinds — SHAP-style attribution on the recommender
+    # (sum to 1.0 ±0.01 across all drivers).
+    COST_TRAJECTORY = "cost_trajectory"
+    COMPETITOR_SIGNAL = "competitor_signal"
+    WIN_PROB_OPTIMUM = "win_prob_optimum"
+    FLOOR_PROTECTION = "floor_protection"
+
+
+class ConfidenceLevel(str, Enum):
+    """Coarse confidence bucket exposed alongside the numeric ``confidence``.
+
+    Computed from ``n_deals`` + WTP-band width so the UI can render a
+    single low/med/high pill without re-deriving the rule.
+    """
+
+    LOW = "low"
+    MED = "med"
+    HIGH = "high"
 
 
 class Driver(BaseModel):
@@ -43,7 +61,12 @@ class Driver(BaseModel):
 
 
 class RecommendationBand(BaseModel):
-    """Confidence band for the recommended price (EUR)."""
+    """Confidence band for the recommended price (EUR).
+
+    ``min`` = lowest price where win-prob ≥ 80%
+    ``target`` = recommended price (DB2-maximising)
+    ``max`` = highest price where win-prob ≥ 50%
+    """
 
     min: Decimal
     target: Decimal
@@ -61,6 +84,14 @@ class Recommendation(BaseModel):
         ge=Decimal("0"),
         le=Decimal("1"),
         description="Model confidence 0.0–1.0.",
+    )
+    confidence_level: Optional[ConfidenceLevel] = Field(
+        default=None,
+        description=(
+            "Coarse low/med/high bucket. Derived from ``n_deals`` and the "
+            "WTP-band width: low if n<5 or (p90-p10)/p50>0.5; high if n≥15 "
+            "and band tight; med otherwise."
+        ),
     )
     band: RecommendationBand
     drivers: list[Driver] = Field(default_factory=list)

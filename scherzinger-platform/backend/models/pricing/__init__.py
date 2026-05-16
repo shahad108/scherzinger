@@ -15,6 +15,7 @@ from backend.models.pricing.audit import (
     PricingAuditEntry,
     PricingAuditTargetKind,
 )
+from backend.models.pricing.competitor import CompetitorRef
 from backend.models.pricing.cost_state import (
     CostBreakdown,
     CostState,
@@ -33,12 +34,15 @@ from backend.models.pricing.lineage import (
 )
 from backend.models.pricing.margin_state import MarginState
 from backend.models.pricing.pricing_state import PriceState, PriceStateRow
+from backend.models.pricing.elasticity import CurvePoint, WinProbCurve
 from backend.models.pricing.recommendation import (
+    ConfidenceLevel,
     Driver,
     DriverKind,
     Recommendation,
     RecommendationBand,
 )
+from backend.models.pricing.wtp import WtpBand
 
 __all__ = [
     # Audit
@@ -46,6 +50,8 @@ __all__ = [
     "PricingAuditAction",
     "PricingAuditEntry",
     "PricingAuditTargetKind",
+    # Competitor (computed only)
+    "CompetitorRef",
     # Cost
     "CostBreakdown",
     "CostState",
@@ -65,8 +71,14 @@ __all__ = [
     "PriceState",
     "PriceStateRow",
     # Recommendation (computed only)
+    "ConfidenceLevel",
     "Driver",
     "DriverKind",
     "Recommendation",
     "RecommendationBand",
+    # Elasticity (computed only)
+    "CurvePoint",
+    "WinProbCurve",
+    # WTP (computed only)
+    "WtpBand",
 ]
