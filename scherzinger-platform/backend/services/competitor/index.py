@@ -51,8 +51,10 @@ def build_competitor_ref(
     Returns ``None`` when there are no PA/PR rejections in window.
     """
     since = (datetime.now(timezone.utc) - timedelta(days=n_days)).date()
+    # The SQL only binds :aid and :since; ``n_days`` is consumed locally
+    # to derive ``since`` so we don't pass it as a no-op SQL parameter.
     rows = db_session.execute(
-        _LOST_QUOTE_SQL, {"aid": aid, "since": since, "n_days": n_days}
+        _LOST_QUOTE_SQL, {"aid": aid, "since": since}
     ).fetchall()
 
     prices: list[Decimal] = []

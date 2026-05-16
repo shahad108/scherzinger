@@ -70,14 +70,23 @@ def test_nine_lost_quotes_returns_aggregate() -> None:
 
 
 def test_window_days_is_passed_through() -> None:
+    from datetime import datetime, timedelta, timezone
+
     session = _stub_session([])
     # Bigger window — same empty stub, should still get None and the
-    # caller-set window_days flows through the query params.
+    # caller-set ``n_days`` flows through into ``since`` (the SQL only
+    # binds ``aid`` + ``since``; ``n_days`` is consumed locally).
     ref = comp.build_competitor_ref(aid="X-1", n_days=365, db_session=session)
     assert ref is None
-    # Verify the SQL params were passed (n_days argument propagates).
     call_args = session.execute.call_args
-    if call_args is not None:
-        # Param dict is the second positional arg.
-        params = call_args.args[1] if len(call_args.args) > 1 else {}
-        assert params.get("n_days") == 365 or "n_days" in str(params)
+    assert call_args is not None
+    params = call_args.args[1] if len(call_args.args) > 1 else {}
+    # ``since`` should equal today - 365 days (within a 2-day window for
+    # clock skew + execution time).
+    expected_since = (datetime.now(timezone.utc) - timedelta(days=365)).date()
+    assert "since" in params
+    delta_days = abs((params["since"] - expected_since).days)
+    assert delta_days <= 2, (
+        f"since={params['since']} not within 2 days of "
+        f"expected={expected_since}"
+    )

@@ -51,6 +51,14 @@ from backend.services.pricing.lineage import create_lineage
 logger = logging.getLogger(__name__)
 
 
+# Weight on the competitor-vs-WTP delta when we shift the optimisation
+# cost to measure the competitor signal's marginal contribution. Larger
+# values let competitor evidence move the recommended price faster; 0.1
+# is a damped pull so a single noisy lost quote can't dominate. Tune
+# this with Phase 2's per-aid signal-strength score before raising it.
+_COMPETITOR_PULL_WEIGHT = Decimal("0.1")
+
+
 # ---------------------------------------------------------------------------
 # Input loaders — broken out so tests can monkey-patch them.
 # ---------------------------------------------------------------------------
@@ -347,7 +355,9 @@ def _compute_drivers(
         # toward p50). Approximate by re-running the optimum with the
         # cost shifted by the competitor delta.
         cost_shift = competitor.median_price - wtp.p50
-        shifted_cost = max(Decimal("0"), cost + cost_shift * Decimal("0.1"))
+        shifted_cost = max(
+            Decimal("0"), cost + cost_shift * _COMPETITOR_PULL_WEIGHT
+        )
         rec_no_competitor = _pick_optimum(curve, shifted_cost)
     else:
         rec_no_competitor = rec_price
