@@ -58,7 +58,12 @@ export function usePricingStream(
   const esRef = useRef<EventSource | null>(null);
   const reconnectTimer = useRef<number | null>(null);
   const reconnectDelay = useRef<number>(INITIAL_DELAY_MS);
-  const retryToken = useRef(0);
+  // `enabledRef` tracks the latest `enabled` value so async reconnect
+  // callbacks can re-check it without being baked into `connect`'s deps.
+  const enabledRef = useRef(enabled);
+  useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
 
   const cleanup = useCallback(() => {
     if (esRef.current) {
@@ -76,6 +81,8 @@ export function usePricingStream(
     if (typeof window === 'undefined' || typeof EventSource === 'undefined') {
       return;
     }
+    // Bail BEFORE cleanup so a rapid disable→enable flip can't kill an
+    // active connection by accident.
     if (!enabled) return;
 
     cleanup();
@@ -102,26 +109,42 @@ export function usePricingStream(
     es.onerror = () => {
       setIsConnected(false);
       es.close();
-      esRef.current = null;
+      // If `esRef.current` already moved on (e.g. retry() called between
+      // open and error), don't touch it.
+      if (esRef.current === es) {
+        esRef.current = null;
+      }
 
-      // Schedule a reconnect with exponential backoff.
+      // Schedule a reconnect with exponential backoff. The scheduled
+      // callback MUST re-check `enabled` + that no other connection
+      // raced in — otherwise rapid unmount/disable can leak a stream.
       const delay = reconnectDelay.current;
       reconnectDelay.current = Math.min(delay * 2, MAX_DELAY_MS);
-      reconnectTimer.current = window.setTimeout(connect, delay);
+      reconnectTimer.current = window.setTimeout(() => {
+        reconnectTimer.current = null;
+        if (!enabledRef.current) return;
+        if (esRef.current) return; // someone reconnected already
+        connect();
+      }, delay);
     };
   }, [aid, cleanup, cluster, enabled, topic]);
 
   useEffect(() => {
     connect();
     return cleanup;
-    // `retryToken` change forces a fresh attempt.
-  }, [connect, cleanup, retryToken.current]);
+    // No ref values in deps — refs don't trigger re-renders, so including
+    // them is misleading. `retry()` invokes `connect()` synchronously
+    // (after `cleanup()`); a future refactor must preserve that.
+  }, [connect, cleanup]);
 
   const retry = useCallback(() => {
     reconnectDelay.current = INITIAL_DELAY_MS;
-    retryToken.current += 1;
+    // Force a fresh attempt synchronously. `connect()` already calls
+    // `cleanup()` internally — listed here too so the contract is
+    // explicit and a future refactor can't break the reconnect.
+    cleanup();
     connect();
-  }, [connect]);
+  }, [cleanup, connect]);
 
   return { lastEvent, isConnected, retry };
 }
