@@ -74,6 +74,88 @@ SYSTEM_SCENARIOS: list[dict[str, Any]] = [
 ]
 
 
+# ----- Preset scenarios (FE `SCENARIO_PRESETS` mirror) -----------------
+# The FE's ScenarioLibrary writes ?scenario_id=preset:<key> on chip click.
+# Mirror those five presets here so the BFF can resolve them into
+# perturbation inputs the same way it resolves system / saved scenarios.
+# Input names must match keys in scenario_runner._INPUT_PASS_THROUGH so the
+# tornado-bar calibration can apply.
+PRESET_SCENARIOS: dict[str, dict[str, Any]] = {
+    "preset:steel-spike": {
+        "id": "preset:steel-spike",
+        "name": "Steel S355 +20%",
+        "description": "Commodity stress — steel S355 +20%, pass-through fixed at 60%.",
+        "inputs": [
+            {"name": "Steel S355", "kind": "market_series", "unit": "€/t",
+             "perturbation": {"type": "pct", "value": 20.0}},
+            {"name": "Pass-through %", "kind": "internal_lever", "unit": "%",
+             "perturbation": {"type": "absolute", "value": 60.0}},
+        ],
+        "visibility": "team",
+        "ownerUserId": None,
+        "derivedFromScenarioId": None,
+        "isSystem": True,
+        "isPreset": True,
+    },
+    "preset:list-uplift": {
+        "id": "preset:list-uplift",
+        "name": "+3% list price",
+        "description": "Price action — +3% list-price uplift, 50% capture.",
+        "inputs": [
+            {"name": "List-price uplift", "kind": "internal_lever", "unit": "%",
+             "perturbation": {"type": "absolute", "value": 3.0}},
+        ],
+        "visibility": "team",
+        "ownerUserId": None,
+        "derivedFromScenarioId": None,
+        "isSystem": True,
+        "isPreset": True,
+    },
+    "preset:bkagg-churn": {
+        "id": "preset:bkagg-churn",
+        "name": "Lose top-3 BKAGG",
+        "description": "Concentration risk — top-3 BKAGG customers churn (modelled as −5% demand).",
+        "inputs": [
+            {"name": "Demand growth", "kind": "internal_lever", "unit": "%",
+             "perturbation": {"type": "pct", "value": -5.0}},
+        ],
+        "visibility": "team",
+        "ownerUserId": None,
+        "derivedFromScenarioId": None,
+        "isSystem": True,
+        "isPreset": True,
+    },
+    "preset:recapture-pa": {
+        "id": "preset:recapture-pa",
+        "name": "Win +5pp PA quotes",
+        "description": "Recapture action — +5pp price-action capture (modelled as +2% list uplift).",
+        "inputs": [
+            {"name": "List-price uplift", "kind": "internal_lever", "unit": "%",
+             "perturbation": {"type": "absolute", "value": 2.0}},
+        ],
+        "visibility": "team",
+        "ownerUserId": None,
+        "derivedFromScenarioId": None,
+        "isSystem": True,
+        "isPreset": True,
+    },
+    "preset:macro-recession": {
+        "id": "preset:macro-recession",
+        "name": "−10% volume",
+        "description": "Industrial recession — demand −10%.",
+        "inputs": [
+            {"name": "Demand growth", "kind": "internal_lever", "unit": "%",
+             "perturbation": {"type": "pct", "value": -10.0}},
+        ],
+        "visibility": "team",
+        "ownerUserId": None,
+        "derivedFromScenarioId": None,
+        "isSystem": True,
+        "isPreset": True,
+    },
+}
+
+
 # ----- Module-level in-memory fallback ---------------------------------
 _MEMORY_STORE: dict[str, dict[str, Any]] = {}
 
@@ -135,6 +217,12 @@ def list_scenarios(db: Session | None, user_id: UUID | str | None) -> dict[str, 
 
 
 def get_scenario(db: Session | None, scenario_id: str) -> dict[str, Any] | None:
+    # Preset chips (FE writes ?scenario_id=preset:<key>) resolve first so
+    # they never fall through to the UUID-only DB lookup (which would raise
+    # ValueError on the colon and silently return None).
+    if scenario_id.startswith("preset:"):
+        preset = PRESET_SCENARIOS.get(scenario_id)
+        return deepcopy(preset) if preset is not None else None
     for s in SYSTEM_SCENARIOS:
         if s["id"] == scenario_id:
             return deepcopy(s)

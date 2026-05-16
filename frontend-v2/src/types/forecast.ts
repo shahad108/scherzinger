@@ -736,6 +736,9 @@ export interface ScenarioAppliedReceipt {
   relativePctOnMetric: number;
   metric: SimulatorMetric;
   inputCount: number;
+  // Phase B: input names from the scenario that did NOT map to a calibrated
+  // tornado bar. Surfaced so the FE can warn "X was ignored — no calibration".
+  unmappedInputs?: string[];
 }
 
 // Phase 6 — Quote-to-Revenue bridge.

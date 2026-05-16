@@ -100,3 +100,120 @@ def test_forecast_with_base_scenario_is_passthrough(client: TestClient) -> None:
     body = res.json()
     # Base scenario has no inputs — distributions should be untouched.
     assert body["distributions"]["rows"][0]["median"] == base["distributions"]["rows"][0]["median"]
+
+
+# ---------------------------------------------------------------------------
+# Phase B — scenarios propagate across the whole payload (not just distributions)
+# and presets resolve the same way as system / saved scenarios.
+# ---------------------------------------------------------------------------
+
+
+def test_forecast_preset_steel_spike_resolves_and_shifts(client: TestClient) -> None:
+    """preset:steel-spike used to be a silent no-op — verify it now applies."""
+    base = client.get(FORECAST_URL).json()
+    res = client.get(FORECAST_URL, params={"scenario_id": "preset:steel-spike"})
+    assert res.status_code == 200, res.text
+    body = res.json()
+    # Active id surfaces for the banner.
+    assert body.get("activeScenarioId") == "preset:steel-spike"
+    # Receipt is stamped with a non-zero shift (steel +20% should bite).
+    receipt = body.get("scenarioApplied")
+    assert receipt is not None
+    assert receipt["inputCount"] >= 1
+    assert abs(receipt["shiftPpMargin"]) > 0
+    # filterScope reflects the active scenario for FE badges.
+    assert body["filterScope"]["scenarioId"] == "preset:steel-spike"
+    # Distributions still moved (as before).
+    assert (
+        body["distributions"]["rows"][0]["median"]
+        != base["distributions"]["rows"][0]["median"]
+    )
+
+
+def test_forecast_preset_unknown_returns_base_without_crash(client: TestClient) -> None:
+    """Unknown preset ids must not 500 — they fall through as no-op."""
+    res = client.get(FORECAST_URL, params={"scenario_id": "preset:doesnotexist"})
+    assert res.status_code == 200, res.text
+    body = res.json()
+    # No activeScenarioId stamped because scenario_service.get_scenario
+    # returned None → composer skipped the apply branch.
+    assert "activeScenarioId" not in body or body["activeScenarioId"] is None
+
+
+def test_forecast_scenario_propagates_beyond_distributions(client: TestClient) -> None:
+    """Phase B contract: scenarios shift hero, PVM, pocket waterfall,
+    margin trajectory, commodity trajectories, at-risk revenue — not just
+    the distributions card."""
+    base = client.get(FORECAST_URL).json()
+    perturbed = client.get(
+        FORECAST_URL,
+        params={"scenario_id": "00000000-0000-0000-0000-000000000002"},
+    ).json()
+
+    # Pick one downstream section that previously did NOT shift and prove
+    # it now responds to the scenario. We pick the first available signal
+    # to keep the test robust to which optional blocks composed.
+    sections_with_evidence = 0
+
+    # Hero KPI total — recomputed from shifted future-month series.
+    bh = (base.get("hero") or {}).get("forecast12moTotal")
+    ph = (perturbed.get("hero") or {}).get("forecast12moTotal")
+    if isinstance(bh, (int, float)) and isinstance(ph, (int, float)) and bh != 0:
+        if abs(ph - bh) / abs(bh) > 1e-6:
+            sections_with_evidence += 1
+
+    # Margin trajectory projected first quarter.
+    def _first_proj_margin(p: dict) -> float | None:
+        mt = p.get("marginTrajectory") or {}
+        proj = mt.get("projected") or []
+        if proj and isinstance(proj[0], dict):
+            v = proj[0].get("margin")
+            if isinstance(v, (int, float)):
+                return float(v)
+        return None
+    bm = _first_proj_margin(base)
+    pm = _first_proj_margin(perturbed)
+    if bm is not None and pm is not None and bm != pm:
+        sections_with_evidence += 1
+
+    # At-risk revenue total.
+    bar = (base.get("atRiskRevenue") or {}).get("totalForecastEur")
+    par = (perturbed.get("atRiskRevenue") or {}).get("totalForecastEur")
+    if (
+        isinstance(bar, (int, float))
+        and isinstance(par, (int, float))
+        and bar != 0
+        and abs(par - bar) / abs(bar) > 1e-6
+    ):
+        sections_with_evidence += 1
+
+    # Commodity trajectories last quarter on the first group.
+    def _last_q(p: dict) -> float | None:
+        ct = p.get("commodityTrajectories") or {}
+        groups = ct.get("groups") or []
+        if groups and isinstance(groups[0], dict):
+            series = groups[0].get("series") or []
+            if series and isinstance(series[-1], (int, float)):
+                return float(series[-1])
+        return None
+    bc = _last_q(base)
+    pc = _last_q(perturbed)
+    if bc is not None and pc is not None and bc != pc:
+        sections_with_evidence += 1
+
+    assert sections_with_evidence >= 2, (
+        "Expected scenario propagation to shift at least two non-distribution "
+        "sections; saw evidence in "
+        f"{sections_with_evidence}. Phase B regression."
+    )
+
+
+def test_forecast_tornado_bars_untouched_under_scenario(client: TestClient) -> None:
+    """Tornado bars are the sensitivity model — they must NOT shift when a
+    scenario is applied (would be double-counting)."""
+    base = client.get(FORECAST_URL).json()
+    perturbed = client.get(
+        FORECAST_URL,
+        params={"scenario_id": "00000000-0000-0000-0000-000000000002"},
+    ).json()
+    assert base.get("tornado") == perturbed.get("tornado")

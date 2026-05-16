@@ -1,20 +1,27 @@
 """Phase 5 — scenario_runner.
 
-Takes a scenario's perturbation inputs and reruns the forecast composer
-with those perturbations propagated through cost trajectory + price
-channels. For deterministic scenarios (no Monte Carlo replay) we apply
-the shifts directly to the tornado + distribution medians so the FE can
-show the impact instantly.
+Translates a scenario's perturbation inputs into a unified shift envelope
+(``ScenarioShift``) by reading the calibrated tornado-bar sensitivities
+from the assembled forecast payload.
+
+The shift envelope is consumed by ``services.forecast.scenario_apply``,
+which propagates a single coherent shift across every numeric section of
+the composed forecast (hero series, distributions, PVM, pocket waterfall,
+margin / commodity trajectories, at-risk revenue …). Tornado bars are
+deliberately untouched — they ARE the sensitivity model. Diagnostics
+(calibration, bias, win-loss, walk-forward, erosion projection) and
+prescriptive copy (next-moves) also pass through unchanged.
 """
 from __future__ import annotations
 
-from copy import deepcopy
+from dataclasses import dataclass, field
 from typing import Any
 
 
+# Map from a scenario.inputs[*].name to the tornado bar inputName the
+# simulator emits. Keeps the FE / scenario library naming readable while
+# letting the runner look up the right calibrated sensitivity.
 _INPUT_PASS_THROUGH = {
-    # Mapping of perturbation input name → tornado bar input name.
-    # Used to translate scenario.inputs[*].name → bar.inputName.
     "Steel S355": "Steel S355 / S275",
     "Steel": "Steel S355 / S275",
     "Steel HRC": "Steel S355 / S275",
@@ -27,83 +34,111 @@ _INPUT_PASS_THROUGH = {
     "Copper": "Copper",
 }
 
+# Frank baseline used to convert margin-pp shifts into a relative factor
+# applicable to revenue / volume / cost series.
+_BASE_MARGIN_PCT = 64.0
 
-def apply_scenario(forecast: dict[str, Any], scenario_inputs: list[dict[str, Any]]) -> dict[str, Any]:
-    """Apply a scenario to a forecast payload.
 
-    Strategy:
-      - For each perturbation, derive a margin Δ from the tornado bar that
-        already exists for that input (deltaPositive/deltaNegative).
-      - Sum Δs into a single shift applied to:
-          * distributions[*].median / p5 / p95
-          * tornado.bars (untouched — those *are* the inputs we're using)
-      - Header label is updated to reflect the scenario name.
+@dataclass
+class ScenarioShift:
+    """Unified shift envelope derived from a scenario's perturbations.
+
+    Fields:
+      pp_margin:        additive pp shift on a margin fraction (neg = down)
+      factor:           multiplicative factor for revenue / volume / cost
+                        series (= 1 + pp_margin / base_margin)
+      matched_inputs:   count of inputs that resolved to a tornado bar
+      unmatched_inputs: input names that did NOT resolve
+    """
+
+    pp_margin: float
+    factor: float
+    matched_inputs: int = 0
+    unmatched_inputs: list[str] = field(default_factory=list)
+
+    @property
+    def is_noop(self) -> bool:
+        return abs(self.pp_margin) < 1e-9 and abs(self.factor - 1.0) < 1e-9
+
+
+def compute_shift(
+    scenario_inputs: list[dict[str, Any]] | None,
+    tornado: dict[str, Any] | None,
+) -> ScenarioShift:
+    """Translate scenario inputs into a single calibrated shift envelope.
+
+    Tornado bars carry ``deltaPositive`` / ``deltaNegative`` calibrated to
+    ±1σ of margin sensitivity per input. We scale linearly with the
+    perturbation value:
+
+      * ``type="pct"`` — value treated as "10pct = 1σ" multiples
+        (steel +10% ≈ +1σ); positive uses deltaPositive, negative uses
+        deltaNegative.
+      * ``type="absolute"`` — value divided by 100 and applied to
+        deltaPositive (internal-lever absolutes always raise margin).
     """
     if not scenario_inputs:
-        return forecast  # base case → return as-is
+        return ScenarioShift(pp_margin=0.0, factor=1.0)
 
-    out = deepcopy(forecast)
-    tornado = out.get("tornado") or {}
-    bar_lookup = {b["inputName"]: b for b in tornado.get("bars") or []}
+    bars_by_name: dict[str, dict[str, Any]] = {
+        b["inputName"]: b for b in (tornado or {}).get("bars") or []
+    }
 
-    total_pct_shift = 0.0
+    pp_margin = 0.0
+    matched = 0
+    unmatched: list[str] = []
+
     for inp in scenario_inputs:
-        name = inp.get("name", "")
+        name = str(inp.get("name", ""))
         bar_name = _INPUT_PASS_THROUGH.get(name, name)
-        bar = bar_lookup.get(bar_name)
+        bar = bars_by_name.get(bar_name)
         if not bar:
+            unmatched.append(name)
             continue
         pert = inp.get("perturbation") or {}
-        # The tornado bars are calibrated to ±1σ. We scale linearly with the
-        # perturbation value (interpreting value as σ multiples for ``pct``
-        # type and as absolute pp delta for ``absolute``).
-        value = float(pert.get("value", 0))
-        if pert.get("type") == "pct":
-            # ±10% on steel ≈ +1σ worth of shock. Use deltaPositive when
-            # value > 0, deltaNegative when value < 0.
+        try:
+            value = float(pert.get("value", 0))
+        except (TypeError, ValueError):
+            value = 0.0
+        ptype = pert.get("type")
+        if ptype == "pct":
             if value >= 0:
-                total_pct_shift += float(bar.get("deltaPositive", 0)) * (value / 10.0)
+                pp_margin += float(bar.get("deltaPositive", 0)) * (value / 10.0)
             else:
-                total_pct_shift += float(bar.get("deltaNegative", 0)) * (abs(value) / 10.0)
-        elif pert.get("type") == "absolute":
-            # Absolute lever — treat it as a fraction of the bar's positive delta.
-            total_pct_shift += float(bar.get("deltaPositive", 0)) * (value / 100.0)
+                pp_margin += float(bar.get("deltaNegative", 0)) * (abs(value) / 10.0)
+        elif ptype == "absolute":
+            pp_margin += float(bar.get("deltaPositive", 0)) * (value / 100.0)
+        matched += 1
 
-    # Apply shift to distributions. The shift is computed in pp-margin space
-    # (because the tornado bars are calibrated to margin sensitivity). For
-    # revenue and quantity metrics we convert the pp-margin delta into a
-    # relative percent of the current value so the impact is visible at the
-    # right scale (e.g. -4.2pp margin ≈ -6.5% revenue at the 64% base margin).
-    distributions = out.get("distributions") or {}
-    metric = distributions.get("metric", "margin")
-    base_margin_pct = 64.0  # Approximate baseline margin for relative scaling.
+    factor = 1.0 + (pp_margin / _BASE_MARGIN_PCT)
+    return ScenarioShift(
+        pp_margin=round(pp_margin, 3),
+        factor=round(factor, 5),
+        matched_inputs=matched,
+        unmatched_inputs=unmatched,
+    )
 
-    for row in distributions.get("rows") or []:
-        if metric == "margin":
-            shift_abs = total_pct_shift  # additive pp on a fraction stored as %
-        else:
-            # Convert margin pp delta to a relative percent change.
-            rel_pct = total_pct_shift / base_margin_pct
-            shift_factor = 1.0 + rel_pct
-            for key in ("median", "mean", "p5", "p25", "p75", "p95"):
-                v = row.get(key)
-                if v is not None:
-                    row[key] = round(v * shift_factor, 2)
-            continue
-        for key in ("median", "mean", "p5", "p25", "p75", "p95"):
-            v = row.get(key)
-            if v is not None:
-                row[key] = round(v + shift_abs, 2)
 
-    # Surface the relative impact in the receipt so the FE can show a banner.
-    if metric == "margin":
-        relative_pct = total_pct_shift
-    else:
-        relative_pct = round((total_pct_shift / base_margin_pct) * 100, 1)
-    out["scenarioApplied"] = {
-        "shiftPpMargin": round(total_pct_shift, 2),
-        "relativePctOnMetric": relative_pct,
-        "metric": metric,
-        "inputCount": len(scenario_inputs),
-    }
-    return out
+# ---------------------------------------------------------------------------
+# Legacy compatibility shim. The pre-Phase-B apply_scenario only shifted the
+# distributions grid. New code paths should call
+# ``services.forecast.scenario_apply.apply_shift`` instead. Kept so any
+# remaining call site (and the existing tests) still works.
+# ---------------------------------------------------------------------------
+
+
+def apply_scenario(
+    forecast: dict[str, Any], scenario_inputs: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Deprecated — prefer :func:`services.forecast.scenario_apply.apply_shift`.
+
+    Returns the forecast with a shift propagated through the full payload.
+    """
+    # Local import to avoid a circular dependency at module import time.
+    from backend.services.forecast.scenario_apply import apply_shift
+
+    if not scenario_inputs:
+        return forecast
+
+    shift = compute_shift(scenario_inputs, forecast.get("tornado"))
+    return apply_shift(forecast, shift)

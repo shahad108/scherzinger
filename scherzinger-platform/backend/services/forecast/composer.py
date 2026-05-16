@@ -450,6 +450,7 @@ async def build_forecast(
     cluster: str | None,
     lang: str | None,
     db: Session | None = None,
+    scenario_id: str | None = None,
 ) -> dict[str, Any]:
     if persona == "frank":
         pass
@@ -476,7 +477,7 @@ async def build_forecast(
             status_code=status.HTTP_400_BAD_REQUEST, detail="unknown persona"
         )
 
-    key = (user_id, persona, mode, horizon, tier, family, cluster, lang)
+    key = (user_id, persona, mode, horizon, tier, family, cluster, lang, scenario_id)
     cached = _CACHE.get(key)
     now = time.monotonic()
     if cached is not None and now - cached[0] < CACHE_TTL_SECONDS:
@@ -734,8 +735,29 @@ async def build_forecast(
         "tier": tier,
         "family": family,
         "cluster": cluster,
-        "scenarioId": None,  # scenario_id is not currently plumbed into this composer
+        "scenarioId": scenario_id,
     }
+
+    # Phase B — propagate a scenario's perturbation envelope across the whole
+    # payload (hero, distributions, PVM, pocket waterfall, margin /
+    # commodity trajectories, at-risk revenue, plan-tracking gap…). The
+    # tornado bars themselves are NOT shifted — they ARE the sensitivity
+    # model the runner reads to calibrate the envelope. ``apply_shift``
+    # always stamps a ``scenarioApplied`` receipt so the FE banner has a
+    # consistent contract whether or not the scenario matched any bars.
+    if scenario_id:
+        try:
+            from backend.services import scenario_service
+            from backend.services.scenario_runner import compute_shift
+            from .scenario_apply import apply_shift
+
+            scenario = scenario_service.get_scenario(db=db, scenario_id=scenario_id)
+            if scenario is not None:
+                shift = compute_shift(scenario.get("inputs") or [], payload.get("tornado"))
+                payload = apply_shift(payload, shift)
+                payload["activeScenarioId"] = scenario_id
+        except Exception as e:  # pragma: no cover — safety net
+            _log.warning("scenario apply failed for %s: %s", scenario_id, e)
 
     _CACHE[key] = (now, payload)
     return payload

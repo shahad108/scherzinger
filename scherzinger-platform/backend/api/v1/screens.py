@@ -245,6 +245,10 @@ async def get_forecast(
     optional ``?scenario_id=`` applies a saved scenario's perturbations.
     """
     effective_persona = persona or ctx.persona
+    # Phase B — scenario_id is now resolved + applied INSIDE build_forecast
+    # so the cache key includes the scenario, the shift is propagated
+    # across every section (not just distributions), and presets resolve
+    # the same way as system / saved scenarios.
     payload = await build_forecast(
         user_id=str(ctx.user_id),
         persona=effective_persona,
@@ -255,13 +259,8 @@ async def get_forecast(
         cluster=cluster,
         lang=lang,
         db=db,
+        scenario_id=scenario_id,
     )
-    if scenario_id:
-        from backend.services import scenario_runner, scenario_service
-        scenario = scenario_service.get_scenario(db=db, scenario_id=scenario_id)
-        if scenario and scenario.get("inputs"):
-            payload = scenario_runner.apply_scenario(payload, scenario["inputs"])
-            payload["activeScenarioId"] = scenario_id
     raw = json.dumps(payload, sort_keys=True).encode("utf-8")
     etag = '"' + hashlib.sha256(raw).hexdigest()[:16] + '"'
     if if_none_match and if_none_match == etag:
