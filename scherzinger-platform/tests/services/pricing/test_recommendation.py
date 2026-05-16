@@ -229,6 +229,45 @@ def test_recompute_exists_and_emits_event(monkeypatch) -> None:
     }
 
 
+def test_recompute_forwards_cluster_and_customer_id(monkeypatch) -> None:
+    """MF2: recompute must accept ``cluster`` + ``customer_id`` and
+    forward them to ``build_recommendation`` — otherwise the cost-ingest
+    path silently loses cluster-anchor fallback + customer-mix lineage.
+    """
+    captured_kwargs: dict = {}
+
+    def _capture_build(**kwargs):
+        captured_kwargs.update(kwargs)
+        fake = MagicMock()
+        fake.model_dump.return_value = {"aid": kwargs["aid"]}
+        return fake
+
+    class _SessionCM:
+        def __enter__(self):
+            return MagicMock()
+
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr(rec, "SessionLocal", lambda: _SessionCM())
+    monkeypatch.setattr(rec, "build_recommendation", _capture_build)
+
+    from backend.services import events as ev_mod
+
+    monkeypatch.setattr(
+        ev_mod, "publish_sync", lambda *a, **kw: None
+    )
+
+    result = rec.recompute(
+        "X-1", tier="A", cluster="CL-42", customer_id="CUST-007"
+    )
+    assert result is not None
+    assert captured_kwargs.get("aid") == "X-1"
+    assert captured_kwargs.get("tier") == "A"
+    assert captured_kwargs.get("cluster") == "CL-42"
+    assert captured_kwargs.get("customer_id") == "CUST-007"
+
+
 def _custom_mix_lineage(source_id: str) -> LineageRef:
     return LineageRef(
         id=uuid4(),

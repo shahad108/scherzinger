@@ -690,16 +690,35 @@ def _recommendation_to_dict(rec: Recommendation) -> dict[str, Any]:
     return rec.model_dump(mode="json")
 
 
-def recompute(aid: str, *, tier: Optional[str] = None) -> Optional[Recommendation]:
+def recompute(
+    aid: str,
+    *,
+    tier: Optional[str] = None,
+    cluster: Optional[str] = None,
+    customer_id: Optional[str] = None,
+) -> Optional[Recommendation]:
     """Rebuild the recommendation and publish ``pricing.recommendation_updated``.
 
     Called by the cost-ingest service when ``pricing.cost_moved`` fires.
     Safe to call from any context — pubsub uses ``publish_sync`` when no
     event loop is running.
+
+    ``cluster`` and ``customer_id`` are forwarded to
+    ``build_recommendation`` so the WTP cluster-anchor fallback and the
+    customer-mix lineage stay correctly tagged on the SSE-published
+    payload. The cost-ingest writer is expected to look up the SKU's
+    cluster (and any associated customer-id if the trigger is per-deal)
+    before calling ``recompute``.
     """
     try:
         with SessionLocal() as db:
-            rec = build_recommendation(aid=aid, tier=tier, db_session=db)
+            rec = build_recommendation(
+                aid=aid,
+                tier=tier,
+                cluster=cluster,
+                customer_id=customer_id,
+                db_session=db,
+            )
             db.commit()
     except Exception:
         logger.exception("recommendation.recompute failed aid=%s", aid)

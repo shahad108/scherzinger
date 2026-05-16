@@ -7,6 +7,14 @@ from sqlalchemy import text
 # ``pricing.recommendation_updated`` to SSE subscribers. Today this
 # module is read-only; the hook lives in the recommendation service
 # behind a unit-tested ``recompute(aid)`` entry point.
+#
+# When wiring this up, the cost-ingest writer MUST look up the SKU's
+# cluster (from ``products.commodity_group`` or the SKU master table)
+# and forward it as ``recompute(aid, cluster=cluster)``. Without the
+# cluster, the WTP cluster-anchor fallback can't fire on thin samples
+# and the recomputed recommendation will silently lose accuracy for
+# any SKU with n<5 won deals. If the trigger is per-deal, also pass
+# ``customer_id=...`` so the customer-mix lineage stays auditable.
 
 
 def get_cost_trends(db: Session, article_id: str = None, top: int = 20):
