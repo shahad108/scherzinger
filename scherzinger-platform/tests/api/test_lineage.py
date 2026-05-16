@@ -69,3 +69,89 @@ def test_create_lineage_scrubs_literals_from_sql(session: Session) -> None:
     assert "CUST-SECRET-42" not in row.sql
     assert "1234.56" not in row.sql
     assert "?" in row.sql
+
+
+# ---------------------------------------------------------------------------
+# PII scrubber — every PostgreSQL literal shape we know about MUST be
+# replaced. A regression here is a P0 (PII leak into the audit trail).
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "name, secret",
+    [
+        ("single_quoted", "CUST-SECRET-42"),
+        ("double_quoted", "CUST-SECRET-42"),
+        ("e_escape", "CUST-SECRET-42"),
+        ("dollar_named", "CUST-SECRET-42"),
+        ("dollar_anon", "CUST-SECRET-42"),
+        ("hex_literal", "deadbeef"),
+        ("line_comment", "secret"),
+        ("block_comment", "secret"),
+    ],
+)
+def test_pii_scrubber_cases(name: str, secret: str) -> None:
+    from backend.services.pricing.lineage import _sanitize_sql
+
+    cases = {
+        "single_quoted": f"SELECT * FROM t WHERE c = 'CUST-SECRET-42'",
+        "double_quoted": 'SELECT * FROM t WHERE "CUST-SECRET-42" = 1',
+        "e_escape": "SELECT * FROM t WHERE c = E'CUST-SECRET-42'",
+        "dollar_named": "SELECT * FROM t WHERE c = $tag$CUST-SECRET-42$tag$",
+        "dollar_anon": "SELECT * FROM t WHERE c = $$CUST-SECRET-42$$",
+        "hex_literal": "SELECT * FROM t WHERE c = x'deadbeef'",
+        "line_comment": "SELECT 1 -- secret should be stripped",
+        "block_comment": "SELECT /* secret should be stripped */ 1",
+    }
+    cleaned = _sanitize_sql(cases[name])
+    assert cleaned is not None
+    assert secret not in cleaned, (
+        f"{name}: secret leaked through scrubber: cleaned={cleaned!r}"
+    )
+    assert "?" in cleaned
+
+
+# ---------------------------------------------------------------------------
+# Postgres CHECK constraints — bad enum-as-string values MUST be rejected.
+# ---------------------------------------------------------------------------
+
+
+def test_check_constraint_rejects_invalid_customer_tier(session: Session) -> None:
+    """Inserting tier='Z' must be rejected by the ck_customer_on_sku_tier
+    CHECK constraint added in p21a.
+    """
+    from sqlalchemy import text
+    from sqlalchemy.exc import IntegrityError
+
+    with pytest.raises(IntegrityError):
+        session.execute(
+            text(
+                """
+                INSERT INTO customer_on_sku
+                    (id, aid, customer_id, ltm_units, tier, updated_at)
+                VALUES
+                    (gen_random_uuid(), 'TST-AID', 'TST-CUST', 0, 'Z', NOW())
+                """
+            )
+        )
+        session.flush()
+    session.rollback()
+
+
+def test_check_constraint_rejects_invalid_audit_action(session: Session) -> None:
+    from sqlalchemy import text
+    from sqlalchemy.exc import IntegrityError
+
+    with pytest.raises(IntegrityError):
+        session.execute(
+            text(
+                """
+                INSERT INTO pricing_audit
+                    (id, actor, action, target_kind, target_id)
+                VALUES
+                    (gen_random_uuid(), 'tester', 'NOT_A_REAL_ACTION', 'sku', 'X')
+                """
+            )
+        )
+        session.flush()
+    session.rollback()

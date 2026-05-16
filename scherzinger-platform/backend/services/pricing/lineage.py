@@ -16,13 +16,34 @@ from sqlalchemy.orm import Session
 from backend.models.pricing.lineage import LineageRefRow, LineageSourceKind
 
 
-# Conservative regex: replaces both $1-style numbered params and ?-style
-# placeholders' surrounding literals. We use it to strip embedded literals
-# (numbers, quoted strings) when callers forget to pre-template their SQL.
+# Conservative regex: strips every PostgreSQL-flavoured literal/comment
+# shape we know about so a leaked literal can never survive the audit
+# trail. Order matters — dollar-quoted and E'…' strings must precede the
+# vanilla single-quoted alternative so their delimiters aren't eaten
+# first. Block comments must precede line comments (a ``/* -- */`` block
+# contains a literal ``--``).
+#
+# Tested cases (see tests/api/test_lineage.py::test_pii_scrubber_*):
+#   - single-quoted string:        'CUST-42'
+#   - double-quoted identifier:    "CUST-42"
+#   - E-escape string:             E'foo\\n'
+#   - dollar-quoted (named):       $tag$ raw $tag$
+#   - dollar-quoted (anonymous):   $$ raw $$
+#   - hex literal:                 x'deadbeef'
+#   - SQL line comment:            -- secret\n
+#   - SQL block comment:           /* secret */
+#   - numeric literal:             1234.56
 _LITERAL_RE = re.compile(
     r"""
-    '(?:[^']|'')*'      # single-quoted string literal
-    | \b\d+(\.\d+)?\b   # numeric literal
+      /\*[\s\S]*?\*/                              # block comment
+    | --[^\n]*                                    # line comment
+    | \$\$[\s\S]*?\$\$                            # anonymous dollar-quote
+    | \$([A-Za-z_]\w*)\$[\s\S]*?\$\1\$            # named dollar-quote
+    | [Ee]'(?:[^'\\]|\\.|'')*'                    # E-escape string
+    | [xX]'[0-9a-fA-F]*'                          # hex literal
+    | '(?:[^']|'')*'                              # single-quoted string
+    | "(?:[^"]|"")*"                              # double-quoted identifier/string
+    | \b\d+(?:\.\d+)?\b                           # numeric literal
     """,
     re.VERBOSE,
 )
