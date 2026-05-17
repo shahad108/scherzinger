@@ -27,6 +27,7 @@ import { WinProbCurve } from './components/WinProbCurve';
 import { DriverWaterfall } from './components/DriverWaterfall';
 import { LineageDrawer } from './components/LineageDrawer';
 import { LineageDrawerProvider } from './lineage/LineageDrawerContext';
+import { useLineageUrlSync } from './lineage/useLineageUrlSync';
 import { parseDecimal } from './lib/decimal';
 // Pricing Studio v3 / Phase 3 — cost & margin reality.
 import { TriggerBanner } from './components/TriggerBanner';
@@ -96,19 +97,49 @@ export default function PricingStudioPage() {
   const urlAid = params.get('aid');
   const [selectedAid, setSelectedAid] = useState<string | null>(urlAid);
   const [activeOption, setActiveOption] = useState<ActiveOptionView | null>(null);
-  // Phase 3 — Cost Trajectory Drawer open state. Sparkline click, "view
-  // outlook" pill, and the TriggerBanner all flip this.
-  const [costDrawerOpen, setCostDrawerOpen] = useState(false);
-  // Phase 4 — Audit Drawer open state + "new audit" badge tracked between
-  // SSE ticks. The counter resets on open so the badge represents "unseen
-  // since the last time you looked".
-  const [auditDrawerOpen, setAuditDrawerOpen] = useState(false);
+  // Pricing Studio v3 / Phase 11 — drawer open state now lives on the
+  // URL so a refresh + deep-link can restore the open drawer + filter
+  // pills. We mirror the URL into a small helper below; the underlying
+  // setter is `setParams` so a single source of truth (the URL) drives
+  // both the drawer and any browser back/forward.
+  const costDrawerOpen = params.get('cost_outlook_open') === '1';
+  const setCostDrawerOpen = (open: boolean) =>
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (open) next.set('cost_outlook_open', '1');
+      else next.delete('cost_outlook_open');
+      return next;
+    }, { replace: true });
+
+  const auditDrawerOpen = params.get('audit_open') === '1';
+  const setAuditDrawerOpen = (open: boolean) =>
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (open) next.set('audit_open', '1');
+      else next.delete('audit_open');
+      return next;
+    }, { replace: true });
   const [auditBadge, setAuditBadge] = useState(0);
-  // Phase 8 — simulation + compare drawers. The simulation drawer takes a
-  // variant price string (decimal-as-string) and fans out 3 scenarios.
-  const [simulationDrawerOpen, setSimulationDrawerOpen] = useState(false);
-  const [simulationPrice, setSimulationPrice] = useState<string>('');
-  const [compareDrawerOpen, setCompareDrawerOpen] = useState(false);
+
+  // Phase 8 — simulation drawer is keyed on the option price (the URL
+  // carries the option price so a refresh re-opens the same simulation).
+  const simulationDrawerOpen = params.get('simulation_open') != null;
+  const simulationPrice = params.get('simulation_open') ?? '';
+  const setSimulationDrawerOpen = (open: boolean, price?: string) =>
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (open) next.set('simulation_open', price ?? simulationPrice);
+      else next.delete('simulation_open');
+      return next;
+    }, { replace: true });
+  const compareDrawerOpen = params.get('compare_open') === '1';
+  const setCompareDrawerOpen = (open: boolean) =>
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (open) next.set('compare_open', '1');
+      else next.delete('compare_open');
+      return next;
+    }, { replace: true });
   // Pre-fill for the ABTestCard when the user opts in via "Run as A/B"
   // from the SimulationDrawer.
   const [abPrefill, setAbPrefill] = useState<{ variant: string; control: string } | null>(null);
@@ -563,6 +594,7 @@ export default function PricingStudioPage() {
 
   return (
     <LineageDrawerProvider>
+      <StudioUrlSyncBridge />
       <section id="screen-studio" className="w-full px-6 py-6">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
@@ -700,8 +732,7 @@ export default function PricingStudioPage() {
                 abPrefill?.variant ?? wb.options.floor.price
               }
               onSimulateOption={(price) => {
-                setSimulationPrice(price);
-                setSimulationDrawerOpen(true);
+                setSimulationDrawerOpen(true, price);
               }}
               onOpenCompare={() => setCompareDrawerOpen(true)}
               onAbTestCreated={() => {
@@ -835,4 +866,11 @@ export default function PricingStudioPage() {
       </section>
     </LineageDrawerProvider>
   );
+}
+
+// Pricing Studio v3 / Phase 11 — opt-in lineage URL sync. Mounted inside
+// `<LineageDrawerProvider>` so the hook can read the provider context.
+function StudioUrlSyncBridge() {
+  useLineageUrlSync();
+  return null;
 }

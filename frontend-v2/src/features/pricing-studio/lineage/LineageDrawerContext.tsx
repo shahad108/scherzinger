@@ -129,3 +129,11 @@ export function useLineageDrawer(): LineageDrawerState {
   }
   return ctx;
 }
+
+// Pricing Studio v3 / Phase 11 — opt-in URL sync for the lineage drawer.
+// Call this hook ONCE inside a router-mounted descendant of
+// `<LineageDrawerProvider>` (e.g. the Pricing Studio page). It mirrors the
+// open ref id into `?lineage_ref=` and restores it on mount. Component
+// tests that render the provider without a router are unaffected because
+// the import is local to the page that needs the URL plumbing.
+export { useLineageUrlSync } from './useLineageUrlSync';
