@@ -230,6 +230,43 @@ export interface WorkbenchData {
   option_margins?: OptionMarginBlock[];
   cost_history?: CostHistoryBlock;
   trigger_context?: TriggerContextBlock | null;
+  // Pricing Studio v3 / Phase 8 — active A/B test summary (or null/absent
+  // when no running test). Populated by the BFF
+  // (`services/pricing/ab_test.get_active_ab_test_summary`).
+  active_ab_test?: ActiveAbTestSummary | null;
+}
+
+// ---- Pricing Studio v3 / Phase 8 wire-shape blocks --------------------------
+
+export interface AbScoringArm {
+  n: number;
+  conv: number | null;
+  margin: number | null;
+  revenue: number;
+}
+
+export interface AbScoringResult {
+  test_id: string;
+  control: AbScoringArm;
+  variant: AbScoringArm;
+  z_stat: number | null;
+  p_value: number | null;
+  decision_ready: boolean;
+  lineage_ref?: string | null;
+}
+
+export interface ActiveAbTestSummary {
+  test_id: string;
+  aid: string;
+  /** Decimal-as-string EUR. */
+  control_price: string;
+  /** Decimal-as-string EUR. */
+  variant_price: string;
+  /** running | held | promoted | rejected. */
+  decision_state: 'running' | 'held' | 'promoted' | 'rejected' | (string & {});
+  target_sample: number;
+  criterion: Record<string, unknown> | null;
+  scoring: AbScoringResult | null;
 }
 
 // ---- Pricing Studio v3 / Phase 1 wire-shape blocks --------------------------
