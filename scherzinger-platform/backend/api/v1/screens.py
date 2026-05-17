@@ -11,6 +11,7 @@ send a matching ``If-None-Match`` get a 304.
 from __future__ import annotations
 
 from copy import deepcopy
+from decimal import Decimal
 import hashlib
 import json
 from functools import lru_cache
@@ -19,6 +20,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Header, Request, Response, status
 from fastapi.responses import Response as RawResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.auth.security import AuthContext, require_auth
@@ -344,6 +346,34 @@ async def get_studio_workbench(
     response.headers["ETag"] = etag
     response.headers["Cache-Control"] = "private, max-age=60"
     return payload
+
+
+class _FanoutRequest(BaseModel):
+    """Body for POST /studio/fanout — re-score the customer fanout at a price."""
+
+    aid: str
+    proposed_price: Decimal
+
+
+@router.post("/studio/fanout")
+def post_studio_fanout(
+    body: _FanoutRequest,
+    ctx: AuthContext = Depends(require_auth),  # noqa: ARG001 (auth gate)
+    db: Session = Depends(get_db),
+):
+    """Phase 2 — reactive customer fanout re-score.
+
+    Same shape as ``workbench.customer_fanout``. Cached by
+    (aid, proposed_price) for 60s so repeated drags on the slider are
+    near-instant. Spec acceptance: < 500ms p50.
+    """
+    from backend.services.pricing.customer_fanout import build_customer_fanout
+
+    return build_customer_fanout(
+        aid=body.aid,
+        proposed_price=body.proposed_price,
+        db_session=db,
+    )
 
 
 @router.get("/studio/comparable/{aid}")
