@@ -645,6 +645,12 @@ export interface SeasonalOverlay {
   deviationTone: 'green' | 'amber' | 'red';
   note: string;
   source?: 'live' | 'synthetic';
+  // Partial-month disclosure (DATA-AUDIT-2026-05-17 defect #15). When
+  // `dataComplete=false`, the FE should render "{partialMonthDays}/{totalMonthDays} days"
+  // alongside the deviation so the user knows the figure is pro-rated.
+  dataComplete?: boolean;
+  partialMonthDays?: number;
+  totalMonthDays?: number;
 }
 
 export interface CommodityTrajectoryGroup {

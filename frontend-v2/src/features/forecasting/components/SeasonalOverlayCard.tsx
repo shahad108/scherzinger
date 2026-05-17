@@ -60,6 +60,16 @@ export function SeasonalOverlayCard({ data, filterScope }: Props) {
             {data.deviationPct >= 0 ? '+' : ''}
             {data.deviationPct.toFixed(1)}% vs expected
           </span>
+          {/* DATA-AUDIT-2026-05-17 defect #15 — partial-month disclosure */}
+          {data.dataComplete === false && data.partialMonthDays && data.totalMonthDays ? (
+            <span
+              data-testid="seasonal-partial-month-chip"
+              className="tag-chip"
+              title="Current-month actual pro-rated to month-end for fair comparison against the historical baseline."
+            >
+              {data.currentMonthLabel} partial — {data.partialMonthDays}/{data.totalMonthDays} days
+            </span>
+          ) : null}
         </div>
       </div>
 
