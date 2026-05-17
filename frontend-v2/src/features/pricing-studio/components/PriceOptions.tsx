@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { PriceOptionsBundle } from '@/types/studio';
+import type { OptionMarginBlock, PriceOptionsBundle } from '@/types/studio';
+import { OptionMarginMicroWaterfall } from './OptionMarginMicroWaterfall';
 
 export type ActiveOpt = 'hold' | 'floor' | 'market' | 'custom' | 'abtest';
 
@@ -19,9 +20,27 @@ interface Props {
    * (the hero owns that CTA now) and tightens the heading copy.
    */
   compact?: boolean;
+  /**
+   * Pricing Studio v3 / Phase 3 — per-option pocket waterfall data from the
+   * BFF. Keyed by `option_id` ("hold" / "floor" / "market" / "custom" /
+   * "recommendation"). Missing entries surface a DataMissingBadge inside
+   * the option card.
+   */
+  optionMargins?: OptionMarginBlock[];
 }
 
-export function PriceOptions({ options, optionsSub, onActiveChange, compact = false }: Props) {
+function findOptionMargin(margins: OptionMarginBlock[] | undefined, optionId: string) {
+  if (!margins) return null;
+  return margins.find((m) => m.option_id === optionId) ?? null;
+}
+
+export function PriceOptions({
+  options,
+  optionsSub,
+  onActiveChange,
+  compact = false,
+  optionMargins,
+}: Props) {
   const [active, setActive] = useState<ActiveOpt>('floor');
   const [customPrice, setCustomPrice] = useState('');
 
@@ -83,6 +102,11 @@ export function PriceOptions({ options, optionsSub, onActiveChange, compact = fa
               </span>
             ))}
           </span>
+          <OptionMarginMicroWaterfall
+            optionMargin={findOptionMargin(optionMargins, 'hold')}
+            compact={compact}
+            label="Hold"
+          />
         </button>
 
         <button
@@ -104,6 +128,11 @@ export function PriceOptions({ options, optionsSub, onActiveChange, compact = fa
               </span>
             ))}
           </span>
+          <OptionMarginMicroWaterfall
+            optionMargin={findOptionMargin(optionMargins, 'floor')}
+            compact={compact}
+            label="Cost-floor"
+          />
         </button>
 
         <button
@@ -125,6 +154,11 @@ export function PriceOptions({ options, optionsSub, onActiveChange, compact = fa
               </span>
             ))}
           </span>
+          <OptionMarginMicroWaterfall
+            optionMargin={findOptionMargin(optionMargins, 'market')}
+            compact={compact}
+            label="Market anchor"
+          />
         </button>
 
         <div
@@ -154,6 +188,11 @@ export function PriceOptions({ options, optionsSub, onActiveChange, compact = fa
           <span className="ws-opt-delta">{customDelta}</span>
           <span className="ws-opt-impact">{customImpact}</span>
           <span className="ws-opt-risk">{customRisk}</span>
+          <OptionMarginMicroWaterfall
+            optionMargin={findOptionMargin(optionMargins, 'custom')}
+            compact={compact}
+            label="Custom"
+          />
         </div>
 
         <button

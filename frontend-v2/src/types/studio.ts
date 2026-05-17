@@ -224,6 +224,12 @@ export interface WorkbenchData {
   // re-scores at a proposed price. Absent if the BFF errored — UI
   // falls back to the legacy `fanout` pane in that case.
   customer_fanout?: CustomerFanoutBlock;
+  // Pricing Studio v3 / Phase 3 — cost + margin reality blocks. Each is
+  // optional and surfaces a DataMissingBadge in its target UI when absent
+  // (e.g. the BFF couldn't load CostState for this aid).
+  option_margins?: OptionMarginBlock[];
+  cost_history?: CostHistoryBlock;
+  trigger_context?: TriggerContextBlock | null;
 }
 
 // ---- Pricing Studio v3 / Phase 1 wire-shape blocks --------------------------
@@ -453,6 +459,119 @@ export interface ToggleDef {
 export interface CrossLink {
   label: string;
   target?: string;
+}
+
+// ---- Pricing Studio v3 / Phase 3 wire-shape blocks --------------------------
+//
+// option_margins: per-option pocket waterfall (list → quoted → booked →
+// invoiced → db2). One entry per PriceOption surfaced in the workbench.
+// All monetary fields are Decimal-as-string; percentages too.
+//
+// cost_history: per-SKU narrowed commodity trajectory (already filtered to
+// the SKU's cluster on the BFF). Empty `points` is acceptable — the UI
+// renders a "no history" placeholder rather than crashing.
+//
+// trigger_context: deep-link banner descriptor populated when the shell
+// receives `?source=...&reason=...`. Null when source/reason are absent
+// or the (source, reason) tuple is unrecognised by the BFF composer.
+
+export interface OptionMarginBlock {
+  option_id: string;
+  /** Decimal-as-string EUR. */
+  price: string;
+  list: string;
+  quoted: string;
+  booked: string;
+  invoiced: string;
+  db2: string;
+  /** Four percentage points (Decimal-as-string) — list→quoted, quoted→booked, booked→invoiced, invoiced→db2. */
+  leakage_per_step_pct: string[];
+  lineage_ref?: LineageRefBlock | null;
+}
+
+export interface CostHistoryPoint {
+  /** ISO date or quarter label, e.g. "2024-Q1". */
+  date: string;
+  /** Decimal-as-string EUR per unit. */
+  unit_cost: string;
+  breakdown?: {
+    material?: string;
+    labor?: string;
+    outsourcing?: string;
+    overhead?: string;
+  } | null;
+}
+
+export interface CostHistoryCommodity {
+  /** e.g. "Steel S355". May arrive as `id`+`name` from the BFF traj API. */
+  name?: string;
+  id?: string;
+  /** Series points; same length as the parent quarters array. May be empty. */
+  trajectory?: Array<{ date?: string; value?: number | string }>;
+  /** Some BFF builds ship a `points` array instead of `trajectory`. */
+  points?: Array<{ date?: string; value?: number | string }>;
+  /** Optional slope-per-year (DB2 pp). */
+  slopePerYear?: number;
+}
+
+export interface CostHistoryBlock {
+  points: CostHistoryPoint[];
+  commodities: CostHistoryCommodity[];
+  quarters?: string[];
+  source?: string;
+}
+
+export interface TriggerContextBlock {
+  source: string;
+  reason: string;
+  headline: string;
+  details: string;
+  link_label: string;
+  link_target: string;
+  lineage_ref?: LineageRefBlock | null;
+}
+
+// ---- Cost Outlook drawer payload (GET /pricing/sku/{aid}/cost-outlook) -----
+
+export interface CostOutlookToday {
+  unit_cost: string;
+  breakdown: {
+    material: string;
+    labor: string;
+    outsourcing: string;
+    overhead: string;
+  };
+}
+
+export interface CostOutlookForecastPoint {
+  month_offset: number;
+  p20_unit_cost: string;
+  p50_unit_cost: string;
+  p80_unit_cost: string;
+}
+
+export interface CostOutlookComponent {
+  name: string;
+  today_value: string;
+  forecast_value: string;
+  change_pct: string;
+  commodity_label: string;
+}
+
+export interface CostOutlookCommodityTrend {
+  commodity: string;
+  monthly_yoy_pct: number;
+}
+
+export interface CostOutlookPayload {
+  aid: string;
+  horizon_months: number;
+  today: CostOutlookToday;
+  forecast: CostOutlookForecastPoint[];
+  components: CostOutlookComponent[];
+  floor_crosses_at: string | null;
+  commodity_trend: CostOutlookCommodityTrend[];
+  lineage_ref?: LineageRefBlock | null;
 }
 
 export interface StudioShell {
