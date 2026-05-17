@@ -235,17 +235,33 @@ def _project_row(
     start = _add_months(anchor.replace(day=1), 1)
     projection: list[dict[str, Any]] = []
     crossover: str | None = None
+    # DATA-AUDIT-2026-05-17 defect #14b — clamp the linear list-price
+    # projection at a sensible floor so it can never go negative. We use
+    # the maximum of: the projected cost floor (lp at or below cost is a
+    # margin breach, not a valid list price) and 50% of the starting list
+    # price (so an aggressive cost decline can't make the floor implausibly
+    # cheap). Once we hit the floor we hold it constant for remaining
+    # months — the linear slope is a diagnostic, not a forecast of how
+    # the list price would actually move past breakeven.
+    hard_floor = max(current_list * 0.5, 0.0)
+    floored = False
     for i in range(1, horizon_months + 1):
         month = _add_months(start, i - 1)
-        lp = current_list + monthly_list_slope * i
+        raw_lp = current_list + monthly_list_slope * i
         fl = current_cost + monthly_cost_slope * i
+        effective_floor = max(fl, hard_floor)
+        if raw_lp <= effective_floor or floored:
+            lp = effective_floor
+            floored = True
+            if crossover is None:
+                crossover = _month_key(month)
+        else:
+            lp = raw_lp
         projection.append({
             "month": _month_key(month),
             "listPrice": round(lp, 4),
             "floor": round(fl, 4),
         })
-        if crossover is None and lp <= fl:
-            crossover = _month_key(month)
 
     cadence = {
         "updatesEveryMonths": cadence_block.get("updatesEveryMonths") if cadence_block else None,
