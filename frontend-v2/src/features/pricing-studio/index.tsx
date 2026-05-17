@@ -782,6 +782,7 @@ export default function PricingStudioPage() {
                 aid={effectiveAid}
               />
               <CostHistory
+                aid={effectiveAid}
                 cost={wb.cost}
                 history={wb.history}
                 costHistory={wb.cost_history ?? null}
@@ -809,7 +810,7 @@ export default function PricingStudioPage() {
               }}
             />
 
-            <RationaleMemo data={wb.memo} />
+            <RationaleMemo aid={effectiveAid} data={wb.memo} />
           </div>
           )}
         </div>

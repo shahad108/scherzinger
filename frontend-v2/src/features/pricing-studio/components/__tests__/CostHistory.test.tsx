@@ -4,12 +4,24 @@
 // the bottom sparkline renders from the live values instead of the
 // legacy hardcoded SVG point strings; sparkline click + outlook pill
 // both call `onOpenCostDrawer`.
+//
+// Phase 13 update: the component now consumes `useAuditFeed` +
+// `useCostOutlook` internally — tests wrap in a fresh QueryClient so
+// the hooks don't blow up. We intentionally do NOT supply an `aid` here
+// so the hooks stay disabled and we exercise the fallback paths.
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 import { CostHistory } from '../CostHistory';
 import { costHistory } from './fixtures-phase3';
 import type { CostPane, HistoryRow } from '@/types/studio';
+
+function wrap(ui: ReactNode) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+}
 
 const baseCost: CostPane = {
   paneSub: 'this SKU · 4yr',
@@ -39,14 +51,14 @@ const baseHistory: HistoryRow[] = [
 
 describe('CostHistory', () => {
   it('falls back to legacy hardcoded points when costHistory is not supplied', () => {
-    render(<CostHistory cost={baseCost} history={baseHistory} />);
+    wrap(<CostHistory cost={baseCost} history={baseHistory} />);
     const sparkline = screen.getByTestId('cost-traj-sparkline');
     const materialLine = sparkline.querySelector('polyline');
     expect(materialLine?.getAttribute('points')).toBe('4,30 84,24 164,16 236,8');
   });
 
   it('uses BFF cost_history.points for the material sparkline when supplied', () => {
-    render(
+    wrap(
       <CostHistory
         cost={baseCost}
         history={baseHistory}
@@ -64,7 +76,7 @@ describe('CostHistory', () => {
 
   it('clicking the sparkline calls onOpenCostDrawer', () => {
     const onOpen = vi.fn();
-    render(
+    wrap(
       <CostHistory
         cost={baseCost}
         history={baseHistory}
@@ -78,7 +90,7 @@ describe('CostHistory', () => {
 
   it('renders the "View 6mo outlook" pill when onOpenCostDrawer is wired and fires it on click', () => {
     const onOpen = vi.fn();
-    render(
+    wrap(
       <CostHistory
         cost={baseCost}
         history={baseHistory}
@@ -93,7 +105,7 @@ describe('CostHistory', () => {
   });
 
   it('does not render the outlook pill when no onOpenCostDrawer handler is supplied', () => {
-    render(<CostHistory cost={baseCost} history={baseHistory} />);
+    wrap(<CostHistory cost={baseCost} history={baseHistory} />);
     expect(screen.queryByTestId('cost-outlook-pill')).not.toBeInTheDocument();
   });
 });
