@@ -190,6 +190,7 @@ export default function PricingStudioPage() {
               aid={effectiveAid}
               recommendation={wb.recommendation}
               winProbCurve={wb.win_prob_curve}
+              wtp={wb.wtp}
               currentPriceLabel={heroView.currentPrice}
               currentPriceValue={currentPriceValue}
               currentMarginLabel={heroView.currentMargin}

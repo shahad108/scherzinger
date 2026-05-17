@@ -13,6 +13,8 @@ import { usePricingLineage } from '@/data/api/usePricingLineage';
 import { usePricingStream } from '@/hooks/usePricingStream';
 import type { LineageSourceRow } from '@/data/api/usePricingLineage';
 import { ChevronRight, RefreshCw } from 'lucide-react';
+import { DriverWaterfall } from './DriverWaterfall';
+import { WtpBandStrip } from './WtpBandStrip';
 
 const REC_UPDATED_TOPIC = 'pricing.recommendation_updated';
 
@@ -57,8 +59,19 @@ interface BodyProps {
 }
 
 function LineageDrawerBody({ refId, subjectTitle, aid }: BodyProps) {
-  const { openLineageRef } = useLineageDrawer();
-  const lineage = usePricingLineage(openLineageRef);
+  const {
+    openLineageRef,
+    drivers,
+    wtp,
+    recommendedPrice,
+  } = useLineageDrawer();
+  // Pass workbench context into the synthesiser so the always-on frame
+  // (cost-state · competitor · won-deal sample · elasticity model) is
+  // sourced from real numbers when available.
+  const lineage = usePricingLineage(openLineageRef, {
+    wtp,
+    competitorRef: null,
+  });
   // SSE: surface a "recomputed" banner if the recommendation changes while
   // the drawer is open. We don't auto-replace because the user may be
   // mid-reading; they click to acknowledge.
@@ -125,7 +138,49 @@ function LineageDrawerBody({ refId, subjectTitle, aid }: BodyProps) {
       )}
 
       <div className="flex-1 overflow-y-auto px-5 py-4">
-        <section aria-labelledby={`${headingId}-sources`}>
+        {drivers && drivers.length > 0 && (
+          <section
+            aria-labelledby={`${headingId}-drivers`}
+            data-testid="lineage-drawer-drivers"
+          >
+            <h3
+              id={`${headingId}-drivers`}
+              className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em] text-[var(--muted)]"
+            >
+              Drivers
+            </h3>
+            <DriverWaterfall drivers={drivers} />
+          </section>
+        )}
+
+        {wtp && (
+          <section
+            aria-labelledby={`${headingId}-wtp`}
+            data-testid="lineage-drawer-wtp"
+            className={
+              drivers && drivers.length > 0
+                ? 'pt-4 mt-4 border-t border-[var(--hairline)]'
+                : ''
+            }
+          >
+            <h3
+              id={`${headingId}-wtp`}
+              className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em] text-[var(--muted)]"
+            >
+              Willingness-to-pay
+            </h3>
+            <WtpBandStrip wtp={wtp} recommendedPrice={recommendedPrice} />
+          </section>
+        )}
+
+        <section
+          aria-labelledby={`${headingId}-sources`}
+          className={
+            (drivers && drivers.length > 0) || wtp
+              ? 'pt-4 mt-4 border-t border-[var(--hairline)]'
+              : ''
+          }
+        >
           <h3
             id={`${headingId}-sources`}
             className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.06em] text-[var(--muted)]"
@@ -155,8 +210,12 @@ function LineageDrawerBody({ refId, subjectTitle, aid }: BodyProps) {
 
 function SourceRow({ source }: { source: LineageSourceRow }) {
   const [expanded, setExpanded] = useState(false);
+  const unavailable = source.available === false;
   return (
-    <li className="rounded-md border border-[var(--hairline)] bg-white">
+    <li
+      className={`rounded-md border border-[var(--hairline)] bg-white ${unavailable ? 'opacity-60' : ''}`}
+      data-source-kind={source.source_kind}
+    >
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
@@ -166,6 +225,11 @@ function SourceRow({ source }: { source: LineageSourceRow }) {
         <div className="min-w-0">
           <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--muted)]">
             {source.kindLabel}
+            {unavailable && (
+              <span className="ml-1.5 rounded-full bg-[var(--surface-soft)] px-1.5 py-[1px] text-[9.5px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+                no recent samples
+              </span>
+            )}
           </div>
           <div className="mt-0.5 truncate text-[12px] font-semibold text-[var(--ink-2)]">
             {source.source_id}

@@ -124,7 +124,12 @@ export function RecommendationHero({
   const freshSec = isFreshKnown ? Math.max(0, Math.round(Date.now() / 1000 - lastTickAt!)) : null;
 
   const onOpenRecLineage = () =>
-    openLineage(recommendation.lineage_ref ?? null, { subjectTitle: `Why ${recPrice} for ${aid}?` });
+    openLineage(recommendation.lineage_ref ?? null, {
+      subjectTitle: `Why ${recPrice} for ${aid}?`,
+      drivers: recommendation.drivers,
+      wtp: wtp ?? null,
+      recommendedPrice: recommendation.recommended_price,
+    });
 
   return (
     <section

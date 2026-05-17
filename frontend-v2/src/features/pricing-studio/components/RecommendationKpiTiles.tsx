@@ -9,6 +9,7 @@
 import type {
   RecommendationBlock,
   WinProbCurveBlock,
+  WtpBlock,
   ConfidenceLevel,
   LineageRefBlock,
 } from '@/types/studio';
@@ -21,6 +22,8 @@ interface Props {
   aid: string;
   recommendation?: RecommendationBlock;
   winProbCurve?: WinProbCurveBlock;
+  /** WTP block — surfaces sample-size into the lineage drawer header chip. */
+  wtp?: WtpBlock;
   /** Pre-formatted current price string. */
   currentPriceLabel: string;
   /** Numeric current price for Δ math. */
@@ -42,12 +45,22 @@ const CONF_LABEL: Record<ConfidenceLevel, string> = {
 export function RecommendationKpiTiles({
   recommendation,
   winProbCurve,
+  wtp,
   currentPriceLabel,
   currentPriceValue,
   projectedDb2Label,
   projectedDb2Lineage,
 }: Props) {
   const { openLineage } = useLineageDrawer();
+  // Shared "rich" lineage opts so any rec-anchored tile opens a fully-populated
+  // drawer (drivers waterfall + WTP strip).
+  const recOpenOpts = recommendation
+    ? {
+        drivers: recommendation.drivers,
+        wtp: wtp ?? null,
+        recommendedPrice: recommendation.recommended_price,
+      }
+    : null;
 
   const recPriceNum = recommendation ? parseDecimal(recommendation.recommended_price) : Number.NaN;
   const recPriceLabel = Number.isFinite(recPriceNum) ? fmt.eurPrecise(recPriceNum) : null;
@@ -90,10 +103,11 @@ export function RecommendationKpiTiles({
         sub={recommendation ? `confidence: ${CONF_LABEL[recommendation.confidence_level]}` : undefined}
         tone={recommendation ? 'rose' : 'neutral'}
         onClick={
-          recommendation?.lineage_ref
+          recommendation?.lineage_ref && recOpenOpts
             ? () =>
                 openLineage(recommendation.lineage_ref!, {
                   subjectTitle: 'Recommended price',
+                  ...recOpenOpts,
                 })
             : undefined
         }
@@ -154,10 +168,11 @@ export function RecommendationKpiTiles({
                 : 'neutral'
         }
         onClick={
-          recommendation?.lineage_ref
+          recommendation?.lineage_ref && recOpenOpts
             ? () =>
                 openLineage(recommendation.lineage_ref!, {
                   subjectTitle: 'Confidence',
+                  ...recOpenOpts,
                 })
             : undefined
         }
