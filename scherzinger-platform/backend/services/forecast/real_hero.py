@@ -80,6 +80,15 @@ def fetch_actuals_by_month(
         if d is None or v is None:
             continue
         out[f"{d.year:04d}-{d.month:02d}"] = float(v)
+    # Drop the trailing partial month so downstream callers (plan tracking,
+    # calibration, etc.) don't compare a 2-day slice against a full month.
+    max_date_row = db.execute(text("SELECT MAX(date) FROM invoices")).scalar()
+    if max_date_row is not None and out:
+        from calendar import monthrange
+        last_key = f"{max_date_row.year:04d}-{max_date_row.month:02d}"
+        last_day = monthrange(max_date_row.year, max_date_row.month)[1]
+        if last_key in out and max_date_row.day < last_day:
+            del out[last_key]
     return out
 
 
@@ -166,12 +175,44 @@ def build_hero(
             """
         )
     ).fetchall()
-    # Use the most recent 12 months of actuals + project next 12.
     history_rows = [(r[0], float(r[1] or 0.0)) for r in rows]
     if not history_rows:
         return _empty(mode, horizon_months)
 
-    # Trim to last 12 actuals.
+    # Drop the trailing partial month. If MAX(date) is not the last day of
+    # its month, that month contains only a slice of invoices (e.g. May 2026
+    # with 1 row on day-1 → €47). Feeding that into the 4-step WMA collapses
+    # the projection to ~€0 and the FE renders a forecast hero falling off a
+    # cliff. We only project from *completed* months. The dropped slice is
+    # reported separately via the `currentMonthPartial` block so the FE can
+    # surface it with a "month-to-date" caption instead of an actual.
+    max_date_row = db.execute(text("SELECT MAX(date) FROM invoices")).scalar()
+    current_partial: dict[str, Any] | None = None
+    if max_date_row is not None and history_rows:
+        last_month_start, last_month_value = history_rows[-1]
+        # End-of-month for last_month_start.
+        from calendar import monthrange
+        last_day_in_month = monthrange(last_month_start.year, last_month_start.month)[1]
+        if max_date_row.day < last_day_in_month and max_date_row.year == last_month_start.year and max_date_row.month == last_month_start.month:
+            current_partial = {
+                "month": _month_label(last_month_start),
+                "monthStart": last_month_start.isoformat(),
+                "asOf": max_date_row.isoformat(),
+                "daysObserved": max_date_row.day,
+                "daysInMonth": last_day_in_month,
+                "value": round(last_month_value, 4),
+                "note": (
+                    f"Month-to-date through {max_date_row.isoformat()} "
+                    f"({max_date_row.day}/{last_day_in_month} days). Excluded from "
+                    f"forecast inputs — projection runs off completed months only."
+                ),
+            }
+            history_rows = history_rows[:-1]
+
+    if not history_rows:
+        return _empty(mode, horizon_months)
+
+    # Trim to last 12 completed-month actuals.
     history_rows = history_rows[-12:]
     actuals = [v for (_, v) in history_rows]
 
@@ -249,13 +290,18 @@ def build_hero(
     else:
         caption = "Monthly revenue (EUR) · walk-forward · solid = primary · shaded = ±1σ band"
 
-    # D8: pre-compute the forward-only sum of the hero series so the
+    # D8: pre-compute the forward-only aggregate of the hero series so the
     # FE "Forecast (next 12mo)" tile cannot disagree with the chart.
     # Forward = months with `actual` not present (i.e., real forecast).
+    # For revenue/volume we sum (12-month total); for margin we average
+    # because summing percentages is meaningless ("332.5%" instead of 27.7%).
     forecast_only = [p for p in series if p.get("actual") is None]
-    forecast12mo_total = sum(
-        float(p.get("p50") or p.get("primary") or 0) for p in forecast_only[:12]
-    )
+    horizon = forecast_only[:12]
+    values_horizon = [float(p.get("p50") or p.get("primary") or 0) for p in horizon]
+    if mode == "margin":
+        forecast12mo_total = (sum(values_horizon) / len(values_horizon)) if values_horizon else 0.0
+    else:
+        forecast12mo_total = sum(values_horizon)
 
     out = {
         "caption": caption,
@@ -263,6 +309,7 @@ def build_hero(
         "unit": unit,
         "series": series,
         "forecast12moTotal": forecast12mo_total,
+        "currentMonthPartial": current_partial,
         "intervals": {
             "title": "Prediction intervals — what the band means",
             "bands": [
