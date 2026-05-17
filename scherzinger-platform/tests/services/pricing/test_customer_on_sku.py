@@ -207,3 +207,21 @@ def test_unknown_tier_falls_back_to_C() -> None:
             db_session=session,
         )
     assert row.tier == CustomerTier.C
+
+
+def test_operational_error_propagates_from_loader() -> None:
+    """SF5: DB connection errors MUST propagate, not silently mask data.
+
+    A broad ``except Exception`` swallowed OperationalError and produced an
+    empty history → looked like 'no purchases' instead of '500'. The narrow
+    handler lets the connection error bubble up to the API layer.
+    """
+    import sqlalchemy.exc
+    session = MagicMock()
+    session.execute.side_effect = sqlalchemy.exc.OperationalError(
+        "stmt", {}, Exception("connection lost")
+    )
+    with pytest.raises(sqlalchemy.exc.OperationalError):
+        cos._load_invoice_history(
+            aid="X-1", customer_id="C-1", db_session=session
+        )

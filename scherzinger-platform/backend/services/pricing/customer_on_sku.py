@@ -23,6 +23,7 @@ from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
 
+import sqlalchemy.exc
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -66,7 +67,10 @@ def _load_invoice_history(
             """),
             {"cid": customer_id, "aid": aid},
         ).fetchall()
-    except Exception:
+    except (sqlalchemy.exc.NoResultFound, ValueError, KeyError):
+        # Narrow on purpose: connection-level failures (OperationalError,
+        # DBAPIError) MUST propagate so the API surfaces a 500 instead of
+        # silently returning an empty history.
         logger.exception(
             "customer_on_sku._load_invoice_history failed aid=%s cid=%s",
             aid,
@@ -110,7 +114,8 @@ def _load_customer_master(
             """),
             {"cid": customer_id},
         ).fetchone()
-    except Exception:
+    except (sqlalchemy.exc.NoResultFound, ValueError, KeyError):
+        # See _load_invoice_history — connection errors propagate.
         logger.exception(
             "customer_on_sku._load_customer_master failed cid=%s", customer_id
         )
@@ -143,7 +148,8 @@ def _load_customer_risk_scores(
             """),
             {"cid": customer_id},
         ).fetchone()
-    except Exception:
+    except (sqlalchemy.exc.NoResultFound, ValueError, KeyError):
+        # See _load_invoice_history — connection errors propagate.
         logger.exception(
             "customer_on_sku._load_customer_risk_scores failed cid=%s", customer_id
         )
@@ -173,7 +179,8 @@ def _load_customer_ltm_eur(
             """),
             {"cid": customer_id},
         ).fetchone()
-    except Exception:
+    except (sqlalchemy.exc.NoResultFound, ValueError, KeyError):
+        # See _load_invoice_history — connection errors propagate.
         logger.exception(
             "customer_on_sku._load_customer_ltm_eur failed cid=%s", customer_id
         )
