@@ -25,7 +25,9 @@ from backend.models.pricing.cost_state import (
 from backend.models.pricing.customer_on_sku import (
     CustomerOnSku,
     CustomerOnSkuRow,
+    CustomerOnSkuSnapshotRow,
     CustomerTier,
+    PaidBand,
 )
 from backend.models.pricing.lineage import (
     LineageRef,
@@ -60,7 +62,9 @@ __all__ = [
     # Customer
     "CustomerOnSku",
     "CustomerOnSkuRow",
+    "CustomerOnSkuSnapshotRow",
     "CustomerTier",
+    "PaidBand",
     # Lineage
     "LineageRef",
     "LineageRefRow",
