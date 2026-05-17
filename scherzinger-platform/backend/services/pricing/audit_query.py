@@ -21,7 +21,7 @@ from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from backend.models.pricing.audit import PricingAuditEntry
-from backend.models.pricing.lineage import LineageRefRow
+from backend.models.pricing.lineage import LineageRefRow, LineageSourceKind
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,10 @@ logger = logging.getLogger(__name__)
 # expectation of the Decision History drawer ("event happened seconds ago").
 _CACHE_TTL_SECONDS = 30.0
 _CACHE_MAX_ENTRIES = 256
+# SF2 — cache entry shape extended to ``{rows, total, lineage_ref_id}`` so
+# the read-side lineage row is materialized at most once per (aid, filters)
+# window. This avoids inserting a fresh ``lineage_refs`` row on every audit
+# drawer poll.
 _CACHE: "OrderedDict[tuple, tuple[float, dict[str, Any]]]" = OrderedDict()
 
 
@@ -119,13 +123,18 @@ def list_audit_for_sku(
     actor: Optional[str] = None,
     since: Optional[datetime] = None,
     bypass_cache: bool = False,
-) -> tuple[list[dict[str, Any]], int]:
-    """Return paginated audit rows for ``aid`` + total count.
+) -> tuple[list[dict[str, Any]], int, Optional[UUID]]:
+    """Return paginated audit rows for ``aid`` + total count + query lineage.
 
     Includes direct ``target_kind='sku'`` rows AND customer/cluster rows
     whose payload pins the SKU. Ordered by ``at desc``.
 
-    Returns ``(rows, total)``.
+    Returns ``(rows, total, lineage_ref_id)``.
+
+    SF2 — ``lineage_ref_id`` is created once per (aid, filters) window and
+    cached alongside the rows. Empty result sets return ``None`` so the
+    read endpoint can omit the lineage write entirely. Subsequent calls
+    inside the 30s TTL reuse the same lineage row.
     """
     limit = max(1, min(int(limit), 200))
     offset = max(0, int(offset))
@@ -143,7 +152,11 @@ def list_audit_for_sku(
         cached = _CACHE.get(cache_key)
         if cached and (now - cached[0]) < _CACHE_TTL_SECONDS:
             _CACHE.move_to_end(cache_key)
-            return cached[1]["rows"], cached[1]["total"]
+            return (
+                cached[1]["rows"],
+                cached[1]["total"],
+                cached[1].get("lineage_ref_id"),
+            )
 
     base_predicate = or_(
         and_(
@@ -206,8 +219,32 @@ def list_audit_for_sku(
         for r in rows
     ]
 
-    _CACHE[cache_key] = (now, {"rows": serialized, "total": int(total)})
+    # SF2 — only materialize the audit-query lineage row when there's at
+    # least one row to surface. Empty paginated reads return ``None`` so the
+    # endpoint can omit the INSERT.
+    lineage_ref_id: Optional[UUID] = None
+    if serialized:
+        from backend.services.pricing.lineage import create_lineage
+
+        lineage_row = create_lineage(
+            source_kind=LineageSourceKind.MANUAL_OVERRIDE,
+            source_id=f"audit_query:{aid}",
+            sql=None,
+            model="audit_query_v1",
+            computed_by="system",
+            session=db_session,
+        )
+        lineage_ref_id = lineage_row.id
+
+    _CACHE[cache_key] = (
+        now,
+        {
+            "rows": serialized,
+            "total": int(total),
+            "lineage_ref_id": lineage_ref_id,
+        },
+    )
     _CACHE.move_to_end(cache_key)
     while len(_CACHE) > _CACHE_MAX_ENTRIES:
         _CACHE.popitem(last=False)
-    return serialized, int(total)
+    return serialized, int(total), lineage_ref_id

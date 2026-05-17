@@ -390,13 +390,13 @@ def get_sku_audit(
     ``target_kind='sku'`` events AND customer/cluster/family events
     where the SKU appears in the payload's ``aid`` field.
     """
-    from backend.models.pricing.lineage import LineageSourceKind
     from backend.services.pricing.audit_query import list_audit_for_sku
-    from backend.services.pricing.lineage import create_lineage
 
     actions = _parse_csv_action_in(action_in)
     since_dt = _parse_iso_datetime(since, field="since")
-    rows, total = list_audit_for_sku(
+    # SF2 — the service owns the read-side lineage row now (created once
+    # per cached (aid, filters) window, skipped when ``rows`` is empty).
+    rows, total, lineage_ref_id = list_audit_for_sku(
         aid=aid,
         db_session=db,
         limit=limit,
@@ -405,21 +405,11 @@ def get_sku_audit(
         actor=actor,
         since=since_dt,
     )
-    # Stamp lineage on the query itself so the drawer can show provenance
-    # on the read (not just on each row).
-    lineage_row = create_lineage(
-        source_kind=LineageSourceKind.MANUAL_OVERRIDE,
-        source_id=f"audit_query:{aid}",
-        sql=None,
-        model="audit_query_v1",
-        computed_by="system",
-        session=db,
-    )
     db.commit()
     return {
         "rows": rows,
         "total": total,
-        "lineage_ref": str(lineage_row.id),
+        "lineage_ref": str(lineage_ref_id) if lineage_ref_id is not None else None,
     }
 
 

@@ -59,7 +59,7 @@ def test_audit_returns_paginated_rows_and_total(client: TestClient) -> None:
     rows = _stub_rows("A-1", n=3)
     with patch(
         "backend.services.pricing.audit_query.list_audit_for_sku",
-        return_value=(rows, 7),
+        return_value=(rows, 7, uuid4()),
     ):
         res = client.get(URL.format(aid="A-1"), params={"limit": 3, "offset": 0})
     assert res.status_code == 200, res.text
@@ -83,7 +83,7 @@ def test_audit_action_in_filter_is_forwarded(client: TestClient) -> None:
         captured["action_in"] = action_in
         captured["limit"] = limit
         captured["offset"] = offset
-        return [], 0
+        return [], 0, None
 
     with patch(
         "backend.services.pricing.audit_query.list_audit_for_sku",
@@ -103,7 +103,7 @@ def test_audit_since_filter_is_forwarded(client: TestClient) -> None:
 
     def _capture(*, aid, db_session, limit, offset, action_in, actor, since, **kw):
         captured["since"] = since
-        return [], 0
+        return [], 0, None
 
     with patch(
         "backend.services.pricing.audit_query.list_audit_for_sku",
@@ -126,7 +126,7 @@ def test_audit_actor_filter_is_forwarded(client: TestClient) -> None:
 
     def _capture(*, aid, db_session, limit, offset, action_in, actor, since, **kw):
         captured["actor"] = actor
-        return [], 0
+        return [], 0, None
 
     with patch(
         "backend.services.pricing.audit_query.list_audit_for_sku",
@@ -140,13 +140,16 @@ def test_audit_actor_filter_is_forwarded(client: TestClient) -> None:
 def test_audit_empty_when_no_rows(client: TestClient) -> None:
     with patch(
         "backend.services.pricing.audit_query.list_audit_for_sku",
-        return_value=([], 0),
+        return_value=([], 0, None),
     ):
         res = client.get(URL.format(aid="MISSING"))
     assert res.status_code == 200
     body = res.json()
     assert body["rows"] == []
     assert body["total"] == 0
+    # SF2 — empty audit query returns ``lineage_ref: None`` so no
+    # ``lineage_refs`` row gets allocated for read-only empty paginations.
+    assert body["lineage_ref"] is None
 
 
 def test_audit_rejects_unauthenticated() -> None:
