@@ -206,11 +206,32 @@ export function useRollback(aid: string | null | undefined) {
 // Helpers shared with the UI.
 // ---------------------------------------------------------------------------
 
-/** Build a branded PDF URL — used by DecisionFooter's "Branded PDF" button. */
-export function proposalPdfUrl(proposalId: string): string {
+/**
+ * Build a branded PDF URL — used by DecisionFooter's "Branded PDF" button.
+ *
+ * Pricing Studio v3 / Phase 10 — accepts optional `persona` + `lang` query
+ * params so the BFF can swap rationale voice + language. Persona is purely
+ * cosmetic for v3 (rationale text style); the BFF honours both knobs but
+ * most numeric fields remain identical.
+ */
+export interface ProposalPdfUrlOpts {
+  persona?: 'frank' | 'till' | 'manuel';
+  lang?: 'en' | 'de';
+}
+
+export function proposalPdfUrl(
+  proposalId: string,
+  opts?: ProposalPdfUrlOpts,
+): string {
   const base =
     (import.meta.env.VITE_SCHERZINGER_API as string | undefined) || '/api/v1';
-  return `${base}/pricing/proposals/${encodeURIComponent(proposalId)}/pdf`;
+  const qs = new URLSearchParams();
+  if (opts?.persona) qs.set('persona', opts.persona);
+  if (opts?.lang) qs.set('lang', opts.lang);
+  const suffix = qs.toString();
+  return `${base}/pricing/proposals/${encodeURIComponent(proposalId)}/pdf${
+    suffix ? `?${suffix}` : ''
+  }`;
 }
 
 /** True when a receipt is still within the 72h rollback window. */

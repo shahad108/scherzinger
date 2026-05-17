@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { DecisionData } from '@/types/studio';
 import { renderInline } from './renderInline';
@@ -6,7 +6,22 @@ import type { ActiveOptionView } from './PriceOptions';
 import { useCreateProposal } from '@/data/api/useProposals';
 import { useUiAction } from '@/hooks/useUiAction';
 import { proposalPdfUrl } from '@/data/api/usePublishPrice';
+import { useUserLanguage } from '@/data/api/useUserLanguage';
+import type { UserLanguage } from '@/data/api/useUserLanguage';
 import { PublishConfirmationDrawer } from './PublishConfirmationDrawer';
+
+type PdfPersona = 'frank' | 'till' | 'manuel';
+
+const PDF_PERSONA_OPTIONS: { value: PdfPersona; label: string }[] = [
+  { value: 'frank', label: 'Frank · Analyst' },
+  { value: 'till', label: 'Till · CFO' },
+  { value: 'manuel', label: 'Manuel · Sales' },
+];
+
+const PDF_LANG_OPTIONS: { value: UserLanguage; label: string }[] = [
+  { value: 'en', label: 'English' },
+  { value: 'de', label: 'Deutsch' },
+];
 
 interface Props {
   data: DecisionData;
@@ -41,6 +56,23 @@ export function DecisionFooter({
   const [publishOpen, setPublishOpen] = useState(false);
   const createProposal = useCreateProposal();
   const runUiAction = useUiAction();
+  // Phase 10 — Branded PDF popover state (persona + language).
+  const { lang: userLang } = useUserLanguage();
+  const [pdfOpen, setPdfOpen] = useState(false);
+  const [pdfPersona, setPdfPersona] = useState<PdfPersona>('frank');
+  const [pdfLang, setPdfLang] = useState<UserLanguage>(userLang);
+  const pdfPopoverRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    setPdfLang(userLang);
+  }, [userLang]);
+  useEffect(() => {
+    if (!pdfOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!pdfPopoverRef.current?.contains(e.target as Node)) setPdfOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [pdfOpen]);
 
   const proposed = activeOption ? activeOption.price : data.summary.proposedPrice;
   const recommendationId = params.get('recommendation') ?? null;
@@ -203,35 +235,123 @@ export function DecisionFooter({
             ↗ View approval stepper
           </button>
         )}
-        <button
-          type="button"
-          className="btn"
-          data-testid="decision-footer-pdf"
-          title={
-            proposalId
-              ? 'Open the branded proposal PDF in a new tab.'
-              : 'Save the proposal first — PDF is tied to a proposal id.'
-          }
-          onClick={() => {
-            if (!proposalId) {
-              runUiAction({
-                disabledReason:
-                  'Branded PDF needs a saved proposal — save as draft first.',
-              });
-              return;
+        <div ref={pdfPopoverRef} style={{ position: 'relative' }}>
+          <button
+            type="button"
+            className="btn"
+            data-testid="decision-footer-pdf"
+            aria-expanded={pdfOpen}
+            aria-haspopup="dialog"
+            title={
+              proposalId
+                ? 'Open the persona + language picker, then generate the branded PDF.'
+                : 'Save the proposal first — PDF is tied to a proposal id.'
             }
-            if (typeof window !== 'undefined') {
-              window.open(
-                proposalPdfUrl(proposalId),
-                '_blank',
-                'noopener,noreferrer',
-              );
-            }
-          }}
-          disabled={!proposalId}
-        >
-          📄 Branded PDF
-        </button>
+            onClick={() => {
+              if (!proposalId) {
+                runUiAction({
+                  disabledReason:
+                    'Branded PDF needs a saved proposal — save as draft first.',
+                });
+                return;
+              }
+              setPdfOpen((v) => !v);
+            }}
+            disabled={!proposalId}
+          >
+            📄 Branded PDF
+          </button>
+          {pdfOpen && proposalId && (
+            <div
+              role="dialog"
+              aria-label="Branded PDF options"
+              data-testid="decision-footer-pdf-popover"
+              style={{
+                position: 'absolute',
+                bottom: 'calc(100% + 6px)',
+                right: 0,
+                zIndex: 30,
+                minWidth: 220,
+                background: 'var(--surface, #fff)',
+                border: '1px solid var(--hairline)',
+                borderRadius: 10,
+                boxShadow: 'var(--shadow-pop, 0 10px 32px rgba(0,0,0,0.16))',
+                padding: 10,
+                fontSize: 12,
+              }}
+            >
+              <div style={{ fontWeight: 700, fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
+                Persona
+              </div>
+              <div role="radiogroup" aria-label="Persona" style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
+                {PDF_PERSONA_OPTIONS.map((opt) => (
+                  <label
+                    key={opt.value}
+                    data-testid={`decision-footer-pdf-persona-${opt.value}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}
+                  >
+                    <input
+                      type="radio"
+                      name="pdf-persona"
+                      value={opt.value}
+                      checked={pdfPersona === opt.value}
+                      onChange={() => setPdfPersona(opt.value)}
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+              <div style={{ fontWeight: 700, fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
+                Language
+              </div>
+              <div role="radiogroup" aria-label="Language" style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                {PDF_LANG_OPTIONS.map((opt) => (
+                  <label
+                    key={opt.value}
+                    data-testid={`decision-footer-pdf-lang-${opt.value}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}
+                  >
+                    <input
+                      type="radio"
+                      name="pdf-lang"
+                      value={opt.value}
+                      checked={pdfLang === opt.value}
+                      onChange={() => setPdfLang(opt.value)}
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                <button
+                  type="button"
+                  className="btn"
+                  data-testid="decision-footer-pdf-cancel"
+                  onClick={() => setPdfOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn primary"
+                  data-testid="decision-footer-pdf-submit"
+                  onClick={() => {
+                    if (typeof window !== 'undefined') {
+                      window.open(
+                        proposalPdfUrl(proposalId, { persona: pdfPersona, lang: pdfLang }),
+                        '_blank',
+                        'noopener,noreferrer',
+                      );
+                    }
+                    setPdfOpen(false);
+                  }}
+                >
+                  Generate PDF
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <PublishConfirmationDrawer
