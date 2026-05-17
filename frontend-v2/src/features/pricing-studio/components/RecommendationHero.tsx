@@ -22,6 +22,7 @@ import { useLineageDrawer } from '@/features/pricing-studio/lineage/LineageDrawe
 import { fmt } from '@/lib/format';
 import { parseDecimal, pctFromFraction, signedPctDelta } from '../lib/decimal';
 import { Sparkles } from 'lucide-react';
+import { AlertButton } from '@/components/AlertButton';
 
 interface Props {
   aid: string;
@@ -267,7 +268,11 @@ export function RecommendationHero({
 
           {/* Competitor */}
           <div className="mt-5 border-t border-dashed border-[var(--hairline)] pt-3 text-[11.5px]">
-            <CompetitorLine competitor={competitorRef ?? undefined} recPriceNum={recPriceNum} />
+            <CompetitorLine
+              competitor={competitorRef ?? undefined}
+              recPriceNum={recPriceNum}
+              aid={aid}
+            />
           </div>
         </div>
 
@@ -377,15 +382,22 @@ function BandStrip({ band, wtp, recommendedPrice, onClick }: BandStripProps) {
 function CompetitorLine({
   competitor,
   recPriceNum,
+  aid,
 }: {
   competitor: CompetitorRefBlock | undefined;
   recPriceNum: number;
+  aid: string;
 }) {
   if (!competitor) {
     return (
       <div className="flex items-center gap-2 text-[var(--muted)]">
         <span className="font-semibold text-[var(--ink-3)]">Competitor:</span>
         <DataMissingBadge reason="No signal" icon={false} tooltip="No lost-quote signal in the last 90 days." />
+        <AlertButton
+          triggerKind="competitor_undercut"
+          scope={{ aid }}
+          initialSpec={{ pct: 3 }}
+        />
       </div>
     );
   }
@@ -410,6 +422,11 @@ function CompetitorLine({
           ⚠ below ours
         </span>
       )}
+      <AlertButton
+        triggerKind="competitor_undercut"
+        scope={{ aid }}
+        initialSpec={{ pct: 3 }}
+      />
     </div>
   );
 }

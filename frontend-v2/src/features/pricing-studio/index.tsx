@@ -40,6 +40,8 @@ import { WhatChangedStrip } from './components/WhatChangedStrip';
 import { auditFeedKey } from '@/data/api/useAuditFeed';
 // Pricing Studio v3 / Phase 5 — approval inbox + SSE-driven invalidation.
 import { ApprovalInboxBell } from './components/ApprovalInboxBell';
+import { AlertInboxBell } from './components/AlertInboxBell';
+import { AlertBanner } from './components/AlertBanner';
 import { approvalInboxKey } from '@/data/api/useApprovalInbox';
 // Pricing Studio v3 / Phase 6 — batch repricing.
 import { BatchWorkbench } from './components/BatchWorkbench';
@@ -540,8 +542,10 @@ export default function PricingStudioPage() {
           </div>
           {/* TODO §5.6: lift the bell into the app shell once placement
               is settled. For now it sits in the Studio page header so
-              Phase 5 is functionally complete. */}
-          <div className="mt-2 shrink-0">
+              Phase 5 is functionally complete. Phase 9 adds the alerts
+              bell next to it so Frank gets both queues in one glance. */}
+          <div className="mt-2 flex shrink-0 items-center gap-2">
+            <AlertInboxBell />
             <ApprovalInboxBell />
           </div>
         </div>
@@ -578,6 +582,11 @@ export default function PricingStudioPage() {
             </div>
           ) : (
           <div className="ws-bench">
+            {/* Phase 9 — Live alert banner. Subscribes to the pricing SSE
+                stream and surfaces a dismissible amber pill when an alert
+                fires on the current SKU. */}
+            <AlertBanner aid={effectiveAid} />
+
             <WorkbenchHero
               hero={heroView}
               onOpenAudit={() => setAuditDrawerOpen(true)}

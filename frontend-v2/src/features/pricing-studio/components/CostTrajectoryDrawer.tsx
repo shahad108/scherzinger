@@ -16,7 +16,7 @@
 // Data fetching via `useCostOutlook(aid, horizon)`. Decimal-as-string
 // from the BFF → `parseDecimal` at the formatter boundary.
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Area,
@@ -34,6 +34,7 @@ import { useCostOutlook } from '@/data/api/useCostOutlook';
 import type { CostHistoryBlock, CostOutlookPayload } from '@/types/studio';
 import { parseDecimal } from '../lib/decimal';
 import { fmt } from '@/lib/format';
+import { AlertSetupDrawer } from './AlertSetupDrawer';
 
 interface Props {
   open: boolean;
@@ -97,9 +98,7 @@ export function CostTrajectoryDrawer({
           )}
         </div>
 
-        {data && (
-          <ActionsFooter aid={aid} payload={data} />
-        )}
+        {data && <ActionsFooter aid={aid} />}
       </div>
     </Drawer>
   );
@@ -311,8 +310,9 @@ function FloorCrossSection({ payload }: { payload: CostOutlookPayload }) {
 
 // --- Actions footer --------------------------------------------------------
 
-function ActionsFooter({ aid, payload }: { aid: string; payload: CostOutlookPayload }) {
+function ActionsFooter({ aid }: { aid: string }) {
   const navigate = useNavigate();
+  const [alertOpen, setAlertOpen] = useState(false);
 
   return (
     <footer className="ws-cost-drawer-actions" data-testid="cost-drawer-actions">
@@ -320,14 +320,20 @@ function ActionsFooter({ aid, payload }: { aid: string; payload: CostOutlookPayl
         type="button"
         className="ws-cost-drawer-btn"
         data-testid="cost-drawer-set-alert"
-        // Phase 9 will wire this to the alerts engine, including its own
-        // setup drawer that picks the threshold. No client-side math here:
-        // we never derive prices in the browser. Stays disabled until then.
-        disabled
-        title="Cost alerts ship in Phase 9"
+        onClick={() => setAlertOpen(true)}
+        title="Set a cost-movement alert for this SKU"
       >
         Set cost alert
       </button>
+      {alertOpen && (
+        <AlertSetupDrawer
+          open={alertOpen}
+          onOpenChange={setAlertOpen}
+          triggerKind="cost_threshold"
+          scope={{ aid }}
+          initialSpec={{ pct: 5, days: 30 }}
+        />
+      )}
       <button
         type="button"
         className="ws-cost-drawer-btn ws-cost-drawer-btn--primary"

@@ -162,7 +162,7 @@ describe('CostTrajectoryDrawer', () => {
     expect(screen.getByTestId('data-missing-badge')).toBeInTheDocument();
   });
 
-  it('shows a disabled "Set cost alert" button without any client-side threshold math', async () => {
+  it('exposes an enabled "Set cost alert" button that opens the AlertSetupDrawer', async () => {
     wrap(
       <CostTrajectoryDrawer
         open
@@ -175,8 +175,7 @@ describe('CostTrajectoryDrawer', () => {
       expect(screen.getByTestId('cost-drawer-set-alert')).toBeInTheDocument();
     });
     const btn = screen.getByTestId('cost-drawer-set-alert') as HTMLButtonElement;
-    expect(btn).toBeDisabled();
-    expect(btn).toHaveAttribute('title', 'Cost alerts ship in Phase 9');
+    expect(btn).not.toBeDisabled();
     // Label is the bare "Set cost alert" — no threshold value rendered.
     expect(btn.textContent?.trim()).toBe('Set cost alert');
     expect(btn.textContent ?? '').not.toMatch(/€|≥/);

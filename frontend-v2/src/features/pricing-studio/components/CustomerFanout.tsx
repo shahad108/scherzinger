@@ -22,6 +22,7 @@ import { PaidBandMicroBar } from './PaidBandMicroBar';
 import { fmt } from '@/lib/format';
 import { parseDecimal } from '../lib/decimal';
 import { renderInline } from './renderInline';
+import { AlertButton } from '@/components/AlertButton';
 
 interface Props {
   /** Legacy FanoutPane (mock JSON path) — used for the default workbench view. */
@@ -56,11 +57,19 @@ export function CustomerFanout({ data, fanPrice, block, proposedPriceDecimal, ai
 
   return (
     <div className="ws-pane">
-      <h4>
-        Customer fan-out · this SKU only
-        <span className="ws-pane-sub" data-testid="ws-pane-sub">
-          if priced at <b>{fanPrice}</b> ({contextLabel})
+      <h4 className="flex items-center gap-2">
+        <span>
+          Customer fan-out · this SKU only
+          <span className="ws-pane-sub" data-testid="ws-pane-sub">
+            if priced at <b>{fanPrice}</b> ({contextLabel})
+          </span>
         </span>
+        <AlertButton
+          triggerKind="churn_spike"
+          scope={{ aid }}
+          initialSpec={{ pp: 10 }}
+          label="churn"
+        />
       </h4>
       <p className="cluster-note">{renderInline(data.clusterNote)}</p>
       <div className="ws-fanout">

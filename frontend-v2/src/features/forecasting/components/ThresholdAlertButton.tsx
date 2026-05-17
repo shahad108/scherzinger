@@ -3,10 +3,17 @@
 // Drops a tiny bell button on each forecast block header. Click → modal
 // where Frank sets the metric / threshold / notification channel. POSTs to
 // /forecast/alerts (the backend endpoints already exist).
+//
+// Pricing Studio v3 / Phase 9 (§9.5): the modal now also exposes a
+// "Pricing alert" pivot that opens the unified pricing-studio
+// AlertSetupDrawer pre-filled by metric → kind. Lets Frank set the same
+// trigger against the pricing-alerts engine without leaving forecasting.
 
 import { Bell, X } from 'lucide-react';
 import { useState } from 'react';
 import { postJson } from '@/lib/api/client';
+import { AlertSetupDrawer } from '@/features/pricing-studio/components/AlertSetupDrawer';
+import type { AlertKind } from '@/data/api/usePricingAlerts';
 
 type ThresholdKind = 'mape_above' | 'margin_below_pct' | 'revenue_decline_prob_above';
 
@@ -42,6 +49,7 @@ export function ThresholdAlertButton({
   const [channel, setChannel] = useState<'in_app' | 'email'>('in_app');
   const [busy, setBusy] = useState(false);
   const [receipt, setReceipt] = useState<AlertReceipt | null>(null);
+  const [pricingAlertOpen, setPricingAlertOpen] = useState(false);
 
   const submit = async () => {
     setBusy(true);
@@ -171,29 +179,84 @@ export function ThresholdAlertButton({
                 </div>
               )}
             </div>
-            <footer className="flex items-center justify-end gap-2 border-t border-[var(--border)] px-5 py-3">
+            <footer className="flex items-center justify-between gap-2 border-t border-[var(--border)] px-5 py-3">
               <button
                 type="button"
-                onClick={() => setOpen(false)}
-                className="rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-[12.5px] font-semibold"
+                onClick={() => {
+                  setOpen(false);
+                  setPricingAlertOpen(true);
+                }}
+                data-testid="alert-pivot-pricing"
+                className="rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[var(--ink-2)] hover:bg-[var(--surface-soft)]"
               >
-                Close
+                Pricing alert →
               </button>
-              <button
-                type="button"
-                onClick={submit}
-                disabled={busy}
-                data-testid="alert-submit"
-                className="rounded-md bg-[var(--rose-deep)] px-3 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-50"
-              >
-                {busy ? 'Saving…' : 'Save alert'}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-[12.5px] font-semibold"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={submit}
+                  disabled={busy}
+                  data-testid="alert-submit"
+                  className="rounded-md bg-[var(--rose-deep)] px-3 py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-50"
+                >
+                  {busy ? 'Saving…' : 'Save alert'}
+                </button>
+              </div>
             </footer>
           </div>
         </div>
       )}
+      {pricingAlertOpen && (
+        <AlertSetupDrawer
+          open={pricingAlertOpen}
+          onOpenChange={setPricingAlertOpen}
+          triggerKind={pricingKindFor(thresholdKind)}
+          scope={
+            entityType === 'sku' && entityId
+              ? { aid: entityId }
+              : entityType === 'cluster' && entityId
+                ? { cluster: entityId }
+                : entityType === 'family' && entityId
+                  ? { family: entityId }
+                  : undefined
+          }
+          initialSpec={initialSpecFor(thresholdKind, thresholdValue)}
+        />
+      )}
     </>
   );
+}
+
+function pricingKindFor(threshold: ThresholdKind): AlertKind {
+  switch (threshold) {
+    case 'margin_below_pct':
+      return 'cluster_db2_drop';
+    case 'mape_above':
+    case 'revenue_decline_prob_above':
+    default:
+      return 'cost_threshold';
+  }
+}
+
+function initialSpecFor(
+  threshold: ThresholdKind,
+  value: number,
+): { pct?: number; pp?: number; days?: number } {
+  switch (threshold) {
+    case 'margin_below_pct':
+      return { pp: value };
+    case 'mape_above':
+    case 'revenue_decline_prob_above':
+    default:
+      return { pct: value, days: 30 };
+  }
 }
 
 function thresholdDefault(kind: ThresholdKind): number {
