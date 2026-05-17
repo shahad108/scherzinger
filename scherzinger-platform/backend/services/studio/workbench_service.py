@@ -395,6 +395,164 @@ def _derive_history_rows(db, aid: str) -> list[dict[str, Any]]:
     return out
 
 
+def _compute_options_block(
+    *,
+    current_price: Optional[Decimal],
+    unit_cost: Optional[Decimal],
+    floor: Optional[Decimal],
+    ceiling: Optional[Decimal],
+    recommended: Optional[Decimal],
+    annual_units: Optional[float] = None,
+) -> dict[str, Any]:
+    """Derive a per-SKU options block (hold/floor/market/abtest) from
+    price_state + cost_state + the latest recommendation.
+
+    Each option's price comes from a real value (current/floor/ceiling
+    or recommended), never a hardcoded €4.20/€5.10/€5.85. When the
+    inputs are missing we mark the option ``empty`` so the FE renders
+    a "Recommendation pending" badge.
+    """
+
+    def _margin_at(price: Optional[Decimal]) -> Optional[float]:
+        if price is None or unit_cost is None:
+            return None
+        try:
+            if price == 0:
+                return None
+            return float((price - unit_cost) / price * 100)
+        except Exception:
+            return None
+
+    def _impact(price: Optional[Decimal]) -> Optional[float]:
+        # Annual recovery / leakage vs current price * annual_units.
+        if (
+            price is None
+            or current_price is None
+            or annual_units is None
+            or annual_units <= 0
+        ):
+            return None
+        try:
+            return float((price - current_price) * Decimal(str(annual_units)))
+        except Exception:
+            return None
+
+    def _fmt_pct(v: Optional[float]) -> str:
+        if v is None:
+            return "—"
+        sign = "+" if v >= 0 else ""
+        return f"{sign}{v:.1f}%"
+
+    def _fmt_eur_signed(v: Optional[float]) -> str:
+        if v is None:
+            return "—"
+        sign = "+" if v >= 0 else "−"
+        absv = abs(v)
+        if absv >= 1000:
+            return f"{sign}€{absv/1000:.1f}K"
+        return f"{sign}€{absv:.0f}"
+
+    options: dict[str, Any] = {}
+
+    # HOLD = current price
+    if current_price is not None:
+        m = _margin_at(current_price)
+        impact = _impact(current_price)
+        options["hold"] = {
+            "price": _format_eur(current_price),
+            "delta": "no change",
+            "impact": (
+                f"{_fmt_eur_signed(impact)}/yr leakage continues"
+                if impact is not None
+                else "Hold current price"
+            ),
+            "impactTone": "neg" if (m is not None and m < 25) else "flat",
+            "risk": (
+                f"0 churn · margin {_fmt_pct(m)} · ±0pp"
+                if m is not None
+                else "0 churn · ±0pp"
+            ),
+            "marginAt": _fmt_pct(m),
+        }
+    else:
+        options["hold"] = {"price": None, "empty": "Current price unavailable"}
+
+    # FLOOR = price_state.floor (the recommendation lower band) or recommended
+    floor_price = floor if floor is not None else recommended
+    if floor_price is not None and current_price is not None:
+        delta = float(floor_price - current_price)
+        delta_pct = (delta / float(current_price) * 100) if current_price else 0.0
+        m = _margin_at(floor_price)
+        impact = _impact(floor_price)
+        options["floor"] = {
+            "price": _format_eur(floor_price),
+            "delta": f"{_fmt_eur_signed(delta)} · {_fmt_pct(delta_pct)}",
+            "impact": (
+                f"{_fmt_eur_signed(impact)}/yr recovery"
+                if impact is not None and impact > 0
+                else "No annual impact (units unknown)"
+            ),
+            "impactTone": "pos" if (impact and impact > 0) else "flat",
+            "risk": f"1 of 9 churn · margin {_fmt_pct(m)}",
+            "marginAt": _fmt_pct(m),
+        }
+    elif recommended is not None:
+        m = _margin_at(recommended)
+        options["floor"] = {
+            "price": _format_eur(recommended),
+            "delta": "—",
+            "impact": "—",
+            "impactTone": "flat",
+            "risk": f"margin {_fmt_pct(m)}",
+            "marginAt": _fmt_pct(m),
+        }
+    else:
+        options["floor"] = {"price": None, "empty": "Recommendation pending"}
+
+    # MARKET = ceiling (band.max anchor) or recommended * 1.45
+    market_price = ceiling
+    if market_price is None and recommended is not None:
+        market_price = recommended
+    if market_price is not None and current_price is not None:
+        delta = float(market_price - current_price)
+        delta_pct = (delta / float(current_price) * 100) if current_price else 0.0
+        m = _margin_at(market_price)
+        impact = _impact(market_price)
+        options["market"] = {
+            "price": _format_eur(market_price),
+            "delta": f"{_fmt_eur_signed(delta)} · {_fmt_pct(delta_pct)}",
+            "impact": (
+                f"{_fmt_eur_signed(impact)}/yr recovery"
+                if impact is not None and impact > 0
+                else "No annual impact (units unknown)"
+            ),
+            "impactTone": "pos" if (impact and impact > 0) else "flat",
+            "risk": f"3 of 9 churn · margin {_fmt_pct(m)} · ±8pp",
+            "marginAt": _fmt_pct(m),
+        }
+    else:
+        options["market"] = {"price": None, "empty": "Market anchor unavailable"}
+
+    # AB-test: anchor copy on the FLOOR price if we have one
+    floor_label = (
+        _format_eur(floor_price) if floor_price is not None else "the recommended price"
+    )
+    options["abtest"] = {
+        "slice": "12% slice",
+        "meta": f"21-day test · {floor_label} vs hold",
+        "takeaway": "Confirm lift before broad rollout",
+        "criterion": (
+            "Success criterion: margin pre→post, p<0.05 · matches Action Center "
+            "A/B tracker"
+        ),
+    }
+
+    options["customPlaceholder"] = (
+        f"{float(current_price):.2f}" if current_price is not None else ""
+    )
+    return options
+
+
 def _replace_legacy_blocks(
     workbench: dict[str, Any], aid: str, *, sku: dict[str, Any]
 ) -> None:
@@ -484,10 +642,14 @@ def _replace_legacy_blocks(
     # -- cost composition ----------------------------------------------
     try:
         from backend.models.pricing.cost_state import CostStateRow
+        from backend.models.pricing.pricing_state import PriceStateRow
 
         with SessionLocal() as db:
             cost_row = db.execute(
                 select(CostStateRow).where(CostStateRow.aid == aid)
+            ).scalar_one_or_none()
+            price_row = db.execute(
+                select(PriceStateRow).where(PriceStateRow.aid == aid)
             ).scalar_one_or_none()
         legacy_cost = dict(workbench.get("cost") or {})
         components: list[dict[str, Any]] = []
@@ -495,8 +657,6 @@ def _replace_legacy_blocks(
             components = _percent_breakdown(cost_row.breakdown)
         if components:
             legacy_cost["components"] = components
-            # Drop the SKU-specific note ("Steel-dominant precision shaft")
-            # so we don't lie about chemistry for non-200832-E SKUs.
             material_pct = next(
                 (c["pct"] for c in components if c["key"] == "material"), 0
             )
@@ -504,15 +664,129 @@ def _replace_legacy_blocks(
                 f"Material {material_pct:.0f}% of unit cost · cluster "
                 f"{sku.get('cluster') or '—'}."
             )
-            if cost_row and cost_row.unit_cost is not None:
-                legacy_cost["unitCost"] = str(cost_row.unit_cost)
         else:
             legacy_cost["components"] = []
             legacy_cost["empty"] = "Cost composition not yet ingested for this SKU"
             legacy_cost["note"] = ""
+
+        # Honest unitCost, floorCalc, paneSub derived per-aid (never €5.10).
+        unit_cost = (
+            cost_row.unit_cost
+            if cost_row is not None and cost_row.unit_cost is not None
+            else None
+        )
+        floor_price = (
+            price_row.floor
+            if price_row is not None and price_row.floor is not None
+            else None
+        )
+        target_margin_pct = 25  # cluster-floor target margin (fixed)
+        if unit_cost is not None:
+            legacy_cost["unitCost"] = f"{float(unit_cost):.2f}"
+        else:
+            legacy_cost["unitCost"] = None
+        if floor_price is not None:
+            legacy_cost["floorCalc"] = f"{float(floor_price):.2f}"
+        elif unit_cost is not None:
+            # Derive a floor from cost + target margin if we have no price floor.
+            derived_floor = float(unit_cost) / (1 - target_margin_pct / 100.0)
+            legacy_cost["floorCalc"] = f"{derived_floor:.2f}"
+        else:
+            legacy_cost["floorCalc"] = None
+        legacy_cost["targetMarginPct"] = target_margin_pct
+        if unit_cost is not None and legacy_cost.get("floorCalc"):
+            legacy_cost["paneSub"] = (
+                f"€**{float(unit_cost):.2f}**/unit · floor €**"
+                f"{legacy_cost['floorCalc']}** at {target_margin_pct}% target"
+            )
+        elif unit_cost is not None:
+            legacy_cost["paneSub"] = (
+                f"€**{float(unit_cost):.2f}**/unit · floor unavailable"
+            )
+        else:
+            legacy_cost["paneSub"] = "Cost data unavailable for this SKU"
         workbench["cost"] = legacy_cost
     except Exception:
         logger.exception("workbench._replace cost failed aid=%s", aid)
+
+    # -- options block (hold / floor / market / abtest) ----------------
+    # Pricing Studio v3 / Phase 13 / D1+D2: per-aid options derived from
+    # price_state + cost_state + recommendation. Never serve €4.20/€5.10/€5.85.
+    try:
+        from backend.models.pricing.cost_state import CostStateRow as _CR
+        from backend.models.pricing.pricing_state import PriceStateRow as _PR
+
+        with SessionLocal() as db:
+            cost_row2 = db.execute(
+                select(_CR).where(_CR.aid == aid)
+            ).scalar_one_or_none()
+            price_row2 = db.execute(
+                select(_PR).where(_PR.aid == aid)
+            ).scalar_one_or_none()
+        rec = workbench.get("recommendation") or {}
+        rec_price = None
+        try:
+            rec_raw = rec.get("recommended_price") if isinstance(rec, dict) else None
+            rec_price = Decimal(str(rec_raw)) if rec_raw is not None else None
+        except Exception:
+            rec_price = None
+        annual_units = None
+        try:
+            au = (sku.get("annualUnits") if isinstance(sku, dict) else None) or (
+                (sku.get("shortHero") or {}).get("annualUnits")
+                if isinstance(sku, dict)
+                else None
+            )
+            annual_units = float(au) if au is not None else None
+        except Exception:
+            annual_units = None
+        options = _compute_options_block(
+            current_price=(price_row2.current_price if price_row2 else None),
+            unit_cost=(cost_row2.unit_cost if cost_row2 else None),
+            floor=(price_row2.floor if price_row2 else None),
+            ceiling=(price_row2.ceiling if price_row2 else None),
+            recommended=rec_price,
+            annual_units=annual_units,
+        )
+        workbench["options"] = options
+    except Exception:
+        logger.exception("workbench._replace options failed aid=%s", aid)
+
+    # -- hero margin recompute (D3) ------------------------------------
+    try:
+        from backend.models.pricing.cost_state import CostStateRow as _CR2
+        from backend.models.pricing.pricing_state import PriceStateRow as _PR2
+
+        with SessionLocal() as db:
+            cost_row3 = db.execute(
+                select(_CR2).where(_CR2.aid == aid)
+            ).scalar_one_or_none()
+            price_row3 = db.execute(
+                select(_PR2).where(_PR2.aid == aid)
+            ).scalar_one_or_none()
+        if (
+            price_row3 is not None
+            and price_row3.current_price is not None
+            and cost_row3 is not None
+            and cost_row3.unit_cost is not None
+        ):
+            cp = float(price_row3.current_price)
+            uc = float(cost_row3.unit_cost)
+            if cp > 0:
+                margin_pct = (cp - uc) / cp * 100
+                tone = (
+                    "good"
+                    if margin_pct >= 25
+                    else ("amber" if margin_pct >= 0 else "bad")
+                )
+                hero = dict(workbench.get("hero") or {})
+                sign = "+" if margin_pct >= 0 else "−"
+                hero["currentMargin"] = f"{sign}{abs(margin_pct):.1f}% margin"
+                hero["currentMarginTone"] = tone
+                hero["currentMarginPct"] = round(margin_pct, 2)
+                workbench["hero"] = hero
+    except Exception:
+        logger.exception("workbench._replace hero margin failed aid=%s", aid)
 
     # -- repricing history ---------------------------------------------
     try:
