@@ -137,6 +137,10 @@ function AuditDrawerBody({
     if (rows.length === 0) return;
     const topId = rows[0].id;
     const prev = prevTopRowRef.current;
+    // Unconditionally update the ref so the next prepend compares against the
+    // current top (not the original one from first mount), preventing a re-flash
+    // loop where every SSE tick re-flashes previously-seen rows.
+    prevTopRowRef.current = topId;
     if (prev !== null && topId !== prev) {
       const added: string[] = [];
       for (const r of rows) {
@@ -149,7 +153,6 @@ function AuditDrawerBody({
         return () => window.clearTimeout(tid);
       }
     }
-    prevTopRowRef.current = topId;
     return undefined;
   }, [rows]);
 
@@ -299,9 +302,8 @@ function AuditRow({ row, fresh, onOpenProposal }: RowProps) {
       data-action={row.action}
       className={
         'px-5 py-3 transition-colors ' +
-        (fresh ? 'audit-row--new bg-[var(--rose-bg)]' : '')
+        (fresh ? 'audit-row--new audit-row-flash bg-[var(--rose-bg)]' : '')
       }
-      style={fresh ? { animation: 'audit-row-flash 1100ms ease-out' } : undefined}
     >
       <div className="flex items-baseline justify-between gap-3">
         <div className="min-w-0">

@@ -275,6 +275,7 @@ export default function PricingStudioPage() {
                 click rows to deep-link or open the AuditDrawer. */}
             <WhatChangedStrip
               aid={effectiveAid}
+              cluster={studioParams.cluster ?? null}
               onOpenAudit={() => setAuditDrawerOpen(true)}
             />
 

@@ -21,7 +21,26 @@ import {
 
 interface Props {
   aid: string;
+  cluster?: string | null;
   onOpenAudit: () => void;
+}
+
+/**
+ * Per spec §4.6, cost / competitor diff rows should link to Forecasting when
+ * the BFF doesn't supply an explicit `link_target`. We synthesise the fallback
+ * client-side from the current cluster so the contract holds even before the
+ * BFF route lands.
+ */
+function fallbackLinkTarget(
+  kind: SkuDiffChangeKind,
+  cluster: string | null | undefined,
+): string | null {
+  if (!cluster) return null;
+  if (kind === 'cost' || kind === 'competitor_signal') {
+    const params = new URLSearchParams({ cluster });
+    return `/forecasting?${params.toString()}#commodities`;
+  }
+  return null;
 }
 
 const KIND_LABEL: Record<SkuDiffChangeKind, string> = {
@@ -32,7 +51,7 @@ const KIND_LABEL: Record<SkuDiffChangeKind, string> = {
   price: 'Price',
 };
 
-export function WhatChangedStrip({ aid, onOpenAudit }: Props) {
+export function WhatChangedStrip({ aid, cluster, onOpenAudit }: Props) {
   const navigate = useNavigate();
   const query = useSkuDiff(aid, { enabled: Boolean(aid) });
   const dismiss = useDismissSkuDiff(aid);
@@ -79,6 +98,7 @@ export function WhatChangedStrip({ aid, onOpenAudit }: Props) {
           <ChangeRow
             key={`${c.kind}-${c.customer_id ?? c.label ?? i}`}
             change={c}
+            fallbackLinkTarget={fallbackLinkTarget(c.kind, cluster)}
             onNavigate={navigate}
             onOpenAudit={onOpenAudit}
           />
@@ -90,21 +110,23 @@ export function WhatChangedStrip({ aid, onOpenAudit }: Props) {
 
 interface ChangeRowProps {
   change: SkuDiffChange;
+  fallbackLinkTarget: string | null;
   onNavigate: ReturnType<typeof useNavigate>;
   onOpenAudit: () => void;
 }
 
-function ChangeRow({ change, onNavigate, onOpenAudit }: ChangeRowProps) {
+function ChangeRow({ change, fallbackLinkTarget, onNavigate, onOpenAudit }: ChangeRowProps) {
   const label = KIND_LABEL[change.kind] ?? change.kind;
   const body = renderChangeBody(change);
+  const target = change.link_target ?? fallbackLinkTarget;
   return (
     <li>
       <button
         type="button"
         data-testid={`what-changed-row-${change.kind}`}
         onClick={() => {
-          if (change.link_target) {
-            onNavigate(change.link_target);
+          if (target) {
+            onNavigate(target);
             return;
           }
           onOpenAudit();

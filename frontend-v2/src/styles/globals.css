@@ -2730,3 +2730,7 @@
   0%   { background-color: var(--rose-bg); }
   100% { background-color: transparent; }
 }
+.audit-row-flash { animation: audit-row-flash 1100ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .audit-row-flash { animation: none; background-color: transparent; }
+}
