@@ -51,21 +51,35 @@ describe('TriggerBanner', () => {
   it('clicking the banner body calls onOpenCostDrawer', () => {
     const onOpen = vi.fn();
     wrap(<TriggerBanner trigger={triggerContext()} onOpenCostDrawer={onOpen} />);
-    fireEvent.click(screen.getByTestId('trigger-banner'));
+    fireEvent.click(screen.getByTestId('trigger-banner-body'));
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
-  it('Enter on the banner triggers the drawer', () => {
+  it('Enter on the body button triggers the drawer (native button activation)', () => {
     const onOpen = vi.fn();
     wrap(<TriggerBanner trigger={triggerContext()} onOpenCostDrawer={onOpen} />);
-    fireEvent.keyDown(screen.getByTestId('trigger-banner'), { key: 'Enter' });
+    // Native <button> activates on click events for Enter; simulate that
+    // path. We additionally assert keyDown alone does NOT fire the handler
+    // since we removed the manual onKeyDown wiring.
+    fireEvent.keyDown(screen.getByTestId('trigger-banner-body'), { key: 'Enter' });
+    expect(onOpen).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('trigger-banner-body'));
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
-  it('clicking the link does NOT also fire the drawer open (stopPropagation)', () => {
+  it('clicking the link does NOT also fire the drawer open (sibling buttons, no nesting)', () => {
     const onOpen = vi.fn();
     wrap(<TriggerBanner trigger={triggerContext()} onOpenCostDrawer={onOpen} />);
     fireEvent.click(screen.getByTestId('trigger-banner-link'));
     expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it('keyboard Enter on the link navigates but does NOT open the drawer', () => {
+    const onOpen = vi.fn();
+    wrap(<TriggerBanner trigger={triggerContext()} onOpenCostDrawer={onOpen} />);
+    // Native <button> handles Enter via click; emulate that path explicitly.
+    fireEvent.click(screen.getByTestId('trigger-banner-link'));
+    expect(onOpen).not.toHaveBeenCalled();
+    expect(screen.getByTestId('location').textContent ?? '').toContain('/forecasting');
   });
 });

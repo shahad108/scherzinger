@@ -10,6 +10,14 @@
 // Persistent for the session — there is no dismiss control. The banner
 // disappears only when the user navigates away or selects a different
 // SKU that doesn't carry a trigger context.
+//
+// Structurally this is three sibling interactive elements inside a
+// non-interactive `<section>`:
+//   1. Body button   → opens Cost Trajectory Drawer
+//   2. Link button   → navigates to link_target
+//   3. LineageButton → opens the lineage drawer
+// Keeping them as siblings (rather than nesting buttons) is required
+// for valid HTML and avoids double-firing on Enter.
 
 import { AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -27,46 +35,41 @@ export function TriggerBanner({ trigger, onOpenCostDrawer }: Props) {
   if (!trigger) return null;
 
   return (
-    <div
+    <section
       className="ws-trigger"
-      role="button"
-      tabIndex={0}
       data-testid="trigger-banner"
       data-source={trigger.source}
       data-reason={trigger.reason}
       aria-label={`Opened from ${trigger.source}: ${trigger.headline}`}
-      onClick={() => onOpenCostDrawer?.()}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onOpenCostDrawer?.();
-        }
-      }}
     >
-      <span className="ws-trigger-icon" aria-hidden="true">
-        <AlertTriangle size={14} />
-      </span>
-      <span className="ws-trigger-body">
-        <span className="ws-trigger-headline">{trigger.headline}</span>
-        <button
-          type="button"
-          className="ws-trigger-link"
-          data-testid="trigger-banner-link"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(trigger.link_target);
-          }}
-        >
-          {trigger.link_label} →
-        </button>
-      </span>
-      <span className="ws-trigger-lineage" onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        className="ws-trigger-banner-body"
+        data-testid="trigger-banner-body"
+        onClick={() => onOpenCostDrawer?.()}
+      >
+        <span className="ws-trigger-icon" aria-hidden="true">
+          <AlertTriangle size={14} />
+        </span>
+        <span className="ws-trigger-body">
+          <span className="ws-trigger-headline">{trigger.headline}</span>
+        </span>
+      </button>
+      <button
+        type="button"
+        className="ws-trigger-link"
+        data-testid="trigger-banner-link"
+        onClick={() => navigate(trigger.link_target)}
+      >
+        {trigger.link_label} →
+      </button>
+      <span className="ws-trigger-lineage">
         <LineageButton
           lineageRef={trigger.lineage_ref ?? null}
           subjectTitle="Trigger context"
           label="lineage"
         />
       </span>
-    </div>
+    </section>
   );
 }
