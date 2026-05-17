@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useStudio } from '@/data/api/useStudio';
+import { useStudioWorkbench } from '@/data/api/useStudioWorkbench';
 import { useProposals } from '@/data/api/useProposals';
 import { useLivePricing } from '@/hooks/useLivePricing';
 import { usePricingStream } from '@/hooks/usePricingStream';
@@ -188,6 +189,12 @@ export default function PricingStudioPage() {
   }, [urlAid]);
 
   const effectiveAid = selectedAid ?? data?.defaultAid ?? '';
+  // Pricing Studio v3 / Phase 13 (p13) — per-SKU workbench, lazy-fetched.
+  // The shell endpoint no longer carries per-aid recommendation/wtp/fanout
+  // for every SKU; this hook fetches the enriched workbench for the
+  // currently selected aid and we prefer its data over the static seed
+  // returned by `useStudio`.
+  const wbQuery = useStudioWorkbench(effectiveAid || null);
   // Phase 7 — derive a proposal id for DecisionFooter's Push-to-quoting +
   // Branded PDF buttons. We pick the most recently updated non-rejected
   // proposal for the open SKU, scoped to the deep-link recommendation when
@@ -219,6 +226,23 @@ export default function PricingStudioPage() {
 
   const heroView: HeroView | null = useMemo(() => {
     if (!data) return null;
+    // Pricing Studio v3 / Phase 13 (p13) — prefer the per-aid workbench
+    // hero when it has loaded so the panel reflects the selected SKU
+    // immediately (rather than the static seed for the default AID).
+    const liveHero = wbQuery.data?.hero;
+    if (liveHero) {
+      return {
+        eyebrow: liveHero.eyebrow,
+        title: liveHero.title,
+        sub: liveHero.sub,
+        chips: liveHero.chips,
+        meta: liveHero.meta,
+        currentPrice: liveHero.currentPrice,
+        currentMargin: liveHero.currentMargin,
+        currentMarginTone: liveHero.currentMarginTone,
+        targetText: liveHero.targetText,
+      };
+    }
     if (effectiveAid === data.defaultAid) {
       const h = data.workbench.hero;
       return {
@@ -262,7 +286,7 @@ export default function PricingStudioPage() {
       currentMarginTone: data.workbench.hero.currentMarginTone,
       targetText: data.workbench.hero.targetText,
     };
-  }, [data, effectiveAid, selectedSku]);
+  }, [data, effectiveAid, selectedSku, wbQuery.data]);
 
   // Pricing Studio v3 / Phase 2 — when the user picks a price option,
   // surface it as a Decimal-as-string so the BFF round-trip preserves
@@ -323,6 +347,9 @@ export default function PricingStudioPage() {
     // (it invalidates ['studio']). Additionally drop the cost-outlook
     // cache so the drawer reloads fresh data on the next render.
     queryClient.invalidateQueries({ queryKey: ['cost-outlook'] });
+    // Phase 13 (p13) — drop the per-aid workbench cache so the next render
+    // refetches the enriched recommendation/wtp/fanout block.
+    queryClient.invalidateQueries({ queryKey: ['studio-workbench'] });
   }, [live.lastTickAt, queryClient]);
 
   // Phase 7 — react to `pricing.price_set` and `pricing.price_rolled_back`.
@@ -570,7 +597,11 @@ export default function PricingStudioPage() {
   }
 
   const showComparable = selectedSku?.isNew ?? false;
-  const wb = selectedSku?.workbench ?? data.workbench;
+  // Pricing Studio v3 / Phase 13 (p13) — prefer the per-aid workbench
+  // fetched by `useStudioWorkbench` so recommendation/wtp/fanout/etc.
+  // reflect the selected SKU. Falls back to the SKU row's bundled
+  // workbench (legacy mock mode) and finally to the shell seed.
+  const wb = wbQuery.data ?? selectedSku?.workbench ?? data.workbench;
   const fanPrice = activeOption?.price ?? wb.fanout.fanPrice;
 
   // The fanout block we render: default workbench block when no price
