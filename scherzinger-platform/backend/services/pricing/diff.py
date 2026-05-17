@@ -274,7 +274,13 @@ def _diff_competitor_signal(
 def _diff_proposal(
     *, aid: str, since: datetime, now: datetime, db_session: Session
 ) -> list[DiffChange]:
-    """Proposal diff: count of created + approved proposals in the window."""
+    """Proposal diff: count of created + approved proposals in the window.
+
+    SF3 — avoid materializing the whole rowset just to count it. A 7-day
+    window on a hot SKU can carry many proposal audit rows; we only need
+    (a) the count and (b) the latest row's label/lineage. Two cheap
+    queries instead of a full fetch.
+    """
     predicate = and_(
         PricingAuditEntry.target_kind == "sku",
         PricingAuditEntry.target_id == aid,
@@ -282,18 +288,19 @@ def _diff_proposal(
         PricingAuditEntry.at > since,
         PricingAuditEntry.at <= now,
     )
-    rows = (
-        db_session.execute(
-            select(PricingAuditEntry)
-            .where(predicate)
-            .order_by(PricingAuditEntry.at.asc())
-        )
-        .scalars()
-        .all()
-    )
-    if not rows:
+    count = db_session.execute(
+        select(func.count()).select_from(PricingAuditEntry).where(predicate)
+    ).scalar_one()
+    if not count:
         return []
-    last = rows[-1]
+    last = db_session.execute(
+        select(PricingAuditEntry)
+        .where(predicate)
+        .order_by(PricingAuditEntry.at.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+    if last is None:  # defensive — shouldn't happen given count > 0
+        return []
     payload = last.after or {}
     proposal_id = (
         payload.get("proposal_id")
@@ -306,7 +313,7 @@ def _diff_proposal(
         DiffChange(
             kind=ChangeKind.PROPOSAL,
             before=None,
-            after=Decimal(str(len(rows))),
+            after=Decimal(str(count)),
             pct=None,
             label=label,
             lineage_ref=last.lineage_ref_id,

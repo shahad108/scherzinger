@@ -184,6 +184,73 @@ def test_customer_risk_diff_returns_top_5_by_abs_delta(db, aid):
 # ---------------------------------------------------------------------------
 
 
+def test_proposal_diff_uses_count_not_full_fetch(db, aid):
+    """SF3 — ``_diff_proposal`` must use ``func.count()`` for the count
+    instead of materializing all rows in the window. With a 7-day window
+    on a hot SKU this matters.
+
+    We assert the behavior by seeding many rows and confirming both
+    ``after`` (count) and ``label`` (latest row) are still correct.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from backend.services.pricing.diff import _diff_proposal
+
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=7)
+    # Seed 10 proposal_created rows spaced 1h apart, plus 1 trailing
+    # proposal_approved as the latest (so the label picks it up).
+    for i in range(10):
+        record_audit(
+            actor="frank",
+            action=PricingAuditAction.PROPOSAL_CREATED,
+            target_kind=PricingAuditTargetKind.SKU,
+            target_id=aid,
+            after={"aid": aid, "rec_ref": f"p_{i:04d}"},
+            session=db,
+        )
+    record_audit(
+        actor="till",
+        action=PricingAuditAction.PROPOSAL_APPROVED,
+        target_kind=PricingAuditTargetKind.SKU,
+        target_id=aid,
+        after={"aid": aid, "proposal_id": "p_LATEST"},
+        session=db,
+    )
+    db.flush()
+    # Backdate the first 10 so they're earlier than the approval.
+    entries = (
+        db.query(PricingAuditEntry)
+        .filter_by(target_id=aid)
+        .order_by(PricingAuditEntry.at.asc())
+        .all()
+    )
+    for idx, entry in enumerate(entries[:-1]):
+        entry.at = now - timedelta(hours=10 - idx)
+    db.flush()
+
+    changes = _diff_proposal(aid=aid, since=since, now=now + timedelta(seconds=1), db_session=db)
+    assert len(changes) == 1
+    c = changes[0]
+    assert c.after == Decimal("11")  # 10 created + 1 approved
+    # Latest row's proposal_id should be reflected in the label.
+    assert "p_LATEST"[:8] in c.label
+
+
+def test_proposal_diff_empty_window_returns_no_change(db, aid):
+    """SF3 — when nothing landed in the window, ``_diff_proposal`` must
+    short-circuit on the count and return no DiffChange (no rowset
+    materialization, no label query)."""
+    from datetime import datetime, timedelta, timezone
+
+    from backend.services.pricing.diff import _diff_proposal
+
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=7)
+    changes = _diff_proposal(aid=aid, since=since, now=now, db_session=db)
+    assert changes == []
+
+
 def test_proposal_diff_counts_in_window(db, aid):
     """A draft + an approval landed in the last day → count == 2."""
     now = datetime.now(timezone.utc)
