@@ -31,6 +31,9 @@ import { parseDecimal } from './lib/decimal';
 // Pricing Studio v3 / Phase 3 — cost & margin reality.
 import { TriggerBanner } from './components/TriggerBanner';
 import { CostTrajectoryDrawer } from './components/CostTrajectoryDrawer';
+// Pricing Studio v3 / Phase 8 — simulation + compare drawers.
+import { SimulationDrawer } from './components/SimulationDrawer';
+import { CompareDrawer } from './components/CompareDrawer';
 // Pricing Studio v3 / Phase 4 — audit history + what-changed-since strip.
 import { AuditDrawer } from './components/AuditDrawer';
 import { WhatChangedStrip } from './components/WhatChangedStrip';
@@ -92,6 +95,14 @@ export default function PricingStudioPage() {
   // since the last time you looked".
   const [auditDrawerOpen, setAuditDrawerOpen] = useState(false);
   const [auditBadge, setAuditBadge] = useState(0);
+  // Phase 8 — simulation + compare drawers. The simulation drawer takes a
+  // variant price string (decimal-as-string) and fans out 3 scenarios.
+  const [simulationDrawerOpen, setSimulationDrawerOpen] = useState(false);
+  const [simulationPrice, setSimulationPrice] = useState<string>('');
+  const [compareDrawerOpen, setCompareDrawerOpen] = useState(false);
+  // Pre-fill for the ABTestCard when the user opts in via "Run as A/B"
+  // from the SimulationDrawer.
+  const [abPrefill, setAbPrefill] = useState<{ variant: string; control: string } | null>(null);
 
   // Phase 6 — Batch repricing state. Mode + the staged AID set live on
   // the URL so refresh / deep-link preserves them; the active batch_id
@@ -640,6 +651,24 @@ export default function PricingStudioPage() {
               onActiveChange={setActiveOption}
               compact
               optionMargins={wb.option_margins}
+              aid={effectiveAid}
+              activeAbTest={wb.active_ab_test ?? null}
+              abTestControlPrice={
+                abPrefill?.control ?? wb.options.hold.price
+              }
+              abTestVariantPrice={
+                abPrefill?.variant ?? wb.options.floor.price
+              }
+              onSimulateOption={(price) => {
+                setSimulationPrice(price);
+                setSimulationDrawerOpen(true);
+              }}
+              onOpenCompare={() => setCompareDrawerOpen(true)}
+              onAbTestCreated={() => {
+                // Clear the prefill so the active card reads from the
+                // fresh ['studio'] invalidation rather than stale state.
+                setAbPrefill(null);
+              }}
             />
 
             <div className="ws-body">
@@ -713,6 +742,50 @@ export default function PricingStudioPage() {
           cluster={selectedSku?.cluster ?? null}
           history={wb.cost_history ?? null}
           horizonMonths={6}
+        />
+        {/* Phase 8 — Simulation Drawer. Opened by "Simulate this option"
+            on any PriceOption. Read-only on the backend; we still wire
+            "Set as proposal" and "Run as A/B" so the user can follow up. */}
+        <SimulationDrawer
+          open={simulationDrawerOpen}
+          onOpenChange={setSimulationDrawerOpen}
+          aid={effectiveAid}
+          variantPrice={simulationPrice}
+          controlPrice={(() => {
+            const cleaned = (heroView.currentPrice ?? '')
+              .replace(/[^\d,.\-]/g, '')
+              .replace(',', '.');
+            return cleaned || '0';
+          })()}
+          onProposalCreated={() => {
+            // Phase 5's ProposalContextPanel reacts to the pricing-proposals
+            // cache invalidation; scroll the user there so they can finish
+            // the workflow.
+            window.setTimeout(() => {
+              const el = document.getElementById('proposal-context-panel');
+              el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
+          }}
+          onRunAsAbTest={(variant, control) => {
+            setAbPrefill({ variant, control });
+            // Scroll to the PriceOptions so the user sees the pre-filled
+            // ABTestCard.
+            window.setTimeout(() => {
+              const el = document.querySelector('[data-testid="ab-test-setup"]');
+              el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+          }}
+        />
+        {/* Phase 8 — Compare Drawer. Triggered from PriceOptions header. */}
+        <CompareDrawer
+          open={compareDrawerOpen}
+          onOpenChange={setCompareDrawerOpen}
+          aid={effectiveAid}
+          options={wb.options}
+          optionMargins={wb.option_margins}
+          winProbCurve={wb.win_prob_curve}
+          customerFanout={wb.customer_fanout ?? null}
+          currentPriceLabel={heroView.currentPrice}
         />
       </section>
     </LineageDrawerProvider>

@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
-import type { OptionMarginBlock, PriceOptionsBundle } from '@/types/studio';
+import type {
+  ActiveAbTestSummary,
+  OptionMarginBlock,
+  PriceOptionsBundle,
+} from '@/types/studio';
 import { OptionMarginMicroWaterfall } from './OptionMarginMicroWaterfall';
+import { ABTestCard } from './ABTestCard';
 
 export type ActiveOpt = 'hold' | 'floor' | 'market' | 'custom' | 'abtest';
 
@@ -27,6 +32,22 @@ interface Props {
    * the option card.
    */
   optionMargins?: OptionMarginBlock[];
+  /**
+   * Pricing Studio v3 / Phase 8 — backing aid + active A/B summary. When
+   * present, the A/B card switches from setup form → scoring strip.
+   */
+  aid?: string;
+  activeAbTest?: ActiveAbTestSummary | null;
+  /** Fires when the user clicks "Simulate this option" on a card. */
+  onSimulateOption?: (variantPrice: string) => void;
+  /** Fires when the user clicks the "Compare options" toggle. */
+  onOpenCompare?: () => void;
+  /** Fires after a successful A/B test create. */
+  onAbTestCreated?: (testId: string) => void;
+  /** Pre-filled control price for the A/B card. */
+  abTestControlPrice?: string;
+  /** Pre-filled variant price for the A/B card. */
+  abTestVariantPrice?: string;
 }
 
 function findOptionMargin(margins: OptionMarginBlock[] | undefined, optionId: string) {
@@ -40,6 +61,13 @@ export function PriceOptions({
   onActiveChange,
   compact = false,
   optionMargins,
+  aid,
+  activeAbTest,
+  onSimulateOption,
+  onOpenCompare,
+  onAbTestCreated,
+  abTestControlPrice,
+  abTestVariantPrice,
 }: Props) {
   const [active, setActive] = useState<ActiveOpt>('floor');
   const [customPrice, setCustomPrice] = useState('');
@@ -80,6 +108,19 @@ export function PriceOptions({
               </button>
             </>
           )}
+          {onOpenCompare && (
+            <>
+              {' · '}
+              <button
+                type="button"
+                className="link-btn"
+                onClick={onOpenCompare}
+                data-testid="open-compare"
+              >
+                ⇄ Compare options
+              </button>
+            </>
+          )}
         </span>
       </div>
       <div className={`ws-options${compact ? ' ws-options--compact' : ''}`}>
@@ -107,6 +148,11 @@ export function PriceOptions({
             compact={compact}
             label="Hold"
           />
+          {onSimulateOption && (
+            <SimulateLink
+              onClick={() => onSimulateOption(parsePriceLabel(options.hold.price))}
+            />
+          )}
         </button>
 
         <button
@@ -133,6 +179,11 @@ export function PriceOptions({
             compact={compact}
             label="Cost-floor"
           />
+          {onSimulateOption && (
+            <SimulateLink
+              onClick={() => onSimulateOption(parsePriceLabel(options.floor.price))}
+            />
+          )}
         </button>
 
         <button
@@ -159,6 +210,11 @@ export function PriceOptions({
             compact={compact}
             label="Market anchor"
           />
+          {onSimulateOption && (
+            <SimulateLink
+              onClick={() => onSimulateOption(parsePriceLabel(options.market.price))}
+            />
+          )}
         </button>
 
         <div
@@ -193,22 +249,50 @@ export function PriceOptions({
             compact={compact}
             label="Custom"
           />
+          {onSimulateOption && customPrice && (
+            <SimulateLink onClick={() => onSimulateOption(customPrice)} />
+          )}
         </div>
-
-        <button
-          type="button"
-          className={`ws-opt abtest${active === 'abtest' ? ' active' : ''}`}
-          onClick={() => setActive('abtest')}
-        >
-          <span className="ws-opt-lab">🧪 Slice as A/B</span>
-          <span className="ws-opt-price" style={{ fontSize: 18 }}>
-            {options.abtest.slice}
-          </span>
-          <span className="ws-opt-delta">{options.abtest.meta}</span>
-          <span className="ws-opt-impact violet">{options.abtest.takeaway}</span>
-          <span className="ws-opt-risk">{options.abtest.criterion}</span>
-        </button>
       </div>
+
+      {aid && (
+        <div className="mt-3">
+          <ABTestCard
+            aid={aid}
+            defaultControlPrice={abTestControlPrice ?? options.hold.price}
+            defaultVariantPrice={abTestVariantPrice ?? options.floor.price}
+            activeTest={activeAbTest ?? null}
+            onCreated={onAbTestCreated}
+          />
+        </div>
+      )}
     </>
+  );
+}
+
+// Strip "€127.00" / "€ 127" / "127,00" → "127.00" so the simulate callback
+// always receives a plain decimal string.
+function parsePriceLabel(label: string | null | undefined): string {
+  if (!label) return '';
+  return label.replace(/[€\s]/g, '').replace(/,/g, '.');
+}
+
+interface SimulateLinkProps {
+  onClick: () => void;
+}
+
+function SimulateLink({ onClick }: SimulateLinkProps) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      className="ws-opt-sim-link mt-1 text-[10px] uppercase tracking-wide text-rose-600 hover:underline"
+      data-testid="simulate-option"
+    >
+      Simulate this option
+    </button>
   );
 }
