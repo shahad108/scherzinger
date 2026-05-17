@@ -101,17 +101,35 @@ def _wma_project(history: list[float], n_periods: int = 12) -> list[float]:
     return projected
 
 
-def _band(history: list[float], primary: float, sigma_multiplier: float = 1.0) -> tuple[float, float]:
-    """Symmetric band: primary ± sigma * stdev of historical residuals."""
+def _band(
+    history: list[float],
+    primary: float,
+    sigma_multiplier: float = 1.0,
+    *,
+    non_negative: bool = False,
+) -> tuple[float, float]:
+    """Symmetric band: primary ± sigma * stdev of historical residuals.
+
+    ``non_negative`` clamps the lower bound at zero for metrics that cannot
+    physically go below zero (revenue, volume). For partial / low-mean months
+    the symmetric ±sigma band would otherwise pierce the axis and the chart
+    would render impossible negative euros. Margin keeps the unclamped band
+    because negative margins are real.
+    """
     if len(history) < 3:
-        return primary * 0.92, primary * 1.08
+        low, high = primary * 0.92, primary * 1.08
+        return (max(0.0, low) if non_negative else low, high)
     mean = statistics.mean(history)
     try:
         sd = statistics.pstdev(history)
     except statistics.StatisticsError:
         sd = abs(mean) * 0.05
     sd = max(sd, abs(mean) * 0.02)  # floor at 2% of mean
-    return primary - sd * sigma_multiplier, primary + sd * sigma_multiplier
+    low = primary - sd * sigma_multiplier
+    high = primary + sd * sigma_multiplier
+    if non_negative:
+        low = max(0.0, low)
+    return low, high
 
 
 def _month_label(d: date) -> str:
@@ -163,10 +181,12 @@ def build_hero(
 
     # Compose series: 12 actuals + n_project projected points.
     series: list[dict[str, Any]] = []
+    # Revenue and volume cannot be negative; margin can.
+    non_negative = mode in ("revenue", "volume")
 
     for d, v in history_rows:
-        low_p80, high_p80 = _band(actuals, v, sigma_multiplier=1.28)
-        low_p95, high_p95 = _band(actuals, v, sigma_multiplier=1.96)
+        low_p80, high_p80 = _band(actuals, v, sigma_multiplier=1.28, non_negative=non_negative)
+        low_p95, high_p95 = _band(actuals, v, sigma_multiplier=1.96, non_negative=non_negative)
         series.append(
             {
                 "month": _month_label(d),
@@ -189,8 +209,8 @@ def build_hero(
         year_offset, new_m = divmod(new_m - 1, 12)
         new_m += 1
         proj_date = date(last_d.year + year_offset, new_m, 1)
-        low_p80, high_p80 = _band(actuals, p, sigma_multiplier=1.28)
-        low_p95, high_p95 = _band(actuals, p, sigma_multiplier=1.96)
+        low_p80, high_p80 = _band(actuals, p, sigma_multiplier=1.28, non_negative=non_negative)
+        low_p95, high_p95 = _band(actuals, p, sigma_multiplier=1.96, non_negative=non_negative)
         series.append(
             {
                 "month": _month_label(proj_date),

@@ -53,16 +53,24 @@ def _enrich_intervals(hero: dict[str, Any]) -> dict[str, Any]:
     p80_hits = 0
     p95_hits = 0
     actuals_n = 0
+    # Seed fallback assumes revenue/volume; margin uses the live path which
+    # already preserves negative bands. Clamp non-negative monetary bands here.
+    mode = (hero.get("mode") or "revenue").lower()
+    non_negative = mode in ("revenue", "volume")
 
     for p in series:
         primary = float(p["primary"])
         low = float(p["low"])
         high = float(p["high"])
+        if non_negative and low < 0:
+            low = 0.0
         # Symmetric-around-primary widening for P95.
         half_p80 = (high - low) / 2.0
         half_p95 = half_p80 * _P95_MULTIPLIER
         p95_low = round(primary - half_p95, 4)
         p95_high = round(primary + half_p95, 4)
+        if non_negative and p95_low < 0:
+            p95_low = 0.0
 
         actual = p.get("actual")
         if actual is not None:

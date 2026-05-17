@@ -272,7 +272,14 @@ export function HeroForecast({
   // Margin comes back as ratio 0..1 (so 0.05 = 5pp); revenue/volume in absolute units.
   const span = Math.max(highestBound - lowestBound, 1e-9);
   const pad = span * 0.08; // 8% headroom on each side
-  const yMin = mode === 'margin' ? Math.max(0, lowestBound - pad) : lowestBound - pad;
+  // Revenue and volume cannot be physically negative. Margin (a ratio) can
+  // be negative in theory but the chart clamps at 0 for the historical floor.
+  // Revenue/volume must also clamp at 0 so the Y-axis never opens a phantom
+  // negative band — the BFF already clamps the data, this is the FE safety net.
+  const yMin =
+    mode === 'margin' || mode === 'revenue' || mode === 'volume'
+      ? Math.max(0, lowestBound - pad)
+      : lowestBound - pad;
   const yMax = highestBound + pad;
 
   const movablePct = hero.movableLockedSplit.movablePct;
