@@ -249,11 +249,20 @@ def build_hero(
     else:
         caption = "Monthly revenue (EUR) · walk-forward · solid = primary · shaded = ±1σ band"
 
+    # D8: pre-compute the forward-only sum of the hero series so the
+    # FE "Forecast (next 12mo)" tile cannot disagree with the chart.
+    # Forward = months with `actual` not present (i.e., real forecast).
+    forecast_only = [p for p in series if p.get("actual") is None]
+    forecast12mo_total = sum(
+        float(p.get("p50") or p.get("primary") or 0) for p in forecast_only[:12]
+    )
+
     out = {
         "caption": caption,
         "mode": mode,
         "unit": unit,
         "series": series,
+        "forecast12moTotal": forecast12mo_total,
         "intervals": {
             "title": "Prediction intervals — what the band means",
             "bands": [

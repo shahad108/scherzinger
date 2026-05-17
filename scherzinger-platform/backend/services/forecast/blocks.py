@@ -211,38 +211,49 @@ def _hero_movers_live(db: Session) -> list[dict[str, Any]] | None:
 
 
 def _movable_locked_live(db: Session) -> dict[str, Any] | None:
-    """Movable/locked split derived from customer_risk_scores risk_tier × LTM revenue.
+    """Movable/locked split — UNIFIED with Action Center's definition.
 
-    Definition: high/critical risk customers' revenue is 'movable' (at risk of
-    being lost/won); low risk is 'locked' (sticky). Medium splits 50/50.
+    D9: Both Action Center and Forecast must use the SAME movable rule so
+    the two screens don't contradict each other. The canonical rule (from
+    services.action_center.movable_hero) is:
+
+        movable = article has a cost movement in the latest period
+                  OR is in a running A/B test
+        locked  = everything else
+
+    We re-execute that SQL here and aggregate by revenue (LTM) so the
+    forecast page surfaces the same € value.
     """
     try:
-        rows = db.execute(text("""
-            WITH bounds AS (SELECT MAX(date) AS max_d FROM invoices),
-            ltm AS (
-                SELECT customer_id, SUM(revenue) AS rev
-                FROM invoices, bounds
-                WHERE date >= bounds.max_d - INTERVAL '12 months'
-                GROUP BY customer_id
+        row = db.execute(text("""
+            WITH movable_articles AS (
+              SELECT DISTINCT article_id FROM (
+                SELECT article_id FROM product_cost_trends
+                 WHERE period_start = (SELECT MAX(period_start) FROM product_cost_trends)
+                UNION
+                SELECT aid AS article_id FROM ab_tests WHERE status = 'running'
+              ) m
             ),
-            latest_risk AS (
-                SELECT DISTINCT ON (customer_id) customer_id, risk_tier
-                FROM customer_risk_scores
-                ORDER BY customer_id, score_date DESC
+            classified AS (
+              SELECT i.article_id,
+                     i.year, i.month, i.revenue,
+                     CASE WHEN ma.article_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_movable
+                FROM invoices i
+                LEFT JOIN movable_articles ma ON ma.article_id = i.article_id
+               WHERE i.year >= EXTRACT(YEAR FROM CURRENT_DATE) - 1
             )
-            SELECT lr.risk_tier, SUM(ltm.rev) AS rev
-            FROM ltm
-            LEFT JOIN latest_risk lr ON lr.customer_id = ltm.customer_id
-            GROUP BY lr.risk_tier
-        """)).fetchall()
+            SELECT
+              COALESCE(SUM(revenue) FILTER (WHERE is_movable), 0) AS movable_rev,
+              COALESCE(SUM(revenue), 0) AS total_rev
+            FROM classified
+        """)).fetchone()
     except Exception:
         return None
-    if not rows:
+    if not row:
         return None
-    by_tier = {(r[0] or "unknown"): float(r[1] or 0) for r in rows}
-    movable = by_tier.get("high", 0) + by_tier.get("critical", 0) + 0.5 * by_tier.get("medium", 0) + by_tier.get("unknown", 0)
-    locked = by_tier.get("low", 0) + 0.5 * by_tier.get("medium", 0)
-    total = movable + locked
+    movable = float(row[0] or 0)
+    total = float(row[1] or 0)
+    locked = total - movable
     if total <= 0:
         return None
     movable_pct = round(movable / total * 100)
@@ -252,7 +263,8 @@ def _movable_locked_live(db: Session) -> dict[str, Any] | None:
         "movablePct": movable_pct,
         "sub": (
             f"€{movable / 1e6:.2f}M movable · €{locked / 1e6:.2f}M locked "
-            f"(movable = high/critical risk + ½ medium; locked = low + ½ medium)"
+            "(movable = SKU had a cost movement in the latest period OR is in "
+            "a running A/B test — same rule as Action Center)"
         ),
     }
 
@@ -325,6 +337,10 @@ async def hero(
                 block["unit"] = live["unit"]
                 block["heroSeriesSource"] = "live"
                 block["intervals"] = live.get("intervals")
+                # D8: surface forecast-only 12mo sum so the FE KPI tile
+                # matches the chart (forward-only months).
+                if "forecast12moTotal" in live:
+                    block["forecast12moTotal"] = live["forecast12moTotal"]
         except Exception:
             block["heroSeriesSource"] = "seed_fallback"
 

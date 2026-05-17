@@ -289,8 +289,14 @@ function AggregateViewV2({ data, article, mode, showAll }: Omit<AggregateProps, 
   // (forecast12moTotal, varianceVsPlanPct, mapeTrailing6mo, fva) are honored
   // when present, otherwise computed from `series` or filled with safe zeros.
   const series = data.hero?.series ?? [];
+  // D8: forward-only sum — months with no `actual` are the real forecast.
+  // The previous .slice(-12) accidentally summed mixed actuals+forecast or
+  // pure forecast depending on horizon, producing a headline that
+  // contradicted the chart. We now match the BFF's forecast12moTotal field
+  // and fall back to a forward-only filter when it's missing.
   const derivedForecast12mo = series
-    .slice(-12)
+    .filter((p) => p.actual === null || p.actual === undefined)
+    .slice(0, 12)
     .reduce((acc, p) => acc + (p.p50 ?? p.primary ?? 0), 0);
   const forecast12mo = data.hero?.forecast12moTotal ?? derivedForecast12mo;
   const varianceVsPlanPct = data.hero?.varianceVsPlanPct ?? 0;
