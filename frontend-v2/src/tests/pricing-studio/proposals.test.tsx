@@ -81,6 +81,31 @@ describe('Pricing proposals lifecycle (mock mode)', () => {
     expect(screen.getByRole('button', { name: /Submit for approval/i })).toBeInTheDocument();
   });
 
+  it('mounts ApprovalStepper for a draft proposal so Recall is reachable', async () => {
+    const seed = {
+      id: 'draft-recall-1',
+      recommendation_id: null,
+      article_id: '300100',
+      current_price: 9.9,
+      proposed_price: 10.5,
+      delta_pp: 6.1,
+      status: 'draft' as const,
+      approval_required: false,
+      payload: {},
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    window.sessionStorage.setItem(
+      'pryzm_v2_synth_proposals',
+      JSON.stringify([seed]),
+    );
+
+    render(withQc(<ProposalContextPanel articleId="300100" />));
+    await waitFor(() =>
+      expect(screen.getByTestId('approval-stepper')).toBeInTheDocument(),
+    );
+  });
+
   it('Submit-for-approval advances status to pending_approval', async () => {
     // Seed the synthetic store directly so we know the proposal id.
     const seed = {

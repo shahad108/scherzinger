@@ -249,6 +249,37 @@ describe('ApprovalStepper', () => {
     expect(screen.queryByTestId('approval-recall-button')).not.toBeInTheDocument();
   });
 
+  it('renders a draft placeholder + Recall button when instance is null and proposal is draft (creator)', () => {
+    // No approval instance exists yet (draft never submitted).
+    mockInstance = { data: null, isLoading: false };
+    useAuthStore.setState({
+      user: {
+        id: 'user-1',
+        email: 'creator@example.com',
+        name: 'Creator',
+        ui_persona: 'frank',
+        roles: [],
+        permissions: [],
+        features: [],
+      },
+      isLoading: false,
+    });
+    wrap(
+      <ApprovalStepper
+        proposal={{
+          id: 'proposal-1',
+          status: 'draft',
+          article_id: 'AID-1',
+          payload: {},
+          created_by: 'user-1',
+        }}
+      />,
+    );
+    expect(screen.getByTestId('approval-stepper')).toBeInTheDocument();
+    expect(screen.getByTestId('approval-stepper-draft-empty')).toBeInTheDocument();
+    expect(screen.getByTestId('approval-recall-button')).toBeInTheDocument();
+  });
+
   it('Add comment toggles the inline textarea', () => {
     mockInstance = { data: makeInstance(), isLoading: false };
     wrap(

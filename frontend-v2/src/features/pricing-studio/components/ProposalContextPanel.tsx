@@ -55,6 +55,7 @@ export function ProposalContextPanel({ articleId, recommendationId }: Props) {
         </div>
       </div>
       {items.map((p) =>
+        p.status === 'draft' ||
         p.status === 'pending_approval' ||
         p.status === 'approved' ||
         p.status === 'rejected' ||

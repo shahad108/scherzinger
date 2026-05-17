@@ -158,8 +158,46 @@ export function ApprovalStepper({ proposal, fixture }: Props) {
       </div>
     );
   }
+
+  // Draft case — no approval instance has been created yet. Render a
+  // minimal placeholder so the Recall button is reachable for the
+  // proposal creator (spec §5.3).
   if (!data || steps.length === 0) {
-    return null;
+    if (proposal.status !== 'draft') return null;
+    return (
+      <section
+        data-testid="approval-stepper"
+        className="mb-3 rounded-[14px] border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-card)]"
+        aria-label={`Approval workflow for draft proposal ${proposal.id}`}
+      >
+        <header className="mb-2 flex items-baseline justify-between gap-3">
+          <div>
+            <h4 className="font-display text-[13px] font-bold tracking-tight text-[var(--ink)]">
+              Approval · #{proposal.id.slice(0, 6)}
+            </h4>
+            <p
+              className="mt-0.5 text-[11px] text-[var(--muted)]"
+              data-testid="approval-stepper-draft-empty"
+            >
+              Draft — not yet submitted for approval.
+            </p>
+          </div>
+        </header>
+        {canRecall && (
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              type="button"
+              data-testid="approval-recall-button"
+              onClick={() => recall.mutate(proposal.id)}
+              disabled={recall.isPending}
+              className="inline-flex items-center gap-1.5 rounded-md border border-[var(--rose-border)] bg-[var(--rose-bg)] px-3 py-1.5 text-[11.5px] font-semibold text-[var(--rose-deep)] hover:bg-[color-mix(in_oklab,var(--rose-bg)_70%,white)] disabled:opacity-60"
+            >
+              <RotateCcw size={12} /> {recall.isPending ? 'Recalling…' : 'Recall'}
+            </button>
+          </div>
+        )}
+      </section>
+    );
   }
 
   const onSubmitComment = () => {
