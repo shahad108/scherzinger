@@ -118,4 +118,8 @@ export const qk = {
 
   // Phase 2 — recommendation lookup for deep-link banners.
   recommendation: (ref: string) => ['recommendation', ref] as const,
+
+  // Pricing Studio v3 / Phase 9 — alerts engine surfaces.
+  pricingAlerts: () => ['pricing-alerts'] as const,
+  pricingAlertsInbox: () => ['pricing-alerts-inbox'] as const,
 } as const;
