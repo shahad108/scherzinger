@@ -37,7 +37,11 @@ export function ProposalContextPanel({ articleId, recommendationId }: Props) {
   if (isLoading || items.length === 0) return null;
 
   return (
-    <div className="mt-3 mb-4 rounded-[14px] border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-card)]">
+    <div
+      id="proposal-context-panel"
+      data-testid="proposal-context-panel"
+      className="mt-3 mb-4 rounded-[14px] border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-card)]"
+    >
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <div>
           <h3 className="font-display text-[15px] font-bold tracking-tight text-[var(--ink)]">

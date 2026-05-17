@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useStudio } from '@/data/api/useStudio';
 import { useLivePricing } from '@/hooks/useLivePricing';
+import { usePricingStream } from '@/hooks/usePricingStream';
 import { useFanoutRescore } from '@/data/api/useFanoutRescore';
 import { PageHead } from './components/PageHead';
 import { SkuPicker } from './components/SkuPicker';
@@ -29,6 +30,10 @@ import { parseDecimal } from './lib/decimal';
 // Pricing Studio v3 / Phase 3 — cost & margin reality.
 import { TriggerBanner } from './components/TriggerBanner';
 import { CostTrajectoryDrawer } from './components/CostTrajectoryDrawer';
+// Pricing Studio v3 / Phase 4 — audit history + what-changed-since strip.
+import { AuditDrawer } from './components/AuditDrawer';
+import { WhatChangedStrip } from './components/WhatChangedStrip';
+import { auditFeedKey } from '@/data/api/useAuditFeed';
 
 export default function PricingStudioPage() {
   const [params, setParams] = useSearchParams();
@@ -59,6 +64,11 @@ export default function PricingStudioPage() {
   // Phase 3 — Cost Trajectory Drawer open state. Sparkline click, "view
   // outlook" pill, and the TriggerBanner all flip this.
   const [costDrawerOpen, setCostDrawerOpen] = useState(false);
+  // Phase 4 — Audit Drawer open state + "new audit" badge tracked between
+  // SSE ticks. The counter resets on open so the badge represents "unseen
+  // since the last time you looked".
+  const [auditDrawerOpen, setAuditDrawerOpen] = useState(false);
+  const [auditBadge, setAuditBadge] = useState(0);
 
   // Phase 21 — SKU-picker clicks must update the URL so refresh preserves
   // the selection. Wrap setSelectedAid + setSearchParams in a single handler
@@ -162,6 +172,17 @@ export default function PricingStudioPage() {
     enabled: Boolean(proposedPriceDecimal) && Boolean(effectiveAid),
   });
 
+  // Phase 4 — SSE channel for `audit.appended`. The audit drawer subscribes
+  // to the same topic locally so it can drive its flash highlight; this
+  // page-level subscription drives the badge counter + invalidates the
+  // audit-feed cache so a refresh of the (closed) drawer is up-to-date.
+  const auditStream = usePricingStream({
+    topic: 'audit',
+    aid: effectiveAid || null,
+    enabled: Boolean(effectiveAid),
+  });
+  const lastAuditEventTsRef = useRef<number | null>(null);
+
   // F4: SSE-driven cache invalidation for the fanout block.
   // `useLivePricing` already invalidates the studio key on every tick;
   // we additionally drop the per-price fanout cache so the re-score
@@ -176,6 +197,29 @@ export default function PricingStudioPage() {
     // cache so the drawer reloads fresh data on the next render.
     queryClient.invalidateQueries({ queryKey: ['cost-outlook'] });
   }, [live.lastTickAt, queryClient]);
+
+  // Phase 4 — react to `audit.appended` events:
+  //   - invalidate the audit feed cache so the open drawer re-fetches
+  //   - if the drawer is CLOSED, bump the "new audit" badge counter
+  // Resets when the drawer opens (the badge represents "unseen" events).
+  useEffect(() => {
+    const evt = auditStream.lastEvent;
+    if (!evt) return;
+    if (evt.topic !== 'audit.appended') return;
+    if (evt.aid && effectiveAid && evt.aid !== effectiveAid) return;
+    if (lastAuditEventTsRef.current === evt.ts) return;
+    lastAuditEventTsRef.current = evt.ts;
+    queryClient.invalidateQueries({ queryKey: auditFeedKey(effectiveAid, { pills: [] }) });
+    queryClient.invalidateQueries({ queryKey: ['audit', effectiveAid] });
+    if (!auditDrawerOpen) {
+      setAuditBadge((c) => c + 1);
+    }
+  }, [auditStream.lastEvent, effectiveAid, auditDrawerOpen, queryClient]);
+
+  // Opening the drawer clears the badge.
+  useEffect(() => {
+    if (auditDrawerOpen) setAuditBadge(0);
+  }, [auditDrawerOpen]);
 
   if (isLoading || !data || !heroView) {
     return <StudioSkeleton />;
@@ -220,7 +264,19 @@ export default function PricingStudioPage() {
           />
 
           <div className="ws-bench">
-            <WorkbenchHero hero={heroView} />
+            <WorkbenchHero
+              hero={heroView}
+              onOpenAudit={() => setAuditDrawerOpen(true)}
+              auditBadge={auditBadge}
+            />
+
+            {/* Phase 4 — "What changed since you last looked" strip.
+                Renders only when the diff endpoint returns changes;
+                click rows to deep-link or open the AuditDrawer. */}
+            <WhatChangedStrip
+              aid={effectiveAid}
+              onOpenAudit={() => setAuditDrawerOpen(true)}
+            />
 
             {/* Phase 3 — Deep-link trigger banner. Persists for the
                 session; clicking the body opens the Cost Trajectory
@@ -317,6 +373,19 @@ export default function PricingStudioPage() {
 
         <CrossLinks links={data.crossLinks} />
         <LineageDrawer aid={effectiveAid} />
+        <AuditDrawer
+          open={auditDrawerOpen}
+          onOpenChange={setAuditDrawerOpen}
+          aid={effectiveAid}
+          onScrollToProposalPanel={() => {
+            // Defer to the next tick so the drawer close animation
+            // doesn't fight the scroll.
+            window.setTimeout(() => {
+              const el = document.getElementById('proposal-context-panel');
+              el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
+          }}
+        />
         <CostTrajectoryDrawer
           open={costDrawerOpen}
           onOpenChange={setCostDrawerOpen}
