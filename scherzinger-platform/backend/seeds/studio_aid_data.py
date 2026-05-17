@@ -326,12 +326,15 @@ def _seed_customer_on_sku(db, sku: dict) -> list[dict]:
         else:
             tier = "D"
 
-        # Units pull: A buys lots, D buys little.
+        # Units pull: A buys lots, D buys little. Scales match real
+        # Scherzinger invoice quantities (avg qty/invoice ≈ 5, max ≈ 400).
+        # ltm_units below is the customer's ANNUAL volume spread across
+        # ~6 invoices, so per-invoice qty ≈ ltm_units / 6.
         units_base = {
-            "A": rng.randint(600, 2000),
-            "B": rng.randint(300, 900),
-            "C": rng.randint(150, 500),
-            "D": rng.randint(80, 250),
+            "A": rng.randint(60, 180),
+            "B": rng.randint(30, 90),
+            "C": rng.randint(12, 36),
+            "D": rng.randint(4, 16),
         }[tier]
         jitter = 0.8 + rng.random() * 0.6  # 0.8..1.4
         last_paid = round(cur * jitter, 2)
