@@ -219,26 +219,14 @@ def build_drill_in(
     if cached is not None and now - cached[0] < _CACHE_TTL_SECONDS:
         return cached[1]
 
-    # Existence check — relies on master + invoice history. If both are
-    # empty, this customer has nothing to drill into.
+    # Existence check — master is the source of truth. ``_load_customer_master``
+    # returns ``None`` when the customer is unknown (no name-prefix sniff).
     master = _load_customer_master(customer_id=customer_id, db_session=db_session)
+    if master is None:
+        return None
     history = _load_history_on_sku(
         customer_id=customer_id, aid=aid, db_session=db_session
     )
-    # When we got a synthesized "Customer {id}" name AND no history, treat
-    # as 404. Master-loader never raises (returns default) — distinguish
-    # by checking the invoices table for any rows.
-    if master["name"].startswith("Customer ") and not history:
-        # Final disambiguation: any invoice rows at all for this customer?
-        try:
-            row = db_session.execute(
-                text("SELECT 1 FROM invoices WHERE customer_id = :cid LIMIT 1"),
-                {"cid": customer_id},
-            ).fetchone()
-        except Exception:
-            row = None
-        if row is None:
-            return None
 
     cos = build_customer_on_sku(
         aid=aid,

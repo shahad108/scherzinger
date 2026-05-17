@@ -93,8 +93,14 @@ def _load_invoice_history(
 
 def _load_customer_master(
     *, customer_id: str, db_session: Session
-) -> dict:
-    """Return {"name", "tier"} or defaults if customer is unknown."""
+) -> Optional[dict]:
+    """Return ``{"name", "tier"}`` or ``None`` when the customer is unknown.
+
+    Callers that need a fallback (e.g. ``build_customer_on_sku``) coerce
+    None to a safe default with a synthesized ``Customer {id}`` name;
+    callers that need to disambiguate (e.g. drill-in 404 path) rely on
+    the explicit None.
+    """
     try:
         row = db_session.execute(
             text("""
@@ -110,7 +116,7 @@ def _load_customer_master(
         )
         row = None
     if row is None:
-        return {"name": f"Customer {customer_id}", "tier": "C"}
+        return None
     name = row[0] or f"Customer {customer_id}"
     tier = (row[1] or "C").upper()
     if tier not in ("A", "B", "C", "D"):
@@ -297,6 +303,11 @@ def build_customer_on_sku(
         aid=aid, customer_id=customer_id, db_session=db_session
     )
     master = _load_customer_master(customer_id=customer_id, db_session=db_session)
+    if master is None:
+        # Composer is forgiving — unknown customers still get a row with a
+        # synthesized name + default tier. Drill-in distinguishes 404 by
+        # calling ``_load_customer_master`` directly and checking for None.
+        master = {"name": f"Customer {customer_id}", "tier": "C"}
     risk_scores = _load_customer_risk_scores(
         customer_id=customer_id, db_session=db_session
     )
