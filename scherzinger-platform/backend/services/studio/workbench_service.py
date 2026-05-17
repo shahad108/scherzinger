@@ -24,6 +24,7 @@ from decimal import Decimal
 from typing import Any, Optional
 
 from fastapi import HTTPException, status
+from sqlalchemy import select
 
 from backend.database import SessionLocal
 from backend.services.competitor.index import build_competitor_ref
@@ -287,6 +288,281 @@ def _attach_phase1_signals(
         logger.exception("workbench Phase 1 signal attach failed aid=%s", aid)
 
 
+def _percent_breakdown(breakdown: dict[str, Any]) -> list[dict[str, Any]]:
+    """Normalise a ``CostBreakdown``-shaped dict to integer-percent components.
+
+    Returns the 4 canonical rows the legacy FE expects (material/labor/
+    outsourcing/overhead). Sum is renormalised to 100 when the underlying
+    values are Euros so the rendered bars always fit 0..100%.
+    """
+    raw = {
+        "material": breakdown.get("material") if breakdown else None,
+        "labor": breakdown.get("labor") if breakdown else None,
+        "outsourcing": breakdown.get("outsourcing") if breakdown else None,
+        "overhead": breakdown.get("overhead") if breakdown else None,
+    }
+    vals: dict[str, float] = {}
+    for k, v in raw.items():
+        try:
+            f = float(v) if v is not None else 0.0
+        except (TypeError, ValueError):
+            f = 0.0
+        vals[k] = f if f >= 0 else 0.0
+    total = sum(vals.values())
+    if total <= 0:
+        return []
+    # If the breakdown is fractional (~1.0) or Euros (>1.5) — normalise either way.
+    scale = 100.0 / total
+    pct = {k: round(v * scale, 1) for k, v in vals.items()}
+    names = {
+        "material": "Material",
+        "labor": "Labor",
+        "outsourcing": "Outsourcing",
+        "overhead": "Overhead",
+    }
+    return [
+        {"key": k, "name": names[k], "pct": pct[k]}
+        for k in ("material", "labor", "outsourcing", "overhead")
+    ]
+
+
+def _quarter_label(at) -> str:
+    try:
+        q = (at.month - 1) // 3 + 1
+        return f"{at.year}-Q{q}"
+    except Exception:
+        return str(at)[:10] if at else "—"
+
+
+def _derive_history_rows(db, aid: str) -> list[dict[str, Any]]:
+    """Build the repricing-history rows for ``aid`` from pricing_audit.
+
+    Matches rows where ``target_kind='sku' AND target_id=aid AND
+    action='price_set'``. Returns ``[]`` if no events exist — the FE
+    renders an empty-state instead of falling back to seeded fiction.
+    """
+    from backend.models.pricing.audit import PricingAuditEntry
+
+    out: list[dict[str, Any]] = []
+    try:
+        rows = (
+            db.execute(
+                select(PricingAuditEntry)
+                .where(PricingAuditEntry.target_kind == "sku")
+                .where(PricingAuditEntry.target_id == aid)
+                .where(PricingAuditEntry.action == "price_set")
+                .order_by(PricingAuditEntry.at.desc())
+                .limit(20)
+            )
+            .scalars()
+            .all()
+        )
+    except Exception:
+        logger.exception("workbench.history pricing_audit query failed aid=%s", aid)
+        return []
+
+    for r in rows:
+        before = r.before or {}
+        after = r.after or {}
+        from_p = before.get("price") or before.get("list_price") or before.get("from")
+        to_p = after.get("price") or after.get("list_price") or after.get("to")
+        try:
+            from_f = float(from_p) if from_p is not None else None
+            to_f = float(to_p) if to_p is not None else None
+        except (TypeError, ValueError):
+            from_f, to_f = None, None
+        if from_f is not None and to_f is not None:
+            pct = ((to_f - from_f) / from_f * 100.0) if from_f else 0.0
+            sign = "+" if pct >= 0 else ""
+            move = f"€{from_f:.2f} → €{to_f:.2f} ({sign}{pct:.1f}%)"
+            vol_tone = "up" if to_f > from_f else "down" if to_f < from_f else "flat"
+        elif to_f is not None:
+            move = f"→ €{to_f:.2f}"
+            vol_tone = "flat"
+        else:
+            move = "—"
+            vol_tone = "flat"
+        out.append(
+            {
+                "date": _quarter_label(r.at),
+                "move": move,
+                "vol": r.reason or "",
+                "volTone": vol_tone,
+                "by": r.actor or "system",
+                "hash": (str(r.id) if r.id else "")[:6] or "—",
+            }
+        )
+    return out
+
+
+def _replace_legacy_blocks(
+    workbench: dict[str, Any], aid: str, *, sku: dict[str, Any]
+) -> None:
+    """Pricing Studio v3 / Phase 13 — replace legacy seed blocks with
+    per-aid honest derivations.
+
+    Mutates ``workbench`` in place:
+        - ``fanout`` rows derived from the LIVE ``customer_fanout`` block
+          (which was already attached by ``_attach_phase2_signals``).
+          When that block is empty we drop ``rows`` to ``[]`` and the FE
+          renders the empty state — never the hardcoded 101580/102330/…
+          list for a SKU that doesn't buy them.
+        - ``cost`` composition derived from ``cost_state.breakdown``.
+        - ``history`` rows derived from ``pricing_audit`` for the aid.
+        - ``memo`` title/subject derived from the aid + SKU description.
+
+    All blocks fall back to an empty-state shape when the underlying DB
+    rows don't exist. We swallow exceptions to keep the workbench shell
+    rendering even when a derivation fails.
+    """
+    # -- fanout ---------------------------------------------------------
+    try:
+        live_fan = workbench.get("customer_fanout") or {}
+        live_rows = live_fan.get("rows") or []
+        legacy_fan = dict(workbench.get("fanout") or {})
+        legacy_fan["rows"] = []  # Always drop the hardcoded seed rows.
+        if not live_rows:
+            legacy_fan["empty"] = (
+                "No customers buying this SKU in the trailing 12 months"
+            )
+            # Strip the misleading cluster note when we have no real fanout.
+            legacy_fan["clusterNote"] = ""
+            legacy_fan["footNote"] = ""
+        else:
+            # Synthesise legacy-shape rows from real customers so any FE
+            # path that still reads `wb.fanout.rows` (e.g. older tests)
+            # sees REAL ids — not the stub 101580/102330 list.
+            synth_rows: list[dict[str, Any]] = []
+            for r in live_rows:
+                cid = r.get("customer_id") or ""
+                tier = r.get("tier") or "B"
+                last_paid = r.get("last_paid") or "—"
+                ltm = r.get("ltm_eur") or "0"
+                wallet = r.get("wallet_share_pct")
+                try:
+                    wallet_pct = (
+                        f"{float(wallet) * 100:.1f}%" if wallet is not None else "—"
+                    )
+                except (TypeError, ValueError):
+                    wallet_pct = "—"
+                try:
+                    churn_pct = (
+                        f"{float(r.get('churn_p', 0)) * 100:.0f}%"
+                        if r.get("churn_p") is not None
+                        else "—"
+                    )
+                except (TypeError, ValueError):
+                    churn_pct = "—"
+                tone = r.get("tone") or "plain"
+                churn_tone = "r" if tone == "alert" else "g"
+                synth_rows.append(
+                    {
+                        "tier": tier,
+                        "customer": cid,
+                        "customerSub": (
+                            f"last paid €{last_paid} · LTM €{ltm} · wallet {wallet_pct}"
+                        ),
+                        "amount": "—",
+                        "amountSub": "",
+                        "churnPct": churn_pct,
+                        "churnTone": churn_tone,
+                        "recommendation": "",
+                        "rowTone": tone,
+                    }
+                )
+            legacy_fan["rows"] = synth_rows
+            # Keep the cluster note honest — drop the hardcoded n=247 claim.
+            cluster = str(sku.get("cluster") or "") or "—"
+            legacy_fan["clusterNote"] = (
+                f"Cluster **{cluster}** · "
+                f"{len(live_rows)} customer(s) on this SKU in the trailing window"
+            )
+        workbench["fanout"] = legacy_fan
+    except Exception:
+        logger.exception("workbench._replace fanout failed aid=%s", aid)
+
+    # -- cost composition ----------------------------------------------
+    try:
+        from backend.models.pricing.cost_state import CostStateRow
+
+        with SessionLocal() as db:
+            cost_row = db.execute(
+                select(CostStateRow).where(CostStateRow.aid == aid)
+            ).scalar_one_or_none()
+        legacy_cost = dict(workbench.get("cost") or {})
+        components: list[dict[str, Any]] = []
+        if cost_row is not None and cost_row.breakdown:
+            components = _percent_breakdown(cost_row.breakdown)
+        if components:
+            legacy_cost["components"] = components
+            # Drop the SKU-specific note ("Steel-dominant precision shaft")
+            # so we don't lie about chemistry for non-200832-E SKUs.
+            material_pct = next(
+                (c["pct"] for c in components if c["key"] == "material"), 0
+            )
+            legacy_cost["note"] = (
+                f"Material {material_pct:.0f}% of unit cost · cluster "
+                f"{sku.get('cluster') or '—'}."
+            )
+            if cost_row and cost_row.unit_cost is not None:
+                legacy_cost["unitCost"] = str(cost_row.unit_cost)
+        else:
+            legacy_cost["components"] = []
+            legacy_cost["empty"] = "Cost composition not yet ingested for this SKU"
+            legacy_cost["note"] = ""
+        workbench["cost"] = legacy_cost
+    except Exception:
+        logger.exception("workbench._replace cost failed aid=%s", aid)
+
+    # -- repricing history ---------------------------------------------
+    try:
+        with SessionLocal() as db:
+            history_rows = _derive_history_rows(db, aid)
+        if history_rows:
+            workbench["history"] = history_rows
+        else:
+            # Empty list + explicit empty hint via a sidecar key (FE already
+            # renders an empty state when historyRows.length === 0).
+            workbench["history"] = []
+            workbench["history_empty"] = (
+                "No prior repricings recorded for this SKU"
+            )
+    except Exception:
+        logger.exception("workbench._replace history failed aid=%s", aid)
+        workbench["history"] = []
+
+    # -- memo (title/subject) ------------------------------------------
+    try:
+        legacy_memo = dict(workbench.get("memo") or {})
+        cluster = sku.get("cluster") or "—"
+        description = (sku.get("shortHero") or {}).get("title") or aid
+        # Replace the hardcoded "Subject: Price proposal — Article 200832-E …"
+        # paragraph with one that mentions THIS aid/cluster. The FE prefers
+        # the live `useBriefing` markdown body, so the fallback paragraphs
+        # only matter when the LLM hasn't returned yet.
+        rec = workbench.get("recommendation") or {}
+        rec_price = rec.get("recommended_price") if isinstance(rec, dict) else None
+        subject_line = (
+            f"**Subject:** Price proposal — Article {aid} "
+            f"({description}, cluster {cluster})"
+        )
+        if rec_price is None:
+            # No recommendation → fallback memo is meaningless. Drop the
+            # detailed paragraphs and let the FE empty-state handle it.
+            legacy_memo["paragraphs"] = [{"body": subject_line}]
+            legacy_memo["empty"] = (
+                "Memo will draft once a recommendation is computed"
+            )
+        else:
+            # Keep the structure but rewrite the subject paragraph; the
+            # remaining paragraphs are 200832-E-specific so drop them too
+            # in favour of the live briefing.
+            legacy_memo["paragraphs"] = [{"body": subject_line}]
+        workbench["memo"] = legacy_memo
+    except Exception:
+        logger.exception("workbench._replace memo failed aid=%s", aid)
+
+
 async def build_workbench(
     *,
     aid: str,
@@ -370,6 +646,11 @@ async def build_workbench(
         cluster=cluster,
     )
     _attach_phase8_signals(workbench, aid)
+    # Pricing Studio v3 / Phase 13 — replace the legacy seed blocks
+    # (`fanout`, `cost`, `history`, `memo`) with per-aid derivations so we
+    # never lie about reality.  Each block falls back to a "not yet
+    # available" empty-state when the underlying DB rows don't exist.
+    _replace_legacy_blocks(workbench, aid, sku=sku)
     return workbench
 
 
