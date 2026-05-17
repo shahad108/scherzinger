@@ -210,6 +210,108 @@ export interface WorkbenchData {
   history: HistoryRow[];
   decision: DecisionData;
   memo: MemoData;
+  // Pricing Studio v3 / Phase 1 — typed blocks attached by the BFF
+  // (`services/studio/workbench_service.py::attach_phase1`). Each block
+  // is best-effort: if the backend hit an exception the field is absent
+  // and the UI renders <DataMissingBadge> in place of the value.
+  recommendation?: RecommendationBlock;
+  wtp?: WtpBlock;
+  win_prob_curve?: WinProbCurveBlock;
+  competitor_ref?: CompetitorRefBlock | null;
+}
+
+// ---- Pricing Studio v3 / Phase 1 wire-shape blocks --------------------------
+//
+// These mirror the Pydantic models in
+// `scherzinger-platform/backend/models/pricing/*`. Decimal arrives as a
+// JSON-serialised string (Pydantic `mode="json"` quantises to string);
+// numeric values keep their string type until a formatter consumes them.
+
+export type ConfidenceLevel = 'low' | 'med' | 'high';
+
+export type DriverKind =
+  | 'cost_trajectory'
+  | 'competitor_signal'
+  | 'customer_mix'
+  | 'win_prob_optimum'
+  | 'floor_protection'
+  // Catch-all for the wider DriverKind enum on the backend — UI degrades
+  // gracefully to a generic label/colour if a new kind arrives.
+  | (string & {});
+
+export interface LineageRefBlock {
+  id: string;
+  source_kind: string;
+  source_id: string;
+  sql?: string | null;
+  model?: string | null;
+  computed_at: string;
+  computed_by: string;
+}
+
+export interface RecommendationDriver {
+  kind: DriverKind;
+  label: string;
+  /** Fractional 0..1 — multiply by 100 for display. */
+  contribution_pct: string;
+  lineage_ref?: LineageRefBlock | null;
+}
+
+export interface RecommendationBand {
+  min: string;
+  target: string;
+  max: string;
+}
+
+export interface RecommendationBlock {
+  aid: string;
+  recommended_price: string;
+  /** 0..1 fractional. */
+  confidence: string;
+  confidence_level: ConfidenceLevel;
+  band: RecommendationBand;
+  drivers: RecommendationDriver[];
+  rationale_md: string;
+  lineage_ref?: LineageRefBlock | null;
+}
+
+export interface WtpBlock {
+  aid: string;
+  tier?: string | null;
+  p10: string;
+  p50: string;
+  p90: string;
+  n_deals: number;
+  window_days: number;
+  confidence: ConfidenceLevel;
+  anchored_from_cluster: boolean;
+  lineage_ref?: LineageRefBlock | null;
+}
+
+export interface WinProbCurvePoint {
+  price: string;
+  /** 0..1 fractional. */
+  win_prob: string;
+  lower_ci?: string;
+  upper_ci?: string;
+}
+
+export interface WinProbCurveBlock {
+  aid: string;
+  tier?: string | null;
+  points: WinProbCurvePoint[];
+  n_deals: number;
+  confidence_band?: 'asymptotic' | 'bootstrap' | null;
+  lineage_ref?: LineageRefBlock | null;
+}
+
+export interface CompetitorRefBlock {
+  aid: string;
+  median_price: string;
+  sample_count: number;
+  last_seen: string;
+  window_days: number;
+  lineage_ref?: LineageRefBlock | null;
 }
 
 export interface HeroChipData {
