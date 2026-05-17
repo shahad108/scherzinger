@@ -100,10 +100,13 @@ def _cluster_for_aid(db: Session, aid: str) -> Optional[str]:
     from sqlalchemy import text
 
     try:
+        # Prefer non-NULL cluster — synthetic seeder rows may leave it NULL
+        # on the most recent invoice while older rows carry the real value.
         row = db.execute(
             text(
                 "SELECT commodity_group FROM invoices "
-                "WHERE article_id = :aid ORDER BY date DESC LIMIT 1"
+                "WHERE article_id = :aid AND commodity_group IS NOT NULL "
+                "ORDER BY date DESC LIMIT 1"
             ),
             {"aid": aid},
         ).fetchone()

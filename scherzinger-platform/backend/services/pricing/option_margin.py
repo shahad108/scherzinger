@@ -61,10 +61,13 @@ def _load_cluster(*, aid: str, db_session: Session) -> Optional[str]:
     try:
         from sqlalchemy import text
 
+        # Prefer a non-NULL commodity_group from the most recent invoice;
+        # synthetic seeder rows can leave the field NULL even when older
+        # invoices for the same article carry a real cluster.
         row = db_session.execute(
             text(
                 "SELECT commodity_group FROM invoices "
-                "WHERE article_id = :aid "
+                "WHERE article_id = :aid AND commodity_group IS NOT NULL "
                 "ORDER BY date DESC LIMIT 1"
             ),
             {"aid": aid},
