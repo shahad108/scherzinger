@@ -497,9 +497,11 @@ def create_ab_test(
         session=db_session,
     )
 
-    # 5. Hash-split + persist assignments. Cap at 2 × target_sample
-    # so a 10k-customer pool doesn't write 10k rows when target is 30.
-    cap = max(target_sample * 2, target_sample)
+    # 5. Hash-split + persist assignments. Cap at 3 × target_sample
+    # so a 10k-customer pool doesn't write 10k rows when target is 30
+    # but still over-provisions for the deterministic ~50/50 split
+    # (a 2× cap can leave one arm short of target on small samples).
+    cap = max(target_sample * 3, target_sample)
     chosen = eligible[: min(len(eligible), cap)]
     assignments_rows: list[AbTestAssignment] = []
     for cust in chosen:
