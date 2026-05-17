@@ -16,7 +16,7 @@
 // Decimal arrives as JSON-string from the BFF. We parse at the formatter
 // boundary, never sooner.
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LineChart,
@@ -434,8 +434,14 @@ function ActionsFooter({
   const navigate = useNavigate();
   const pushToast = useActionFeedbackStore((s) => s.pushToast);
   const createProposal = useCreateProposal();
+  // Pricing Studio v3 / Phase 11 — soft-toast audit: blocking errors stay
+  // inline next to the action so the user sees them when they look at the
+  // button they just pressed. Toasts are reserved for non-blocking success
+  // messages.
+  const [inlineError, setInlineError] = useState<string | null>(null);
 
   const handleQueue = () => {
+    setInlineError(null);
     // TODO(p5: approval-wired) — customer-specific proposals get their
     // own approval rules in Phase 5. For now we fire-and-forget the
     // existing /pricing/proposals POST with a customer-scoped payload
@@ -457,7 +463,7 @@ function ActionsFooter({
           pushToast(`Proposal queued for ${customerName}`, 'success');
         },
         onError: (err) => {
-          pushToast(`Could not queue: ${(err as Error).message}`, 'error');
+          setInlineError(`Could not queue: ${(err as Error).message}`);
         },
       },
     );
@@ -474,6 +480,15 @@ function ActionsFooter({
 
   return (
     <div className="border-t border-[var(--hairline)] bg-[var(--surface-soft)] px-5 py-3">
+      {inlineError && (
+        <div
+          role="alert"
+          data-testid="drill-in-inline-error"
+          className="mb-2 rounded-[var(--r-sm)] border border-[var(--rose-border)] bg-[var(--rose-bg)] px-2.5 py-1.5 text-[12px] text-[var(--rose-deep)]"
+        >
+          {inlineError}
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
