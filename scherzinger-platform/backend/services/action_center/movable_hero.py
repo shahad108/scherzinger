@@ -149,6 +149,11 @@ async def build(*, week: str | None, cluster: str | None) -> dict[str, Any]:
             "delta": delta_label,
             "deltaDirection": delta_dir,
             "totalRevenue": _format_eur_m(kpis["total"]),
+            # D6: label the window honestly — the SQL aggregates the full
+            # trailing 12 months of invoices, NOT "this week". Without this
+            # the FE renders "€8.39M total revenue this week" while the week
+            # ending 2026-05-02 actually has €16,767 of revenue.
+            "windowLabel": "trailing 12 months",
             "movablePct": kpis["movable_pct"],
             "skusInScope": kpis["movable_skus"],
             "skusTotal": kpis["total_skus"],

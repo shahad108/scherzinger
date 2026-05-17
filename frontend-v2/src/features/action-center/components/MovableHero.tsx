@@ -107,7 +107,7 @@ export function MovableHero({ hero, onAction }: Props) {
 
           <p className="mt-3 text-[13px] leading-relaxed text-[var(--muted)]">
             of <b className="font-semibold text-[var(--ink-2)]">{hero.totalRevenue}</b> total revenue
-            this week —{' '}
+            {' '}({hero.windowLabel ?? 'trailing 12 months'}) —{' '}
             <b className="font-semibold text-[var(--ink-2)]">{movablePct}% open to repricing</b>.
             {heuristic?.qualifier && (
               <>

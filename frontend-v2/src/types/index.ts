@@ -44,6 +44,7 @@ export interface MovableHero {
   delta: string;
   deltaDirection: 'up' | 'down' | 'flat';
   totalRevenue: string;
+  windowLabel?: string;
   movablePct: number;
   skusInScope: number;
   skusTotal: number;
