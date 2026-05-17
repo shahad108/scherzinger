@@ -6,7 +6,7 @@
 //   - The Push button is disabled when no price option is active.
 
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReactNode } from 'react';
@@ -101,7 +101,7 @@ describe('DecisionFooter — Phase 7 footer', () => {
     expect(dr).toHaveAttribute('data-aid', 'AID-1');
   });
 
-  it('Branded PDF opens a new tab when a proposalId is present', () => {
+  it('Branded PDF opens a persona+lang popover and submits with the chosen values', () => {
     wrap(
       <DecisionFooter
         data={data}
@@ -110,9 +110,21 @@ describe('DecisionFooter — Phase 7 footer', () => {
         proposalId="p-1"
       />,
     );
+    // First click opens the popover, no window.open yet.
     fireEvent.click(screen.getByTestId('decision-footer-pdf'));
+    expect(window.open).not.toHaveBeenCalled();
+    const popover = screen.getByTestId('decision-footer-pdf-popover');
+    expect(popover).toBeInTheDocument();
+    // Switch persona to Till + lang to DE, then submit.
+    fireEvent.click(
+      screen.getByTestId('decision-footer-pdf-persona-till').querySelector('input')!,
+    );
+    fireEvent.click(
+      screen.getByTestId('decision-footer-pdf-lang-de').querySelector('input')!,
+    );
+    fireEvent.click(screen.getByTestId('decision-footer-pdf-submit'));
     expect(window.open).toHaveBeenCalledWith(
-      expect.stringContaining('/pricing/proposals/p-1/pdf'),
+      expect.stringMatching(/\/pricing\/proposals\/p-1\/pdf\?.*persona=till.*lang=de|\/pricing\/proposals\/p-1\/pdf\?.*lang=de.*persona=till/),
       '_blank',
       'noopener,noreferrer',
     );
