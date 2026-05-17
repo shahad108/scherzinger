@@ -223,7 +223,23 @@ function LineageDrawerBody({ refId, subjectTitle, aid }: BodyProps) {
             {lineage.sources.map((s) => (
               <SourceRow key={s.id} source={s} />
             ))}
-            {lineage.sources.length === 0 && (
+            {lineage.sources.length === 0 && !lineage.notFound && lineage.isLoading && (
+              <li
+                data-testid="lineage-drawer-loading"
+                className="rounded-md border border-dashed border-[var(--hairline)] p-3 text-[12px] text-[var(--muted)]"
+              >
+                Loading lineage…
+              </li>
+            )}
+            {lineage.sources.length === 0 && lineage.notFound && (
+              <li
+                data-testid="lineage-drawer-not-found"
+                className="rounded-md border border-dashed border-[var(--amber-border)] bg-[var(--amber-bg)] p-3 text-[12px] text-[var(--amber)]"
+              >
+                Lineage not found — the underlying lineage_refs row has been pruned or never recorded.
+              </li>
+            )}
+            {lineage.sources.length === 0 && !lineage.notFound && !lineage.isLoading && (
               <li className="rounded-md border border-dashed border-[var(--hairline)] p-3 text-[12px] text-[var(--muted)]">
                 No upstream sources recorded.
               </li>
