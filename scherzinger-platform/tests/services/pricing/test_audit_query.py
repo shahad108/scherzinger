@@ -64,6 +64,30 @@ def test_empty_audit_query_does_not_insert_lineage(db, aid) -> None:
     assert after_count == before_count
 
 
+def test_aid_in_payload_matches_article_id_key(db, aid) -> None:
+    """SF5 — the ``_aid_in_payload`` predicate must match both
+    ``payload->>'aid'`` AND ``payload->>'article_id'``. Proposal audit
+    rows use ``article_id`` (see pricing.create_proposal) while
+    customer/cluster rows use ``aid`` — both must surface in the SKU
+    audit drawer.
+    """
+    # Insert a proposal_approved row with the article_id key (no aid).
+    record_audit(
+        actor="till",
+        action=PricingAuditAction.PROPOSAL_APPROVED,
+        target_kind=PricingAuditTargetKind.CUSTOMER,  # a non-sku target
+        target_id="C-test",
+        after={"article_id": aid, "proposal_id": "p_abc"},
+        session=db,
+    )
+    db.flush()
+
+    rows, total, _ = list_audit_for_sku(aid=aid, db_session=db, bypass_cache=True)
+    assert total == 1
+    assert len(rows) == 1
+    assert rows[0]["after"]["article_id"] == aid
+
+
 def test_repeated_audit_query_reuses_cached_lineage(db, aid) -> None:
     """SF2 — two consecutive identical reads must insert exactly one
     lineage row total. The cache stores ``lineage_ref_id`` alongside

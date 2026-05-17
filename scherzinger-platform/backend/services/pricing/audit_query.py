@@ -100,16 +100,23 @@ def _serialize_row(
 
 
 def _aid_in_payload(aid: str) -> Any:
-    """SQLAlchemy predicate matching rows whose ``payload->>'aid'`` is ``aid``.
+    """SQLAlchemy predicate matching rows whose payload references ``aid``.
 
     The Studio v3 audit log records customer/cluster actions with the
     SKU id pinned in the payload so the per-SKU drawer can surface them.
     Both ``before`` and ``after`` are checked because not every action
     fills both sides (e.g. ``override_added`` may only carry ``after``).
+
+    SF5 — ``proposal_*`` audit rows persist the SKU under
+    ``payload.article_id`` (see ``api.v1.pricing.create_proposal``)
+    while customer/cluster overrides use ``payload.aid``. Both spellings
+    must match so the SKU drawer surfaces proposal events too.
     """
     return or_(
         PricingAuditEntry.after["aid"].astext == aid,
         PricingAuditEntry.before["aid"].astext == aid,
+        PricingAuditEntry.after["article_id"].astext == aid,
+        PricingAuditEntry.before["article_id"].astext == aid,
     )
 
 
