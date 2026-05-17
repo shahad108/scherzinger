@@ -154,7 +154,12 @@ def _enrich_intervals(hero: dict[str, Any]) -> dict[str, Any]:
 
 
 def _hero_movers_live(db: Session) -> list[dict[str, Any]] | None:
-    """Top-3 customer deltas (positive + negative) between last week and prior week."""
+    """Top-3 customer deltas (positive + negative) between last week and prior week.
+
+    Excludes synthetic seed customers — IDs matching the `ABE-%` prefix come
+    from the seed pipeline (e.g. ``ABE-FA8F05-CUST-003``) and must never leak
+    into the user-facing 'Top movers' hero. DATA-AUDIT-2026-05-17 defect #7.
+    """
     try:
         rows = db.execute(text("""
             WITH bounds AS (
@@ -165,6 +170,7 @@ def _hero_movers_live(db: Session) -> list[dict[str, Any]] | None:
                 FROM invoices, bounds
                 WHERE date > bounds.max_d - INTERVAL '7 days'
                   AND date <= bounds.max_d
+                  AND customer_id NOT LIKE 'ABE-%'
                 GROUP BY customer_id
             ),
             prior_week AS (
@@ -172,6 +178,7 @@ def _hero_movers_live(db: Session) -> list[dict[str, Any]] | None:
                 FROM invoices, bounds
                 WHERE date > bounds.max_d - INTERVAL '14 days'
                   AND date <= bounds.max_d - INTERVAL '7 days'
+                  AND customer_id NOT LIKE 'ABE-%'
                 GROUP BY customer_id
             )
             SELECT COALESCE(lw.customer_id, pw.customer_id) AS cid,
@@ -180,6 +187,7 @@ def _hero_movers_live(db: Session) -> list[dict[str, Any]] | None:
             FROM last_week lw
             FULL OUTER JOIN prior_week pw ON lw.customer_id = pw.customer_id
             WHERE COALESCE(lw.rev, 0) - COALESCE(pw.rev, 0) <> 0
+              AND COALESCE(lw.customer_id, pw.customer_id) NOT LIKE 'ABE-%'
             ORDER BY ABS(COALESCE(lw.rev, 0) - COALESCE(pw.rev, 0)) DESC
             LIMIT 3
         """)).fetchall()
