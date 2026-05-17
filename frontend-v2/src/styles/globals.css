@@ -2701,6 +2701,559 @@
     gap: 6px;
     flex-wrap: wrap;
   }
+
+  /* ============================================================
+     Pricing Studio v3 / Phase 6 — Batch repricing surfaces.
+     Picker mode toggle, batch workbench, KPI strip, preview table,
+     approval drawer body. Rose / amber / emerald / warm-gray only.
+     ============================================================ */
+  body.pryzm-2026 #screen-studio .ws-mode-toggle {
+    display: inline-flex;
+    background: var(--surface-soft);
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    padding: 2px;
+    align-self: flex-start;
+  }
+  body.pryzm-2026 #screen-studio .ws-mode-toggle-btn {
+    border: 0;
+    background: transparent;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ink-3);
+    cursor: pointer;
+  }
+  body.pryzm-2026 #screen-studio .ws-mode-toggle-btn:hover {
+    color: var(--ink-2);
+  }
+  body.pryzm-2026 #screen-studio .ws-mode-toggle-btn.active {
+    background: var(--ink);
+    color: #fff;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 6px 8px;
+    background: var(--rose-bg);
+    border-radius: 8px;
+    border: 1px solid var(--rose-tint);
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-summary-pill {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--rose-deep);
+    font-variant-numeric: tabular-nums;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-summary-pill b {
+    font-weight: 700;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-summary-hint {
+    font-size: 10.5px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  body.pryzm-2026 #screen-studio .ws-row.batch-checked {
+    background: var(--rose-bg);
+    border-color: var(--rose-tint);
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-checkbox {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 6px;
+    padding-right: 2px;
+    cursor: pointer;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-checkbox input[type='checkbox'] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--rose);
+    cursor: pointer;
+  }
+  body.pryzm-2026 #screen-studio .ws-row .ws-row-body {
+    all: unset;
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 4px 8px;
+    align-items: center;
+    flex: 1;
+    cursor: pointer;
+    min-width: 0;
+  }
+  /* When checkbox is present, the row is a flex row with checkbox + body */
+  body.pryzm-2026 #screen-studio .ws-row:has(.ws-batch-checkbox) {
+    display: flex;
+    align-items: stretch;
+    padding: 9px 10px;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-footer {
+    padding-top: 6px;
+    border-top: 1px solid var(--hairline);
+    margin-top: 4px;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-build-btn {
+    width: 100%;
+    background: var(--rose);
+    color: #fff;
+    border: 0;
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.15s, opacity 0.15s;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-build-btn:hover:not(:disabled) {
+    background: var(--rose-deep);
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-build-btn:disabled,
+  body.pryzm-2026 #screen-studio .ws-batch-build-btn[aria-disabled='true'] {
+    background: var(--surface-sunken);
+    color: var(--ink-3);
+    cursor: not-allowed;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-build-count {
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 6px;
+    padding: 1px 7px;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Batch Workbench */
+  body.pryzm-2026 #screen-studio .ws-batch-workbench {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-card);
+    padding: 16px 18px;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-card-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+    margin: 0;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-card-sub {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-rule-fields {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: end;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-field label {
+    font-size: 11px;
+    color: var(--ink-3);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-field select,
+  body.pryzm-2026 #screen-studio .ws-batch-field input[type='number'],
+  body.pryzm-2026 #screen-studio .ws-batch-field input[type='text'] {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 9px;
+    font-size: 12.5px;
+    font-family: inherit;
+    color: var(--ink);
+    background: var(--surface);
+    min-width: 0;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-field input:focus,
+  body.pryzm-2026 #screen-studio .ws-batch-field select:focus {
+    outline: 2px solid var(--rose-tint);
+    outline-offset: 1px;
+    border-color: var(--rose);
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-preview-btn {
+    background: var(--ink);
+    color: #fff;
+    border: 0;
+    border-radius: 10px;
+    padding: 9px 16px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-preview-btn:hover {
+    background: var(--ink-2);
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-preview-btn:disabled {
+    background: var(--surface-sunken);
+    color: var(--ink-3);
+    cursor: not-allowed;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-rule-hint {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* KPI strip */
+  body.pryzm-2026 #screen-studio .ws-batch-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-kpi-label {
+    font-size: 10.5px;
+    color: var(--ink-3);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-kpi-value {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-kpi-value.pos {
+    color: var(--green);
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-kpi-value.neg {
+    color: var(--red);
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-kpi-sub {
+    font-size: 10.5px;
+    color: var(--muted);
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-routing-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-routing-chip {
+    background: var(--surface-soft);
+    color: var(--ink-2);
+    border: 1px solid var(--hairline);
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-routing-chip.auto {
+    background: var(--green-bg);
+    color: var(--green);
+    border-color: transparent;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-routing-chip.block {
+    background: var(--red-bg);
+    color: var(--red);
+    border-color: transparent;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-routing-chip.manuel {
+    background: var(--amber-bg);
+    color: var(--amber);
+    border-color: transparent;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-routing-chip.md {
+    background: var(--rose-bg);
+    color: var(--rose-deep);
+    border-color: var(--rose-tint);
+  }
+
+  /* Preview table */
+  body.pryzm-2026 #screen-studio .ws-batch-table-wrap {
+    overflow-x: auto;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-table th {
+    text-align: left;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--surface-soft);
+    white-space: nowrap;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--hairline);
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-table tr:hover td {
+    background: var(--surface-soft);
+    cursor: pointer;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-table tr.locked td {
+    color: var(--ink-3);
+    opacity: 0.55;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-table tr.stale td {
+    background: rgba(245, 158, 11, 0.06);
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-delta {
+    font-weight: 700;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-delta.pos {
+    color: var(--green);
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-delta.neg {
+    color: var(--red);
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-risk {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-risk.lo {
+    background: var(--green-bg);
+    color: var(--green);
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-risk.mid {
+    background: var(--amber-bg);
+    color: var(--amber);
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-risk.hi {
+    background: var(--red-bg);
+    color: var(--red);
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-stale-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--amber);
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-lock-toggle {
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    color: var(--ink-3);
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-lock-toggle.locked {
+    background: var(--ink);
+    color: #fff;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-table .ws-batch-empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 32px 0;
+    font-size: 12.5px;
+  }
+
+  body.pryzm-2026 #screen-studio .ws-batch-commit-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding-top: 12px;
+    border-top: 1px solid var(--hairline);
+    margin-top: 8px;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-commit-btn {
+    background: var(--rose);
+    color: #fff;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-commit-btn:hover {
+    background: var(--rose-deep);
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-commit-btn:disabled {
+    background: var(--surface-sunken);
+    color: var(--ink-3);
+    cursor: not-allowed;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-cancel-btn {
+    background: transparent;
+    color: var(--ink-3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  body.pryzm-2026 #screen-studio .ws-batch-cancel-btn:hover {
+    color: var(--ink);
+    border-color: var(--border-strong);
+  }
+
+  /* Approval drawer body */
+  .batch-approval-drawer {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .batch-approval-drawer-head {
+    padding: 18px 22px 12px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .batch-approval-drawer-eyebrow {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    font-weight: 600;
+  }
+  .batch-approval-drawer-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--ink);
+    margin: 4px 0 0;
+  }
+  .batch-approval-drawer-body {
+    padding: 16px 22px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .batch-approval-routing-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+    align-items: baseline;
+    padding: 10px 12px;
+    background: var(--surface-soft);
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+  }
+  .batch-approval-routing-row-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .batch-approval-routing-row-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .batch-approval-routing-row-count {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .batch-approval-routing-row-impact {
+    font-size: 11.5px;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .batch-approval-drawer-footer {
+    padding: 14px 22px;
+    border-top: 1px solid var(--hairline);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .batch-approval-drawer-footer .primary {
+    background: var(--rose);
+    color: #fff;
+    border: 0;
+    border-radius: 10px;
+    padding: 9px 16px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .batch-approval-drawer-footer .primary:hover {
+    background: var(--rose-deep);
+  }
+  .batch-approval-drawer-footer .secondary {
+    background: transparent;
+    color: var(--ink-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .batch-approval-drawer-footer .secondary:hover {
+    color: var(--ink);
+    border-color: var(--border-strong);
+  }
+  .batch-approval-drawer-footer .ghost {
+    background: transparent;
+    color: var(--ink-3);
+    border: 0;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .batch-approval-drawer-footer .ghost:hover {
+    color: var(--ink);
+  }
 }
 
 
