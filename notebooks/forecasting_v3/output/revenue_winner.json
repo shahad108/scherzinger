@@ -1,9 +1,12 @@
 {
-  "name": "Theta",
-  "mase": 0.745040694929939,
-  "smape": 16.785439000696794,
-  "rmse": 113869.65205122095,
-  "params": {},
+  "name": "AutoETS_direct + MinTrace-OLS reconciliation (log-space)",
+  "mase": 0.786,
+  "smape": 17.68,
+  "rmse": 117884,
+  "params": {
+    "season_length": 12,
+    "model": "ZZA"
+  },
   "fitted_on": [
     "2022-01-01",
     "2025-12-01"
@@ -12,55 +15,72 @@
   "beats_floor": true,
   "floor_mase": 0.929,
   "beat_target_mase": 0.79,
-  "twelve_month_sum_eur": 7234528.048529876,
+  "twelve_month_sum_eur": 6880985.600829875,
   "monthly_forecast": [
     {
       "month": "2026-01-01",
-      "revenue_p50": 597269.2305085957
+      "revenue_p50": 519566.518150157
     },
     {
       "month": "2026-02-01",
-      "revenue_p50": 598288.88630294
+      "revenue_p50": 573203.7914286258
     },
     {
       "month": "2026-03-01",
-      "revenue_p50": 599308.5420972843
+      "revenue_p50": 556291.4245352054
     },
     {
       "month": "2026-04-01",
-      "revenue_p50": 600328.1978916287
+      "revenue_p50": 585406.7613664132
     },
     {
       "month": "2026-05-01",
-      "revenue_p50": 601347.8536859731
+      "revenue_p50": 583956.0691212139
     },
     {
       "month": "2026-06-01",
-      "revenue_p50": 602367.5094803175
+      "revenue_p50": 589545.2930183992
     },
     {
       "month": "2026-07-01",
-      "revenue_p50": 603387.165274662
+      "revenue_p50": 650067.9996307208
     },
     {
       "month": "2026-08-01",
-      "revenue_p50": 604406.8210690063
+      "revenue_p50": 492751.579091138
     },
     {
       "month": "2026-09-01",
-      "revenue_p50": 605426.4768633507
+      "revenue_p50": 574612.3544504221
     },
     {
       "month": "2026-10-01",
-      "revenue_p50": 606446.132657695
+      "revenue_p50": 585573.1084523218
     },
     {
       "month": "2026-11-01",
-      "revenue_p50": 607465.7884520395
+      "revenue_p50": 581046.2493379097
     },
     {
       "month": "2026-12-01",
-      "revenue_p50": 608485.4442463837
+      "revenue_p50": 588964.4522473479
     }
-  ]
+  ],
+  "supervisor_override": {
+    "previous_winner": "Theta",
+    "previous_mase": 0.745,
+    "reason": "Theta MASE (0.745) was lower than AutoETS (0.786) by ~5%, but the Theta refit on all 48 months produced a near-flat monotonic forecast with no preserved seasonal shape. AutoETS retains the seasonal pattern. Supervisor selected AutoETS as the coherent winner."
+  },
+  "leaderboard_actual": {
+    "mase": 0.786035605316585,
+    "smape": 17.6791195944799,
+    "rmse": 117884.0533240165
+  },
+  "reconciliation": {
+    "method": "MinTrace(ols) in log space",
+    "hierarchy": "log_revenue = log_volume + log_avg_price",
+    "direct_fold_mean_mase": 0.8741,
+    "reconciled_fold_mean_mase": 0.8535,
+    "chosen": "reconciled"
+  }
 }
