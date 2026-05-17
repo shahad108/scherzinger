@@ -708,7 +708,7 @@ async def build_forecast(
     # already-composed pareto + customers blocks (no extra DB hit).
     try:
         from .at_risk_revenue import build_at_risk_revenue
-        payload["atRiskRevenue"] = build_at_risk_revenue(payload)
+        payload["atRiskRevenue"] = build_at_risk_revenue(payload, db=db)
     except Exception as e:  # pragma: no cover - safety net
         _log.warning("at_risk_revenue compose failed: %s", e)
 

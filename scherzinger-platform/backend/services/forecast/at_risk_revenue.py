@@ -70,7 +70,65 @@ def _risk_prob_for(customer_id: str, risk_by_id: dict[str, float]) -> float:
     return max(0.0, min(p, 1.0))
 
 
-def build_at_risk_revenue(payload: dict[str, Any]) -> dict[str, Any]:
+def _augment_risk_from_db(
+    risk_by_id: dict[str, float],
+    customer_ids: list[str],
+    db: Any | None,
+) -> None:
+    """D10: enrich risk_by_id with canonical customer_risk_scores for the
+    pareto customer ids that aren't covered by ``topAtRisk``.
+
+    Without this overlay, pareto's top-revenue customers (who are usually
+    NOT in the top-N at-risk list) score 0% risk on the tier roll-up, so
+    every tier shows '0% at-risk' even when Action Center says some of
+    those customers are high/critical risk. We map risk_tier and
+    risk_score onto a churn-probability proxy.
+    """
+    if db is None or not customer_ids:
+        return
+    missing = [c for c in customer_ids if c not in risk_by_id]
+    if not missing:
+        return
+    try:
+        from sqlalchemy import text as _text
+
+        rows = (
+            db.execute(
+                _text(
+                    """
+                    SELECT DISTINCT ON (customer_id)
+                           customer_id, risk_score, risk_tier
+                      FROM customer_risk_scores
+                     WHERE customer_id = ANY(:ids)
+                     ORDER BY customer_id, score_date DESC
+                    """
+                ),
+                {"ids": missing},
+            )
+            .fetchall()
+        )
+        # Map risk_tier → fallback probability so even rows with NULL
+        # risk_score still contribute. risk_score is in [0,1] already.
+        tier_floor = {
+            "critical": 0.85,
+            "high": 0.65,
+            "medium": 0.40,
+            "low": 0.15,
+        }
+        for r in rows:
+            cid = str(r[0])
+            score = float(r[1]) if r[1] is not None else 0.0
+            tier = (r[2] or "").strip().lower()
+            floor_val = tier_floor.get(tier, 0.0)
+            risk_by_id[cid] = max(0.0, min(1.0, max(score, floor_val)))
+    except Exception:
+        # If the table is missing or query fails, leave risk_by_id alone.
+        pass
+
+
+def build_at_risk_revenue(
+    payload: dict[str, Any], *, db: Any | None = None
+) -> dict[str, Any]:
     """Per-tier forecast vs at-risk € totals.
 
     Consumes ``payload["pareto"]["customer"]["rows"]`` (each row carries a
@@ -127,6 +185,17 @@ def build_at_risk_revenue(payload: dict[str, Any]) -> dict[str, Any]:
                 except (TypeError, ValueError):
                     pd = 0.0
                 risk_by_id[str(cid)] = max(pc, pd)
+
+    # D10: enrich with canonical customer_risk_scores for any pareto
+    # customer not already covered by topAtRisk so tier roll-ups reflect
+    # the same risk source as Action Center decisions.
+    if db is not None:
+        pareto_cids = [
+            str(r.get("customerId"))
+            for r in cust_rows
+            if r.get("customerId") is not None
+        ]
+        _augment_risk_from_db(risk_by_id, pareto_cids, db)
 
     # Aggregate per tier.
     tier_acc: dict[str, dict[str, float | int]] = {
