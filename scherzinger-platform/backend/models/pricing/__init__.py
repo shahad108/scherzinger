@@ -50,6 +50,12 @@ from backend.models.pricing.lineage import (
 from backend.models.pricing.margin_state import MarginState
 from backend.models.pricing.option_margin import OptionMargin
 from backend.models.pricing.pricing_state import PriceState, PriceStateRow
+from backend.models.pricing.publish import (
+    PriceBookRow,
+    PublishReceiptRow,
+    ScheduledPublish,
+    ScheduledPublishStatus,
+)
 from backend.models.pricing.elasticity import CurvePoint, WinProbCurve
 from backend.models.pricing.recommendation import (
     ConfidenceLevel,
@@ -101,6 +107,11 @@ __all__ = [
     # Price
     "PriceState",
     "PriceStateRow",
+    # Publish (Phase 7)
+    "PriceBookRow",
+    "PublishReceiptRow",
+    "ScheduledPublish",
+    "ScheduledPublishStatus",
     # Recommendation (computed only)
     "ConfidenceLevel",
     "Driver",
