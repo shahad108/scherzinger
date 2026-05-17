@@ -121,6 +121,10 @@ def _load_customer_ids_for_aid(*, aid: str, db_session: Session) -> list[str]:
                 FROM invoices
                 WHERE article_id = :aid
                   AND date >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)
+                  -- D16: exclude synthetic ABE-* customer ids that leaked
+                  -- into the seeded DB; they pollute the fanout list with
+                  -- fake "customers" who never existed in the real ledger.
+                  AND customer_id NOT LIKE 'ABE-%'
                 GROUP BY customer_id
                 ORDER BY ltm_eur DESC
                 LIMIT 50
