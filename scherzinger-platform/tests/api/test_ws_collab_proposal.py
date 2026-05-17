@@ -180,6 +180,80 @@ def test_ws_accepts_real_proposal(client: TestClient) -> None:
         ws.send_text(json.dumps({"kind": "cursor", "position": {"x": 1}}))
 
 
+# ---------------------------------------------------------------------------
+# SF4 — audit.appended SSE event must reach subscribers from the WS path.
+# ---------------------------------------------------------------------------
+
+
+def test_ws_comment_emits_audit_appended_sse_event(client: TestClient) -> None:
+    """SF4: posting a comment via WS must publish ``audit.appended`` on the
+    SSE bus within 1s.
+
+    Before SF4 the WS handler called the sync ``record_audit``, which
+    invokes ``publish_sync`` — and ``publish_sync`` raises RuntimeError
+    inside a running event loop. The error was swallowed inside the
+    audit module's try/except, so subscribers never saw the event.
+
+    We register a sync subscription on the in-process bus before the WS
+    write, then drive the WS in a worker thread (so the subscriber's
+    loop isn't the one running the WS handler) and assert the event
+    arrives.
+    """
+    import asyncio
+    import threading
+
+    from backend.services import events as events_module
+
+    proposal_id, aid = _create_proposal(client)
+
+    # Swap in a fresh bus for the test so we don't race with other
+    # publishers in the long-lived TestClient session.
+    original_bus = events_module.get_bus()
+    events_module.set_bus(events_module.InProcessEventBus())
+    bus = events_module.get_bus()
+    assert isinstance(bus, events_module.InProcessEventBus)
+
+    captured: list[events_module.Event] = []
+
+    async def _drain() -> None:
+        sub = bus.open_subscription("audit", aid=aid)
+        try:
+            event = await sub.next(timeout=2.0)
+            if event is not None:
+                captured.append(event)
+        finally:
+            sub.close()
+
+    def _ws_emit() -> None:
+        # Tiny delay so the subscriber is fully registered before publish.
+        import time as _t
+
+        _t.sleep(0.1)
+        url = f"/api/v1/ws/proposal/{proposal_id}"
+        with client.websocket_connect(url) as ws:
+            ws.send_text(
+                json.dumps(
+                    {"kind": "comment", "comment": "audit-appended trigger", "aid": aid}
+                )
+            )
+            # Give the server time to flush the audit row + publish.
+            _t.sleep(0.4)
+
+    try:
+        emitter = threading.Thread(target=_ws_emit, daemon=True)
+        emitter.start()
+        asyncio.run(_drain())
+        emitter.join(timeout=5.0)
+    finally:
+        events_module.set_bus(original_bus)
+
+    assert captured, "no audit.appended event reached the subscriber within 1s"
+    event = captured[0]
+    assert event.topic == "audit.appended"
+    assert event.aid == aid
+    assert event.payload["action"] == "proposal_commented"
+
+
 def test_ws_comment_with_mismatched_aid_is_rejected(client: TestClient) -> None:
     """Comments must target the proposal's own article_id.
 

@@ -40,7 +40,7 @@ from uuid import UUID, uuid4
 from sqlalchemy.orm import Session
 
 from backend.models.pricing.audit import PricingAuditAction, PricingAuditTargetKind
-from backend.services.pricing.audit import record_audit
+from backend.services.pricing.audit import record_audit_async
 
 logger = logging.getLogger(__name__)
 
@@ -132,12 +132,18 @@ class CollabChannel:
         is available we still record against the proposal_id (target
         kind ``family`` is the closest stand-in; the front-end keys on
         the payload's ``proposal_id``).
+
+        SF4 (Phase-5 review): we route through ``record_audit_async`` so
+        the ``audit.appended`` SSE event actually reaches subscribers.
+        The sync variant calls ``publish_sync`` which raises in an
+        async context and the error was being swallowed → live audit
+        wiring silently broke for WS-driven comments.
         """
         target_id = aid or conn.proposal_id
         target_kind = (
             PricingAuditTargetKind.SKU if aid else PricingAuditTargetKind.FAMILY
         )
-        record_audit(
+        await record_audit_async(
             actor=conn.user_id,
             action=PricingAuditAction.PROPOSAL_COMMENTED,
             target_kind=target_kind,
@@ -150,6 +156,10 @@ class CollabChannel:
             reason=comment,
             session=session,
         )
+        # The audit write owns its own flush; commit so the row is
+        # observable by other transactions (and by the SSE subscriber
+        # snapshot below). ``commit`` is sync but very fast — we don't
+        # bother going through ``to_thread`` for this.
         session.commit()
         return await self._broadcast(
             conn,
