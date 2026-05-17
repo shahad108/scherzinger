@@ -136,7 +136,7 @@ describe('ApprovalDrawer', () => {
     );
   });
 
-  it('"Approve with changes" first expands the price field, then posts approve on second click', async () => {
+  it('"Counter-propose" expands the price field, then posts a request_changes decision with the counter-price', async () => {
     wrap(
       <ApprovalDrawer
         open
@@ -147,17 +147,28 @@ describe('ApprovalDrawer', () => {
       />,
     );
     expect(screen.queryByTestId('drawer-edit-price')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByTestId('drawer-approve-changes-button'));
+    const btn = screen.getByTestId('drawer-approve-changes-button');
+    expect(btn.textContent ?? '').toMatch(/counter-propose/i);
+    fireEvent.click(btn);
     expect(screen.getByTestId('drawer-edit-price')).toBeInTheDocument();
+    // Hint text appears below the price field.
+    expect(
+      screen.getByText(/sends the proposal back to the requester/i),
+    ).toBeInTheDocument();
     fireEvent.change(screen.getByTestId('drawer-edit-price-input'), {
       target: { value: '121.50' },
+    });
+    fireEvent.change(screen.getByTestId('drawer-comment-input'), {
+      target: { value: 'closer to budget pls' },
     });
     fireEvent.click(screen.getByTestId('drawer-approve-changes-button'));
     await waitFor(() =>
       expect(decideMutate).toHaveBeenCalledWith(
         expect.objectContaining({
-          decision: 'approve',
-          comment: expect.stringContaining('121.50'),
+          decision: 'request_changes',
+          comment: expect.stringMatching(
+            /Counter-proposing €121\.50: closer to budget pls/i,
+          ),
         }),
       ),
     );

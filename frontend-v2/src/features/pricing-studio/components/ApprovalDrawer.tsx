@@ -85,9 +85,12 @@ export function ApprovalDrawer({
       return;
     }
     setRejectError(null);
+    // SF4: "Counter-propose" submits request_changes with a structured
+    // comment that names the counter-price so the audit captures the
+    // approver's alternative cleanly.
     const finalComment =
-      mode === 'approve_with_changes' && editedPrice.trim()
-        ? `${comment.trim() ? comment.trim() + '\n\n' : ''}Suggested price: ${editedPrice.trim()}`
+      decision === 'request_changes' && editedPrice.trim()
+        ? `Counter-proposing €${editedPrice.trim()}: ${comment.trim()}`.trim()
         : comment.trim() || undefined;
     await decide.mutateAsync({ decision, comment: finalComment });
     setComment('');
@@ -263,6 +266,9 @@ export function ApprovalDrawer({
                 placeholder="e.g. 121.50"
                 className="mt-1 w-full rounded-md border border-[var(--rose-border)] bg-white p-2 text-[12px] tabular-nums text-[var(--ink)] outline-none focus:border-[var(--rose-deep)]"
               />
+              <p className="mt-1 text-[10.5px] text-[var(--muted)]">
+                This sends the proposal back to the requester for revision.
+              </p>
             </div>
           )}
           {rejectError && (
@@ -308,13 +314,13 @@ export function ApprovalDrawer({
                   setMode('approve_with_changes');
                   return;
                 }
-                void submit('approve');
+                void submit('request_changes');
               }}
               disabled={decide.isPending}
               className="inline-flex items-center justify-center gap-1 rounded-md border border-[var(--amber-border)] bg-[var(--amber-bg)] px-2 py-2 text-[11.5px] font-semibold text-[var(--amber)] hover:bg-[color-mix(in_oklab,var(--amber-bg)_70%,white)] disabled:opacity-60"
             >
               <PencilLine size={12} />{' '}
-              {mode === 'approve_with_changes' ? 'Submit changes' : 'With changes'}
+              {mode === 'approve_with_changes' ? 'Send counter-proposal' : 'Counter-propose'}
             </button>
             <button
               type="button"
