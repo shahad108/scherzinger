@@ -49,6 +49,22 @@ export function MarketDirectionStrip({ data }: Props) {
                     {arrow} {tile.wowPct >= 0 ? '+' : ''}
                     {tile.wowPct.toFixed(1)}% WoW
                   </div>
+                  {/* DATA-AUDIT-2026-05-17 defect #11 — surface the
+                      synthetic-for-demo (or any indicator) disclosure
+                      consistently across ALL tiles, not just the first. */}
+                  {tile.indicator ? (
+                    <div
+                      data-testid={`market-tile-indicator-${tile.name.toLowerCase().replace(/\W+/g, '-')}`}
+                      className={`mt-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide ${
+                        tile.indicator.startsWith('⚠')
+                          ? 'bg-amber-50 text-amber-700'
+                          : 'bg-[var(--surface-soft)] text-[var(--ink-3)]'
+                      }`}
+                      title={tile.indicator}
+                    >
+                      {tile.indicator}
+                    </div>
+                  ) : null}
                 </button>
               </li>
             );
