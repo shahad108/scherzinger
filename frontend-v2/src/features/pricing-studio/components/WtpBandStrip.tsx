@@ -136,7 +136,7 @@ export function WtpBandStrip({
         )}
       </div>
 
-      {degenerate && markers.length <= 1 ? (
+      {degenerate ? (
         <div className="grid place-items-center" style={{ height: STRIP_HEIGHT - 24 }}>
           <DataMissingBadge reason="Single point" tooltip="WTP p10 / p50 / p90 collapsed to a single value — too few samples to spread." />
         </div>

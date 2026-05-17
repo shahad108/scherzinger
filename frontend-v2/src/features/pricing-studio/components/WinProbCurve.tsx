@@ -146,11 +146,17 @@ export function WinProbCurve({ curve, recommendedPrice, className }: Props) {
             />
             <Tooltip
               cursor={{ stroke: 'var(--rose-soft)', strokeDasharray: '3 3' }}
-              formatter={(value: number, key: string) => {
-                if (key === 'winProb') return [`${(value * 100).toFixed(1)}%`, 'P(win)'];
+              // Recharts 3.x typed the formatter against the union ValueType.
+              // Coerce at the boundary so we keep the strong types inside
+              // our callback without disabling tsc on the whole file.
+              formatter={((value: unknown, key: unknown) => {
+                const num = typeof value === 'number' ? value : Number(value);
+                if (key === 'winProb' && Number.isFinite(num)) {
+                  return [`${(num * 100).toFixed(1)}%`, 'P(win)'];
+                }
                 if (key === 'band') return [null, null];
-                return [value, key];
-              }}
+                return [String(value ?? ''), String(key ?? '')];
+              }) as never}
               labelFormatter={(label) => fmt.eurPrecise(label as number)}
             />
             {hasCi && (
@@ -179,7 +185,6 @@ export function WinProbCurve({ curve, recommendedPrice, className }: Props) {
                 fill="var(--rose-deep)"
                 stroke="white"
                 strokeWidth={2}
-                isFront
               />
             )}
           </ComposedChart>
