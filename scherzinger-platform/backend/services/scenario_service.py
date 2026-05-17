@@ -182,6 +182,29 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _dedupe_by_name(scenarios: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Defensive dedupe: keep the most-recent scenario per name.
+
+    The DB cleanup (``backend.seeds.cleanup_scenarios``) prevents dupes at rest,
+    but if a future seed or replay re-introduces collisions, the UI must still
+    render a clean list. Ordering: ``updated_at`` desc, then ``created_at`` desc.
+    """
+    def _key(s: dict[str, Any]) -> str:
+        return s.get("updatedAt") or s.get("createdAt") or ""
+
+    # Sort newest first so the first occurrence per name wins.
+    ordered = sorted(scenarios, key=_key, reverse=True)
+    seen: set[str] = set()
+    deduped: list[dict[str, Any]] = []
+    for s in ordered:
+        name = (s.get("name") or "").strip().lower()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        deduped.append(s)
+    return deduped
+
+
 def list_scenarios(db: Session | None, user_id: UUID | str | None) -> dict[str, Any]:
     """Return system + my-scenarios + team-shared in a single payload."""
     uid_str = str(user_id) if user_id else None
@@ -211,8 +234,8 @@ def list_scenarios(db: Session | None, user_id: UUID | str | None) -> dict[str, 
 
     return {
         "system": [deepcopy(s) for s in SYSTEM_SCENARIOS],
-        "saved": saved,
-        "teamShared": team_shared,
+        "saved": _dedupe_by_name(saved),
+        "teamShared": _dedupe_by_name(team_shared),
     }
 
 
