@@ -45,6 +45,16 @@ export function CustomerFanout({ data, fanPrice, block, proposedPriceDecimal, ai
   // `rows` is required on the wire-shape but old workbench mocks may
   // ship a partial object — guard for that.
   const useBlock = Boolean(block && Array.isArray(block.rows) && block.rows.length > 0);
+  // Pricing Studio v3 / Phase 11 — empty state when the BFF block is
+  // explicitly empty (no rows) AND the legacy data also has no rows.
+  // Loading is handled upstream by the studio skeleton — once the page
+  // is rendered, we're guaranteed to have either rows or "no customers".
+  const isExplicitlyEmpty =
+    block !== null &&
+    block !== undefined &&
+    Array.isArray(block.rows) &&
+    block.rows.length === 0 &&
+    (!data.rows || data.rows.length === 0);
 
   // SF3 (Phase 2.2.5): prefer the BFF-computed context label so a slider
   // re-score updates the header in lockstep with the row tones. Fall
@@ -72,6 +82,14 @@ export function CustomerFanout({ data, fanPrice, block, proposedPriceDecimal, ai
         />
       </h4>
       <p className="cluster-note">{renderInline(data.clusterNote)}</p>
+      {isExplicitlyEmpty && (
+        <div
+          className="rounded-[var(--r-sm)] border border-dashed border-[var(--hairline)] bg-[var(--surface-soft)] px-3 py-3 text-[12px] text-[var(--muted)]"
+          data-testid="customer-fanout-empty"
+        >
+          No customers buy this SKU in the current period — fan-out is empty.
+        </div>
+      )}
       <div className="ws-fanout">
         {useBlock
           ? block!.rows.map((r) => (
