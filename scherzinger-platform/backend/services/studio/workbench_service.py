@@ -75,6 +75,31 @@ def _resolve_envelope(
     return resolve_envelope(price_row, cost_row)
 
 
+def _attach_phase2_signals(
+    workbench: dict[str, Any],
+    aid: str,
+) -> None:
+    """Phase 2: customer-fanout block (BFF-computed, no proposed price yet).
+
+    Initial fanout uses ``proposed_price=None`` so ``risk_if_moved`` is
+    null and ``tone`` defaults to ``plain`` for every row. The frontend
+    POSTs ``/screens/studio/fanout`` with the user-selected price to
+    re-score on demand.
+    """
+    try:
+        from backend.services.pricing.customer_fanout import build_customer_fanout
+
+        with SessionLocal() as db:
+            payload = build_customer_fanout(
+                aid=aid, proposed_price=None, db_session=db
+            )
+            workbench["customer_fanout"] = payload
+            db.commit()
+    except Exception:
+        logger.exception("workbench customer_fanout failed aid=%s", aid)
+        # Leave the field absent — workbench shell + Phase 1 blocks still render.
+
+
 def _attach_phase1_signals(
     workbench: dict[str, Any],
     aid: str,
@@ -179,6 +204,7 @@ async def build_workbench(*, aid: str, tier: Optional[str] = None) -> dict[str, 
         tier or str(sku.get("tier") or "") or None,
         cluster=cluster,
     )
+    _attach_phase2_signals(workbench, aid)
     return workbench
 
 
