@@ -331,6 +331,12 @@ def _diff_customer_risk(
     and the audit log's customer-targeted entries (``after.risk_if_moved``)
     for the before value. When no audit row is found for a customer we
     skip it — without a "before" the delta is meaningless.
+
+    SF4 — fetches all per-customer "before" values in ONE window-function
+    query instead of N round-trips. The previous per-customer
+    ``ORDER BY ... LIMIT 1`` query meant 50 customers = 50 SELECTs;
+    now it's a single ``ROW_NUMBER() OVER (PARTITION BY target_id
+    ORDER BY at DESC)`` over the same predicate.
     """
     snap_rows = (
         db_session.execute(
@@ -341,26 +347,63 @@ def _diff_customer_risk(
     )
     if not snap_rows:
         return []
+
+    customer_ids = [snap.customer_id for snap in snap_rows]
+
+    # Single windowed query: latest customer-targeted audit row per
+    # customer where ``payload.after.aid = aid`` and ``at <= since``.
+    rn = (
+        func.row_number()
+        .over(
+            partition_by=PricingAuditEntry.target_id,
+            order_by=PricingAuditEntry.at.desc(),
+        )
+        .label("rn")
+    )
+    subq = (
+        select(
+            PricingAuditEntry.target_id.label("customer_id"),
+            PricingAuditEntry.after.label("after"),
+            PricingAuditEntry.lineage_ref_id.label("lineage_ref_id"),
+            rn,
+        )
+        .where(
+            and_(
+                PricingAuditEntry.target_kind == "customer",
+                PricingAuditEntry.target_id.in_(customer_ids),
+                PricingAuditEntry.after["aid"].astext == aid,
+                PricingAuditEntry.at <= since,
+            )
+        )
+        .subquery()
+    )
+    latest_rows = db_session.execute(
+        select(
+            subq.c.customer_id,
+            subq.c.after,
+            subq.c.lineage_ref_id,
+        ).where(subq.c.rn == 1)
+    ).all()
+
+    # Index "before" rows by customer for quick lookup during the
+    # snapshot pass below.
+    before_by_cid: dict[str, tuple[Optional[Decimal], Any]] = {}
+    for cid, after_payload, lineage_ref_id in latest_rows:
+        if cid is None:
+            continue
+        payload = after_payload or {}
+        before = _safe_decimal(payload.get("risk_if_moved"))
+        before_by_cid[cid] = (before, lineage_ref_id)
+
     movers: list[tuple[Decimal, DiffChange]] = []
     for snap in snap_rows:
         current = _safe_decimal(snap.risk_if_moved)
         if current is None:
             continue
-        predicate = and_(
-            PricingAuditEntry.target_kind == "customer",
-            PricingAuditEntry.target_id == snap.customer_id,
-            PricingAuditEntry.after["aid"].astext == aid,
-            PricingAuditEntry.at <= since,
-        )
-        earlier = db_session.execute(
-            select(PricingAuditEntry)
-            .where(predicate)
-            .order_by(PricingAuditEntry.at.desc())
-            .limit(1)
-        ).scalar_one_or_none()
-        if earlier is None:
+        anchor = before_by_cid.get(snap.customer_id)
+        if anchor is None:
             continue
-        before = _safe_decimal((earlier.after or {}).get("risk_if_moved"))
+        before, lineage_ref_id = anchor
         if before is None or before == current:
             continue
         change = DiffChange(
@@ -369,7 +412,7 @@ def _diff_customer_risk(
             after=current,
             pct=_pct(before, current),
             customer_id=snap.customer_id,
-            lineage_ref=earlier.lineage_ref_id,
+            lineage_ref=lineage_ref_id,
             link_target=_customer_link(aid, snap.customer_id),
         )
         delta = abs(current - before)

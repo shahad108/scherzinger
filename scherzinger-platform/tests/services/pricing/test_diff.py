@@ -126,6 +126,74 @@ def test_competitor_diff_handles_null_gracefully(db, aid):
 # ---------------------------------------------------------------------------
 
 
+def test_customer_risk_diff_uses_single_query_for_before_values(db, aid):
+    """SF4 — ``_diff_customer_risk`` must collapse the per-customer
+    ``ORDER BY ... LIMIT 1`` lookups into ONE window-function query.
+
+    Wraps ``db.execute`` to count invocations and asserts <= 2 calls
+    for 5 customers (1 for the snapshot fetch, 1 for the windowed
+    before-values fetch — NOT 1 + N).
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from backend.services.pricing.diff import _diff_customer_risk
+
+    customers = [(f"C{i}_{uuid4().hex[:4]}", Decimal(f"0.{20 + i}")) for i in range(5)]
+    three_days_ago = datetime.now(timezone.utc) - timedelta(days=3)
+    for cid, current_risk in customers:
+        db.add(
+            CustomerOnSkuSnapshotRow(
+                aid=aid,
+                customer_id=cid,
+                risk_if_moved=current_risk,
+                ltm_units=10,
+            )
+        )
+    db.flush()
+    for i, (cid, current_risk) in enumerate(customers):
+        before = current_risk - Decimal("0.05")
+        record_audit(
+            actor="system",
+            action=PricingAuditAction.OVERRIDE_ADDED,
+            target_kind=PricingAuditTargetKind.CUSTOMER,
+            target_id=cid,
+            after={"aid": aid, "risk_if_moved": str(before)},
+            session=db,
+        )
+    customer_ids = [cid for cid, _ in customers]
+    db.query(PricingAuditEntry).filter(
+        PricingAuditEntry.target_id.in_(customer_ids)
+    ).update({PricingAuditEntry.at: three_days_ago}, synchronize_session=False)
+    db.flush()
+
+    # Wrap db.execute so we can count call counts.
+    real_execute = db.execute
+    calls: list[Any] = []
+
+    def _counting_execute(*args, **kwargs):
+        calls.append(args[0] if args else None)
+        return real_execute(*args, **kwargs)
+
+    db.execute = _counting_execute  # type: ignore[assignment]
+    try:
+        changes = _diff_customer_risk(
+            aid=aid,
+            since=datetime.now(timezone.utc) - timedelta(days=1),
+            now=datetime.now(timezone.utc),
+            db_session=db,
+        )
+    finally:
+        db.execute = real_execute  # type: ignore[assignment]
+
+    assert len(changes) == 5
+    # SF4 acceptance: at most 2 SELECTs total. The pre-fix implementation
+    # would issue 1 + N (= 6 for 5 customers).
+    assert len(calls) <= 2, (
+        f"_diff_customer_risk issued {len(calls)} SELECTs for 5 customers "
+        f"— expected <= 2 (snapshot fetch + windowed before-values)"
+    )
+
+
 def test_customer_risk_diff_returns_top_5_by_abs_delta(db, aid):
     """Per-customer risk diff returns top 5 by |delta|, ordered by
     customer_id within the kind for determinism."""
