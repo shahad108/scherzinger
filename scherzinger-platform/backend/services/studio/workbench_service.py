@@ -40,6 +40,22 @@ from ._seed import load_seed
 logger = logging.getLogger(__name__)
 
 
+def _format_eur(value: Decimal | float | None) -> str:
+    """Format a Decimal/float as a euro label using the same conventions
+    the seed uses (e.g. ``"€4.20"``, ``"€1,240"``)."""
+    if value is None:
+        return "—"
+    try:
+        v = Decimal(str(value))
+    except Exception:
+        return "—"
+    # Drop the cents if the value is a whole number ≥ €100, otherwise keep
+    # 2dp. Mirrors the studio.json conventions exactly.
+    if v == v.to_integral_value() and v >= 100:
+        return f"€{int(v):,}"
+    return f"€{v:,.2f}"
+
+
 def _find_sku(aid: str) -> dict[str, Any] | None:
     seed = load_seed()
     for s in seed.get("skus", []):
@@ -305,6 +321,37 @@ async def build_workbench(
             short = sku["shortHero"]
             hero["title"] = short.get("title", hero.get("title"))
             hero["sub"] = short.get("sub", hero.get("sub"))
+            # Honour the per-SKU shortHero price/margin overrides — without
+            # these, every non-default SKU rendered the default SKU's
+            # €4.20 / −1.3% in the hero while the recommendation used the
+            # SKU's real price_state, producing nonsense deltas like
+            # "+9704% upside on €284 → €411".
+            for key in (
+                "currentPrice",
+                "currentMargin",
+                "currentMarginTone",
+                "targetText",
+                "meta",
+            ):
+                v = short.get(key)
+                if v not in (None, "", "—"):
+                    hero[key] = v
+        # Also overlay the canonical current_price from price_state so the
+        # hero never lies about reality even when shortHero is absent or
+        # stale (e.g. SKUs in the seed without a shortHero block).
+        try:
+            from sqlalchemy import select
+
+            from backend.models.pricing.pricing_state import PriceStateRow
+
+            with SessionLocal() as db:
+                row = db.execute(
+                    select(PriceStateRow).where(PriceStateRow.aid == aid)
+                ).scalar_one_or_none()
+                if row is not None and row.current_price is not None:
+                    hero["currentPrice"] = _format_eur(row.current_price)
+        except Exception:
+            logger.exception("workbench.hero currentPrice override failed aid=%s", aid)
         workbench["hero"] = hero
     workbench["aid"] = aid
     cluster = str(sku.get("cluster") or "") or None
