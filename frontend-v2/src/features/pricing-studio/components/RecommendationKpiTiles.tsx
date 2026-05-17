@@ -70,7 +70,13 @@ export function RecommendationKpiTiles({
     Number.isFinite(currentPriceValue) && Number.isFinite(recPriceNum)
       ? signedPctDelta(currentPriceValue!, recPriceNum)
       : null;
-  const deltaPositive = deltaLabel !== null && !deltaLabel.startsWith('−');
+  const deltaPositive =
+    deltaLabel !== null &&
+    deltaLabel !== '—' &&
+    !deltaLabel.startsWith('−') &&
+    Number.isFinite(currentPriceValue) &&
+    Number.isFinite(recPriceNum) &&
+    recPriceNum > currentPriceValue!;
 
   // Win prob at recommended price — snap to nearest curve point.
   const winProbAtRec = (() => {

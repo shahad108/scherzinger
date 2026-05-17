@@ -115,7 +115,13 @@ export function RecommendationHero({
     Number.isFinite(currentPriceValue) && Number.isFinite(recPriceNum)
       ? signedPctDelta(currentPriceValue!, recPriceNum)
       : null;
-  const deltaPositive = delta !== null && !delta.startsWith('−');
+  const deltaPositive =
+    delta !== null &&
+    delta !== '—' &&
+    !delta.startsWith('−') &&
+    Number.isFinite(currentPriceValue) &&
+    Number.isFinite(recPriceNum) &&
+    recPriceNum > currentPriceValue!;
   const highMargin =
     recommendation.confidence_level === 'high' &&
     deltaPositive;
