@@ -14,6 +14,7 @@
 
 import { useMemo, useState } from 'react';
 import { Drawer } from '@/components/ui/Drawer';
+import { DataMissingBadge } from '@/components/DataMissingBadge';
 import { useApprovalDecision } from '@/data/api/useApprovalInbox';
 import { useApprovalInstance } from '@/data/api/useApprovalInstance';
 import { useLineageDrawer } from '@/features/pricing-studio/lineage/LineageDrawerContext';
@@ -151,15 +152,19 @@ export function ApprovalDrawer({
             <dd className="tabular-nums">{summaryDelta}</dd>
             <dt className="text-[var(--muted)]">Projected DB2</dt>
             <dd className="text-[var(--ink-2)]">
-              {((proposal?.payload as Record<string, unknown> | undefined)?.projected_db2 as
-                | string
-                | undefined) ?? '—'}
+              {(() => {
+                const v = (proposal?.payload as Record<string, unknown> | undefined)
+                  ?.projected_db2 as string | undefined;
+                return v ?? <DataMissingBadge reason="projected DB2 missing" />;
+              })()}
             </dd>
             <dt className="text-[var(--muted)]">Win prob</dt>
             <dd className="text-[var(--ink-2)]">
-              {((proposal?.payload as Record<string, unknown> | undefined)?.win_prob as
-                | string
-                | undefined) ?? '—'}
+              {(() => {
+                const v = (proposal?.payload as Record<string, unknown> | undefined)
+                  ?.win_prob as string | undefined;
+                return v ?? <DataMissingBadge reason="win prob missing" />;
+              })()}
             </dd>
           </dl>
         </section>
