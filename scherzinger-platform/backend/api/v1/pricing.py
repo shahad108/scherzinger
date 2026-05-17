@@ -960,3 +960,170 @@ def get_proposal_pdf(
             "Content-Disposition": f"inline; filename=\"{filename}\"",
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase 8 — A/B test + simulator endpoints
+# ---------------------------------------------------------------------------
+
+
+class AbTestCreateIn(BaseModel):
+    aid: str
+    control_price: Decimal
+    variant_price: Decimal
+    eligibility: dict[str, Any] | None = None
+    criterion: dict[str, Any] | None = None
+    target_sample: int = 30
+    duration_days: int | None = 14
+    success_metric: str | None = "db2_margin"
+    hypothesis: str | None = None
+
+
+class AbTestDecisionIn(BaseModel):
+    decision: str  # 'promote' | 'hold'
+
+
+class SimulateIn(BaseModel):
+    aid: str
+    control_price: Decimal
+    variant_price: Decimal
+    eligibility: dict[str, Any] | None = None
+    target_sample: int = 30
+    tier: str | None = None
+    horizon_months: int = 12
+
+
+def _serialize_ab_test(t) -> dict[str, Any]:
+    return {
+        "id": str(t.id),
+        "aid": t.aid,
+        "control_price": str(t.control_price),
+        "variant_price": str(t.treatment_price),
+        "status": t.status,
+        "decision_state": t.decision_state,
+        "target_sample": t.target_sample,
+        "eligibility": t.eligibility_json,
+        "criterion": t.criterion_json,
+        "duration_days": t.duration_days,
+        "success_metric": t.success_metric,
+        "hypothesis": t.hypothesis,
+        "start_date": t.start_date.isoformat() if t.start_date else None,
+        "end_date": t.end_date.isoformat() if t.end_date else None,
+        "created_at": t.created_at.isoformat() if t.created_at else None,
+    }
+
+
+@router.post("/ab-tests", status_code=status.HTTP_201_CREATED)
+def create_pricing_ab_test(
+    body: AbTestCreateIn,
+    ctx: AuthContext = Depends(require_auth),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Create a new A/B price test for ``aid``."""
+    from backend.services.pricing import ab_test as ab_test_svc
+
+    try:
+        test = ab_test_svc.create_ab_test(
+            aid=body.aid,
+            control_price=body.control_price,
+            variant_price=body.variant_price,
+            eligibility=body.eligibility,
+            criterion=body.criterion,
+            target_sample=body.target_sample,
+            actor=str(ctx.user_id),
+            db_session=db,
+            duration_days=body.duration_days,
+            success_metric=body.success_metric,
+            hypothesis=body.hypothesis,
+        )
+    except ab_test_svc.AbTestEligibilityEmptyError as exc:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, f"no eligible customers: {exc}"
+        ) from exc
+    db.commit()
+    db.refresh(test)
+    return {"ab_test": _serialize_ab_test(test)}
+
+
+@router.get("/ab-tests/{test_id}")
+def get_pricing_ab_test(
+    test_id: UUID,
+    ctx: AuthContext = Depends(require_auth),  # noqa: ARG001
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from backend.models import AbTest
+    from backend.services.pricing import ab_test as ab_test_svc
+
+    test = db.get(AbTest, test_id)
+    if test is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "ab_test not found")
+    try:
+        result = ab_test_svc.score_ab_test(test_id=test.id, db_session=db).to_dict()
+    except ab_test_svc.AbTestNotFoundError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+    return {
+        "ab_test": _serialize_ab_test(test),
+        "scoring": result,
+    }
+
+
+@router.post("/ab-tests/{test_id}/score")
+def score_pricing_ab_test(
+    test_id: UUID,
+    ctx: AuthContext = Depends(require_auth),  # noqa: ARG001
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from backend.services.pricing import ab_test as ab_test_svc
+
+    try:
+        result = ab_test_svc.score_ab_test(test_id=test_id, db_session=db)
+    except ab_test_svc.AbTestNotFoundError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+    return {"scoring": result.to_dict()}
+
+
+@router.post("/ab-tests/{test_id}/decision")
+def decide_pricing_ab_test(
+    test_id: UUID,
+    body: AbTestDecisionIn,
+    ctx: AuthContext = Depends(require_auth),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from backend.services.pricing import ab_test as ab_test_svc
+
+    if body.decision not in ("promote", "hold"):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "decision must be 'promote' or 'hold'"
+        )
+    try:
+        outcome = ab_test_svc.promote_or_hold(
+            test_id=test_id,
+            decision=body.decision,  # type: ignore[arg-type]
+            actor=str(ctx.user_id),
+            db_session=db,
+        )
+    except ab_test_svc.AbTestNotFoundError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+    db.commit()
+    return outcome.to_dict()
+
+
+@router.post("/simulate")
+def simulate_pricing(
+    body: SimulateIn,
+    ctx: AuthContext = Depends(require_auth),  # noqa: ARG001 (auth gate)
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Read-only simulation — no writes."""
+    from backend.services.pricing.simulator import simulate
+
+    return simulate(
+        aid=body.aid,
+        control_price=body.control_price,
+        variant_price=body.variant_price,
+        eligibility=body.eligibility,
+        target_sample=body.target_sample,
+        tier=body.tier,
+        horizon_months=body.horizon_months,
+        db_session=db,
+    )

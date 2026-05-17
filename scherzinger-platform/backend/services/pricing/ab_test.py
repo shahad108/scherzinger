@@ -186,24 +186,25 @@ def _load_eligible_pool(*, aid: str, db_session: Session) -> list[CustomerFacts]
 
     # Step 1 — invoice-based customer ids + LTM revenue.
     try:
-        rows = db_session.execute(
-            text(
-                """
-                SELECT customer_id,
-                       COALESCE(SUM(revenue), 0) AS ltm_eur
-                FROM invoices
-                WHERE article_id = :aid
-                  AND date >= (
-                    SELECT COALESCE(MAX(date), CURRENT_DATE) - INTERVAL '12 months'
+        with db_session.begin_nested():
+            rows = db_session.execute(
+                text(
+                    """
+                    SELECT customer_id,
+                           COALESCE(SUM(revenue), 0) AS ltm_eur
                     FROM invoices
-                  )
-                GROUP BY customer_id
-                ORDER BY ltm_eur DESC
-                LIMIT 500
-                """
-            ),
-            {"aid": aid},
-        ).fetchall()
+                    WHERE article_id = :aid
+                      AND date >= (
+                        SELECT COALESCE(MAX(date), CURRENT_DATE) - INTERVAL '12 months'
+                        FROM invoices
+                      )
+                    GROUP BY customer_id
+                    ORDER BY ltm_eur DESC
+                    LIMIT 500
+                    """
+                ),
+                {"aid": aid},
+            ).fetchall()
     except Exception:
         logger.exception("ab_test._load_eligible_pool invoices aid=%s", aid)
         rows = []
@@ -224,47 +225,51 @@ def _load_eligible_pool(*, aid: str, db_session: Session) -> list[CustomerFacts]
         return []
 
     # Step 2 — tier from customers master (column may not exist in dev).
+    # Each lookup runs in its own SAVEPOINT so a missing column / sparse
+    # table doesn't poison the outer transaction (the API endpoint would
+    # otherwise see "current transaction is aborted").
     try:
         cids = list(pool.keys())
-        tier_rows = db_session.execute(
-            text(
-                """
-                SELECT customer_id, COALESCE(tier, 'C') AS tier
-                FROM customers
-                WHERE customer_id = ANY(:ids)
-                """
-            ),
-            {"ids": cids},
-        ).fetchall()
-        for r in tier_rows:
-            cid = str(r[0])
-            if cid in pool:
-                t = (r[1] or "C").upper()
-                if t not in ("A", "B", "C", "D"):
-                    t = "C"
-                pool[cid]["tier"] = t
+        with db_session.begin_nested():
+            tier_rows = db_session.execute(
+                text(
+                    """
+                    SELECT customer_id, COALESCE(tier, 'C') AS tier
+                    FROM customers
+                    WHERE customer_id = ANY(:ids)
+                    """
+                ),
+                {"ids": cids},
+            ).fetchall()
+            for r in tier_rows:
+                cid = str(r[0])
+                if cid in pool:
+                    t = (r[1] or "C").upper()
+                    if t not in ("A", "B", "C", "D"):
+                        t = "C"
+                    pool[cid]["tier"] = t
     except Exception:
-        # Missing column / sparse master — keep the default "C".
         logger.debug("ab_test._load_eligible_pool tier lookup failed aid=%s", aid)
 
     # Step 3 — family (business_unit) from quotes for this aid.
     try:
-        fam_rows = db_session.execute(
-            text(
-                """
-                SELECT customer_id, MAX(business_unit) AS family
-                FROM quotes
-                WHERE article_id = :aid
-                  AND customer_id = ANY(:ids)
-                GROUP BY customer_id
-                """
-            ),
-            {"aid": aid, "ids": list(pool.keys())},
-        ).fetchall()
-        for r in fam_rows:
-            cid = str(r[0])
-            if cid in pool:
-                pool[cid]["family"] = r[1]
+        with db_session.begin_nested():
+            fam_rows = db_session.execute(
+                text(
+                    """
+                    SELECT customer_id, MAX(business_unit) AS family
+                    FROM quotes
+                    WHERE article_id = :aid
+                      AND customer_id = ANY(:ids)
+                    GROUP BY customer_id
+                    """
+                ),
+                {"aid": aid, "ids": list(pool.keys())},
+            ).fetchall()
+            for r in fam_rows:
+                cid = str(r[0])
+                if cid in pool:
+                    pool[cid]["family"] = r[1]
     except Exception:
         logger.debug("ab_test._load_eligible_pool family lookup failed aid=%s", aid)
 

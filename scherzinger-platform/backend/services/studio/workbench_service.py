@@ -152,6 +152,27 @@ def _attach_phase3_signals(
             )
 
 
+def _attach_phase8_signals(
+    workbench: dict[str, Any],
+    aid: str,
+) -> None:
+    """Phase 8: surface the active A/B test summary on the workbench so
+    the PriceOptions card can render a real flow when a test is in flight.
+
+    Best-effort: any failure is swallowed and logged — the workbench
+    still renders, the frontend simply omits the active_ab_test block.
+    """
+    try:
+        from backend.services.pricing.ab_test import get_active_ab_test_summary
+
+        with SessionLocal() as db:
+            summary = get_active_ab_test_summary(aid=aid, db_session=db)
+            if summary is not None:
+                workbench["active_ab_test"] = summary
+    except Exception:
+        logger.exception("workbench.active_ab_test failed aid=%s", aid)
+
+
 def _attach_phase2_signals(
     workbench: dict[str, Any],
     aid: str,
@@ -301,6 +322,7 @@ async def build_workbench(
         reason=reason,
         cluster=cluster,
     )
+    _attach_phase8_signals(workbench, aid)
     return workbench
 
 
