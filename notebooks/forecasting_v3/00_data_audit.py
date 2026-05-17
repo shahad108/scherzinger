@@ -93,6 +93,7 @@ def load_monthly() -> pd.DataFrame:
               SUM(revenue)                                AS revenue,
               SUM(quantity)                               AS units,
               SUM(COALESCE(material_per_unit, 0) * quantity) AS cost,
+              SUM(COALESCE(db2_total, 0))                 AS db2_total,
               COUNT(*)                                    AS invoice_count,
               COUNT(DISTINCT customer_id)                 AS customers
             FROM invoices
@@ -107,7 +108,7 @@ def load_monthly() -> pd.DataFrame:
 
     df = pd.DataFrame(rows)
     df["month"] = pd.to_datetime(df["month"])
-    for c in ("revenue", "units", "cost"):
+    for c in ("revenue", "units", "cost", "db2_total"):
         df[c] = df[c].astype(float)
     for c in ("invoice_count", "customers"):
         df[c] = df[c].astype(int)
@@ -199,8 +200,15 @@ clean["avg_price"] = np.where(clean["units"] > 0, clean["revenue"] / clean["unit
 clean["margin_ratio"] = np.where(
     clean["revenue"] > 0, (clean["revenue"] - clean["cost"]) / clean["revenue"], np.nan
 )
+# DB2 margin = SUM(db2_total) / SUM(revenue) per month. This is the column
+# the FE actually displays (see backend/services/forecast/real_hero.py and
+# margin_trajectory.py). margin_ratio above is material-only (~85%); the
+# FE uses DB2 (~60%) which nets out additional cost components (fek/fv/etc).
+clean["db2_margin"] = np.where(
+    clean["revenue"] > 0, clean["db2_total"] / clean["revenue"], np.nan
+)
 
-out_cols = ["month", "revenue", "units", "cost", "avg_price", "margin_ratio"]
+out_cols = ["month", "revenue", "units", "cost", "avg_price", "margin_ratio", "db2_margin"]
 clean_out = clean[out_cols].copy()
 
 assert len(clean_out) == 48, f"expected 48 clean months, got {len(clean_out)}"

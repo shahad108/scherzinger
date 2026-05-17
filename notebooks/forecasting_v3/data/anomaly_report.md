@@ -1,6 +1,6 @@
 # Phase 0 anomaly report
 
-Generated: 2026-05-17T15:41:46.199264+00:00
+Generated: 2026-05-17T16:10:10.444976+00:00
 
 **Z-score baseline:** all z-scores below are computed against the clean-window sample (2022-01..2025-12) only, so the 2026 billing outliers do not inflate σ and mask in-window dips.
 
