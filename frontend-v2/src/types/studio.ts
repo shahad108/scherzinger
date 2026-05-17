@@ -621,4 +621,11 @@ export interface StudioShell {
   comparable: ComparablePanel;
   crossLinks: CrossLink[];
   footerNote?: string;
+  /**
+   * Pricing Studio v3 / Phase 10 — canonical freshness timestamp.
+   * ISO-8601 (UTC); ``null``/absent when the BFF could not resolve a
+   * cost-state / invoice / competitor probe. Rendered as a traffic-light
+   * <FreshnessChip /> in PageHead.
+   */
+  dataThrough?: string | null;
 }

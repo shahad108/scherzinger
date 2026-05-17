@@ -538,7 +538,7 @@ export default function PricingStudioPage() {
       <section id="screen-studio" className="w-full px-6 py-6">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <PageHead header={data.header} />
+            <PageHead header={data.header} dataThrough={data.dataThrough ?? null} />
           </div>
           {/* TODO §5.6: lift the bell into the app shell once placement
               is settled. For now it sits in the Studio page header so

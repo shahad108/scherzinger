@@ -1,10 +1,17 @@
 import type { StudioHeader } from '@/types/studio';
+import { FreshnessChip } from './FreshnessChip';
 
 interface Props {
   header: StudioHeader;
+  /**
+   * Pricing Studio v3 / Phase 10 — canonical freshness timestamp from the BFF
+   * studio shell. Renders a traffic-light <FreshnessChip /> next to the
+   * existing "Updated" sub-stat.
+   */
+  dataThrough?: string | null;
 }
 
-export function PageHead({ header }: Props) {
+export function PageHead({ header, dataThrough }: Props) {
   const [c1, c2, c3] = header.crumbs;
   return (
     <>
@@ -30,6 +37,7 @@ export function PageHead({ header }: Props) {
                 <b>{s.value}</b> {s.label}
               </span>
             ))}
+            <FreshnessChip dataThrough={dataThrough ?? null} />
           </div>
         </div>
         <div className="head-actions">
