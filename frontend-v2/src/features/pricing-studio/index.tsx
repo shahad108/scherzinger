@@ -26,6 +26,9 @@ import { DriverWaterfall } from './components/DriverWaterfall';
 import { LineageDrawer } from './components/LineageDrawer';
 import { LineageDrawerProvider } from './lineage/LineageDrawerContext';
 import { parseDecimal } from './lib/decimal';
+// Pricing Studio v3 / Phase 3 — cost & margin reality.
+import { TriggerBanner } from './components/TriggerBanner';
+import { CostTrajectoryDrawer } from './components/CostTrajectoryDrawer';
 
 export default function PricingStudioPage() {
   const [params, setParams] = useSearchParams();
@@ -37,6 +40,10 @@ export default function PricingStudioPage() {
     family: params.get('family') ?? undefined,
     cluster: params.get('cluster') ?? undefined,
     scenario_id: params.get('scenario_id') ?? undefined,
+    // Phase 3 — deep-link banner trigger; BFF returns trigger_context
+    // when (source, reason) is a recognised tuple.
+    source: params.get('source') ?? undefined,
+    reason: params.get('reason') ?? undefined,
   };
   const { data, isLoading } = useStudio(studioParams);
   // Pricing Studio v3 / Phase 1 — live-wired tick + toast surface. The data
@@ -49,6 +56,9 @@ export default function PricingStudioPage() {
   const urlAid = params.get('aid');
   const [selectedAid, setSelectedAid] = useState<string | null>(urlAid);
   const [activeOption, setActiveOption] = useState<ActiveOptionView | null>(null);
+  // Phase 3 — Cost Trajectory Drawer open state. Sparkline click, "view
+  // outlook" pill, and the TriggerBanner all flip this.
+  const [costDrawerOpen, setCostDrawerOpen] = useState(false);
 
   // Phase 21 — SKU-picker clicks must update the URL so refresh preserves
   // the selection. Wrap setSelectedAid + setSearchParams in a single handler
@@ -161,6 +171,10 @@ export default function PricingStudioPage() {
     if (!live.lastTickAt) return;
     queryClient.invalidateQueries({ queryKey: ['studio-fanout'] });
     queryClient.invalidateQueries({ queryKey: ['customer-drill-in'] });
+    // Phase 3 — `pricing.cost_moved` flows through `useLivePricing` already
+    // (it invalidates ['studio']). Additionally drop the cost-outlook
+    // cache so the drawer reloads fresh data on the next render.
+    queryClient.invalidateQueries({ queryKey: ['cost-outlook'] });
   }, [live.lastTickAt, queryClient]);
 
   if (isLoading || !data || !heroView) {
@@ -207,6 +221,14 @@ export default function PricingStudioPage() {
 
           <div className="ws-bench">
             <WorkbenchHero hero={heroView} />
+
+            {/* Phase 3 — Deep-link trigger banner. Persists for the
+                session; clicking the body opens the Cost Trajectory
+                Drawer; the inline link routes to the originating screen. */}
+            <TriggerBanner
+              trigger={wb.trigger_context ?? null}
+              onOpenCostDrawer={() => setCostDrawerOpen(true)}
+            />
 
             {/* Phase 1 — Recommendation hero card replaces the top-of-page
                 price options. Reads typed BFF blocks; PriceOptions is
@@ -257,6 +279,7 @@ export default function PricingStudioPage() {
               optionsSub={wb.optionsSub}
               onActiveChange={setActiveOption}
               compact
+              optionMargins={wb.option_margins}
             />
 
             <div className="ws-body">
@@ -267,7 +290,12 @@ export default function PricingStudioPage() {
                 proposedPriceDecimal={proposedPriceDecimal}
                 aid={effectiveAid}
               />
-              <CostHistory cost={wb.cost} history={wb.history} />
+              <CostHistory
+                cost={wb.cost}
+                history={wb.history}
+                costHistory={wb.cost_history ?? null}
+                onOpenCostDrawer={() => setCostDrawerOpen(true)}
+              />
             </div>
 
             {showComparable && <ComparablePanel data={data.comparable} />}
@@ -289,6 +317,14 @@ export default function PricingStudioPage() {
 
         <CrossLinks links={data.crossLinks} />
         <LineageDrawer aid={effectiveAid} />
+        <CostTrajectoryDrawer
+          open={costDrawerOpen}
+          onOpenChange={setCostDrawerOpen}
+          aid={effectiveAid}
+          cluster={selectedSku?.cluster ?? null}
+          history={wb.cost_history ?? null}
+          horizonMonths={6}
+        />
       </section>
     </LineageDrawerProvider>
   );

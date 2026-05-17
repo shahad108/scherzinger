@@ -68,6 +68,13 @@ export type StudioParams = ShellParams & {
   family?: string;
   cluster?: string;
   scenario_id?: string;
+  // Pricing Studio v3 / Phase 3 — deep-link trigger context. The BFF
+  // reads (source, reason) and returns `workbench.trigger_context` for
+  // the banner. Recognised tuples (e.g. forecasting+cost-spike,
+  // margin+erosion, action-center+leakage) come back populated;
+  // unknown tuples return null and the banner is suppressed.
+  source?: string;
+  reason?: string;
 };
 
 export type AiParams = ShellParams;
