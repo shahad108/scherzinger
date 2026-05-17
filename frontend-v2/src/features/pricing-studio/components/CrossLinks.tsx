@@ -23,6 +23,18 @@ const ROUTE_FOR_LABEL: Record<string, string> = {
   'Quotes': '/quotes',
 };
 
+// Short-key aliases the BFF uses on `target` (e.g. crossLinks[].target).
+// Keeps the seed terse while still resolving to canonical app routes.
+const ROUTE_FOR_TARGET_KEY: Record<string, string> = {
+  action: '/action-center',
+  'action-center': '/action-center',
+  forecast: '/forecasting',
+  forecasting: '/forecasting',
+  quotes: '/quotes',
+  margin: '/margin',
+  'margin-cockpit': '/margin',
+};
+
 function destinationFor(
   link: CrossLink,
   aid: string | null | undefined,
@@ -34,7 +46,10 @@ function destinationFor(
     url.searchParams.set('source', 'studio');
     return `${url.pathname}${url.search}`;
   }
-  const base = ROUTE_FOR_LABEL[link.label];
+  // Or a short-key on `target` ("action" / "forecast" / "quotes" / "margin").
+  const base =
+    (link.target && ROUTE_FOR_TARGET_KEY[link.target.toLowerCase()]) ||
+    ROUTE_FOR_LABEL[link.label];
   if (!base) return null;
   const sp = new URLSearchParams();
   if (base === '/forecasting') {
