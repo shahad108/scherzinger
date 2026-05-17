@@ -268,3 +268,64 @@ def test_empty_diff_returns_summary_with_empty_changes(db, aid):
     assert summary.aid == aid
     assert summary.changes == []
     assert summary.summary_lineage_ref is not None
+
+
+# ---------------------------------------------------------------------------
+# SF1 — Empty diff GETs must not bloat the lineage_refs table.
+# ---------------------------------------------------------------------------
+
+
+def test_empty_diff_does_not_insert_lineage_row(db, aid):
+    """Performance: an empty diff (no changes) must NOT create a new
+    ``lineage_refs`` row. The diff endpoint is hit on every page open,
+    so allocating a lineage row per empty GET bloats the table.
+    """
+    from backend.models.pricing.lineage import LineageRefRow
+
+    before_count = db.query(LineageRefRow).count()
+    summary = build_diff(
+        aid=aid,
+        since=datetime.now(timezone.utc) - timedelta(days=1),
+        db_session=db,
+    )
+    after_count = db.query(LineageRefRow).count()
+
+    assert summary.changes == []
+    # Field still populated for wire-shape stability, but no row inserted.
+    assert summary.summary_lineage_ref is not None
+    assert after_count == before_count, (
+        f"empty diff inserted {after_count - before_count} lineage row(s)"
+    )
+
+
+def test_nonempty_diff_inserts_one_lineage_row(db, aid):
+    """Performance counterpart: when ``changes`` is non-empty the diff
+    must still insert exactly one lineage row (unchanged behavior).
+    """
+    from backend.models.pricing.lineage import LineageRefRow
+
+    db.add(CostStateRow(aid=aid, unit_cost=Decimal("88.00"), breakdown={}))
+    record_audit(
+        actor="system",
+        action=PricingAuditAction.OVERRIDE_ADDED,
+        target_kind=PricingAuditTargetKind.SKU,
+        target_id=aid,
+        after={"aid": aid, "unit_cost": "80.00"},
+        session=db,
+    )
+    db.query(PricingAuditEntry).filter_by(target_id=aid).update(
+        {PricingAuditEntry.at: datetime.now(timezone.utc) - timedelta(days=3)},
+        synchronize_session=False,
+    )
+    db.flush()
+
+    before_count = db.query(LineageRefRow).count()
+    summary = build_diff(
+        aid=aid,
+        since=datetime.now(timezone.utc) - timedelta(days=1),
+        db_session=db,
+    )
+    after_count = db.query(LineageRefRow).count()
+
+    assert len(summary.changes) >= 1
+    assert after_count == before_count + 1

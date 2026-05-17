@@ -17,6 +17,7 @@ can render with no client-side sorting (deterministic test diffs too).
 from __future__ import annotations
 
 import logging
+import uuid
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Optional
@@ -37,6 +38,15 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_LOOKBACK = timedelta(days=7)
 _TOP_N_CUSTOMER_MOVERS = 5
+
+# SF1 — Sentinel lineage_ref returned when ``changes`` is empty so we don't
+# allocate a fresh ``lineage_refs`` row on every page-open diff GET (the diff
+# endpoint is hit on every Studio render → table bloat). The UUID is
+# deterministic (UUID5 over a namespaced string) so clients can recognize
+# the sentinel if they want, and the wire shape stays non-nullable.
+_EMPTY_DIFF_SENTINEL_LINEAGE_REF: uuid.UUID = uuid.uuid5(
+    uuid.NAMESPACE_URL, "scherzinger://pricing/diff/empty"
+)
 
 
 def _safe_decimal(v: Any) -> Optional[Decimal]:
@@ -405,21 +415,28 @@ def build_diff(
     # within-kind ordering.
     changes.sort(key=lambda c: (c.kind.value, c.customer_id or ""))
 
-    lineage_row = create_lineage(
-        source_kind=LineageSourceKind.MANUAL_OVERRIDE,
-        source_id=f"diff:{aid}:{since.isoformat()}",
-        sql=None,
-        model="diff_v1",
-        computed_by="system",
-        session=db_session,
-    )
+    # SF1 — skip the lineage_refs INSERT when nothing changed. The diff
+    # endpoint is hit on every Studio page-open, so writing a row per call
+    # bloats the table. Only stamp lineage when there's an actual diff.
+    if changes:
+        lineage_row = create_lineage(
+            source_kind=LineageSourceKind.MANUAL_OVERRIDE,
+            source_id=f"diff:{aid}:{since.isoformat()}",
+            sql=None,
+            model="diff_v1",
+            computed_by="system",
+            session=db_session,
+        )
+        summary_lineage_ref = lineage_row.id
+    else:
+        summary_lineage_ref = _EMPTY_DIFF_SENTINEL_LINEAGE_REF
 
     return DiffSummary(
         aid=aid,
         since=since,
         now=now,
         changes=changes,
-        summary_lineage_ref=lineage_row.id,
+        summary_lineage_ref=summary_lineage_ref,
     )
 
 
