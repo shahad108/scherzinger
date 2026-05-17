@@ -63,9 +63,42 @@ def _linreg_slope(y: list[float]) -> float:
     return num / den
 
 
-def get_commodity_trajectories(db: Session | None) -> dict[str, Any]:
+def _cluster_for_aid(db: Session, aid: str) -> str | None:
+    """Lookup the SKU's commodity group via the invoice ledger."""
+    try:
+        row = db.execute(
+            text(
+                "SELECT commodity_group FROM invoices "
+                "WHERE article_id = :aid "
+                "ORDER BY date DESC LIMIT 1"
+            ),
+            {"aid": aid},
+        ).fetchone()
+    except Exception:
+        return None
+    if row is None or row[0] is None:
+        return None
+    return str(row[0]).split(" ")[0]
+
+
+def get_commodity_trajectories(
+    db: Session | None,
+    *,
+    aid: str | None = None,
+) -> dict[str, Any]:
+    """Cluster-level (default) or per-SKU when ``aid`` is given.
+
+    Pricing Studio v3 / Phase 3.2.1: when ``aid`` is provided we narrow the
+    groups to the SKU's cluster — the workbench's commodity card then shows
+    only the relevant trajectory rather than all four clusters.
+    """
     if db is None:
         return _seed()
+    groups = list(_INCLUDE_GROUPS)
+    if aid:
+        own_cluster = _cluster_for_aid(db, aid)
+        if own_cluster is not None and own_cluster in _INCLUDE_GROUPS:
+            groups = [own_cluster]
     try:
         rows = db.execute(text("""
             SELECT commodity_group, year, quarter,
@@ -77,7 +110,7 @@ def get_commodity_trajectories(db: Session | None) -> dict[str, Any]:
               AND year IS NOT NULL
             GROUP BY commodity_group, year, quarter
             ORDER BY commodity_group, year, quarter
-        """), {"groups": list(_INCLUDE_GROUPS)}).fetchall()
+        """), {"groups": groups}).fetchall()
     except Exception:
         return _seed()
     if not rows:
@@ -102,8 +135,13 @@ def get_commodity_trajectories(db: Session | None) -> dict[str, Any]:
     # Use last 12 quarters
     quarters_sorted = quarters_sorted[-12:]
 
-    groups: list[dict[str, Any]] = []
-    for gid in _INCLUDE_GROUPS:
+    # When narrowed to a single SKU's cluster, only emit that cluster's
+    # group; otherwise iterate over the canonical _INCLUDE_GROUPS ordering.
+    iter_groups: list[str] = (
+        [g for g in _INCLUDE_GROUPS if g in groups] if aid else list(_INCLUDE_GROUPS)
+    )
+    out_groups: list[dict[str, Any]] = []
+    for gid in iter_groups:
         series_map = dict(by_group.get(gid, []))
         values: list[float | None] = [series_map.get(q) for q in quarters_sorted]
         actuals = [v for v in values if v is not None]
@@ -112,10 +150,10 @@ def get_commodity_trajectories(db: Session | None) -> dict[str, Any]:
             slope_per_year = slope_per_q * 4
         else:
             slope_per_year = 0.0
-        groups.append({
+        out_groups.append({
             "id": gid,
             "name": _NAMES[gid],
             "series": [round(v, 2) if v is not None else None for v in values],
             "slopePerYear": round(slope_per_year, 2),
         })
-    return {"source": "live", "quarters": quarters_sorted, "groups": groups}
+    return {"source": "live", "quarters": quarters_sorted, "groups": out_groups}

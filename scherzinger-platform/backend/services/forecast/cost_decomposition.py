@@ -62,11 +62,26 @@ def _insight(name: str, values: list[float]) -> tuple[str, str]:
     return trend, insight
 
 
-def get_cost_decomposition(db: Session | None) -> dict[str, Any]:
+def get_cost_decomposition(
+    db: Session | None,
+    *,
+    aid: str | None = None,
+) -> dict[str, Any]:
+    """Cluster-level cost decomposition (default) or per-SKU when ``aid`` is set.
+
+    Pricing Studio v3 / Phase 3.2.1: narrowing to a single SKU lets the
+    workbench render the per-SKU material/labor/outsourcing/overhead
+    split. When the SKU has no invoice rows we fall back to the cluster
+    seed so the card never blanks.
+    """
     if db is None:
         return _seed()
+    aid_clause = "AND article_id = :aid" if aid else ""
+    params: dict[str, Any] = {}
+    if aid:
+        params["aid"] = aid
     try:
-        rows = db.execute(text("""
+        rows = db.execute(text(f"""
             WITH bounds AS (SELECT MAX(date) AS max_d FROM invoices)
             SELECT year, quarter,
                    SUM(material_per_unit * quantity) / NULLIF(SUM(revenue), 0) * 100 AS material_pct,
@@ -76,9 +91,10 @@ def get_cost_decomposition(db: Session | None) -> dict[str, Any]:
             WHERE date >= bounds.max_d - INTERVAL '36 months'
               AND quarter IS NOT NULL
               AND year IS NOT NULL
+              {aid_clause}
             GROUP BY year, quarter
             ORDER BY year, quarter
-        """)).fetchall()
+        """), params).fetchall()
     except Exception:
         return _seed()
 

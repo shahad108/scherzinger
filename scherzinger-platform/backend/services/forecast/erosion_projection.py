@@ -106,13 +106,22 @@ def _fetch_monthly_series(
     db: Session,
     *,
     months: int = 24,
+    aid: str | None = None,
 ) -> dict[str, list[tuple[str, float, float]]]:
     """Per cluster, last ``months`` monthly tuples of
     (month_key, avg_list_price_per_unit, avg_cost_per_unit).
 
     list price ≈ revenue / quantity (realised unit price)
     cost      ≈ COALESCE(hkvoll_per_unit, material_per_unit+fek_per_unit+fv_per_unit)
+
+    When ``aid`` is provided (Pricing Studio v3 / Phase 3.2.1) the series
+    is narrowed to that SKU so the workbench shows the per-SKU erosion
+    rather than the cluster average.
     """
+    aid_clause = "AND article_id = :aid" if aid else ""
+    params: dict[str, Any] = {"months": months}
+    if aid:
+        params["aid"] = aid
     rows = db.execute(
         _sql_text(
             f"""
@@ -132,11 +141,12 @@ def _fetch_monthly_series(
              WHERE commodity_group IS NOT NULL
                AND quantity > 0
                AND date >= (SELECT MAX(date) - (:months * INTERVAL '1 month') FROM invoices)
+               {aid_clause}
              GROUP BY commodity_group, year, month
              ORDER BY commodity_group, year, month
             """
         ),
-        {"months": months},
+        params,
     ).fetchall()
 
     out: dict[str, list[tuple[str, float, float]]] = {}
@@ -259,6 +269,7 @@ def build_erosion_projection(
     *,
     cluster: str | None = None,
     horizon_months: int = 12,
+    aid: str | None = None,
 ) -> dict[str, Any]:
     """Build the list-price erosion projection panel.
 
@@ -275,7 +286,7 @@ def build_erosion_projection(
         if anchor is None:
             return empty
 
-        series_by_cluster = _fetch_monthly_series(db)
+        series_by_cluster = _fetch_monthly_series(db, aid=aid)
         cadence_by_cluster = _fetch_price_update_history(db)
 
         rows: list[dict[str, Any]] = []

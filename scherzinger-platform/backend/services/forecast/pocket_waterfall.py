@@ -81,6 +81,7 @@ def build_pocket_waterfall_from_db(
     *,
     cluster: str | None = None,
     months: int = 12,
+    aid: str | None = None,
 ) -> dict[str, Any]:
     """Live variant that gathers step values from the invoice + quote ledgers,
     then delegates to ``build_pocket_waterfall`` for the pure shape.
@@ -118,6 +119,13 @@ def build_pocket_waterfall_from_db(
             cluster_clause_i = "AND i.commodity_group = :cluster"
             cluster_clause_q = "AND q.commodity_group = :cluster"
             params["cluster"] = cluster
+        # Phase 3.2.1 (Pricing Studio v3): SKU-granular waterfall — when
+        # aid is set we narrow the invoice + quote ledger to that article.
+        # Quote rows carry an ``article_id`` column same as invoices.
+        if aid:
+            cluster_clause_i = (cluster_clause_i + " AND i.article_id = :aid").strip()
+            cluster_clause_q = (cluster_clause_q + " AND q.article_id = :aid").strip()
+            params["aid"] = aid
 
         # "List" is not stored on the invoice line; we approximate it as the
         # per-article 95th-percentile realised unit-price × the line quantity.
@@ -192,6 +200,9 @@ def build_pocket_waterfall_from_db(
         if cluster:
             cluster_filter_p = "AND commodity_group = :cluster"
             ppct_params["cluster"] = cluster
+        if aid:
+            cluster_filter_p = (cluster_filter_p + " AND article_id = :aid").strip()
+            ppct_params["aid"] = aid
         price_rows = db.execute(text(f"""
             SELECT commodity_group, revenue, quantity
             FROM invoices
