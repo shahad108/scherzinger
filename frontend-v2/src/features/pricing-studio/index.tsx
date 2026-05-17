@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useStudio } from '@/data/api/useStudio';
 import { useProposals } from '@/data/api/useProposals';
@@ -51,9 +51,16 @@ import type { SkuPickerMode } from './components/SkuPicker';
 // Pricing Studio v3 / Phase 7 — push-to-quoting SSE invalidation + toast.
 import { priceBookKey } from '@/data/api/usePublishPrice';
 import { useActionFeedbackStore } from '@/stores/actionFeedbackStore';
+// Pricing Studio v3 / Phase 11 — workflow polish.
+import { ActiveFiltersStrip } from './components/ActiveFiltersStrip';
+import { KeyboardCheatSheet } from './components/KeyboardCheatSheet';
+import { SavedViewsMenu } from './components/SavedViewsMenu';
+import { useStudioKeyboardShortcuts } from './hooks/useStudioKeyboardShortcuts';
 
 export default function PricingStudioPage() {
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [cheatSheetOpen, setCheatSheetOpen] = useState(false);
   // Phase 21 — full deep-link filter quartet flows through `useStudio` so a
   // refresh preserves the exact slice the user landed on.
   const studioParams = {
@@ -506,6 +513,27 @@ export default function PricingStudioPage() {
     queryClient.invalidateQueries({ queryKey: ['pricing-proposals'] });
   }, [proposalStream.lastEvent, queryClient]);
 
+  // Pricing Studio v3 / Phase 11 — keyboard shortcuts (j/k for SKU nav,
+  // ?-to-open cheat sheet, a-to-Action Center). We register the hook here
+  // so the listener is active for the whole studio page.
+  const skuListForKb = data?.skus ?? [];
+  const navigateToSku = (delta: number) => {
+    if (skuListForKb.length === 0) return;
+    const currentIdx = skuListForKb.findIndex(
+      (s) => s.aid === (selectedAid ?? data?.defaultAid),
+    );
+    const base = currentIdx === -1 ? 0 : currentIdx;
+    const nextIdx = (base + delta + skuListForKb.length) % skuListForKb.length;
+    const nextAid = skuListForKb[nextIdx]?.aid;
+    if (nextAid) handleSelectSku(nextAid);
+  };
+  useStudioKeyboardShortcuts({
+    onNextSku: () => navigateToSku(1),
+    onPrevSku: () => navigateToSku(-1),
+    onOpenActionCenter: () => navigate('/action-center?source=studio'),
+    onOpenCheatSheet: () => setCheatSheetOpen(true),
+  });
+
   if (isLoading || !data || !heroView) {
     return <StudioSkeleton />;
   }
@@ -545,11 +573,13 @@ export default function PricingStudioPage() {
               Phase 5 is functionally complete. Phase 9 adds the alerts
               bell next to it so Frank gets both queues in one glance. */}
           <div className="mt-2 flex shrink-0 items-center gap-2">
+            <SavedViewsMenu />
             <AlertInboxBell />
             <ApprovalInboxBell />
           </div>
         </div>
         <DeepLinkBanner effectiveAid={effectiveAid} skuFound={!requestedSkuMissing} />
+        <ActiveFiltersStrip />
 
         <div className="ws-grid">
           <SkuPicker
@@ -563,6 +593,7 @@ export default function PricingStudioPage() {
             selectedAids={batchAids}
             onToggleAid={handleToggleAid}
             onBuildBatch={handleBuildBatch}
+            onSelectRange={(aids) => setBatchAids(aids)}
           />
 
           {inBatchMode ? (
@@ -721,7 +752,12 @@ export default function PricingStudioPage() {
           )}
         </div>
 
-        <CrossLinks links={data.crossLinks} />
+        <CrossLinks
+          links={data.crossLinks}
+          aid={effectiveAid}
+          cluster={selectedSku?.cluster ?? studioParams.cluster ?? null}
+        />
+        <KeyboardCheatSheet open={cheatSheetOpen} onOpenChange={setCheatSheetOpen} />
         <LineageDrawer aid={effectiveAid} />
         <BatchApprovalDrawer
           open={batchDrawerOpen}

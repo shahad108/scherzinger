@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { FilterDef, SkuFlag, SkuListEntry, ToggleDef } from '@/types/studio';
 
 export type SkuPickerMode = 'single' | 'batch';
@@ -19,6 +19,13 @@ interface Props {
   selectedAids?: string[];
   onToggleAid?: (aid: string) => void;
   onBuildBatch?: (aids: string[]) => void;
+  /** Phase 11 — shift-click range select. Replaces the staged set with the
+   * union of currently-selected + the inclusive range from `fromAid` to
+   * `toAid` (using the visible/filtered order). The Studio page is the
+   * source of truth for the staged set; this callback delegates the
+   * mutation back up.
+   */
+  onSelectRange?: (aids: string[]) => void;
 }
 
 export function SkuPicker({
@@ -32,7 +39,11 @@ export function SkuPicker({
   selectedAids = [],
   onToggleAid,
   onBuildBatch,
+  onSelectRange,
 }: Props) {
+  // Phase 11 — track the last AID clicked in batch mode so shift-click can
+  // pivot a range from it.
+  const lastBatchAnchorRef = useRef<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<SkuFlag>('all');
   const initialToggleState = useMemo(() => {
     const out: Record<string, boolean> = {};
@@ -167,10 +178,37 @@ export function SkuPicker({
               <button
                 type="button"
                 className="ws-row-body"
-                onClick={() => {
-                  if (batchMode) onToggleAid?.(s.aid);
-                  else onSelect(s.aid);
+                onClick={(e) => {
+                  if (!batchMode) {
+                    onSelect(s.aid);
+                    return;
+                  }
+                  // Phase 11 — shift-click selects an inclusive range from
+                  // the last anchor to this row (using the visible order so
+                  // active filters narrow the range correctly).
+                  if (e.shiftKey && lastBatchAnchorRef.current) {
+                    const anchor = lastBatchAnchorRef.current;
+                    const idxA = visible.findIndex((v) => v.aid === anchor);
+                    const idxB = visible.findIndex((v) => v.aid === s.aid);
+                    if (idxA !== -1 && idxB !== -1 && onSelectRange) {
+                      const [lo, hi] =
+                        idxA <= idxB ? [idxA, idxB] : [idxB, idxA];
+                      const range = visible
+                        .slice(lo, hi + 1)
+                        .map((r) => r.aid);
+                      const merged = Array.from(
+                        new Set([...selectedAids, ...range]),
+                      );
+                      onSelectRange(merged);
+                      lastBatchAnchorRef.current = s.aid;
+                      return;
+                    }
+                  }
+                  // Plain click (or cmd/ctrl click) → toggle this AID.
+                  lastBatchAnchorRef.current = s.aid;
+                  onToggleAid?.(s.aid);
                 }}
+                data-testid={`sku-picker-row-${s.aid}`}
               >
                 <span className="ws-aid">{s.aid}</span>
                 <span className={`ws-marg ${s.marginTone}`}>{s.margin}</span>
