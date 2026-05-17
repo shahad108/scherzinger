@@ -366,3 +366,116 @@ def test_inbox_returns_pending_instances_for_matching_role(db) -> None:
     items_other = approval_workflow.inbox_for_roles(session=db, user_roles=["sales"])
     matching_other = [i for i in items_other if i["proposal_id"] == str(proposal.id)]
     assert matching_other == []
+
+
+def test_concurrent_apply_decision_serialises_via_row_lock(db) -> None:
+    """MF3 — two approvers racing through ``apply_decision`` must not
+    both succeed.
+
+    Without ``SELECT FOR UPDATE`` on the approval_instance row, two
+    concurrent transactions can both observe the same pending step,
+    both append ApprovalAction rows, and both flip ``proposal.status``
+    → duplicate side effects.
+
+    With the row lock, the second transaction blocks until the first
+    commits, then re-reads the post-commit state and finds no pending
+    step → raises ApprovalWorkflowError.
+
+    We commit the seed data so the lock-blocked second session can
+    actually observe the first session's updates after it commits.
+    Cleanup via explicit deletes at the end keeps the test isolated.
+    """
+    import threading
+
+    from backend.database import SessionLocal
+    from backend.models import PricingProposal
+    from backend.models.pricing.approval import ApprovalInstance
+
+    creator = _seed_user(db)
+    proposal = _seed_proposal(
+        db,
+        creator_id=creator,
+        delta_pp=Decimal("4.0"),
+        current_price=Decimal("100"),
+        proposed_price=Decimal("106"),
+        tier="B",
+    )
+    instance, _ = approval_workflow.submit_proposal_for_approval(
+        session=db, proposal=proposal, actor=str(creator)
+    )
+    db.commit()  # Persist so both worker sessions can observe the row.
+
+    proposal_id = proposal.id
+    instance_id = instance.id
+
+    results: list[tuple[bool, str | None]] = []
+    barrier = threading.Barrier(2)
+
+    def _worker(label: str) -> None:
+        session = SessionLocal()
+        try:
+            inst = session.get(ApprovalInstance, instance_id)
+            prop = session.get(PricingProposal, proposal_id)
+            barrier.wait(timeout=10)  # Release both threads simultaneously.
+            try:
+                approval_workflow.apply_decision(
+                    session=session,
+                    instance=inst,
+                    proposal=prop,
+                    actor=f"md-{label}",
+                    actor_roles=["md"],
+                    decision=ApprovalDecisionKind.APPROVE,
+                    comment=label,
+                )
+                session.commit()
+                results.append((True, None))
+            except approval_workflow.ApprovalWorkflowError as exc:
+                session.rollback()
+                results.append((False, str(exc)))
+        finally:
+            session.close()
+
+    t1 = threading.Thread(target=_worker, args=("A",))
+    t2 = threading.Thread(target=_worker, args=("B",))
+    t1.start()
+    t2.start()
+    t1.join(timeout=20)
+    t2.join(timeout=20)
+
+    # Exactly one worker wins; the other must observe the post-commit
+    # state and raise (no pending step OR proposal already terminal).
+    winners = [r for r in results if r[0]]
+    losers = [r for r in results if not r[0]]
+    try:
+        assert len(winners) == 1, f"expected exactly one winner, got {results!r}"
+        assert len(losers) == 1, f"expected exactly one loser, got {results!r}"
+
+        # Exactly one ApprovalAction row landed.
+        check = SessionLocal()
+        try:
+            actions = (
+                check.query(ApprovalAction)
+                .filter(ApprovalAction.approval_instance_id == instance_id)
+                .all()
+            )
+            assert len(actions) == 1, f"expected 1 action row, got {len(actions)}"
+            prop_check = check.get(PricingProposal, proposal_id)
+            assert prop_check.status == "approved"
+        finally:
+            check.close()
+    finally:
+        # Clean up the persisted rows so the test stays isolated.
+        cleanup = SessionLocal()
+        try:
+            cleanup.query(ApprovalAction).filter(
+                ApprovalAction.approval_instance_id == instance_id
+            ).delete()
+            cleanup.query(ApprovalInstance).filter(
+                ApprovalInstance.id == instance_id
+            ).delete()
+            cleanup.query(PricingProposal).filter(
+                PricingProposal.id == proposal_id
+            ).delete()
+            cleanup.commit()
+        finally:
+            cleanup.close()

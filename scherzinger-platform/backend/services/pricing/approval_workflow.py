@@ -304,7 +304,25 @@ def apply_decision(
     the action row, advances ``current_step`` on approve, flips the
     proposal status terminally on reject/request_changes/last-approve,
     writes the mirroring audit row, publishes the SSE event.
+
+    MF3 (Phase-5 review): the approval_instance row is re-fetched with
+    ``SELECT ... FOR UPDATE`` at the top so two approvers passing through
+    concurrently can't both observe the same pending step and double-
+    apply. The second transaction blocks until the first commits, then
+    re-reads the freshly-updated state and bounces out via the
+    no-pending-step / proposal-terminal guard below.
     """
+    # Acquire a row-level lock on the approval_instance for the duration
+    # of this transaction. ``refresh(with_for_update=True)`` issues a
+    # ``SELECT ... FOR UPDATE`` against the row and re-syncs the
+    # ORM-attached instance so we read the latest steps/current_step.
+    session.refresh(instance, with_for_update=True)
+    # Also refresh the proposal — the parallel transaction may have just
+    # flipped its status, and the row lock on the instance doesn't cover
+    # the proposal row. Re-reading here means the terminal-status guard
+    # below sees the post-commit truth.
+    session.refresh(proposal)
+
     if proposal.status in {"approved", "rejected", "implemented"}:
         raise ApprovalWorkflowError(f"proposal is already {proposal.status!r}")
 
