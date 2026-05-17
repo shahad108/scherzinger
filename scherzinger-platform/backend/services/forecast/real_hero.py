@@ -216,6 +216,23 @@ def build_hero(
     if not history_rows:
         return _empty(mode, horizon_months)
 
+    # Drop the 2026 billing-backlog artifact from the displayed history. Q1
+    # 2026 was under-billed (28/35/50 invoices vs ~120 norm) and April 2026
+    # posted the catch-up dump (492 invoices in one month). v3's training set
+    # already masks these months; without the same mask on the FE history the
+    # chart shows €99K-€184K dips for Jan-Mar followed by a €600K April spike
+    # and looks broken. The v3 forecast starts at Jan-2026, so peeling the
+    # 2026 actuals lets the forecast line take over cleanly from Dec-2025.
+    # Anomaly rule: invoice_count <= 50 OR invoice_count > 300 in the source
+    # parquet's audit. Encode the result statically here (Jan-Apr 2026) so
+    # this module doesn't need to re-run the audit.
+    _ANOMALY_MONTHS = {(2026, 1), (2026, 2), (2026, 3), (2026, 4)}
+    history_rows = [
+        (d, v) for (d, v) in history_rows if (d.year, d.month) not in _ANOMALY_MONTHS
+    ]
+    if not history_rows:
+        return _empty(mode, horizon_months)
+
     # Trim to last 12 completed-month actuals.
     history_rows = history_rows[-12:]
     actuals = [v for (_, v) in history_rows]
