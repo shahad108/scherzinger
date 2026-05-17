@@ -1,0 +1,94 @@
+{
+  "method": "direct",
+  "mae_pp": 1.286980483928264,
+  "details": {
+    "components": {
+      "revenue_model": "Theta",
+      "revenue_mase_cv": 0.745040694929939,
+      "cost_model": "LightGBM",
+      "cost_mase_cv": 0.6033172463926336,
+      "mae_pp_overall": 2.8609531978469684,
+      "mae_pp_per_fold": [
+        3.788665878751574,
+        2.1711408400058194,
+        2.0058229297364982,
+        3.0918374576561938,
+        2.8530011489292217,
+        3.610908499349543,
+        2.5052956304999263
+      ],
+      "note": "Per-fold rev forecast uses the bake-off winner refit on each training window (NOT the reconciled MinTrace path). The final 12-month margin is built from the Phase 3 reconciled revenue forecast + the cost winner forecast."
+    },
+    "direct": {
+      "model": "AutoETS",
+      "margin_ratio_mase_cv": 0.5629401339876623,
+      "mae_pp_overall": 1.286980483928264,
+      "mae_pp_per_fold": [
+        1.3263094954592287,
+        2.2950494553063456,
+        1.554814315270148,
+        0.8410630583554567,
+        0.988717087366379,
+        0.8432238897330562,
+        1.1596860860072333
+      ]
+    },
+    "cv": {
+      "folds": 7,
+      "horizon": 6,
+      "start_train": 24,
+      "step": 3
+    }
+  },
+  "monthly_forecast": [
+    {
+      "month": "2026-01-01",
+      "margin_p50": 0.8471654099603008
+    },
+    {
+      "month": "2026-02-01",
+      "margin_p50": 0.8471654099603008
+    },
+    {
+      "month": "2026-03-01",
+      "margin_p50": 0.8471654099603008
+    },
+    {
+      "month": "2026-04-01",
+      "margin_p50": 0.8471654099603008
+    },
+    {
+      "month": "2026-05-01",
+      "margin_p50": 0.8471654099603008
+    },
+    {
+      "month": "2026-06-01",
+      "margin_p50": 0.8471654099603008
+    },
+    {
+      "month": "2026-07-01",
+      "margin_p50": 0.8471654099603008
+    },
+    {
+      "month": "2026-08-01",
+      "margin_p50": 0.8471654099603008
+    },
+    {
+      "month": "2026-09-01",
+      "margin_p50": 0.8471654099603008
+    },
+    {
+      "month": "2026-10-01",
+      "margin_p50": 0.8471654099603008
+    },
+    {
+      "month": "2026-11-01",
+      "margin_p50": 0.8471654099603008
+    },
+    {
+      "month": "2026-12-01",
+      "margin_p50": 0.8471654099603008
+    }
+  ],
+  "definition_note": "margin_ratio in clean_monthly is (revenue - material_cost) / revenue (~85%). The FE displays DB2 gross margin (~27%) which uses db2_total. Phase 8 must reconcile this definition mismatch."
+}
