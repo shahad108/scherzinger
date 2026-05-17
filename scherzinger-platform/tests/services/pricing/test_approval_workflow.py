@@ -1,8 +1,10 @@
 """Phase 5 — approval workflow service tests.
 
 Exercises ``submit_proposal_for_approval`` + ``apply_decision`` against
-a live DB session. Frank is the proposal creator; Manuel + MD are the
-approver roles in the seeded JSON rules.
+a live DB session. Frank is the proposal creator; ``md`` is the only
+seeded approver role (see MF1 — Manuel is reserved for a future
+intermediate-approver role, but until that role is seeded delta>5% and
+tier-A both route to ``md``).
 
 These tests skip cleanly when the test DB isn't reachable.
 """
@@ -110,7 +112,7 @@ def _reset_rules_cache():
     reset_cache_for_tests()
 
 
-def test_submit_with_delta_over_5pct_routes_to_manuel(db) -> None:
+def test_submit_with_delta_over_5pct_routes_to_md(db) -> None:
     creator = _seed_user(db)
     proposal = _seed_proposal(
         db,
@@ -124,9 +126,9 @@ def test_submit_with_delta_over_5pct_routes_to_manuel(db) -> None:
         session=db, proposal=proposal, actor=str(creator)
     )
     db.flush()
-    assert "manuel" in decision.needs
+    assert "md" in decision.needs
     assert len(instance.steps) == 1
-    assert instance.steps[0]["role"] == "manuel"
+    assert instance.steps[0]["role"] == "md"
     assert instance.steps[0]["decision"] == ApprovalStepState.PENDING.value
     assert proposal.status == "pending_approval"
 
@@ -150,8 +152,13 @@ def test_submit_with_small_delta_tier_c_auto_approves(db) -> None:
     assert proposal.status == "approved"
 
 
-def test_approve_advances_through_multiple_steps(db) -> None:
-    """A tier-A customer with delta > 5% routes to both manuel and md."""
+def test_tier_a_with_high_delta_routes_to_md_deduped(db) -> None:
+    """Tier-A customer with delta>5% fires BOTH delta-over-5pct + tier-a-customer.
+
+    Post-MF1 both rules route to ``md``, so the rules engine must dedupe
+    them into a single approval step (the user already proved they can act
+    as ``md`` — making them approve twice is product noise).
+    """
     creator = _seed_user(db)
     proposal = _seed_proposal(
         db,
@@ -165,28 +172,13 @@ def test_approve_advances_through_multiple_steps(db) -> None:
         session=db, proposal=proposal, actor=str(creator)
     )
     db.flush()
-    assert "manuel" in decision.needs
-    assert "md" in decision.needs
-    assert [s["role"] for s in instance.steps] == ["manuel", "md"]
+    assert decision.needs == ["md"]
+    assert "delta-over-5pct" in decision.thresholds_hit
+    assert "tier-a-customer" in decision.thresholds_hit
+    assert [s["role"] for s in instance.steps] == ["md"]
     assert proposal.status == "pending_approval"
 
-    # Step 0 (manuel) approves — instance must advance, proposal stays pending.
-    approval_workflow.apply_decision(
-        session=db,
-        instance=instance,
-        proposal=proposal,
-        actor="manuel-actor",
-        actor_roles=["manuel"],
-        decision=ApprovalDecisionKind.APPROVE,
-        comment="ok at manuel",
-    )
-    db.flush()
-    assert instance.current_step == 1
-    assert instance.steps[0]["decision"] == ApprovalStepState.APPROVED.value
-    assert instance.steps[1]["decision"] == ApprovalStepState.PENDING.value
-    assert proposal.status == "pending_approval"
-
-    # Step 1 (md) approves — proposal terminally approves.
+    # MD approves — terminal approve, proposal flips to approved.
     approval_workflow.apply_decision(
         session=db,
         instance=instance,
@@ -219,8 +211,8 @@ def test_reject_marks_proposal_rejected(db) -> None:
         session=db,
         instance=instance,
         proposal=proposal,
-        actor="manuel-actor",
-        actor_roles=["manuel"],
+        actor="md-actor",
+        actor_roles=["md"],
         decision=ApprovalDecisionKind.REJECT,
         comment="margin too thin",
     )
@@ -247,8 +239,8 @@ def test_request_changes_marks_proposal_changes_requested(db) -> None:
         session=db,
         instance=instance,
         proposal=proposal,
-        actor="manuel-actor",
-        actor_roles=["manuel"],
+        actor="md-actor",
+        actor_roles=["md"],
         decision=ApprovalDecisionKind.REQUEST_CHANGES,
         comment="please cite the cost source",
     )
@@ -277,7 +269,7 @@ def test_decision_requires_matching_role(db) -> None:
             instance=instance,
             proposal=proposal,
             actor="rando",
-            actor_roles=["sales"],  # not manuel
+            actor_roles=["sales"],  # not md
             decision=ApprovalDecisionKind.APPROVE,
             comment=None,
         )
@@ -334,8 +326,8 @@ def test_action_row_is_persisted_for_each_decision(db) -> None:
         session=db,
         instance=instance,
         proposal=proposal,
-        actor="manuel-actor",
-        actor_roles=["manuel"],
+        actor="md-actor",
+        actor_roles=["md"],
         decision=ApprovalDecisionKind.APPROVE,
         comment="ok",
     )
@@ -365,12 +357,12 @@ def test_inbox_returns_pending_instances_for_matching_role(db) -> None:
     )
     db.flush()
 
-    items = approval_workflow.inbox_for_roles(session=db, user_roles=["manuel"])
+    items = approval_workflow.inbox_for_roles(session=db, user_roles=["md"])
     matching = [i for i in items if i["proposal_id"] == str(proposal.id)]
     assert len(matching) == 1
-    assert matching[0]["step_role"] == "manuel"
+    assert matching[0]["step_role"] == "md"
 
-    # A user without the manuel role doesn't see it.
+    # A user without the md role doesn't see it.
     items_other = approval_workflow.inbox_for_roles(session=db, user_roles=["sales"])
     matching_other = [i for i in items_other if i["proposal_id"] == str(proposal.id)]
     assert matching_other == []

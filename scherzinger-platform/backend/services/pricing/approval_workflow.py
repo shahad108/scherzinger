@@ -68,8 +68,9 @@ _DECISION_OUTCOMES: dict[ApprovalDecisionKind, dict[str, str]] = {
         "event_topic": "proposal.rejected",
     },
     ApprovalDecisionKind.REQUEST_CHANGES: {
-        # "changes_requested" is not in the original PROPOSAL_STATUSES set;
-        # we treat it as a soft state that keeps the proposal editable.
+        # "changes_requested" is in PROPOSAL_STATUSES (workflow_service.py) so
+        # downstream consumers (PATCH validators, persona-overview, reports)
+        # treat it as a valid editable state, not a 500.
         "status": "changes_requested",
         "audit_action": PricingAuditAction.PROPOSAL_CHANGES_REQUESTED.value,
         "event_topic": "proposal.changes_requested",

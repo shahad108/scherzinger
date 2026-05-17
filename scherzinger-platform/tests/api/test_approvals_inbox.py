@@ -39,7 +39,7 @@ def _create_pending_approval(client: TestClient) -> tuple[str, str]:
 
 
 def test_inbox_returns_empty_for_user_without_matching_role(client: TestClient) -> None:
-    """Frank has role=analyst and approval routes target ``manuel`` —
+    """Frank has role=analyst and approval routes target ``md`` (post-MF1) —
     therefore his own inbox should not surface his own pending proposals."""
     proposal_id, _ = _create_pending_approval(client)
     res = client.get(URL)
@@ -50,7 +50,7 @@ def test_inbox_returns_empty_for_user_without_matching_role(client: TestClient) 
     assert matching == []
 
 
-def test_inbox_returns_pending_items_for_manuel_role(client: TestClient) -> None:
+def test_inbox_returns_pending_items_for_md_role(client: TestClient) -> None:
     from backend.auth.security import AuthContext, require_auth
     from backend.main import app
 
@@ -58,20 +58,20 @@ def test_inbox_returns_pending_items_for_manuel_role(client: TestClient) -> None
 
     fake_user_id = UUID("00000000-0000-0000-0000-000000000001")
 
-    def _fake_auth_manuel():
+    def _fake_auth_md():
         return AuthContext(
             user_id=fake_user_id,
             email="m@example.com",
             name="m",
             persona="frank",
-            roles=["manuel"],
+            roles=["md"],
             permissions=[],
         )
 
-    app.dependency_overrides[require_auth] = _fake_auth_manuel
+    app.dependency_overrides[require_auth] = _fake_auth_md
     try:
         # Cache may be warm with frank's empty inbox; the fake auth uses
-        # frank's user_id but roles=["manuel"], so the cache key differs.
+        # frank's user_id but roles=["md"], so the cache key differs.
         res = client.get(URL)
     finally:
         app.dependency_overrides.pop(require_auth, None)
@@ -80,7 +80,7 @@ def test_inbox_returns_pending_items_for_manuel_role(client: TestClient) -> None
     items = [i for i in body["items"] if i["approval_instance_id"] == instance_id]
     assert len(items) == 1
     item = items[0]
-    assert item["step_role"] == "manuel"
+    assert item["step_role"] == "md"
     assert item["proposal_id"] == proposal_id
     assert item["aid"]
 

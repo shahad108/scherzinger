@@ -33,7 +33,8 @@ def _login_as(anon_client: TestClient, email: str, password: str) -> TestClient:
 
 def _create_pending_approval(client: TestClient) -> tuple[str, str]:
     """Create + submit a proposal so Frank has a pending approval routing
-    to ``manuel``. Returns (proposal_id, approval_instance_id).
+    to ``md`` (post-MF1: ``manuel`` role isn't seeded, so delta>5% routes
+    to ``md``). Returns (proposal_id, approval_instance_id).
     """
     res = client.post(
         "/api/v1/pricing/proposals",
@@ -60,14 +61,14 @@ def _create_pending_approval(client: TestClient) -> tuple[str, str]:
 
 
 def test_decision_requires_caller_to_be_next_step_approver(client: TestClient) -> None:
-    """Frank (role=analyst) cannot approve his own proposal that routed to manuel."""
+    """Frank (role=analyst) cannot approve his own proposal that routed to md."""
     _proposal_id, instance_id = _create_pending_approval(client)
     res = client.post(
         URL_DECISION.format(instance_id=instance_id),
         json={"decision": "approve"},
         headers=_csrf(client),
     )
-    # 403 because frank's roles don't include 'manuel'.
+    # 403 because frank's roles don't include 'md'.
     assert res.status_code == 403, res.text
 
 
@@ -94,8 +95,8 @@ def test_decision_writes_audit_row_when_authorised(client: TestClient) -> None:
     aid_res = client.get(f"/api/v1/pricing/proposals/{proposal_id}")
     aid = aid_res.json()["article_id"]
 
-    # Override require_auth so the next call has the 'manuel' role even
-    # though no manuel user is seeded.
+    # Override require_auth so the next call has the 'md' role (the
+    # routed approver post-MF1).
     from backend.auth.security import require_auth
 
     fake_user_id = UUID("00000000-0000-0000-0000-000000000001")  # frank
@@ -103,10 +104,10 @@ def test_decision_writes_audit_row_when_authorised(client: TestClient) -> None:
     def _fake_auth():
         return AuthContext(
             user_id=fake_user_id,
-            email="manuel-test@example.com",
-            name="Manuel Test",
+            email="md-test@example.com",
+            name="MD Test",
             persona="frank",
-            roles=["manuel"],
+            roles=["md"],
             permissions=[],
         )
 
@@ -146,17 +147,17 @@ def test_decision_rejects_when_proposal_already_terminal(client: TestClient) -> 
     proposal_id, instance_id = _create_pending_approval(client)
     fake_user_id = UUID("00000000-0000-0000-0000-000000000001")
 
-    def _fake_auth_manuel():
+    def _fake_auth_md():
         return AuthContext(
             user_id=fake_user_id,
             email="m@example.com",
             name="m",
             persona="frank",
-            roles=["manuel"],
+            roles=["md"],
             permissions=[],
         )
 
-    app.dependency_overrides[require_auth] = _fake_auth_manuel
+    app.dependency_overrides[require_auth] = _fake_auth_md
     try:
         client.post(
             URL_DECISION.format(instance_id=instance_id),

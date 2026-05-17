@@ -20,10 +20,12 @@ def _reset_cache():
     reset_cache_for_tests()
 
 
-def test_delta_over_5pct_routes_to_manuel() -> None:
+def test_delta_over_5pct_routes_to_md() -> None:
+    # v3 simplification — see backend/data/pricing_approval_rules.json: until a
+    # ``manuel`` intermediate approver role is seeded, delta>5% routes to ``md``.
     proposal = Proposal(delta_pct=6.5, delta_pp=4.0, tier="B", effective_in_hours=72)
     decision = should_route_for_approval(proposal)
-    assert "manuel" in decision.needs
+    assert "md" in decision.needs
     assert "delta-over-5pct" in decision.thresholds_hit
     assert decision.auto_approve is False
 
@@ -69,7 +71,9 @@ def test_routed_proposal_never_auto_approves() -> None:
     """Auto-approve flag is suppressed when any other rule routes."""
     proposal = Proposal(delta_pct=6.0, delta_pp=1.0, tier="C", effective_in_hours=72)
     decision = should_route_for_approval(proposal)
-    assert "manuel" in decision.needs
+    # v3 simplification: delta>5% now routes to ``md`` (see MF1 in the
+    # Phase-5 review notes — ``manuel`` role wasn't seeded).
+    assert "md" in decision.needs
     assert decision.auto_approve is False
 
 

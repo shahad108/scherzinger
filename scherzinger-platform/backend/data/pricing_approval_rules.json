@@ -1,12 +1,12 @@
 {
-  "version": 1,
-  "updated": "2026-05-16",
+  "version": 2,
+  "updated": "2026-05-17",
   "rules": [
     {
       "id": "delta-over-5pct",
       "condition": { ">": [{ "var": "delta_pct" }, 5] },
-      "route_to": ["manuel"],
-      "note": "Delta > 5% requires Manuel sign-off."
+      "route_to": ["md"],
+      "note": "Delta > 5% requires MD sign-off. v3 simplification — a future ``manuel`` intermediate-approver role can be added once that role is seeded; today the only authority above analyst that's actually provisioned is ``md``."
     },
     {
       "id": "tier-a-customer",
