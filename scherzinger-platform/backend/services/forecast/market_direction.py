@@ -85,9 +85,49 @@ def _steel_proxy_tile(db: Session) -> dict[str, Any] | None:
         return None
     latest = float(rows[-1][2])
     prior = float(rows[-2][2])
-    if prior == 0:
-        return None
+    # D14: smoothing — if either side of the delta is near zero (mid-month
+    # cutover, partial month, single-invoice noise), the % swing is a
+    # division artifact, not a real signal. Suppress the WoW chip and
+    # surface "n/a — insufficient prior period" instead of a -97% crash.
+    MIN_VALUE = 1.0  # €/unit threshold; below this we treat the period as empty
+    if (
+        prior is None
+        or latest is None
+        or prior < MIN_VALUE
+        or latest < MIN_VALUE
+        or prior == 0
+    ):
+        return {
+            "name": "Steel proxy (internal material/unit)",
+            "value": round(latest, 2) if latest is not None else None,
+            "unit": "€/unit",
+            "wowPct": None,
+            "wowLabel": "n/a — insufficient prior period",
+            "tone": "amber",
+            "context": (
+                "Weighted material_per_unit MoM — internal proxy, NOT Eurofer. "
+                "Delta suppressed: prior period below noise threshold."
+            ),
+            "external": False,
+            "indicator": "internal proxy from invoices",
+        }
     pct = (latest / prior - 1) * 100
+    # Also suppress unrealistic single-week swings as a second guardrail.
+    if abs(pct) > 50:
+        return {
+            "name": "Steel proxy (internal material/unit)",
+            "value": round(latest, 2),
+            "unit": "€/unit",
+            "wowPct": None,
+            "wowLabel": "n/a — single-period swing exceeded smoothing band",
+            "tone": "amber",
+            "context": (
+                "Weighted material_per_unit MoM — internal proxy, NOT Eurofer. "
+                f"Raw delta {pct:+.1f}% suppressed (>±50% threshold)."
+            ),
+            "external": False,
+            "indicator": "internal proxy from invoices",
+        }
     if pct > 1.5:
         tone = "red"
     elif pct < -1.5:
@@ -120,14 +160,15 @@ def get_market_direction(db: Session | None) -> dict[str, Any]:
             continue
         tiles.append(t)
 
+    if steel.get("wowPct") is not None:
+        wow_text = f"Steel proxy {steel['wowPct']:+.2f}% MoM (internal); "
+    else:
+        wow_text = "Steel proxy delta suppressed (insufficient prior period); "
     return {
         "source": "live",
         "tiles": tiles,
         "digest": {
             **_DIGEST,
-            "wow": (
-                f"Steel proxy {steel['wowPct']:+.2f}% MoM (internal); "
-                "FX/PMI/ifo synthetic — external feeds not wired."
-            ),
+            "wow": wow_text + "FX/PMI/ifo synthetic — external feeds not wired.",
         },
     }
