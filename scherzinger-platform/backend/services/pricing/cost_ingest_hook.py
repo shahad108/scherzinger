@@ -28,13 +28,51 @@ def on_cost_changed(
     *,
     breakdown_changed: bool = True,
     new_unit_cost: Optional[str] = None,
+    db_session: Optional[Any] = None,
+    actor: str = "system",
+    lineage_ref: Optional[Any] = None,
 ) -> None:
     """Publish cost-moved + recompute-requested events for ``aid``.
 
     ``new_unit_cost`` (stringified Decimal) is forwarded on the
     ``pricing.cost_moved`` payload so the UI can render the new value
     optimistically while the cache invalidation propagates.
+
+    When a ``db_session`` is supplied, a Phase 4 audit row is appended
+    with ``action=override_added`` and ``after.unit_cost`` so the diff
+    strip + Decision History drawer pick up the cost change. The session
+    is **not** committed — callers commit their own transaction.
     """
+    # Phase 4 — append an audit row when a session is supplied so the
+    # diff strip + Decision History drawer pick up the cost change.
+    if db_session is not None:
+        try:
+            from backend.models.pricing.audit import (
+                PricingAuditAction,
+                PricingAuditTargetKind,
+            )
+            from backend.services.pricing.audit import record_audit
+
+            lineage_id = None
+            if lineage_ref is not None:
+                lineage_id = getattr(lineage_ref, "id", lineage_ref)
+            audit_after: dict[str, Any] = {"aid": aid}
+            if new_unit_cost is not None:
+                audit_after["unit_cost"] = new_unit_cost
+            audit_after["breakdown_changed"] = breakdown_changed
+            record_audit(
+                actor=actor,
+                action=PricingAuditAction.OVERRIDE_ADDED,
+                target_kind=PricingAuditTargetKind.SKU,
+                target_id=aid,
+                after=audit_after,
+                reason="cost_ingested",
+                lineage_ref=lineage_id,
+                session=db_session,
+            )
+        except Exception:
+            logger.exception("cost_ingest_hook.record_audit aid=%s", aid)
+
     # Drop both downstream caches first so any racing query lookups read
     # fresh data even if the SSE publish is slow.
     try:

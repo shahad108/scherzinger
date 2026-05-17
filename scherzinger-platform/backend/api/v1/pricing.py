@@ -1,17 +1,19 @@
 """Pricing proposal workflow endpoints."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any
+from typing import Any, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.auth.security import AuthContext, require_auth
 from backend.database import get_db
 from backend.models import PricingProposal, Recommendation
+from backend.models.user_view_state import UserViewSurface
 from backend.services import workflow_service
 from backend.services.action_center.composer import (
     invalidate_cache as invalidate_action_center_cache,
@@ -339,3 +341,129 @@ def get_sku_cost_outlook(
                 "message": f"no cost state recorded for {aid}",
             },
         ) from exc
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 (Pricing Studio v3) — Decision history + "what changed since".
+# ---------------------------------------------------------------------------
+
+
+def _parse_csv_action_in(raw: Optional[str]) -> Optional[list[str]]:
+    """Accept ``?action_in=a,b,c`` as a CSV string or repeated query param."""
+    if raw is None or raw == "":
+        return None
+    return [v.strip() for v in raw.split(",") if v.strip()]
+
+
+def _parse_iso_datetime(raw: Optional[str], *, field: str) -> Optional[datetime]:
+    if raw is None or raw == "":
+        return None
+    try:
+        # Accept "Z" suffix as UTC.
+        if raw.endswith("Z"):
+            raw = raw[:-1] + "+00:00"
+        dt = datetime.fromisoformat(raw)
+    except ValueError as exc:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"invalid {field}: expected ISO 8601 timestamp, got {raw!r}",
+        ) from exc
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+@router.get("/sku/{aid}/audit")
+def get_sku_audit(
+    aid: str,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    action_in: Optional[str] = Query(default=None),
+    actor: Optional[str] = Query(default=None),
+    since: Optional[str] = Query(default=None),
+    ctx: AuthContext = Depends(require_auth),  # noqa: ARG001 (auth gate)
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Decision history rows for the per-SKU audit drawer.
+
+    Returns ``{rows, total, lineage_ref}``. ``rows`` includes direct
+    ``target_kind='sku'`` events AND customer/cluster/family events
+    where the SKU appears in the payload's ``aid`` field.
+    """
+    from backend.models.pricing.lineage import LineageSourceKind
+    from backend.services.pricing.audit_query import list_audit_for_sku
+    from backend.services.pricing.lineage import create_lineage
+
+    actions = _parse_csv_action_in(action_in)
+    since_dt = _parse_iso_datetime(since, field="since")
+    rows, total = list_audit_for_sku(
+        aid=aid,
+        db_session=db,
+        limit=limit,
+        offset=offset,
+        action_in=actions,
+        actor=actor,
+        since=since_dt,
+    )
+    # Stamp lineage on the query itself so the drawer can show provenance
+    # on the read (not just on each row).
+    lineage_row = create_lineage(
+        source_kind=LineageSourceKind.MANUAL_OVERRIDE,
+        source_id=f"audit_query:{aid}",
+        sql=None,
+        model="audit_query_v1",
+        computed_by="system",
+        session=db,
+    )
+    db.commit()
+    return {
+        "rows": rows,
+        "total": total,
+        "lineage_ref": str(lineage_row.id),
+    }
+
+
+@router.get("/sku/{aid}/diff")
+def get_sku_diff(
+    aid: str,
+    since: Optional[str] = Query(default=None),
+    ctx: AuthContext = Depends(require_auth),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """"What changed since you last looked" diff for the per-SKU strip.
+
+    When ``?since=`` is omitted we read the caller's ``user_view_state``
+    row for this (aid, surface=studio); falling back to "7 days ago" if
+    no row exists (first-time view).
+
+    Side effect: after computing the diff we stamp
+    ``user_view_state.last_seen_at = now()`` for the caller so the next
+    poll only surfaces post-``now`` deltas.
+    """
+    from backend.services.pricing.diff import build_diff, default_lookback
+    from backend.services.user_view_state import get_last_seen, stamp_view
+
+    user_id = str(ctx.user_id)
+    since_dt = _parse_iso_datetime(since, field="since")
+    if since_dt is None:
+        stored = get_last_seen(
+            user_id=user_id,
+            surface=UserViewSurface.STUDIO,
+            target_id=aid,
+            session=db,
+        )
+        since_dt = stored if stored is not None else default_lookback()
+
+    now = datetime.now(timezone.utc)
+    summary = build_diff(aid=aid, since=since_dt, now=now, db_session=db)
+
+    # Stamp the view so the next call advances ``since``.
+    stamp_view(
+        user_id=user_id,
+        surface=UserViewSurface.STUDIO,
+        target_id=aid,
+        session=db,
+        at=now,
+    )
+    db.commit()
+    return summary.model_dump(mode="json")
