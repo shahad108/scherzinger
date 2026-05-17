@@ -183,6 +183,58 @@ async def build_studio_shell(
         for s in skus:
             s.setdefault("recommendation", None)
 
+    # Pricing Studio v3 / D4+D17: overlay picker `margin` + `marginTone`
+    # from the canonical price_state + cost_state so the picker label
+    # matches the workbench hero (same source of truth). Without this,
+    # the picker shows the stale seed margin (e.g., "−1.3 %" for 200832-E)
+    # while the workbench hero shows the recomputed value (e.g., "+22.0 %").
+    try:
+        from sqlalchemy import select as _select
+
+        from backend.models.pricing.cost_state import CostStateRow as _CR
+        from backend.models.pricing.pricing_state import PriceStateRow as _PR
+
+        with SessionLocal() as db:
+            aids_for_overlay = [str(s.get("aid")) for s in skus if s.get("aid")]
+            if aids_for_overlay:
+                price_rows = (
+                    db.execute(_select(_PR).where(_PR.aid.in_(aids_for_overlay)))
+                    .scalars()
+                    .all()
+                )
+                cost_rows = (
+                    db.execute(_select(_CR).where(_CR.aid.in_(aids_for_overlay)))
+                    .scalars()
+                    .all()
+                )
+                price_by_aid = {p.aid: p for p in price_rows}
+                cost_by_aid = {c.aid: c for c in cost_rows}
+                for s in skus:
+                    a = str(s.get("aid") or "")
+                    pr = price_by_aid.get(a)
+                    cr = cost_by_aid.get(a)
+                    if (
+                        pr is not None
+                        and pr.current_price is not None
+                        and cr is not None
+                        and cr.unit_cost is not None
+                    ):
+                        cp = float(pr.current_price)
+                        uc = float(cr.unit_cost)
+                        if cp > 0:
+                            margin_pct = (cp - uc) / cp * 100
+                            sign = "+" if margin_pct >= 0 else "−"
+                            s["margin"] = f"{sign}{abs(margin_pct):.1f}%"
+                            s["marginTone"] = (
+                                "hi"
+                                if margin_pct >= 25
+                                else ("mid" if margin_pct >= 0 else "lo")
+                            )
+    except Exception:
+        # Pilot-mode resilience: failing margin overlay must not block the
+        # shell. The seed-derived margin remains as a fallback.
+        pass
+
     payload = {
         "header": seed["header"],
         "filters": seed["filters"],
