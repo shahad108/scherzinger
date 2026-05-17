@@ -162,6 +162,26 @@ describe('CostTrajectoryDrawer', () => {
     expect(screen.getByTestId('data-missing-badge')).toBeInTheDocument();
   });
 
+  it('shows a disabled "Set cost alert" button without any client-side threshold math', async () => {
+    wrap(
+      <CostTrajectoryDrawer
+        open
+        onOpenChange={() => {}}
+        aid="200832-E"
+        history={costHistory()}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('cost-drawer-set-alert')).toBeInTheDocument();
+    });
+    const btn = screen.getByTestId('cost-drawer-set-alert') as HTMLButtonElement;
+    expect(btn).toBeDisabled();
+    expect(btn).toHaveAttribute('title', 'Cost alerts ship in Phase 9');
+    // Label is the bare "Set cost alert" — no threshold value rendered.
+    expect(btn.textContent?.trim()).toBe('Set cost alert');
+    expect(btn.textContent ?? '').not.toMatch(/€|≥/);
+  });
+
   it('renders components rows with up/down change classes', async () => {
     wrap(
       <CostTrajectoryDrawer

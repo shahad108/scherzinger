@@ -313,10 +313,6 @@ function FloorCrossSection({ payload }: { payload: CostOutlookPayload }) {
 
 function ActionsFooter({ aid, payload }: { aid: string; payload: CostOutlookPayload }) {
   const navigate = useNavigate();
-  const today = parseDecimal(payload.today.unit_cost);
-  const alertLabel = Number.isFinite(today)
-    ? `Set cost alert ≥ ${fmt.eurPrecise(today * 1.05)}`
-    : 'Set cost alert';
 
   return (
     <footer className="ws-cost-drawer-actions" data-testid="cost-drawer-actions">
@@ -324,12 +320,13 @@ function ActionsFooter({ aid, payload }: { aid: string; payload: CostOutlookPayl
         type="button"
         className="ws-cost-drawer-btn"
         data-testid="cost-drawer-set-alert"
-        // Phase 9 will wire this to the alerts engine. For now this is a
-        // visible-but-inert affordance so users see the intent.
+        // Phase 9 will wire this to the alerts engine, including its own
+        // setup drawer that picks the threshold. No client-side math here:
+        // we never derive prices in the browser. Stays disabled until then.
         disabled
         title="Cost alerts ship in Phase 9"
       >
-        {alertLabel}
+        Set cost alert
       </button>
       <button
         type="button"
