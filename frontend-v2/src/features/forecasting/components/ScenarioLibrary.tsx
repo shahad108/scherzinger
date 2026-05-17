@@ -10,6 +10,7 @@ import { Trash2 } from 'lucide-react';
 import { useDeleteScenario, useScenarios } from '@/data/api/useScenarios';
 import type { ScenarioSummary } from '@/types/forecast';
 import { ScenarioBuilder } from './ScenarioBuilder';
+import { ScenarioRunPanel } from './ScenarioRunPanel';
 // v2.2 Phase J — `useCompareParam` lived in ScenarioCompareView and is gone
 // with it. Side-by-side compare was the v2.1 wishlist #2; presets shipped
 // instead. Shift-click on chips is now a no-op (handler ignores modifier).
@@ -45,7 +46,17 @@ export function ScenarioLibrary() {
     setActive(id === activeId ? null : id);
   };
 
+  const activeScenarioName = (() => {
+    if (!activeId || !data) return null;
+    const found = [...data.system, ...data.saved, ...data.teamShared].find((s) => s.id === activeId);
+    if (found) return found.name;
+    const preset = SCENARIO_PRESETS.find((p) => p.key === activeId);
+    return preset?.label ?? null;
+  })();
+
   return (
+    <>
+    <ScenarioRunPanel scenarioId={activeId} scenarioName={activeScenarioName} />
     <div
       className="mb-4 flex flex-wrap items-center gap-2 rounded-[14px] border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-3 py-2"
       data-testid="scenario-library"
@@ -113,6 +124,7 @@ export function ScenarioLibrary() {
       </span>
       <ScenarioBuilder open={builderOpen} onClose={() => setBuilderOpen(false)} />
     </div>
+    </>
   );
 }
 

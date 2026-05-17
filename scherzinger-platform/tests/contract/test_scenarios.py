@@ -217,3 +217,47 @@ def test_forecast_tornado_bars_untouched_under_scenario(client: TestClient) -> N
         params={"scenario_id": "00000000-0000-0000-0000-000000000002"},
     ).json()
     assert base.get("tornado") == perturbed.get("tornado")
+
+
+def test_run_endpoint_returns_baseline_vs_shifted(client: TestClient) -> None:
+    """POST /scenarios/{id}/run returns baseline + shifted forecasts and deltas
+    across revenue / volume / margin targets."""
+    res = client.post(
+        f"{URL}/preset:steel-spike/run",
+        json={"horizon": 12},
+        headers=_csrf(client),
+    )
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["scenarioId"] == "preset:steel-spike"
+    assert body["horizonMonths"] == 12
+    assert set(body["baseline"]) == {"revenue", "volume", "margin"}
+    assert set(body["shifted"]) == {"revenue", "volume", "margin"}
+    assert set(body["deltas"]) == {"revenue", "volume", "margin"}
+    # Each target carries 12 monthly points
+    for target in ("revenue", "volume", "margin"):
+        assert len(body["baseline"][target]["monthly"]) == 12
+        assert len(body["shifted"][target]["monthly"]) == 12
+        delta = body["deltas"][target]
+        assert {"baseline", "shifted", "absoluteDelta", "pctDelta"} <= set(delta)
+    # Steel-spike preset is a downward shock — revenue should drop.
+    assert body["deltas"]["revenue"]["pctDelta"] is not None
+    assert body["deltas"]["revenue"]["pctDelta"] < 0
+    # Receipt is stamped from the scenarioApplied envelope.
+    assert body["receipt"] is not None
+    assert body["receipt"]["inputCount"] >= 1
+
+
+def test_run_endpoint_404_on_unknown_scenario_resolves_to_base(client: TestClient) -> None:
+    """Unknown scenario IDs resolve to base (consistent with the forecast
+    endpoint's `scenario_id=` behaviour) rather than 500."""
+    res = client.post(
+        f"{URL}/preset:does-not-exist/run",
+        json={"horizon": 12},
+        headers=_csrf(client),
+    )
+    assert res.status_code == 200, res.text
+    body = res.json()
+    # No real shift → deltas near zero.
+    rev_delta = body["deltas"]["revenue"]["pctDelta"]
+    assert rev_delta is None or abs(rev_delta) < 1e-6

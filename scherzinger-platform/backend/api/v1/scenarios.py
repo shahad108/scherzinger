@@ -123,3 +123,97 @@ def share(
     return scenario_service.share_scenario(
         db=db, scenario_id=scenario_id, recipient=body.recipient
     )
+
+
+class ScenarioRunRequest(BaseModel):
+    persona: Literal["frank", "till", "heiko"] | None = None
+    horizon: int = Field(default=12, ge=1, le=24)
+
+
+@router.post("/{scenario_id}/run")
+async def run_scenario(
+    scenario_id: str,
+    body: ScenarioRunRequest | None = None,
+    ctx: AuthContext = Depends(require_auth),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Run a scenario end-to-end and return baseline vs. shifted forecast.
+
+    Calls the v3 forecast composer twice (baseline + scenario-applied),
+    extracts hero per-mode (revenue / volume / margin), and returns a slim
+    payload the FE can render without re-fetching the whole shell.
+
+    First-time runs trigger v3 inference (Chronos + AutoETS + reconciliation);
+    subsequent runs are served from the composer's in-memory cache.
+    """
+    from backend.services.forecast import build_forecast
+
+    persona = (body.persona if body else None) or ctx.persona or "frank"
+    horizon = (body.horizon if body else 12)
+
+    async def _hero(target: str, sid: str | None) -> dict[str, Any]:
+        payload = await build_forecast(
+            user_id=str(ctx.user_id),
+            persona=persona,
+            mode=target,
+            horizon=horizon,
+            tier=None, family=None, cluster=None, lang=None,
+            db=db,
+            scenario_id=sid,
+        )
+        hero = payload.get("hero") or {}
+        series = hero.get("series") or []
+        forecast_only = [p for p in series if p.get("actual") is None][:horizon]
+        return {
+            "total": hero.get("forecast12moTotal"),
+            "unit": hero.get("unit"),
+            "monthly": [
+                {
+                    "month": p.get("month"),
+                    "p50": p.get("p50"),
+                    "p80Low": p.get("p80Low"),
+                    "p80High": p.get("p80High"),
+                }
+                for p in forecast_only
+            ],
+            "scenarioApplied": payload.get("scenarioApplied"),
+        }
+
+    baseline = {
+        "revenue": await _hero("revenue", None),
+        "volume":  await _hero("volume",  None),
+        "margin":  await _hero("margin",  None),
+    }
+    shifted = {
+        "revenue": await _hero("revenue", scenario_id),
+        "volume":  await _hero("volume",  scenario_id),
+        "margin":  await _hero("margin",  scenario_id),
+    }
+
+    def _pct(b: float | None, s: float | None) -> float | None:
+        if b is None or s is None or b == 0:
+            return None
+        return round((s - b) / b * 100.0, 2)
+
+    deltas = {
+        target: {
+            "baseline": baseline[target]["total"],
+            "shifted":  shifted[target]["total"],
+            "absoluteDelta": (
+                None
+                if (baseline[target]["total"] is None or shifted[target]["total"] is None)
+                else round(shifted[target]["total"] - baseline[target]["total"], 2)
+            ),
+            "pctDelta": _pct(baseline[target]["total"], shifted[target]["total"]),
+        }
+        for target in ("revenue", "volume", "margin")
+    }
+
+    return {
+        "scenarioId": scenario_id,
+        "horizonMonths": horizon,
+        "baseline": baseline,
+        "shifted": shifted,
+        "deltas": deltas,
+        "receipt": shifted["revenue"].get("scenarioApplied"),
+    }
