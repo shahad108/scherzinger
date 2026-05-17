@@ -24,6 +24,7 @@ from typing import Any, Optional
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from backend.services.pricing.cache_keys import canonical_price_key
 from backend.services.pricing.customer_on_sku import (
     _load_customer_master,
     build_customer_on_sku,
@@ -35,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 _CACHE_TTL_SECONDS = 60.0
 _CACHE: dict[
-    tuple[str, str, str | None], tuple[float, dict[str, Any]]
+    tuple[str, str, str], tuple[float, dict[str, Any]]
 ] = {}
 
 
@@ -211,7 +212,7 @@ def build_drill_in(
     cache_key = (
         customer_id,
         aid,
-        str(proposed_price) if proposed_price is not None else None,
+        canonical_price_key(proposed_price),
     )
     cached = _CACHE.get(cache_key)
     now = time.monotonic()

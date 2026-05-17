@@ -193,3 +193,34 @@ def test_idempotent_within_cache_ttl() -> None:
         )
     assert a is b
     assert call_count["n"] == 1
+
+
+@pytest.mark.parametrize(
+    "price",
+    [Decimal("127"), Decimal("127.0"), Decimal("127.00"), Decimal("127.0000")],
+)
+def test_cache_key_canonical_for_equivalent_decimals(price: Decimal) -> None:
+    """``Decimal("127.00")`` and ``Decimal("127.0")`` MUST hit the same cache.
+
+    Without canonicalization the raw ``str()`` text differs and equivalent
+    prices would thrash the per-price cache.
+    """
+    session = MagicMock()
+    call_count = {"n": 0}
+
+    def _build(*args, **kwargs):
+        call_count["n"] += 1
+        return _cos("C-1", risk=Decimal("0.05"))
+
+    # Seed the cache at 127.00, then re-query with the parametrized variant.
+    with patch.object(cf, "_load_customer_ids_for_aid", return_value=["C-1"]), \
+         patch.object(cf, "_load_active_proposals_for_aid", return_value=set()), \
+         patch.object(cf, "build_customer_on_sku", side_effect=_build):
+        cf.build_customer_fanout(
+            aid="X-1", proposed_price=Decimal("127.00"), db_session=session
+        )
+        cf.build_customer_fanout(
+            aid="X-1", proposed_price=price, db_session=session
+        )
+    # Second call MUST be a cache hit → build_customer_on_sku invoked once.
+    assert call_count["n"] == 1

@@ -23,6 +23,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from backend.models.pricing.customer_on_sku import CustomerOnSku
+from backend.services.pricing.cache_keys import canonical_price_key
 from backend.services.pricing.customer_on_sku import build_customer_on_sku
 from backend.services.pricing.customer_risk import compute_tone
 
@@ -31,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 # Re-score cache. Keyed by (aid, proposed_price as str). 60s TTL per spec.
 _CACHE_TTL_SECONDS = 60.0
-_CACHE: dict[tuple[str, str | None], tuple[float, dict[str, Any]]] = {}
+_CACHE: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
 
 
 def invalidate_cache(aid: Optional[str] = None) -> None:
@@ -178,7 +179,7 @@ def build_customer_fanout(
             "lineage_ref": str (uuid),
         }
     """
-    cache_key = (aid, str(proposed_price) if proposed_price is not None else None)
+    cache_key = (aid, canonical_price_key(proposed_price))
     cached = _CACHE.get(cache_key)
     now = time.monotonic()
     if cached is not None and now - cached[0] < _CACHE_TTL_SECONDS:
