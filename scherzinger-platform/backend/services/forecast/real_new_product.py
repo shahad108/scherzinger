@@ -1,8 +1,13 @@
 """Real-data 'new products' block for the Forecasting composer.
 
 Definition of "new": article_id whose **first appearance in invoices** falls
-within the trailing 12 months. `products.created_at` is uniform across the
+within the trailing 12 months of the latest real invoice date (STSEED-*
+synthetic rows are excluded). `products.created_at` is uniform across the
 seeded dataset, so it cannot be used directly.
+
+The headline counts/revenue/share come from
+``backend.services.canonical_metrics`` so the Forecast page cannot disagree
+with the matching Action Center tile (DATA-AUDIT-2026-05-17 defect #10).
 
 Output shape matches FE `NewProductForecast`:
   { stats: [{num, label}], series: [{month, value}], cards: [NewProductCard] }
@@ -13,6 +18,8 @@ from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
+from backend.services.canonical_metrics import fetch_new_products_metrics
 
 
 _SIMILARITY = [87, 68, 45]
@@ -29,34 +36,12 @@ def _fmt_eur(v: float | int) -> str:
 
 
 def build_new_product(db: Session) -> dict[str, Any]:
-    # ---- counts ----
-    new_count = db.execute(text(
-        """
-        SELECT COUNT(*) FROM (
-          SELECT article_id, MIN(date) AS first_seen
-          FROM invoices GROUP BY article_id
-          HAVING MIN(date) >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)
-        ) AS x
-        """
-    )).scalar() or 0
-
-    revenue_row = db.execute(text(
-        """
-        WITH new_arts AS (
-          SELECT article_id FROM invoices GROUP BY article_id
-          HAVING MIN(date) >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)
-        )
-        SELECT
-          (SELECT COALESCE(SUM(revenue),0) FROM invoices i
-             WHERE i.article_id IN (SELECT article_id FROM new_arts)
-               AND i.date >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)) AS new_rev,
-          (SELECT COALESCE(SUM(revenue),0) FROM invoices
-             WHERE date >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)) AS total_rev
-        """
-    )).fetchone()
-    new_rev = float(revenue_row[0] or 0)
-    total_rev = float(revenue_row[1] or 1)
-    share_pct = (new_rev / total_rev * 100) if total_rev else 0
+    # Canonical metrics — single source of truth for the headline number.
+    metrics = fetch_new_products_metrics(db)
+    new_count = metrics["n_new"]
+    new_rev = metrics["new_revenue"]
+    total_rev = metrics["total_revenue"] or 1.0
+    share_pct = (new_rev / total_rev * 100)
 
     stats = [
         {"num": str(int(new_count)), "label": "new SKUs (last 12mo)"},
@@ -69,14 +54,15 @@ def build_new_product(db: Session) -> dict[str, Any]:
         """
         WITH new_arts AS (
           SELECT article_id FROM invoices GROUP BY article_id
-          HAVING MIN(date) >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)
+          HAVING MIN(date) >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices WHERE invoice_id NOT LIKE 'STSEED-%')
         ),
         ms AS (
           SELECT DATE_TRUNC('month', i.date) AS m,
                  SUM(i.revenue) / 1000.0 AS rev_k
           FROM invoices i
           JOIN new_arts n ON n.article_id = i.article_id
-          WHERE i.date >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)
+          WHERE i.date >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices WHERE invoice_id NOT LIKE 'STSEED-%')
+          AND i.invoice_id NOT LIKE 'STSEED-%'
           GROUP BY 1
           ORDER BY 1
         )
@@ -94,7 +80,7 @@ def build_new_product(db: Session) -> dict[str, Any]:
         WITH new_arts AS (
           SELECT article_id, MIN(date) AS first_seen
           FROM invoices GROUP BY article_id
-          HAVING MIN(date) >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)
+          HAVING MIN(date) >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices WHERE invoice_id NOT LIKE 'STSEED-%')
         )
         SELECT i.article_id,
                COALESCE(p.description, '—') AS description,
