@@ -61,7 +61,18 @@ _MODEL_CARD = {
 
 
 def is_enabled() -> bool:
-    """V3 loader is active when ``FORECAST_V3`` is truthy in the environment."""
+    """V3 loader is active when ``FORECAST_V3`` is truthy. Pydantic-settings
+    loads ``.env`` into ``backend.config.settings`` but does NOT push the value
+    into ``os.environ`` — so we honour both: settings first (the .env path),
+    then os.getenv (for shells that exported the var directly)."""
+    val = "0"
+    try:
+        from backend.config import settings
+        val = str(getattr(settings, "FORECAST_V3", "0") or "0")
+    except Exception:
+        pass
+    if val.lower() in ("1", "true", "yes", "on"):
+        return True
     return os.getenv("FORECAST_V3", "0").lower() in ("1", "true", "yes", "on")
 
 
