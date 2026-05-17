@@ -9,6 +9,10 @@ so Alembic autogenerate / ``Base.metadata.create_all`` pick them up.
 """
 from __future__ import annotations
 
+from backend.models.pricing.alerts import (
+    PricingAlert,
+    PricingAlertEvent,
+)
 from backend.models.pricing.approval import (
     ApprovalAction,
     ApprovalDecisionKind,
@@ -67,6 +71,9 @@ from backend.models.pricing.recommendation import (
 from backend.models.pricing.wtp import WtpBand
 
 __all__ = [
+    # Alerts (Phase 9)
+    "PricingAlert",
+    "PricingAlertEvent",
     # Approval workflow (Phase 5)
     "ApprovalAction",
     "ApprovalDecisionKind",
