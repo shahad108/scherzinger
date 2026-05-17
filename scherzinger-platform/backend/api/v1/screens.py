@@ -326,6 +326,8 @@ async def get_studio_workbench(
     response: Response,
     if_none_match: str | None = Header(default=None, alias="If-None-Match"),
     tier: str | None = None,
+    source: str | None = None,
+    reason: str | None = None,
     ctx: AuthContext = Depends(require_auth),
 ):
     """Phase 8 P8.T1: per-SKU workbench, lazy-fetched by the picker.
@@ -334,8 +336,15 @@ async def get_studio_workbench(
     ``wtp``, ``win_prob_curve`` and ``competitor_ref`` blocks. The
     ``tier`` query param narrows the WTP + elasticity slices when the
     caller wants a tier-specific recommendation.
+
+    Phase 3 forwards the ``source``/``reason`` deep-link params so the
+    workbench composer can attach a ``trigger_context`` banner above the
+    recommendation card (e.g. *"Steel proxy +8% MoM — cost crossed your
+    safety margin"*).
     """
-    payload = await build_studio_workbench(aid=aid, tier=tier)
+    payload = await build_studio_workbench(
+        aid=aid, tier=tier, source=source, reason=reason
+    )
     raw = json.dumps(payload, sort_keys=True).encode("utf-8")
     etag = '"' + hashlib.sha256(raw).hexdigest()[:16] + '"'
     if if_none_match and if_none_match == etag:

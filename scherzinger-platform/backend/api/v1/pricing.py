@@ -297,3 +297,45 @@ def get_customer_drill_in(
             f"customer {customer_id} has no record on aid {aid}",
         )
     return payload
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 (Pricing Studio v3) — Cost Trajectory Drawer endpoint.
+# ---------------------------------------------------------------------------
+
+
+@router.get("/sku/{aid}/cost-outlook")
+def get_sku_cost_outlook(
+    aid: str,
+    horizon_months: int = 6,
+    ctx: AuthContext = Depends(require_auth),  # noqa: ARG001 (auth gate)
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Per-SKU cost outlook for the Cost Trajectory Drawer.
+
+    Returns ``today`` (current unit cost + breakdown), ``forecast``
+    (p20/p50/p80 per next ``horizon_months``), per-component deltas,
+    ``floor_crosses_at``, top commodity-trend rows, and a lineage_ref.
+
+    404 when the SKU has no CostState row (clear ``cost_state_missing``
+    error code so the frontend can render an empty state rather than a
+    generic 404).
+    """
+    from backend.services.pricing.cost_outlook import (
+        CostOutlookMissing,
+        build_cost_outlook,
+    )
+
+    try:
+        return build_cost_outlook(
+            aid=aid, horizon_months=horizon_months, db_session=db
+        )
+    except CostOutlookMissing as exc:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "cost_state_missing",
+                "aid": aid,
+                "message": f"no cost state recorded for {aid}",
+            },
+        ) from exc

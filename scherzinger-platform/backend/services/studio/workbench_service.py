@@ -27,6 +27,9 @@ from fastapi import HTTPException, status
 
 from backend.database import SessionLocal
 from backend.services.competitor.index import build_competitor_ref
+from backend.services.forecast.commodity_trajectories import (
+    get_commodity_trajectories,
+)
 from backend.services.pricing import elasticity as elasticity_mod
 from backend.services.pricing import recommendation as recommendation_mod
 from backend.services.pricing import wtp as wtp_mod
@@ -73,6 +76,80 @@ def _resolve_envelope(
         select(CostStateRow).where(CostStateRow.aid == aid)
     ).scalar_one_or_none()
     return resolve_envelope(price_row, cost_row)
+
+
+def _attach_phase3_signals(
+    workbench: dict[str, Any],
+    aid: str,
+    *,
+    source: Optional[str] = None,
+    reason: Optional[str] = None,
+    cluster: Optional[str] = None,
+) -> None:
+    """Phase 3: option_margins fanout, cost_history (per-SKU), trigger_context.
+
+    Each block is optional. Failures are swallowed and logged — the
+    workbench shell still renders, the frontend shows a DataMissingBadge.
+    """
+    try:
+        from backend.services.pricing.option_margin import build_option_margins
+
+        rec = workbench.get("recommendation") or {}
+        rec_price_raw = rec.get("recommended_price") if isinstance(rec, dict) else None
+        rec_price: Optional[Decimal] = None
+        if rec_price_raw is not None:
+            try:
+                rec_price = Decimal(str(rec_price_raw))
+            except Exception:
+                rec_price = None
+        with SessionLocal() as db:
+            margins = build_option_margins(
+                aid=aid,
+                db_session=db,
+                recommended_price=rec_price,
+            )
+            workbench["option_margins"] = [m.model_dump(mode="json") for m in margins]
+            db.commit()
+    except Exception:
+        logger.exception("workbench.option_margins failed aid=%s", aid)
+
+    try:
+        with SessionLocal() as db:
+            cost_decomp = get_commodity_trajectories(db, aid=aid)
+            # Per-SKU cost_history payload: cluster commodity trajectory
+            # (already narrowed to the SKU's cluster when aid is set).
+            workbench["cost_history"] = {
+                "points": [],
+                "commodities": cost_decomp.get("groups", []),
+                "quarters": cost_decomp.get("quarters", []),
+                "source": cost_decomp.get("source", "synthetic"),
+            }
+            db.commit()
+    except Exception:
+        logger.exception("workbench.cost_history failed aid=%s", aid)
+
+    if source and reason:
+        try:
+            from backend.services.pricing.trigger_context import build_trigger_context
+
+            with SessionLocal() as db:
+                ctx = build_trigger_context(
+                    aid=aid,
+                    source=source,
+                    reason=reason,
+                    cluster=cluster,
+                    db_session=db,
+                )
+                if ctx is not None:
+                    workbench["trigger_context"] = ctx.model_dump(mode="json")
+                db.commit()
+        except Exception:
+            logger.exception(
+                "workbench.trigger_context failed aid=%s source=%s reason=%s",
+                aid,
+                source,
+                reason,
+            )
 
 
 def _attach_phase2_signals(
@@ -173,13 +250,25 @@ def _attach_phase1_signals(
         logger.exception("workbench Phase 1 signal attach failed aid=%s", aid)
 
 
-async def build_workbench(*, aid: str, tier: Optional[str] = None) -> dict[str, Any]:
+async def build_workbench(
+    *,
+    aid: str,
+    tier: Optional[str] = None,
+    source: Optional[str] = None,
+    reason: Optional[str] = None,
+) -> dict[str, Any]:
     """Per-SKU workbench. Today the seed only carries the default SKU's
     workbench; for any other aid we return that same template tagged with
     the requested aid so the contract holds end-to-end.
 
     Phase 1 attaches ``recommendation/wtp/win_prob_curve/competitor_ref``
     as optional fields (omitted on failure, never 500).
+
+    Phase 3 (Pricing Studio v3) adds ``option_margins`` (per-option
+    pocket waterfalls), ``cost_history`` (per-SKU narrowed commodity
+    trajectories) and ``trigger_context`` (the deep-link banner). The
+    ``source``/``reason`` URL params drive the banner — when neither is
+    set the field is omitted.
     """
     sku = _find_sku(aid)
     if sku is None:
@@ -205,6 +294,13 @@ async def build_workbench(*, aid: str, tier: Optional[str] = None) -> dict[str, 
         cluster=cluster,
     )
     _attach_phase2_signals(workbench, aid)
+    _attach_phase3_signals(
+        workbench,
+        aid,
+        source=source,
+        reason=reason,
+        cluster=cluster,
+    )
     return workbench
 
 
