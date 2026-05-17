@@ -413,9 +413,27 @@ export function ApprovalStepper({ proposal, fixture }: Props) {
             </button>
           </div>
           {!collab.isConnected && (
-            <p className="mt-1 text-[10.5px] text-[var(--amber)]">
-              Live channel unavailable — comment will not post until the
-              connection recovers.
+            <p
+              className="mt-1 flex items-center gap-2 text-[10.5px] text-[var(--amber)]"
+              data-testid="approval-collab-offline-notice"
+            >
+              <span>
+                Live channel{' '}
+                {collab.connectionState === 'reconnecting'
+                  ? 'reconnecting…'
+                  : 'unavailable'}{' '}
+                — comment will not post until the connection recovers.
+              </span>
+              {collab.connectionState === 'disconnected' && (
+                <button
+                  type="button"
+                  data-testid="approval-collab-reconnect-button"
+                  onClick={() => collab.reconnect()}
+                  className="rounded-md border border-[var(--amber-border)] bg-[var(--amber-bg)] px-2 py-0.5 text-[10px] font-semibold text-[var(--amber)] hover:bg-[color-mix(in_oklab,var(--amber-bg)_70%,white)]"
+                >
+                  Reconnect
+                </button>
+              )}
             </p>
           )}
         </div>

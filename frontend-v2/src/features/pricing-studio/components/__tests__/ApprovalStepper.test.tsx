@@ -53,12 +53,19 @@ vi.mock('@/data/api/useApprovalInstance', async () => {
 });
 
 const collabSend = vi.fn(() => true);
+const collabReconnect = vi.fn();
+let collabState: {
+  isConnected: boolean;
+  connectionState: 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
+} = { isConnected: true, connectionState: 'connected' };
 vi.mock('@/data/api/useProposalCollab', () => ({
   useProposalCollab: vi.fn(() => ({
     peers: [],
     comments: [],
-    isConnected: true,
+    isConnected: collabState.isConnected,
+    connectionState: collabState.connectionState,
     sendComment: collabSend,
+    reconnect: collabReconnect,
     lastFrame: null,
   })),
 }));
@@ -124,6 +131,8 @@ beforeEach(() => {
   mockInstance = { data: null, isLoading: false };
   recallMutate.mockReset();
   collabSend.mockReset().mockReturnValue(true);
+  collabReconnect.mockReset();
+  collabState = { isConnected: true, connectionState: 'connected' };
 });
 
 describe('ApprovalStepper', () => {
@@ -278,6 +287,46 @@ describe('ApprovalStepper', () => {
     expect(screen.getByTestId('approval-stepper')).toBeInTheDocument();
     expect(screen.getByTestId('approval-stepper-draft-empty')).toBeInTheDocument();
     expect(screen.getByTestId('approval-recall-button')).toBeInTheDocument();
+  });
+
+  it('shows a Reconnect button when the collab channel is fully disconnected', () => {
+    mockInstance = { data: makeInstance(), isLoading: false };
+    collabState = { isConnected: false, connectionState: 'disconnected' };
+    wrap(
+      <ApprovalStepper
+        proposal={{
+          id: 'proposal-1',
+          status: 'pending_approval',
+          article_id: 'AID-1',
+          payload: {},
+        }}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('approval-add-comment-button'));
+    expect(screen.getByTestId('approval-collab-offline-notice')).toBeInTheDocument();
+    const btn = screen.getByTestId('approval-collab-reconnect-button');
+    fireEvent.click(btn);
+    expect(collabReconnect).toHaveBeenCalled();
+  });
+
+  it('does not show Reconnect while the channel is still reconnecting', () => {
+    mockInstance = { data: makeInstance(), isLoading: false };
+    collabState = { isConnected: false, connectionState: 'reconnecting' };
+    wrap(
+      <ApprovalStepper
+        proposal={{
+          id: 'proposal-1',
+          status: 'pending_approval',
+          article_id: 'AID-1',
+          payload: {},
+        }}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('approval-add-comment-button'));
+    expect(screen.getByTestId('approval-collab-offline-notice')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('approval-collab-reconnect-button'),
+    ).not.toBeInTheDocument();
   });
 
   it('Add comment toggles the inline textarea', () => {
