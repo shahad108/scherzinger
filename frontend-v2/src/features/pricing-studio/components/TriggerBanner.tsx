@@ -53,6 +53,11 @@ export function TriggerBanner({ trigger, onOpenCostDrawer }: Props) {
         </span>
         <span className="ws-trigger-body">
           <span className="ws-trigger-headline">{trigger.headline}</span>
+          {trigger.details ? (
+            <p className="ws-trigger-details" data-testid="trigger-banner-details">
+              {trigger.details}
+            </p>
+          ) : null}
         </span>
       </button>
       <button

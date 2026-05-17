@@ -1828,6 +1828,13 @@
     color: var(--ink);
     line-height: 1.4;
   }
+  body.pryzm-2026 #screen-studio .ws-trigger-details {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--muted);
+    line-height: 1.4;
+    margin: 2px 0 0;
+  }
   body.pryzm-2026 #screen-studio .ws-trigger-link {
     align-self: flex-start;
     flex: 0 0 auto;

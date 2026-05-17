@@ -36,6 +36,15 @@ describe('TriggerBanner', () => {
     expect(banner).toHaveTextContent(/Steel S355 cost rose 8%/);
   });
 
+  it('renders the details paragraph below the headline', () => {
+    wrap(<TriggerBanner trigger={triggerContext()} onOpenCostDrawer={() => {}} />);
+    const details = screen.getByTestId('trigger-banner-details');
+    expect(details).toBeInTheDocument();
+    expect(details.textContent ?? '').toMatch(
+      /Forecasting flagged this SKU because the internal material-cost proxy stepped \+8% versus the prior month\./,
+    );
+  });
+
   it('renders nothing when trigger is null', () => {
     const { container } = wrap(<TriggerBanner trigger={null} onOpenCostDrawer={() => {}} />);
     expect(container.querySelector('[data-testid="trigger-banner"]')).toBeNull();
