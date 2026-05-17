@@ -35,6 +35,7 @@ from backend.models.pricing.lineage import (
     LineageSourceKind,
 )
 from backend.models.pricing.margin_state import MarginState
+from backend.models.pricing.option_margin import OptionMargin
 from backend.models.pricing.pricing_state import PriceState, PriceStateRow
 from backend.models.pricing.elasticity import CurvePoint, WinProbCurve
 from backend.models.pricing.recommendation import (
@@ -71,6 +72,8 @@ __all__ = [
     "LineageSourceKind",
     # Margin (computed only)
     "MarginState",
+    # OptionMargin (computed only)
+    "OptionMargin",
     # Price
     "PriceState",
     "PriceStateRow",
