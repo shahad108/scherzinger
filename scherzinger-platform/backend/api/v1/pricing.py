@@ -773,3 +773,190 @@ def get_sku_diff(
     )
     db.commit()
     return summary.model_dump(mode="json")
+
+
+# ---------------------------------------------------------------------------
+# Phase 7 (Pricing Studio v3) — publish + rollback + price-book + PDF.
+# ---------------------------------------------------------------------------
+
+
+class PublishIn(BaseModel):
+    """Request body for ``POST /pricing/sku/{aid}/publish``.
+
+    ``effective_at`` is optional — when omitted or in the past we publish
+    immediately; when in the future we persist to ``scheduled_publishes``.
+    """
+
+    price: Decimal
+    effective_at: Optional[datetime] = None
+    source_proposal_id: Optional[UUID] = None
+
+
+class RollbackIn(BaseModel):
+    receipt_id: UUID
+    reason: str
+
+
+@router.post("/sku/{aid}/publish", status_code=status.HTTP_201_CREATED)
+def publish_sku_price(
+    aid: str,
+    body: PublishIn,
+    ctx: AuthContext = Depends(require_auth),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Publish a price for ``aid`` either immediately or on a schedule."""
+    from backend.services.pricing.publish import (
+        publish_price,
+        schedule_publish,
+        serialize_receipt,
+    )
+
+    effective_at = body.effective_at or datetime.now(timezone.utc)
+    if effective_at.tzinfo is None:
+        effective_at = effective_at.replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+
+    if effective_at > now:
+        scheduled = schedule_publish(
+            aid=aid,
+            price=body.price,
+            effective_at=effective_at,
+            source_proposal_id=body.source_proposal_id,
+            actor=str(ctx.user_id),
+            db_session=db,
+        )
+        db.commit()
+        return {
+            "scheduled": True,
+            "scheduled_publish": scheduled.model_dump(mode="json"),
+        }
+
+    receipt = publish_price(
+        aid=aid,
+        price=body.price,
+        effective_at=effective_at,
+        source_proposal_id=body.source_proposal_id,
+        actor=str(ctx.user_id),
+        db_session=db,
+    )
+    db.commit()
+    # Re-fetch the persisted row so serialize_receipt sees the
+    # post-commit state (notifications_dispatched, etc.).
+    from backend.models.pricing.publish import PublishReceiptRow
+
+    row = db.get(PublishReceiptRow, receipt.id)
+    return {
+        "scheduled": False,
+        "receipt": serialize_receipt(row) if row else receipt.model_dump(mode="json"),
+    }
+
+
+@router.post("/sku/{aid}/rollback")
+def rollback_sku_price(
+    aid: str,
+    body: RollbackIn,
+    ctx: AuthContext = Depends(require_auth),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Rollback a previously published price within the 72h window."""
+    from backend.models.pricing.publish import PublishReceiptRow
+    from backend.services.pricing.publish import (
+        ReceiptAlreadyRolledBackError,
+        ReceiptNotFoundError,
+        RollbackWindowExpiredError,
+        rollback_publish,
+        serialize_receipt,
+    )
+
+    # Defensive: ensure the receipt is for this aid (so a wrong aid in
+    # the URL doesn't silently roll back a different SKU).
+    receipt = db.get(PublishReceiptRow, body.receipt_id)
+    if receipt is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "receipt not found")
+    if receipt.aid != aid:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"receipt {body.receipt_id} belongs to aid {receipt.aid}, not {aid}",
+        )
+
+    try:
+        rollback_publish(
+            receipt_id=body.receipt_id,
+            reason=body.reason,
+            actor=str(ctx.user_id),
+            db_session=db,
+        )
+    except RollbackWindowExpiredError as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    except ReceiptAlreadyRolledBackError as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    except ReceiptNotFoundError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+
+    db.commit()
+    db.refresh(receipt)
+    return {"receipt": serialize_receipt(receipt)}
+
+
+@router.get("/sku/{aid}/price-book")
+def get_sku_price_book(
+    aid: str,
+    limit: int = Query(default=20, ge=1, le=200),
+    ctx: AuthContext = Depends(require_auth),  # noqa: ARG001 (auth gate)
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Return the recent price_book history for ``aid``."""
+    from backend.services.pricing.publish import list_price_book
+
+    rows = list_price_book(aid=aid, db_session=db, limit=limit)
+    return {"aid": aid, "rows": rows}
+
+
+@router.get("/proposals/{proposal_id}/pdf")
+def get_proposal_pdf(
+    proposal_id: UUID,
+    ctx: AuthContext = Depends(require_auth),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Branded export of a proposal. Returns PDF when available,
+    HTML fallback otherwise (Content-Type advertises which one)."""
+    from fastapi import Response
+
+    from backend.models.pricing.audit import (
+        PricingAuditAction,
+        PricingAuditTargetKind,
+    )
+    from backend.services.pricing.audit import record_audit
+    from backend.services.reports.proposal_pdf import render_proposal_pdf
+
+    proposal = db.get(PricingProposal, proposal_id)
+    if proposal is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "proposal not found")
+
+    body, content_type = render_proposal_pdf(
+        proposal_id=proposal_id, db_session=db
+    )
+
+    # Record an audit row so the export is visible in the timeline.
+    record_audit(
+        actor=str(ctx.user_id),
+        action=PricingAuditAction.PUSH_TO_QUOTING,
+        target_kind=PricingAuditTargetKind.SKU,
+        target_id=proposal.article_id,
+        after={
+            "proposal_id": str(proposal_id),
+            "export_format": content_type,
+        },
+        reason="proposal_pdf_exported",
+        session=db,
+    )
+    db.commit()
+
+    filename = f"proposal-{proposal_id}.pdf" if content_type.startswith("application/pdf") else f"proposal-{proposal_id}.html"
+    return Response(
+        content=body,
+        media_type=content_type,
+        headers={
+            "Content-Disposition": f"inline; filename=\"{filename}\"",
+        },
+    )
