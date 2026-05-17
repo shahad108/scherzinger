@@ -218,6 +218,12 @@ export interface WorkbenchData {
   wtp?: WtpBlock;
   win_prob_curve?: WinProbCurveBlock;
   competitor_ref?: CompetitorRefBlock | null;
+  // Pricing Studio v3 / Phase 2 — typed customer-fanout block computed
+  // by the BFF (`services/pricing/customer_fanout.py::build_customer_fanout`).
+  // Same shape returned by POST /screens/studio/fanout when the user
+  // re-scores at a proposed price. Absent if the BFF errored — UI
+  // falls back to the legacy `fanout` pane in that case.
+  customer_fanout?: CustomerFanoutBlock;
 }
 
 // ---- Pricing Studio v3 / Phase 1 wire-shape blocks --------------------------
@@ -312,6 +318,101 @@ export interface CompetitorRefBlock {
   last_seen: string;
   window_days: number;
   lineage_ref?: LineageRefBlock | null;
+}
+
+// ---- Pricing Studio v3 / Phase 2 wire-shape blocks --------------------------
+//
+// Customer fanout + per-customer drill-in payloads. All Decimal-typed
+// fields arrive as JSON strings — never `number`. The "tone" string is
+// the SOURCE OF TRUTH for row colour: NEVER recompute thresholds on
+// the client (see `customer_risk.compute_tone` for the BFF rule).
+
+export type FanoutRowTone = 'alert' | 'warn' | 'plain';
+
+export interface PaidBand {
+  /** Decimal-as-string. */
+  p10: string;
+  p50: string;
+  p90: string;
+}
+
+export interface CustomerFanoutRow {
+  customer_id: string;
+  customer_name: string;
+  aid: string;
+  tier: Tier;
+  /** Decimal-as-string or null when the customer has no paid history. */
+  last_paid: string | null;
+  /** ISO date-time string or null. */
+  last_paid_at: string | null;
+  ltm_units: number;
+  ltm_eur: string | null;
+  /** Decimal 0..1 (e.g. "0.38" = 38% of customer wallet on this SKU). */
+  wallet_share_pct: string | null;
+  paid_band: PaidBand | null;
+  churn_p: string | null;
+  decline_p: string | null;
+  risk_if_moved: string | null;
+  tone: FanoutRowTone;
+  proposal_queued: boolean;
+  lineage_ref_id: string | null;
+}
+
+export interface CustomerFanoutBlock {
+  aid: string;
+  /** Decimal-as-string or null when this is the default (no proposed) fanout. */
+  proposed_price: string | null;
+  rows: CustomerFanoutRow[];
+  lineage_ref: string | null;
+}
+
+export interface WalletSkuRow {
+  aid: string;
+  /** Decimal 0..1. */
+  share_pct: string;
+  ltm_eur: string;
+}
+
+export interface DrillInHistoryPoint {
+  /** ISO date — never null in practice, but defensively typed. */
+  date: string | null;
+  /** Decimal-as-string. */
+  price: string | null;
+  units: number;
+  won: boolean;
+}
+
+export interface DrillInAtProposed {
+  /** Decimal-as-string Δ vs last_paid (may be null when no paid history). */
+  delta_vs_last_paid: string | null;
+  /** Decimal-as-string percent (e.g. "7.5" = 7.5%). */
+  delta_pct: string | null;
+  /** Decimal 0..1 churn-weighted risk. */
+  risk_if_moved: string | null;
+}
+
+export interface DrillInThisSku {
+  aid: string;
+  customer_id: string;
+  last_paid: string | null;
+  last_paid_at: string | null;
+  ltm_units: number;
+  ltm_eur: string | null;
+  churn_p: string | null;
+  decline_p: string | null;
+  risk_if_moved: string | null;
+  wallet_share_pct: string | null;
+  paid_band: PaidBand | null;
+  tier: Tier;
+}
+
+export interface CustomerDrillInPayload {
+  customer: { id: string; name: string; tier: Tier };
+  this_sku: DrillInThisSku;
+  at_proposed: DrillInAtProposed | null;
+  wallet_top_skus: WalletSkuRow[];
+  history_on_sku: DrillInHistoryPoint[];
+  lineage_ref: string | null;
 }
 
 export interface HeroChipData {

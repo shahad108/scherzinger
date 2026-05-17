@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useStudio } from '@/data/api/useStudio';
 import { useLivePricing } from '@/hooks/useLivePricing';
+import { useFanoutRescore } from '@/data/api/useFanoutRescore';
 import { PageHead } from './components/PageHead';
 import { SkuPicker } from './components/SkuPicker';
 import { WorkbenchHero, type HeroView } from './components/WorkbenchHero';
@@ -131,6 +133,36 @@ export default function PricingStudioPage() {
     };
   }, [data, effectiveAid, selectedSku]);
 
+  // Pricing Studio v3 / Phase 2 — when the user picks a price option,
+  // surface it as a Decimal-as-string so the BFF round-trip preserves
+  // precision (formatted strings like "€5.10" lose currency context).
+  // Hooks MUST run before the early-return below — React's rules of
+  // hooks require a stable call order across renders.
+  const proposedPriceDecimal = useMemo(() => {
+    if (!activeOption?.price) return null;
+    const cleaned = activeOption.price.replace(/[^\d,.\-]/g, '').replace(',', '.');
+    const n = parseDecimal(cleaned);
+    return Number.isFinite(n) && n > 0 ? cleaned : null;
+  }, [activeOption?.price]);
+
+  // F3: re-score the customer fanout at the selected price. The hook is
+  // a no-op until both aid and proposed_price are non-empty; switching
+  // back to a previously-selected price is a cache hit.
+  const rescored = useFanoutRescore(effectiveAid, proposedPriceDecimal, {
+    enabled: Boolean(proposedPriceDecimal) && Boolean(effectiveAid),
+  });
+
+  // F4: SSE-driven cache invalidation for the fanout block.
+  // `useLivePricing` already invalidates the studio key on every tick;
+  // we additionally drop the per-price fanout cache so the re-score
+  // hook re-fetches on customer_state_updated.
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!live.lastTickAt) return;
+    queryClient.invalidateQueries({ queryKey: ['studio-fanout'] });
+    queryClient.invalidateQueries({ queryKey: ['customer-drill-in'] });
+  }, [live.lastTickAt, queryClient]);
+
   if (isLoading || !data || !heroView) {
     return <StudioSkeleton />;
   }
@@ -138,6 +170,11 @@ export default function PricingStudioPage() {
   const showComparable = selectedSku?.isNew ?? false;
   const wb = selectedSku?.workbench ?? data.workbench;
   const fanPrice = activeOption?.price ?? wb.fanout.fanPrice;
+
+  // The fanout block we render: default workbench block when no price
+  // option is selected; re-scored block otherwise. Both share the same
+  // wire shape — `CustomerFanoutBlock`.
+  const fanoutBlock = rescored.data ?? wb.customer_fanout ?? null;
 
   // Phase 1 — derive a numeric current price for Δ calculations. The
   // existing heroView.currentPrice is a pre-formatted string ("€118.00").
@@ -223,7 +260,13 @@ export default function PricingStudioPage() {
             />
 
             <div className="ws-body">
-              <CustomerFanout data={wb.fanout} fanPrice={fanPrice} />
+              <CustomerFanout
+                data={wb.fanout}
+                fanPrice={fanPrice}
+                block={fanoutBlock}
+                proposedPriceDecimal={proposedPriceDecimal}
+                aid={effectiveAid}
+              />
               <CostHistory cost={wb.cost} history={wb.history} />
             </div>
 
