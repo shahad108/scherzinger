@@ -195,6 +195,109 @@ def test_idempotent_within_cache_ttl() -> None:
     assert call_count["n"] == 1
 
 
+def test_bulk_loaders_replace_per_customer_n_plus_one() -> None:
+    """SF2: fanout with N visible customers MUST run ≤ 4 bulk loaders + the
+    aid + active proposals queries — not 4×N per-customer queries.
+
+    Constraint: the per-customer ``build_customer_on_sku`` loop receives
+    ``prefetched`` and runs zero new SELECTs.
+    """
+    from backend.services.pricing import customer_on_sku as cos_mod
+
+    session = MagicMock()
+    # Stub the bulk loaders so they don't touch the DB; spy on
+    # build_customer_on_sku to assert prefetched is non-empty per call.
+    per_customer_prefetched_seen: list[dict] = []
+
+    def _spy_build(*, aid, customer_id, proposed_price, db_session, prefetched=None):
+        per_customer_prefetched_seen.append(prefetched or {})
+        return _cos(customer_id, risk=Decimal("0.05"))
+
+    with patch.object(cf, "_load_customer_ids_for_aid",
+                      return_value=["C-1", "C-2", "C-3", "C-4", "C-5"]), \
+         patch.object(cf, "_load_active_proposals_for_aid", return_value=set()), \
+         patch.object(cf, "_bulk_load_history_on_aid",
+                      return_value={cid: [] for cid in
+                                    ["C-1", "C-2", "C-3", "C-4", "C-5"]}), \
+         patch.object(cf, "_bulk_load_master",
+                      return_value={cid: {"name": cid, "tier": "A"} for cid in
+                                    ["C-1", "C-2", "C-3", "C-4", "C-5"]}), \
+         patch.object(cf, "_bulk_load_risk_scores",
+                      return_value={cid: {"churn_p": None, "decline_p": None}
+                                    for cid in ["C-1", "C-2", "C-3", "C-4", "C-5"]}), \
+         patch.object(cf, "_bulk_load_customer_ltm_eur",
+                      return_value={cid: Decimal("0") for cid in
+                                    ["C-1", "C-2", "C-3", "C-4", "C-5"]}), \
+         patch.object(cf, "build_customer_on_sku", side_effect=_spy_build):
+        payload = cf.build_customer_fanout(
+            aid="X-1",
+            proposed_price=Decimal("5.00"),
+            db_session=session,
+            top_n=5,
+        )
+
+    # 5 customers → 5 calls to build_customer_on_sku, each with prefetched.
+    assert len(payload["rows"]) == 5
+    assert len(per_customer_prefetched_seen) == 5
+    for pf in per_customer_prefetched_seen:
+        assert "history" in pf
+        assert "master" in pf
+        assert "risk_scores" in pf
+        assert "customer_total_ltm" in pf
+
+
+def test_build_customer_on_sku_skips_loaders_when_prefetched() -> None:
+    """SF2: when prefetched supplies every key, the loader stubs MUST NOT
+    be called — verifies the per-customer fast path.
+    """
+    from backend.services.pricing import customer_on_sku as cos_mod
+
+    session = MagicMock()
+    invoice_calls = {"n": 0}
+    master_calls = {"n": 0}
+    risk_calls = {"n": 0}
+    ltm_calls = {"n": 0}
+
+    def _invoice(**_):
+        invoice_calls["n"] += 1
+        return []
+
+    def _master(**_):
+        master_calls["n"] += 1
+        return None
+
+    def _risk(**_):
+        risk_calls["n"] += 1
+        return {"churn_p": None, "decline_p": None}
+
+    def _ltm(**_):
+        ltm_calls["n"] += 1
+        return Decimal("0")
+
+    with patch.object(cos_mod, "_load_invoice_history", side_effect=_invoice), \
+         patch.object(cos_mod, "_load_customer_master", side_effect=_master), \
+         patch.object(cos_mod, "_load_customer_risk_scores", side_effect=_risk), \
+         patch.object(cos_mod, "_load_customer_ltm_eur", side_effect=_ltm), \
+         patch.object(cos_mod, "_persist_lineage", return_value=_lineage()):
+        cos_mod.build_customer_on_sku(
+            aid="X-1",
+            customer_id="C-1",
+            proposed_price=None,
+            db_session=session,
+            prefetched={
+                "history": [],
+                "master": {"name": "Acme", "tier": "A"},
+                "risk_scores": {"churn_p": None, "decline_p": None},
+                "customer_total_ltm": Decimal("0"),
+            },
+        )
+    # All four loaders MUST be skipped when prefetched fills the slot.
+    assert invoice_calls["n"] == 0
+    assert master_calls["n"] == 0
+    assert risk_calls["n"] == 0
+    assert ltm_calls["n"] == 0
+
+
 @pytest.mark.parametrize(
     "price",
     [Decimal("127"), Decimal("127.0"), Decimal("127.00"), Decimal("127.0000")],

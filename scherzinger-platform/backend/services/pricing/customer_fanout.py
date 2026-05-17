@@ -126,6 +126,160 @@ def _load_customer_ids_for_aid(*, aid: str, db_session: Session) -> list[str]:
     return [str(r[0]) for r in rows if r[0] is not None]
 
 
+# ---------------------------------------------------------------------------
+# Bulk loaders — used by ``build_customer_fanout`` to avoid 4×N queries.
+#
+# Each returns a ``dict[str, Any]`` keyed by ``customer_id``. The fanout
+# composer then passes each customer's slice into ``build_customer_on_sku``
+# via the ``prefetched`` arg so the per-customer SELECTs are skipped.
+# ---------------------------------------------------------------------------
+
+
+def _bulk_load_history_on_aid(
+    *, aid: str, customer_ids: list[str], db_session: Session
+) -> dict[str, list[dict]]:
+    """Per-customer invoice history on this SKU. Empty dict on failure."""
+    if not customer_ids:
+        return {}
+    from sqlalchemy import bindparam, text
+    from decimal import Decimal
+    try:
+        stmt = text("""
+            SELECT customer_id, date, unit_price, quantity, revenue
+            FROM invoices
+            WHERE article_id = :aid
+              AND customer_id IN :cids
+            ORDER BY customer_id, date ASC
+        """).bindparams(bindparam("cids", expanding=True))
+        rows = db_session.execute(
+            stmt,
+            {"aid": aid, "cids": list(customer_ids)},
+        ).fetchall()
+    except Exception:
+        logger.exception("customer_fanout._bulk_load_history_on_aid aid=%s", aid)
+        return {}
+    out: dict[str, list[dict]] = {cid: [] for cid in customer_ids}
+    for r in rows:
+        cid = str(r[0])
+        price = Decimal(str(r[2])) if r[2] is not None else None
+        if price is None:
+            continue
+        out.setdefault(cid, []).append(
+            {
+                "date": r[1],
+                "price": price,
+                "units": int(r[3] or 0),
+                "revenue": Decimal(str(r[4] or 0)),
+                "won": True,
+            }
+        )
+    return out
+
+
+def _bulk_load_master(
+    *, customer_ids: list[str], db_session: Session
+) -> dict[str, Optional[dict]]:
+    """Per-customer master record (name/tier). Unknown ids map to None."""
+    if not customer_ids:
+        return {}
+    from sqlalchemy import bindparam, text
+    try:
+        stmt = text(
+            "SELECT customer_id, name, tier FROM customers "
+            "WHERE customer_id IN :cids"
+        ).bindparams(bindparam("cids", expanding=True))
+        rows = db_session.execute(
+            stmt, {"cids": list(customer_ids)}
+        ).fetchall()
+    except Exception:
+        logger.exception("customer_fanout._bulk_load_master")
+        return {cid: None for cid in customer_ids}
+    out: dict[str, Optional[dict]] = {cid: None for cid in customer_ids}
+    for r in rows:
+        cid = str(r[0])
+        name = r[1] or f"Customer {cid}"
+        tier = (r[2] or "C").upper()
+        if tier not in ("A", "B", "C", "D"):
+            tier = "C"
+        out[cid] = {"name": name, "tier": tier}
+    return out
+
+
+def _bulk_load_risk_scores(
+    *, customer_ids: list[str], db_session: Session
+) -> dict[str, dict]:
+    """Per-customer churn_p/decline_p, both None when no score row exists.
+
+    Churn damping factor is hoisted to a module constant on
+    ``customer_on_sku`` for the single-customer path; we re-apply the
+    same factor here so the bulk + single paths stay in sync.
+    """
+    from decimal import Decimal, ROUND_HALF_UP
+    from sqlalchemy import bindparam, text
+    default = {"churn_p": None, "decline_p": None}
+    if not customer_ids:
+        return {}
+    try:
+        stmt = text("""
+            SELECT DISTINCT ON (customer_id) customer_id, risk_score
+            FROM customer_risk_scores
+            WHERE customer_id IN :cids
+            ORDER BY customer_id, score_date DESC
+        """).bindparams(bindparam("cids", expanding=True))
+        rows = db_session.execute(
+            stmt, {"cids": list(customer_ids)}
+        ).fetchall()
+    except Exception:
+        logger.exception("customer_fanout._bulk_load_risk_scores")
+        return {cid: dict(default) for cid in customer_ids}
+    # Lazy import to keep the constant in one place.
+    from backend.services.pricing.customer_on_sku import _CHURN_DAMPING_FACTOR
+    out: dict[str, dict] = {cid: dict(default) for cid in customer_ids}
+    for r in rows:
+        cid = str(r[0])
+        if r[1] is None:
+            continue
+        score = Decimal(str(r[1]))
+        out[cid] = {
+            "churn_p": (score * _CHURN_DAMPING_FACTOR).quantize(
+                Decimal("0.0001"), rounding=ROUND_HALF_UP
+            ),
+            "decline_p": score.quantize(
+                Decimal("0.0001"), rounding=ROUND_HALF_UP
+            ),
+        }
+    return out
+
+
+def _bulk_load_customer_ltm_eur(
+    *, customer_ids: list[str], db_session: Session
+) -> dict[str, "Decimal"]:
+    """Per-customer LTM EUR across all SKUs (wallet-share denominator)."""
+    from decimal import Decimal
+    from sqlalchemy import bindparam, text
+    if not customer_ids:
+        return {}
+    try:
+        stmt = text("""
+            SELECT customer_id, COALESCE(SUM(revenue), 0)
+            FROM invoices
+            WHERE customer_id IN :cids
+              AND date >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)
+            GROUP BY customer_id
+        """).bindparams(bindparam("cids", expanding=True))
+        rows = db_session.execute(
+            stmt, {"cids": list(customer_ids)}
+        ).fetchall()
+    except Exception:
+        logger.exception("customer_fanout._bulk_load_customer_ltm_eur")
+        return {cid: Decimal("0") for cid in customer_ids}
+    out: dict[str, Decimal] = {cid: Decimal("0") for cid in customer_ids}
+    for r in rows:
+        cid = str(r[0])
+        out[cid] = Decimal(str(r[1] or 0))
+    return out
+
+
 def _load_active_proposals_for_aid(
     *, aid: str, db_session: Session
 ) -> set[str]:
@@ -188,15 +342,39 @@ def build_customer_fanout(
     customer_ids = _load_customer_ids_for_aid(aid=aid, db_session=db_session)
     active = _load_active_proposals_for_aid(aid=aid, db_session=db_session)
 
+    # SF2: bulk-load everything build_customer_on_sku needs in 4 queries
+    # so the per-customer composer loop becomes O(N) Python — not O(4·N)
+    # round-trips.
+    visible = customer_ids[: max(top_n, 0)]
+    history_by_cid = _bulk_load_history_on_aid(
+        aid=aid, customer_ids=visible, db_session=db_session
+    )
+    master_by_cid = _bulk_load_master(
+        customer_ids=visible, db_session=db_session
+    )
+    risk_by_cid = _bulk_load_risk_scores(
+        customer_ids=visible, db_session=db_session
+    )
+    ltm_by_cid = _bulk_load_customer_ltm_eur(
+        customer_ids=visible, db_session=db_session
+    )
+
     rows: list[dict[str, Any]] = []
     last_lineage_id: Optional[UUID] = None
-    for cid in customer_ids[: max(top_n, 0)]:
+    for cid in visible:
+        prefetched = {
+            "history": history_by_cid.get(cid, []),
+            "master": master_by_cid.get(cid),
+            "risk_scores": risk_by_cid.get(cid, {"churn_p": None, "decline_p": None}),
+            "customer_total_ltm": ltm_by_cid.get(cid),
+        }
         try:
             cos = build_customer_on_sku(
                 aid=aid,
                 customer_id=cid,
                 proposed_price=proposed_price,
                 db_session=db_session,
+                prefetched=prefetched,
             )
         except Exception:
             logger.exception("customer_fanout build_customer_on_sku aid=%s cid=%s",

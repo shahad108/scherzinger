@@ -42,6 +42,20 @@ logger = logging.getLogger(__name__)
 # Minimum transaction count for paid_band to be statistically defensible.
 PAID_BAND_MIN_N = 3
 
+# Churn vs decline damping factor.
+#
+# The persisted ``customer_risk_scores.risk_score`` drives BOTH views in
+# the Forecasting Customer service (services/forecast/customers.py):
+#   - "decline_p" is the raw score (4-quarter decline probability).
+#   - "churn_p" is a dampened variant (= score × this factor), reflecting
+#     the empirical observation that decline is a broader signal than
+#     outright churn. The 0.85 ratio is calibrated against the M8 churn
+#     backtest in notebooks/forecasting/.
+#
+# Hoist as a module constant so bulk + single-customer paths stay in sync
+# — and so a future re-calibration is a one-line change.
+_CHURN_DAMPING_FACTOR: Decimal = Decimal("0.85")
+
 
 # ---------------------------------------------------------------------------
 # Loaders — sliced for monkey-patching.
@@ -158,7 +172,7 @@ def _load_customer_risk_scores(
         return {"churn_p": None, "decline_p": None}
     score = Decimal(str(row[0]))
     return {
-        "churn_p": (score * Decimal("0.85")).quantize(
+        "churn_p": (score * _CHURN_DAMPING_FACTOR).quantize(
             Decimal("0.0001"), rounding=ROUND_HALF_UP
         ),
         "decline_p": score.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP),
@@ -299,25 +313,54 @@ def build_customer_on_sku(
     customer_id: str,
     proposed_price: Optional[Decimal] = None,
     db_session: Session,
+    prefetched: Optional[dict] = None,
 ) -> CustomerOnSku:
     """Build the per-(aid, customer_id) reality row.
 
     ``proposed_price`` drives ``risk_if_moved``. When omitted, the field
     is ``None`` (NOT zero — zero would conflate "no proposal" with "zero
     risk", and the frontend needs to distinguish the two).
+
+    ``prefetched`` is an optional dict carrying values pre-loaded by a
+    bulk caller (e.g. the fanout composer). When provided, the
+    corresponding per-customer SELECTs are skipped — fanout's N+1 risk
+    drops from 4×N queries to 4 + N×0. Recognized keys:
+
+      - "history":           list[dict] (same shape as _load_invoice_history)
+      - "master":            dict | None ({"name", "tier"})
+      - "risk_scores":       dict ({"churn_p", "decline_p"})
+      - "customer_total_ltm": Decimal
+
+    Any missing key falls through to the per-customer loader so single
+    callers keep working unchanged.
     """
-    history = _load_invoice_history(
-        aid=aid, customer_id=customer_id, db_session=db_session
-    )
-    master = _load_customer_master(customer_id=customer_id, db_session=db_session)
+    prefetched = prefetched or {}
+
+    if "history" in prefetched:
+        history = prefetched["history"]
+    else:
+        history = _load_invoice_history(
+            aid=aid, customer_id=customer_id, db_session=db_session
+        )
+
+    if "master" in prefetched:
+        master = prefetched["master"]
+    else:
+        master = _load_customer_master(
+            customer_id=customer_id, db_session=db_session
+        )
     if master is None:
         # Composer is forgiving — unknown customers still get a row with a
         # synthesized name + default tier. Drill-in distinguishes 404 by
         # calling ``_load_customer_master`` directly and checking for None.
         master = {"name": f"Customer {customer_id}", "tier": "C"}
-    risk_scores = _load_customer_risk_scores(
-        customer_id=customer_id, db_session=db_session
-    )
+
+    if "risk_scores" in prefetched:
+        risk_scores = prefetched["risk_scores"]
+    else:
+        risk_scores = _load_customer_risk_scores(
+            customer_id=customer_id, db_session=db_session
+        )
 
     ltm = _trailing_year_filter(history)
     ltm_units = sum(int(h.get("units") or 0) for h in ltm)
@@ -335,9 +378,12 @@ def build_customer_on_sku(
 
     paid_band = _paid_band_from_history(history)
 
-    customer_total_ltm = _load_customer_ltm_eur(
-        customer_id=customer_id, db_session=db_session
-    )
+    if "customer_total_ltm" in prefetched:
+        customer_total_ltm = prefetched["customer_total_ltm"]
+    else:
+        customer_total_ltm = _load_customer_ltm_eur(
+            customer_id=customer_id, db_session=db_session
+        )
     wallet_share_pct: Optional[Decimal]
     if customer_total_ltm > 0:
         wallet_share_pct = (ltm_eur / customer_total_ltm).quantize(
