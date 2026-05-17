@@ -1127,3 +1127,158 @@ def simulate_pricing(
         horizon_months=body.horizon_months,
         db_session=db,
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase 9 — Alerts endpoints
+# ---------------------------------------------------------------------------
+
+
+def _serialize_alert(alert) -> dict[str, Any]:
+    return {
+        "id": str(alert.id),
+        "kind": alert.kind,
+        "spec_json": dict(alert.spec_json or {}),
+        "scope": {
+            "aid": alert.scope_aid,
+            "cluster": alert.scope_cluster,
+            "family": alert.scope_family,
+        },
+        "channels": list(alert.channels or []),
+        "created_by": alert.created_by,
+        "enabled": alert.enabled,
+        "created_at": alert.created_at.isoformat() if alert.created_at else None,
+    }
+
+
+def _serialize_alert_event(event, alert=None) -> dict[str, Any]:
+    out = {
+        "id": str(event.id),
+        "alert_id": str(event.alert_id),
+        "triggered_at": (
+            event.triggered_at.isoformat() if event.triggered_at else None
+        ),
+        "payload": dict(event.payload or {}),
+        "channels_dispatched": list(event.channels_dispatched or []),
+    }
+    if alert is not None:
+        out["kind"] = alert.kind
+        out["scope"] = {
+            "aid": alert.scope_aid,
+            "cluster": alert.scope_cluster,
+            "family": alert.scope_family,
+        }
+    return out
+
+
+@router.post("/alerts", status_code=status.HTTP_201_CREATED)
+def create_pricing_alert(
+    body: dict[str, Any],
+    ctx: AuthContext = Depends(require_auth),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Create an alert. Body is a raw spec dict (discriminated by ``kind``)."""
+    from pydantic import ValidationError
+
+    from backend.services.pricing import alerts as alerts_service
+
+    # Force the spec's created_by to the authenticated user so clients
+    # can't impersonate. We accept (and overwrite) any incoming value.
+    payload = dict(body or {})
+    payload["created_by"] = str(ctx.user_id)
+    try:
+        spec = alerts_service.parse_spec(payload)
+    except ValidationError as exc:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, f"invalid alert spec: {exc.errors()}"
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+    try:
+        alert = alerts_service.create_alert(spec, db)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+    db.commit()
+    db.refresh(alert)
+    return {"alert": _serialize_alert(alert)}
+
+
+@router.get("/alerts")
+def list_pricing_alerts(
+    ctx: AuthContext = Depends(require_auth),
+    db: Session = Depends(get_db),
+    include_disabled: bool = Query(False),
+) -> dict[str, Any]:
+    """List the authenticated user's alerts."""
+    from backend.services.pricing import alerts as alerts_service
+
+    rows = alerts_service.list_alerts_for_user(
+        str(ctx.user_id), db, include_disabled=include_disabled
+    )
+    return {"alerts": [_serialize_alert(r) for r in rows]}
+
+
+@router.delete("/alerts/{alert_id}")
+def disable_pricing_alert(
+    alert_id: UUID,
+    ctx: AuthContext = Depends(require_auth),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Soft-disable an alert (sets ``enabled=False``)."""
+    from backend.services.pricing import alerts as alerts_service
+
+    try:
+        alert = alerts_service.get_alert(alert_id, db)
+    except alerts_service.AlertNotFoundError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+    if alert.created_by != str(ctx.user_id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "not your alert")
+    alerts_service.disable_alert(alert_id, db)
+    db.commit()
+    db.refresh(alert)
+    return {"alert": _serialize_alert(alert)}
+
+
+@router.get("/alerts/inbox")
+def get_pricing_alert_inbox(
+    ctx: AuthContext = Depends(require_auth),
+    db: Session = Depends(get_db),
+    limit: int = Query(100, ge=1, le=500),
+) -> dict[str, Any]:
+    """Return the authenticated user's recent triggered alert events."""
+    from backend.models.pricing.alerts import PricingAlert
+    from backend.services.pricing import alerts as alerts_service
+
+    events = alerts_service.get_alert_inbox(str(ctx.user_id), db, limit=limit)
+    # Eager-load the parent alert for each event so the wire payload
+    # carries kind + scope without N+1 queries on the frontend.
+    out = []
+    for ev in events:
+        alert = db.get(PricingAlert, ev.alert_id)
+        out.append(_serialize_alert_event(ev, alert=alert))
+    return {"events": out}
+
+
+@router.post("/alerts/{alert_id}/test")
+def test_pricing_alert(
+    alert_id: UUID,
+    ctx: AuthContext = Depends(require_auth),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Manually evaluate a single alert (QA seam).
+
+    Fires the alert if the trigger condition is met and returns a
+    summary including the event_id + payload.
+    """
+    from backend.services.pricing import alerts as alerts_service
+    from backend.services.pricing import alerts_runner
+
+    try:
+        alert = alerts_service.get_alert(alert_id, db)
+    except alerts_service.AlertNotFoundError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+    if alert.created_by != str(ctx.user_id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "not your alert")
+    result = alerts_runner.run_for_alert(alert_id, db)
+    db.commit()
+    return result
