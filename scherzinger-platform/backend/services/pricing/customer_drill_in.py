@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import time
+from collections import OrderedDict
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Optional
 
@@ -35,9 +36,12 @@ logger = logging.getLogger(__name__)
 
 
 _CACHE_TTL_SECONDS = 60.0
-_CACHE: dict[
-    tuple[str, str, str], tuple[float, dict[str, Any]]
-] = {}
+_CACHE_MAX_ENTRIES = 1024
+# OrderedDict gives us a one-line LRU eviction: see ``build_drill_in`` for
+# the bump-on-hit / pop-oldest-on-overflow pattern.
+_CACHE: "OrderedDict[tuple[str, str, str], tuple[float, dict[str, Any]]]" = (
+    OrderedDict()
+)
 
 
 def invalidate_cache() -> None:
@@ -217,6 +221,7 @@ def build_drill_in(
     cached = _CACHE.get(cache_key)
     now = time.monotonic()
     if cached is not None and now - cached[0] < _CACHE_TTL_SECONDS:
+        _CACHE.move_to_end(cache_key)
         return cached[1]
 
     # Existence check — master is the source of truth. ``_load_customer_master``
@@ -263,4 +268,7 @@ def build_drill_in(
         ),
     }
     _CACHE[cache_key] = (now, payload)
+    _CACHE.move_to_end(cache_key)
+    while len(_CACHE) > _CACHE_MAX_ENTRIES:
+        _CACHE.popitem(last=False)
     return payload

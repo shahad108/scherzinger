@@ -298,6 +298,44 @@ def test_build_customer_on_sku_skips_loaders_when_prefetched() -> None:
     assert ltm_calls["n"] == 0
 
 
+def test_cache_evicts_oldest_when_capacity_exceeded(monkeypatch) -> None:
+    """F1: the module-level cache MUST be bounded.
+
+    Drop the cap to 3, fill with 5 distinct entries, assert that only the
+    most-recent 3 survive (LRU eviction).
+    """
+    session = MagicMock()
+    monkeypatch.setattr(cf, "_CACHE_MAX_ENTRIES", 3)
+
+    with patch.object(cf, "_load_customer_ids_for_aid", return_value=["C-1"]), \
+         patch.object(cf, "_load_active_proposals_for_aid", return_value=set()), \
+         patch.object(cf, "_bulk_load_history_on_aid", return_value={"C-1": []}), \
+         patch.object(cf, "_bulk_load_master",
+                      return_value={"C-1": {"name": "C-1", "tier": "A"}}), \
+         patch.object(cf, "_bulk_load_risk_scores",
+                      return_value={"C-1": {"churn_p": None, "decline_p": None}}), \
+         patch.object(cf, "_bulk_load_customer_ltm_eur",
+                      return_value={"C-1": Decimal("0")}), \
+         patch.object(cf, "build_customer_on_sku",
+                      return_value=_cos("C-1", risk=Decimal("0.05"))):
+        for price in ["1.00", "2.00", "3.00", "4.00", "5.00"]:
+            cf.build_customer_fanout(
+                aid="X-1",
+                proposed_price=Decimal(price),
+                db_session=session,
+            )
+    # Cap is 3 → only the 3 most-recent entries survive.
+    assert len(cf._CACHE) == 3
+    # The two oldest ("1.00", "2.00") were evicted.
+    keys = list(cf._CACHE.keys())
+    survivors = {k[1] for k in keys}
+    assert "3.0000" in survivors
+    assert "4.0000" in survivors
+    assert "5.0000" in survivors
+    assert "1.0000" not in survivors
+    assert "2.0000" not in survivors
+
+
 @pytest.mark.parametrize(
     "price",
     [Decimal("127"), Decimal("127.0"), Decimal("127.00"), Decimal("127.0000")],

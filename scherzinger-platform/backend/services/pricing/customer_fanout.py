@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import time
+from collections import OrderedDict
 from decimal import Decimal
 from typing import Any, Optional
 from uuid import UUID
@@ -30,9 +31,15 @@ from backend.services.pricing.customer_risk import compute_tone
 logger = logging.getLogger(__name__)
 
 
-# Re-score cache. Keyed by (aid, proposed_price as str). 60s TTL per spec.
+# Re-score cache. Keyed by (aid, canonical proposed_price string). 60s TTL.
+#
+# OrderedDict + insertion-order eviction gives us a one-line LRU bound so a
+# busy Studio session can't grow the cache without limit. The cap is
+# generous (1024 entries ≈ ~17 SKUs × ~60 prices each) since each entry
+# is only the small fanout payload.
 _CACHE_TTL_SECONDS = 60.0
-_CACHE: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
+_CACHE_MAX_ENTRIES = 1024
+_CACHE: "OrderedDict[tuple[str, str], tuple[float, dict[str, Any]]]" = OrderedDict()
 
 
 def invalidate_cache(aid: Optional[str] = None) -> None:
@@ -337,6 +344,8 @@ def build_customer_fanout(
     cached = _CACHE.get(cache_key)
     now = time.monotonic()
     if cached is not None and now - cached[0] < _CACHE_TTL_SECONDS:
+        # Hit → bump LRU recency.
+        _CACHE.move_to_end(cache_key)
         return cached[1]
 
     customer_ids = _load_customer_ids_for_aid(aid=aid, db_session=db_session)
@@ -395,4 +404,7 @@ def build_customer_fanout(
         "lineage_ref": str(last_lineage_id) if last_lineage_id is not None else None,
     }
     _CACHE[cache_key] = (now, payload)
+    _CACHE.move_to_end(cache_key)
+    while len(_CACHE) > _CACHE_MAX_ENTRIES:
+        _CACHE.popitem(last=False)  # drop oldest (LRU)
     return payload
