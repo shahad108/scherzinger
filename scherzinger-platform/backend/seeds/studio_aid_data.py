@@ -299,11 +299,16 @@ def _pick_customers(db, n: int, sku_seed: str) -> list[str]:
     return ids[:n]
 
 
-def _seed_customer_on_sku(db, sku: dict) -> int:
-    n_customers = max(3, min(8, sku["customer_count"] + 2))
+def _seed_customer_on_sku(db, sku: dict) -> list[dict]:
+    """Seed customer_on_sku rows. Returns the list of per-customer dicts so
+    downstream seeders (``_seed_invoices``) can reuse the same roster +
+    paid prices / units without re-deriving them."""
+    # Floor at 7 so the fanout (top_n=6) is always full; the panel UX
+    # falls apart with < 6 visible buyers per SKU.
+    n_customers = max(7, min(8, sku["customer_count"] + 2))
     customer_ids = _pick_customers(db, n_customers, sku["aid"])
     if not customer_ids:
-        return 0
+        return []
 
     rng = _stable_rng("cos", sku["aid"])
     cur = float(sku["current_price"])
@@ -366,7 +371,149 @@ def _seed_customer_on_sku(db, sku: dict) -> int:
                 "updated_at": now,
             },
         )
-    return len(rows)
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# invoices — synthetic per-(aid, customer) history so the fanout loader
+# (``customer_fanout._load_customer_ids_for_aid``) returns ≥ 6 buyers per
+# studio AID. The dev DB only ships a handful of real invoice rows for
+# the studio SKUs (often just 1–3 distinct customers) so the panel ends
+# up showing one customer; this seeds the missing buyers off the same
+# customer_on_sku roster.
+# ---------------------------------------------------------------------------
+
+# Marker prefix used in invoice_id so we can DELETE-then-INSERT our own
+# synthetic rows on re-seed without touching real fixture data.
+_INVOICE_TAG = "STSEED"
+
+
+def _seed_invoices(db, sku: dict, cos_rows: list[dict]) -> int:
+    """Generate 5–7 invoice rows per (aid, customer) over the last 24 months.
+
+    Uses the same customer roster + last_paid / ltm_units that
+    ``_seed_customer_on_sku`` produced so the invoice history is
+    internally consistent with the fanout panel. Idempotent via
+    DELETE-then-INSERT on the ``STSEED-{aid}-…`` invoice_id namespace.
+    """
+    if not cos_rows:
+        return 0
+
+    aid = sku["aid"]
+    cluster = sku["cluster"]
+    unit_cost = float(sku["unit_cost"])
+
+    # Wipe prior synthetic rows for this aid so re-runs stay deterministic.
+    db.execute(
+        text(
+            "DELETE FROM invoices WHERE article_id = :aid AND invoice_id LIKE :tag"
+        ),
+        {"aid": aid, "tag": f"{_INVOICE_TAG}-{aid}-%"},
+    )
+
+    # Use TODAY (not MAX(date)) so newly seeded rows fall inside the
+    # LTM rolling window the fanout loader computes from MAX(date).
+    base_date = datetime.now(timezone.utc).date()
+    inserted = 0
+
+    for r in cos_rows:
+        cid = r["customer_id"]
+        last_paid = float(r["last_paid"])
+        annual_units = int(r["ltm_units"]) or 200
+        rng = _stable_rng("invoices", aid, str(cid))
+
+        # 5–7 invoices per customer spread over 24 months. Ensure at
+        # least one is recent (≤ 6 months) so it falls inside the LTM
+        # 12-month rolling window the fanout SQL uses.
+        n_inv = rng.randint(5, 7)
+        # Build a sorted set of day offsets: at least 2 inside 12 months.
+        offsets: list[int] = []
+        offsets.append(rng.randint(15, 90))    # very recent
+        offsets.append(rng.randint(120, 330))  # mid recent (still LTM)
+        while len(offsets) < n_inv:
+            offsets.append(rng.randint(60, 720))
+        offsets.sort()
+
+        # Per-customer unit volume per invoice (split annual across n_inv).
+        avg_units = max(1, annual_units // max(n_inv, 1))
+
+        for i, days_back in enumerate(offsets):
+            date = base_date - timedelta(days=days_back)
+            # Price drifts ±6% from last_paid per invoice.
+            price = round(last_paid * (0.94 + rng.random() * 0.12), 2)
+            qty = max(1, int(avg_units * (0.7 + rng.random() * 0.6)))
+            revenue = round(price * qty, 2)
+            hkvoll = round(unit_cost * qty * (0.95 + rng.random() * 0.10), 2)
+            hkvar = round(hkvoll * 0.75, 2)
+            material = round(hkvar * 0.45, 2)
+            fek = round(hkvar * 0.45, 2)
+            fv = round(hkvar * 0.10, 2)
+            db1 = round(revenue - hkvar, 2)
+            db2 = round(revenue - hkvoll, 2)
+            db1_pu = round(db1 / qty, 2)
+            db2_pu = round(db2 / qty, 2)
+            db1_margin = round(db1 / max(revenue, 1e-6), 4)
+            db2_margin = round(db2 / max(revenue, 1e-6), 4)
+
+            invoice_id = f"{_INVOICE_TAG}-{aid}-{cid}-{i:02d}"
+            order_id = f"{_INVOICE_TAG}-{aid}-{cid}-{i:02d}"
+            db.execute(
+                text(
+                    """
+                    INSERT INTO invoices (
+                        invoice_id, position, order_id, date, customer_id,
+                        article_id, business_unit, commodity_group, currency,
+                        exchange_rate, quantity, revenue, revenue_per_unit,
+                        hkvoll_per_unit, hkvar_per_unit, material_per_unit,
+                        fek_per_unit, fv_per_unit,
+                        db1_total, db1_per_unit, db1_margin,
+                        db2_total, db2_per_unit, db2_margin,
+                        year, quarter, month,
+                        dq_missing_margin, dq_negative_margin,
+                        dq_low_margin, dq_any_issue
+                    ) VALUES (
+                        :invoice_id, 1, :order_id, :date, :customer_id,
+                        :article_id, :business_unit, :commodity_group, 'EUR',
+                        1.0, :quantity, :revenue, :revenue_per_unit,
+                        :hkvoll_pu, :hkvar_pu, :material_pu,
+                        :fek_pu, :fv_pu,
+                        :db1_total, :db1_pu, :db1_margin,
+                        :db2_total, :db2_pu, :db2_margin,
+                        :year, :quarter, :month,
+                        FALSE, FALSE, FALSE, FALSE
+                    )
+                    ON CONFLICT (invoice_id, position) DO NOTHING
+                    """
+                ),
+                {
+                    "invoice_id": invoice_id,
+                    "order_id": order_id,
+                    "date": date,
+                    "customer_id": cid,
+                    "article_id": aid,
+                    "business_unit": "BU001",
+                    "commodity_group": cluster,
+                    "quantity": qty,
+                    "revenue": revenue,
+                    "revenue_per_unit": price,
+                    "hkvoll_pu": round(hkvoll / qty, 2),
+                    "hkvar_pu": round(hkvar / qty, 2),
+                    "material_pu": round(material / qty, 2),
+                    "fek_pu": round(fek / qty, 2),
+                    "fv_pu": round(fv / qty, 2),
+                    "db1_total": db1,
+                    "db1_pu": db1_pu,
+                    "db1_margin": db1_margin,
+                    "db2_total": db2,
+                    "db2_pu": db2_pu,
+                    "db2_margin": db2_margin,
+                    "year": date.year,
+                    "quarter": (date.month - 1) // 3 + 1,
+                    "month": date.month,
+                },
+            )
+            inserted += 1
+    return inserted
 
 
 # ---------------------------------------------------------------------------
@@ -503,6 +650,7 @@ def seed_all() -> None:
         "price_state": 0,
         "cost_state": 0,
         "customer_on_sku": 0,
+        "invoices": 0,
         "quotes": 0,
     }
     with SessionLocal() as db:
@@ -511,14 +659,17 @@ def seed_all() -> None:
             counts["price_state"] += 1
             _seed_cost(db, sku)
             counts["cost_state"] += 1
-            n_cos = _seed_customer_on_sku(db, sku)
-            counts["customer_on_sku"] += n_cos
+            cos_rows = _seed_customer_on_sku(db, sku)
+            counts["customer_on_sku"] += len(cos_rows)
+            n_inv = _seed_invoices(db, sku, cos_rows)
+            counts["invoices"] += n_inv
             n_q = _seed_quotes(db, sku)
             counts["quotes"] += n_q
             logger.info(
-                "  %s  price OK  cost OK  customer_on_sku +%d  quotes +%d",
+                "  %s  price OK  cost OK  customer_on_sku +%d  invoices +%d  quotes +%d",
                 sku["aid"],
-                n_cos,
+                len(cos_rows),
+                n_inv,
                 n_q,
             )
         db.commit()
