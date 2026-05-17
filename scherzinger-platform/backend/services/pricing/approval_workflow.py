@@ -270,6 +270,22 @@ def submit_proposal_for_approval(
             aid=proposal.article_id,
             extra={"auto_approve": True},
         )
+        # Phase 6 — auto-approved proposals immediately mark the linked
+        # batch item committed. The batch_subscribers helper is a no-op
+        # when the proposal isn't linked to a batch.
+        try:
+            from backend.services.pricing import batch_subscribers
+
+            batch_subscribers.on_proposal_decided(
+                proposal_id=proposal.id,
+                decision="approve",
+                db_session=session,
+            )
+        except Exception:
+            logger.exception(
+                "approval_workflow.submit batch_subscribers failed proposal_id=%s",
+                proposal.id,
+            )
     else:
         _publish_event(
             "proposal.submitted",
@@ -425,6 +441,27 @@ def apply_decision(
             "decision": decision.value,
         },
     )
+
+    # Phase 6 — propagate to the batch subscriber. We only flip the
+    # batch item's status on the *terminal* transition (final approve /
+    # reject / request_changes) so intermediate approves don't prematurely
+    # mark the item committed.
+    try:
+        from backend.services.pricing import batch_subscribers
+
+        if fully_approved or terminal:
+            batch_subscribers.on_proposal_decided(
+                proposal_id=proposal.id,
+                decision=decision.value,
+                db_session=session,
+            )
+    except Exception:
+        logger.exception(
+            "approval_workflow.apply_decision batch_subscribers failed "
+            "proposal_id=%s decision=%s",
+            proposal.id,
+            decision.value,
+        )
 
     return instance
 

@@ -81,6 +81,18 @@ def on_cost_changed(
     except Exception:
         logger.exception("cost_ingest_hook.invalidate cost_outlook aid=%s", aid)
 
+    # Phase 6 — flag any open batch items for this SKU as having a
+    # stale ``before_price``. Best-effort; never block the cost ingest.
+    if db_session is not None:
+        try:
+            from backend.services.pricing import batch_subscribers
+
+            batch_subscribers.on_cost_moved(aid=aid, db_session=db_session)
+        except Exception:
+            logger.exception(
+                "cost_ingest_hook.batch_subscribers aid=%s", aid
+            )
+
     # Customer fanout & drill-in are price-keyed (not cost-keyed) so we
     # don't drop them — but the recommendation recompute will publish
     # ``pricing.recommendation_updated`` which the frontend already wires

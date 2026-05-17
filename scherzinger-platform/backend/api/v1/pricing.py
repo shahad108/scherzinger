@@ -510,6 +510,225 @@ def get_sku_audit(
     }
 
 
+# ---------------------------------------------------------------------------
+# Phase 6 (Pricing Studio v3) — batch repricing endpoints.
+# ---------------------------------------------------------------------------
+
+
+class BatchCreateIn(BaseModel):
+    """Request body for ``POST /pricing/batches``.
+
+    ``rule`` is a discriminated union on ``kind`` — see
+    ``services.pricing.batch.BatchRule``. Pydantic v2 validates the
+    payload against the per-kind shape automatically.
+    """
+
+    aids: list[str]
+    rule: dict[str, Any]
+    scope_filter: dict[str, Any] = {}
+
+
+class BatchCommitIn(BaseModel):
+    dry_run: bool = False
+    locked_aids: list[str] = []
+
+
+# Process-local TTL cache for the GET batch endpoint (30s per plan).
+_BATCH_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
+_BATCH_CACHE_TTL = 30.0
+
+
+def _invalidate_batch_cache(batch_id: Optional[str] = None) -> None:
+    if batch_id is None:
+        _BATCH_CACHE.clear()
+        return
+    _BATCH_CACHE.pop(batch_id, None)
+
+
+def _parse_rule(raw: dict[str, Any]):
+    """Coerce the dict into the appropriate BatchRule subclass.
+
+    Pydantic discriminated unions need the ``kind`` field to dispatch;
+    we hand-dispatch here so the resulting validation error message
+    names the offending field rather than the union as a whole.
+    """
+    from backend.services.pricing.batch import (
+        CustomJsonLogicRule,
+        FloorPlusRule,
+        MatchCompetitorRule,
+        PctMoveRule,
+        TargetDb2Rule,
+    )
+
+    kind = raw.get("kind")
+    rule_classes = {
+        "floor_plus": FloorPlusRule,
+        "pct_move": PctMoveRule,
+        "match_competitor": MatchCompetitorRule,
+        "target_db2": TargetDb2Rule,
+        "custom_jsonlogic": CustomJsonLogicRule,
+    }
+    cls = rule_classes.get(kind)
+    if cls is None:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"unknown rule kind: {kind!r}",
+        )
+    try:
+        return cls.model_validate(raw)
+    except Exception as exc:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)
+        ) from exc
+
+
+def _load_batch_items(db: Session, batch_id: UUID):
+    from backend.models.pricing.batch import PricingBatch, PricingBatchItem
+
+    batch = db.get(PricingBatch, batch_id)
+    if batch is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "batch not found")
+    items = (
+        db.query(PricingBatchItem)
+        .filter(PricingBatchItem.batch_id == batch.id)
+        .order_by(PricingBatchItem.aid.asc())
+        .all()
+    )
+    return batch, items
+
+
+@router.post("/batches", status_code=status.HTTP_201_CREATED)
+def create_batch(
+    body: BatchCreateIn,
+    ctx: AuthContext = Depends(require_auth),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Create a batch + run preview in one call. Returns the full payload."""
+    from backend.services.pricing.batch import (
+        ScopeFilter,
+        build_batch_preview,
+        serialize_batch,
+    )
+
+    rule = _parse_rule(body.rule)
+    try:
+        scope = ScopeFilter.model_validate(body.scope_filter or {})
+    except Exception as exc:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)
+        ) from exc
+
+    batch, items = build_batch_preview(
+        aids=body.aids,
+        rule=rule,
+        scope_filter=scope,
+        db_session=db,
+        actor=str(ctx.user_id),
+    )
+    db.commit()
+    db.refresh(batch)
+    payload = serialize_batch(batch, items)
+    _invalidate_batch_cache(str(batch.id))
+    return payload
+
+
+@router.get("/batches/{batch_id}")
+def get_batch(
+    batch_id: UUID,
+    ctx: AuthContext = Depends(require_auth),  # noqa: ARG001
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from backend.services.pricing.batch import serialize_batch
+
+    key = str(batch_id)
+    import time
+
+    now = time.monotonic()
+    cached = _BATCH_CACHE.get(key)
+    if cached is not None and (now - cached[0]) < _BATCH_CACHE_TTL:
+        return cached[1]
+
+    batch, items = _load_batch_items(db, batch_id)
+    payload = serialize_batch(batch, items)
+    _BATCH_CACHE[key] = (now, payload)
+    return payload
+
+
+@router.post("/batches/{batch_id}/commit")
+def commit_batch_endpoint(
+    batch_id: UUID,
+    body: BatchCommitIn,
+    ctx: AuthContext = Depends(require_auth),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Run ``commit_batch`` for the named batch."""
+    from backend.models.pricing.audit import (
+        PricingAuditAction,
+        PricingAuditTargetKind,
+    )
+    from backend.services.pricing.audit import record_audit
+    from backend.services.pricing.batch import (
+        BatchAlreadyCommittedError,
+        commit_batch,
+    )
+
+    batch, _items = _load_batch_items(db, batch_id)
+    try:
+        summary = commit_batch(
+            batch=batch,
+            db_session=db,
+            actor=str(ctx.user_id),
+            actor_user_id=ctx.user_id,
+            locked_aids=body.locked_aids,
+            dry_run=body.dry_run,
+        )
+    except BatchAlreadyCommittedError as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+
+    # Audit the batch-level commit (one row) — proposal-level audits
+    # are written by the approval workflow as each proposal submits.
+    if not body.dry_run:
+        record_audit(
+            actor=str(ctx.user_id),
+            action=PricingAuditAction.PROPOSAL_SUBMITTED,
+            target_kind=PricingAuditTargetKind.SKU,
+            target_id=f"batch:{batch.id}",
+            after={
+                "batch_id": str(batch.id),
+                "created_proposals": len(summary["created_proposals"]),
+                "routed_by_role": summary["routed_by_role"],
+                "total_revenue_impact": summary["total_revenue_impact"],
+            },
+            session=db,
+        )
+    db.commit()
+    _invalidate_batch_cache(str(batch_id))
+    return summary
+
+
+@router.post("/batches/{batch_id}/cancel")
+def cancel_batch_endpoint(
+    batch_id: UUID,
+    ctx: AuthContext = Depends(require_auth),  # noqa: ARG001
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    from backend.services.pricing.batch import (
+        BatchAlreadyCommittedError,
+        cancel_batch,
+        serialize_batch,
+    )
+
+    batch, items = _load_batch_items(db, batch_id)
+    try:
+        cancel_batch(batch=batch, db_session=db)
+    except BatchAlreadyCommittedError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+    db.commit()
+    db.refresh(batch)
+    _invalidate_batch_cache(str(batch_id))
+    return serialize_batch(batch, items)
+
+
 @router.get("/sku/{aid}/diff")
 def get_sku_diff(
     aid: str,

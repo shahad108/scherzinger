@@ -22,6 +22,12 @@ from backend.models.pricing.audit import (
     PricingAuditEntry,
     PricingAuditTargetKind,
 )
+from backend.models.pricing.batch import (
+    PricingBatch,
+    PricingBatchItem,
+    PricingBatchItemStatus,
+    PricingBatchStatus,
+)
 from backend.models.pricing.competitor import CompetitorRef
 from backend.models.pricing.cost_state import (
     CostBreakdown,
@@ -66,6 +72,11 @@ __all__ = [
     "PricingAuditAction",
     "PricingAuditEntry",
     "PricingAuditTargetKind",
+    # Batch repricing (Phase 6)
+    "PricingBatch",
+    "PricingBatchItem",
+    "PricingBatchItemStatus",
+    "PricingBatchStatus",
     # Competitor (computed only)
     "CompetitorRef",
     # Cost

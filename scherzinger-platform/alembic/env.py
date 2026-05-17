@@ -23,6 +23,8 @@ from backend.models.pricing import (  # noqa: F401
     LineageRefRow,
     PriceStateRow,
     PricingAuditEntry,
+    PricingBatch,
+    PricingBatchItem,
 )
 
 config = context.config
