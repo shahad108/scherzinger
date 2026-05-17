@@ -25,6 +25,31 @@ def _reset_collab_channel():
     channel._by_proposal.clear()
 
 
+def _csrf(client: TestClient) -> dict[str, str]:
+    tok = client.cookies.get("pryzm_csrf")
+    return {"x-csrf": tok} if tok else {}
+
+
+def _create_proposal(client: TestClient) -> tuple[str, str]:
+    """Create a real proposal and return (proposal_id, aid) — required so
+    the WS endpoint's per-proposal authorisation check (MF2) finds a row
+    in pricing_proposals for the connecting user."""
+    aid = f"AID-{uuid4().hex[:6]}"
+    res = client.post(
+        "/api/v1/pricing/proposals",
+        json={
+            "article_id": aid,
+            "current_price": "100.00",
+            "proposed_price": "101.00",
+            "delta_pp": "1.0",
+            "payload": {"tier": "C", "effective_in_hours": 72},
+        },
+        headers=_csrf(client),
+    )
+    assert res.status_code in (200, 201), res.text
+    return res.json()["id"], aid
+
+
 def test_two_users_see_each_others_cursor() -> None:
     """Drive ``CollabChannel`` directly with two synthetic connections.
 
@@ -65,11 +90,9 @@ def test_two_users_see_each_others_cursor() -> None:
 
 def test_comment_persists_via_audit(client: TestClient) -> None:
     from backend.database import SessionLocal
-    from backend.main import app
     from backend.models.pricing.audit import PricingAuditEntry
 
-    proposal_id = f"PROP-{uuid4().hex[:8]}"
-    aid = f"AID-{uuid4().hex[:6]}"
+    proposal_id, aid = _create_proposal(client)
 
     url = f"/api/v1/ws/proposal/{proposal_id}"
     with client.websocket_connect(url) as ws:
@@ -104,7 +127,7 @@ def test_disconnect_removes_from_registry(client: TestClient) -> None:
     """
     from backend.services.realtime.collab import channel
 
-    proposal_id = f"PROP-{uuid4().hex[:8]}"
+    proposal_id, _ = _create_proposal(client)
     url = f"/api/v1/ws/proposal/{proposal_id}"
     with client.websocket_connect(url) as ws:
         # Send + receive a single frame so we know the server-side
@@ -113,3 +136,86 @@ def test_disconnect_removes_from_registry(client: TestClient) -> None:
         ws.send_text(json.dumps({"kind": "cursor", "position": {"x": 1}}))
     # On context exit the WS closes and the registry must drop the entry.
     assert proposal_id not in channel._by_proposal
+
+
+# ---------------------------------------------------------------------------
+# MF2 — per-proposal authorisation on the WS endpoint.
+# ---------------------------------------------------------------------------
+
+
+def test_ws_rejects_unknown_proposal_with_1008(client: TestClient) -> None:
+    """A proposal_id that doesn't resolve to a row must close with 1008.
+
+    Before MF2, any authenticated user could open a WS for any string —
+    even one that didn't correspond to a real proposal — and post audit
+    rows for arbitrary aids. The endpoint now closes the handshake when
+    the referenced proposal doesn't exist.
+    """
+    from starlette.websockets import WebSocketDisconnect
+
+    url = f"/api/v1/ws/proposal/{uuid4()}"  # valid UUID but no matching row
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(url):
+            pytest.fail("connection should have been closed by the server")
+    assert exc.value.code == 1008
+
+
+def test_ws_rejects_non_uuid_proposal_with_1008(client: TestClient) -> None:
+    """Malformed proposal_id (not a UUID) → 1008."""
+    from starlette.websockets import WebSocketDisconnect
+
+    url = "/api/v1/ws/proposal/not-a-uuid"
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(url):
+            pytest.fail("connection should have been closed by the server")
+    assert exc.value.code == 1008
+
+
+def test_ws_accepts_real_proposal(client: TestClient) -> None:
+    """Frank can connect to his own proposal."""
+    proposal_id, _ = _create_proposal(client)
+    url = f"/api/v1/ws/proposal/{proposal_id}"
+    # No exception on enter → handshake succeeded.
+    with client.websocket_connect(url) as ws:
+        ws.send_text(json.dumps({"kind": "cursor", "position": {"x": 1}}))
+
+
+def test_ws_comment_with_mismatched_aid_is_rejected(client: TestClient) -> None:
+    """Comments must target the proposal's own article_id.
+
+    Before MF2 the WS handler accepted any aid in the payload and wrote
+    an audit row against it, letting a connected user attribute a comment
+    to a different SKU. The handler now rejects mismatched aids with an
+    error frame.
+    """
+    from backend.database import SessionLocal
+    from backend.models.pricing.audit import PricingAuditEntry
+
+    proposal_id, aid = _create_proposal(client)
+    foreign_aid = f"FOREIGN-{uuid4().hex[:6]}"
+
+    url = f"/api/v1/ws/proposal/{proposal_id}"
+    with client.websocket_connect(url) as ws:
+        ws.send_text(
+            json.dumps(
+                {"kind": "comment", "comment": "wrong aid", "aid": foreign_aid}
+            )
+        )
+        # Server must reply with an error frame, not a broadcast.
+        reply_raw = ws.receive_text()
+        reply = json.loads(reply_raw)
+        assert reply.get("kind") == "error"
+        assert "aid" in (reply.get("message") or "").lower()
+
+    # And no audit row landed against the foreign aid.
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(PricingAuditEntry)
+            .filter(PricingAuditEntry.target_id == foreign_aid)
+            .filter(PricingAuditEntry.action == "proposal_commented")
+            .all()
+        )
+        assert rows == []
+    finally:
+        db.close()
