@@ -1,6 +1,7 @@
 """Pricing proposal workflow endpoints."""
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -19,20 +20,24 @@ from backend.services.action_center.composer import (
 router = APIRouter(prefix="/pricing", tags=["pricing"])
 
 
+# SF1 (Phase 2.2.5): accept ``Decimal`` rather than ``float`` for prices so the
+# wire shape can carry the canonical decimal string (e.g. ``"5.10"``) end-to-end
+# without ever passing through a JS float. Pydantic v2 will coerce numeric JSON
+# tokens as well, so existing clients posting numbers continue to work.
 class ProposalIn(BaseModel):
     recommendation_id: str | None = None
     article_id: str
-    current_price: float | None = None
-    proposed_price: float | None = None
-    delta_pp: float | None = None
+    current_price: Decimal | None = None
+    proposed_price: Decimal | None = None
+    delta_pp: Decimal | None = None
     approval_required: bool = False
     payload: dict[str, Any] = {}
 
 
 class ProposalPatch(BaseModel):
-    current_price: float | None = None
-    proposed_price: float | None = None
-    delta_pp: float | None = None
+    current_price: Decimal | None = None
+    proposed_price: Decimal | None = None
+    delta_pp: Decimal | None = None
     status: str | None = None
     approval_required: bool | None = None
     payload: dict[str, Any] | None = None
@@ -106,13 +111,29 @@ def create_proposal(
                 rec = db.get(Recommendation, UUID(body.recommendation_id))
             except ValueError:
                 rec = None
-    payload = dict(body.payload or {})
-    payload.update(
+    # SF1 (Phase 2.2.5): the request model carries ``Decimal``; the JSONB
+    # column can't serialize Decimal directly through psycopg2, so the
+    # persisted payload uses canonical *string-encoded* decimals (no JS
+    # float ever touches the value). The SQLAlchemy ``Numeric`` columns
+    # are filled from explicit Decimal kwargs after the insert via the
+    # ORM column setters so cent precision survives the round-trip.
+    stored_payload = dict(body.payload or {})
+    stored_payload.update(
         {
             "article_id": body.article_id,
-            "current_price": body.current_price,
-            "proposed_price": body.proposed_price,
-            "delta_pp": body.delta_pp,
+            "current_price": (
+                str(body.current_price)
+                if body.current_price is not None
+                else None
+            ),
+            "proposed_price": (
+                str(body.proposed_price)
+                if body.proposed_price is not None
+                else None
+            ),
+            "delta_pp": (
+                str(body.delta_pp) if body.delta_pp is not None else None
+            ),
             "approval_required": body.approval_required,
         }
     )
@@ -124,16 +145,29 @@ def create_proposal(
                 "recommendation_id": body.recommendation_id or f"manual:{body.article_id}",
                 "article_id": body.article_id,
                 "source_kind": "pricing_studio",
-                "after": payload,
+                "after": stored_payload,
             },
         )
+    # Build the call body around the JSON-safe ``stored_payload`` (so the
+    # JSONB column never sees a raw Decimal — psycopg2 can't encode it)
+    # and re-attach the typed ``Decimal`` values to the columns *after*
+    # the row is created — ``create_pricing_proposal`` reads them off the
+    # body dict and SQLAlchemy's Numeric type accepts ``Decimal`` for the
+    # typed columns. The columns and the JSONB payload therefore see
+    # different shapes intentionally.
     proposal = workflow_service.create_pricing_proposal(
         db,
         recommendation=rec,
         actor_user_id=ctx.user_id,
-        body=payload,
+        body=stored_payload,
         status="draft",
     )
+    if body.current_price is not None:
+        proposal.current_price = body.current_price
+    if body.proposed_price is not None:
+        proposal.proposed_price = body.proposed_price
+    if body.delta_pp is not None:
+        proposal.delta_pp = body.delta_pp
     # Phase 5 — creating a proposal flips the recommendation lifecycle so
     # the Action Center status chip + composer filter reflect the new
     # proposal on the next refresh. Skip if it's already past the open

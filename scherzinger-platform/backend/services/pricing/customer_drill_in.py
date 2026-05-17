@@ -30,7 +30,7 @@ from backend.services.pricing.customer_on_sku import (
     _load_customer_master,
     build_customer_on_sku,
 )
-from backend.services.pricing.customer_risk import risk_if_moved
+from backend.services.pricing.customer_risk import compute_tone, risk_if_moved
 
 logger = logging.getLogger(__name__)
 
@@ -163,12 +163,16 @@ def _at_proposed_block(
             wallet_share_pct=wallet_share_pct or Decimal("0"),
             delta_pct=delta_pct,
         )
+    # SF2 (Phase 2.2.5): tone is BFF truth. The drawer renders the string
+    # but never re-derives the threshold — see ``customer_risk.compute_tone``
+    # for the canonical mapping shared with the fanout composer.
     return {
         "delta_vs_last_paid": (
             str(delta_vs_last_paid) if delta_vs_last_paid is not None else None
         ),
         "delta_pct": str(delta_pct) if delta_pct is not None else None,
         "risk_if_moved": str(risk) if risk is not None else None,
+        "tone": compute_tone(risk),
     }
 
 

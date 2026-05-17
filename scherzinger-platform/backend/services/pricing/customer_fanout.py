@@ -395,11 +395,28 @@ def build_customer_fanout(
         if cos.lineage_ref is not None:
             last_lineage_id = cos.lineage_ref.id
 
+    # SF3 (Phase 2.2.5): BFF-computed context label so the workbench pane
+    # header stays in sync with the re-score. When a proposed price was
+    # supplied the label echoes ``at proposed €X.XX``; the no-price
+    # default fanout reports ``cost-floor`` (matches the existing mock
+    # pane subtitle so the legacy regex parse keeps working).
+    if proposed_price is not None:
+        # Emit a tabular-friendly two-decimal price so the workbench
+        # subtitle looks consistent with the option chips.
+        from decimal import ROUND_HALF_UP
+        price_label = str(
+            proposed_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        )
+        context_label = f"at proposed €{price_label}"
+    else:
+        context_label = "cost-floor"
+
     payload: dict[str, Any] = {
         "aid": aid,
         "proposed_price": (
             str(proposed_price) if proposed_price is not None else None
         ),
+        "context_label": context_label,
         "rows": rows,
         "lineage_ref": str(last_lineage_id) if last_lineage_id is not None else None,
     }

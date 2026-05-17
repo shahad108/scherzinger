@@ -365,3 +365,57 @@ def test_cache_key_canonical_for_equivalent_decimals(price: Decimal) -> None:
         )
     # Second call MUST be a cache hit → build_customer_on_sku invoked once.
     assert call_count["n"] == 1
+
+
+# ---------------------------------------------------------------------------
+# SF3 (Phase 2.2.5) — BFF-computed context label so the workbench header
+# stays in sync when the user re-scores the fanout from the slider.
+# ---------------------------------------------------------------------------
+
+
+def test_context_label_reports_proposed_price_when_set() -> None:
+    """SF3: explicit proposed price → ``at proposed €X.XX`` label."""
+    session = MagicMock()
+    with patch.object(cf, "_load_customer_ids_for_aid", return_value=["C-1"]), \
+         patch.object(cf, "_load_active_proposals_for_aid", return_value=set()), \
+         patch.object(cf, "build_customer_on_sku",
+                      return_value=_cos("C-1", risk=Decimal("0.20"))):
+        payload = cf.build_customer_fanout(
+            aid="X-1", proposed_price=Decimal("5.10"), db_session=session
+        )
+    assert payload["context_label"] == "at proposed €5.10"
+
+
+def test_context_label_defaults_to_cost_floor_when_no_price() -> None:
+    """SF3: ``proposed_price=None`` → ``cost-floor`` (default workbench fanout)."""
+    session = MagicMock()
+    with patch.object(cf, "_load_customer_ids_for_aid", return_value=["C-1"]), \
+         patch.object(cf, "_load_active_proposals_for_aid", return_value=set()), \
+         patch.object(cf, "build_customer_on_sku",
+                      return_value=_cos("C-1", risk=None)):
+        payload = cf.build_customer_fanout(
+            aid="X-1", proposed_price=None, db_session=session
+        )
+    assert payload["context_label"] == "cost-floor"
+
+
+def test_context_label_updates_on_re_score() -> None:
+    """SF3: the label MUST track the current proposed_price — not the
+    initial workbench mock — so the header doesn't go stale."""
+    session = MagicMock()
+    with patch.object(cf, "_load_customer_ids_for_aid", return_value=["C-1"]), \
+         patch.object(cf, "_load_active_proposals_for_aid", return_value=set()), \
+         patch.object(cf, "build_customer_on_sku",
+                      return_value=_cos("C-1", risk=Decimal("0.05"))):
+        a = cf.build_customer_fanout(
+            aid="X-1", proposed_price=Decimal("5.00"), db_session=session
+        )
+    with patch.object(cf, "_load_customer_ids_for_aid", return_value=["C-1"]), \
+         patch.object(cf, "_load_active_proposals_for_aid", return_value=set()), \
+         patch.object(cf, "build_customer_on_sku",
+                      return_value=_cos("C-1", risk=Decimal("0.40"))):
+        b = cf.build_customer_fanout(
+            aid="X-1", proposed_price=Decimal("6.50"), db_session=session
+        )
+    assert a["context_label"] == "at proposed €5.00"
+    assert b["context_label"] == "at proposed €6.50"

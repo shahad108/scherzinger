@@ -114,6 +114,47 @@ def test_drill_in_returns_none_when_master_missing() -> None:
     assert result is None
 
 
+@pytest.mark.parametrize(
+    "risk,expected_tone",
+    [
+        (Decimal("0.10"), "plain"),   # ≤ warn threshold (0.15)
+        (Decimal("0.20"), "warn"),    # > warn (0.15), ≤ alert (0.30)
+        (Decimal("0.50"), "alert"),   # > alert (0.30)
+    ],
+)
+def test_drill_in_at_proposed_tone_is_bff_computed(
+    risk: Decimal, expected_tone: str,
+) -> None:
+    """SF2 (Phase 2.2.5): the drill-in ``at_proposed`` payload carries the
+    BFF-computed ``tone`` string. Drawer renders it but never re-derives
+    thresholds — see ``customer_risk._TONE_*_GT`` constants for the
+    canonical mapping shared with the fanout composer."""
+    session = MagicMock()
+    cos = _cos()
+    # Force the risk-if-moved value used by the at_proposed block.
+    cos.last_paid = Decimal("5.00")
+    cos.churn_p = risk  # high enough that the computed risk lands in band
+    cos.wallet_share_pct = Decimal("0.10")
+    with patch.object(
+        di,
+        "_load_customer_master",
+        return_value={"name": "Acme", "tier": "A"},
+    ), patch.object(di, "_load_history_on_sku", return_value=[]), patch.object(
+        di, "_load_wallet_top_skus", return_value=[]
+    ), patch.object(di, "build_customer_on_sku", return_value=cos), patch.object(
+        di, "risk_if_moved", return_value=risk
+    ):
+        payload = di.build_drill_in(
+            customer_id="C-1",
+            aid="X-1",
+            proposed_price=Decimal("5.50"),
+            db_session=session,
+        )
+    assert payload is not None
+    assert payload["at_proposed"] is not None
+    assert payload["at_proposed"]["tone"] == expected_tone
+
+
 def test_drill_in_succeeds_when_master_present_even_without_history() -> None:
     """SF4: a real master + zero history should still build a payload.
 
