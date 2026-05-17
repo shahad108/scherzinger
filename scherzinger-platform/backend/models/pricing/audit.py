@@ -24,8 +24,12 @@ from backend.models.pricing.lineage import LineageRef
 class PricingAuditAction(str, Enum):
     PRICE_SET = "price_set"
     PROPOSAL_CREATED = "proposal_created"
+    PROPOSAL_SUBMITTED = "proposal_submitted"
     PROPOSAL_APPROVED = "proposal_approved"
     PROPOSAL_REJECTED = "proposal_rejected"
+    PROPOSAL_CHANGES_REQUESTED = "proposal_changes_requested"
+    PROPOSAL_RECALLED = "proposal_recalled"
+    PROPOSAL_COMMENTED = "proposal_commented"
     OVERRIDE_ADDED = "override_added"
     ALERT_TRIGGERED = "alert_triggered"
     PUSH_TO_QUOTING = "push_to_quoting"
