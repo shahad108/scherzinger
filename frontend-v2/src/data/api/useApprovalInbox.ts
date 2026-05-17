@@ -45,11 +45,16 @@ export interface ApprovalDecisionBody {
   comment?: string;
 }
 
+interface DecisionResponse {
+  approval_instance: { proposal_id?: string } | null;
+  proposal_status: string;
+}
+
 export function useApprovalDecision(instanceId: string | null | undefined) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: ApprovalDecisionBody) =>
-      postJson<{ approval_instance: unknown; proposal_status: string }>(
+      postJson<DecisionResponse>(
         `/approvals/${encodeURIComponent(instanceId ?? '')}/decision`,
         body,
         {
@@ -59,13 +64,20 @@ export function useApprovalDecision(instanceId: string | null | undefined) {
           }),
         },
       ),
-    onSuccess: () => {
-      // We don't have the proposal_id directly; invalidate broadly so any
-      // open stepper / inbox / pricing-proposals query refetches.
+    onSuccess: (data) => {
+      // Inbox + action-center shape depends on every decision, so refresh
+      // unconditionally. The pricing-proposals list is filtered per page;
+      // the response doesn't carry the article_id, so we refresh the
+      // family by prefix.
       qc.invalidateQueries({ queryKey: approvalInboxKey() });
-      qc.invalidateQueries({ queryKey: ['approval-instance'] });
-      qc.invalidateQueries({ queryKey: ['pricing-proposals'] });
       qc.invalidateQueries({ queryKey: qk.actionCenter() });
+      qc.invalidateQueries({ queryKey: ['pricing-proposals'] });
+      // Scope the per-proposal instance invalidation using the mutation
+      // response so unrelated open steppers do not refetch (SF2).
+      const proposalId = data?.approval_instance?.proposal_id;
+      if (proposalId) {
+        qc.invalidateQueries({ queryKey: approvalInstanceKey(proposalId) });
+      }
     },
   });
 }
