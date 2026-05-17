@@ -105,7 +105,7 @@ def _load_history_on_sku(
     try:
         rows = db_session.execute(
             text("""
-                SELECT date, unit_price, quantity, revenue
+                SELECT date, revenue_per_unit, quantity, revenue
                 FROM invoices
                 WHERE customer_id = :cid
                   AND article_id = :aid

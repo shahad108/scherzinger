@@ -152,7 +152,7 @@ def _bulk_load_history_on_aid(
     from decimal import Decimal
     try:
         stmt = text("""
-            SELECT customer_id, date, unit_price, quantity, revenue
+            SELECT customer_id, date, revenue_per_unit, quantity, revenue
             FROM invoices
             WHERE article_id = :aid
               AND customer_id IN :cids
@@ -191,9 +191,24 @@ def _bulk_load_master(
         return {}
     from sqlalchemy import bindparam, text
     try:
+        # ``tier`` lives on ``customer_on_sku`` (one row per (aid, customer));
+        # the customer master only carries name. Pull the strongest tier
+        # across the customer's SKUs (A > B > C > D) so the fanout label
+        # is stable even when the specific SKU row is missing for a
+        # customer.
         stmt = text(
-            "SELECT customer_id, name, tier FROM customers "
-            "WHERE customer_id IN :cids"
+            """
+            SELECT c.customer_id, c.name,
+                   COALESCE(t.tier, 'C') AS tier
+            FROM customers c
+            LEFT JOIN (
+                SELECT customer_id, MIN(tier) AS tier
+                FROM customer_on_sku
+                WHERE tier IN ('A','B','C','D')
+                GROUP BY customer_id
+            ) t ON t.customer_id = c.customer_id
+            WHERE c.customer_id IN :cids
+            """
         ).bindparams(bindparam("cids", expanding=True))
         rows = db_session.execute(
             stmt, {"cids": list(customer_ids)}

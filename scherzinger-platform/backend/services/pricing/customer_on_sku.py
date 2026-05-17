@@ -73,7 +73,7 @@ def _load_invoice_history(
     try:
         rows = db_session.execute(
             text("""
-                SELECT i.date, i.unit_price, i.quantity, i.revenue
+                SELECT i.date, i.revenue_per_unit, i.quantity, i.revenue
                 FROM invoices i
                 WHERE i.customer_id = :cid
                   AND i.article_id = :aid
@@ -120,11 +120,24 @@ def _load_customer_master(
     the explicit None.
     """
     try:
+        # ``tier`` lives on the ``customer_on_sku`` snapshot table (one row
+        # per (aid, customer)). The customer master only carries name/dates.
+        # Pick the strongest tier across the customer's SKUs (A > B > C > D)
+        # so the drill-in shows a stable label even when the specific
+        # customer_on_sku row for *this* aid is missing.
         row = db_session.execute(
             text("""
-                SELECT name, tier
-                FROM customers
-                WHERE customer_id = :cid
+                SELECT c.name,
+                       COALESCE(t.tier, 'C') AS tier
+                FROM customers c
+                LEFT JOIN (
+                    SELECT customer_id, MIN(tier) AS tier
+                    FROM customer_on_sku
+                    WHERE customer_id = :cid
+                      AND tier IN ('A','B','C','D')
+                    GROUP BY customer_id
+                ) t ON t.customer_id = c.customer_id
+                WHERE c.customer_id = :cid
             """),
             {"cid": customer_id},
         ).fetchone()
@@ -211,7 +224,7 @@ def _persist_lineage(
         source_kind=LineageSourceKind.INVOICE_LEDGER,
         source_id=f"customer_on_sku:{aid}:{customer_id}",
         sql=(
-            "SELECT date, unit_price, quantity, revenue FROM invoices "
+            "SELECT date, revenue_per_unit, quantity, revenue FROM invoices "
             "WHERE customer_id = ? AND article_id = ? ORDER BY date"
         ),
         model="customer_on_sku_v1",
