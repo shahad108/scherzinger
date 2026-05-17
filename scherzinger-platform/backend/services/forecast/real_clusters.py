@@ -73,6 +73,11 @@ def build_clusters(
 
     # LTM revenue per commodity_group from the most recent 12 months of
     # `invoices`. We anchor "now" on MAX(date) so the demo dataset works.
+    # Exclude rows where commodity_group IS NULL (458 orphan seeder rows
+    # in DB) so they don't poison the cluster cards. The previous version
+    # of this query returned a NULL key which both inflated nothing and
+    # crashed the downstream `sorted(set(...))` — sending the composer
+    # back to the seed which displays 3-4× the real LTM.
     ltm_rows = db.execute(
         text(
             """
@@ -80,13 +85,14 @@ def build_clusters(
                    SUM(revenue) AS ltm_revenue,
                    COUNT(*) AS n_rows
             FROM invoices
-            WHERE date >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)
+            WHERE commodity_group IS NOT NULL
+              AND date >= (SELECT MAX(date) - INTERVAL '12 months' FROM invoices)
             GROUP BY commodity_group
             """
         )
     ).fetchall()
     ltm_by_cluster: dict[str, float] = {
-        r[0]: float(r[1] or 0.0) for r in ltm_rows
+        r[0]: float(r[1] or 0.0) for r in ltm_rows if r[0] is not None
     }
 
     # Cluster forecasts at the requested horizon (winning model first).
@@ -145,7 +151,13 @@ def build_clusters(
         for r in bt_rows
     }
 
-    cluster_ids = sorted(set(list(fc_by_cluster.keys()) + list(ltm_by_cluster.keys())))
+    cluster_ids = sorted(
+        {
+            cid
+            for cid in list(fc_by_cluster.keys()) + list(ltm_by_cluster.keys())
+            if cid is not None
+        }
+    )
     if only:
         cluster_ids = [c for c in cluster_ids if c.lower() == only.lower()] or cluster_ids
 
