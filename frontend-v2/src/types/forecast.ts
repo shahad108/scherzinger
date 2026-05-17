@@ -802,7 +802,7 @@ export interface MarketTile {
   name: string;
   value: number;
   unit: string;
-  wowPct: number;
+  wowPct: number | null;
   tone: 'green' | 'amber' | 'red' | 'ink-3';
   context: string;
   external?: boolean;

@@ -29,7 +29,18 @@ export function MarketDirectionStrip({ data }: Props) {
                   : tile.tone === 'green'
                     ? 'border-[var(--green,#2e7c5a)]'
                     : 'border-[var(--hairline)]';
-            const arrow = tile.wowPct > 0 ? '↑' : tile.wowPct < 0 ? '↓' : '→';
+            // DATA-AUDIT pass-2 D14 — wowPct may be null when the prior
+            // period is below the smoothing threshold (near-zero denominator).
+            // Render "n/a" instead of crashing on null.toFixed.
+            const wowAvailable =
+              typeof tile.wowPct === 'number' && Number.isFinite(tile.wowPct);
+            const arrow = !wowAvailable
+              ? '–'
+              : tile.wowPct! > 0
+                ? '↑'
+                : tile.wowPct! < 0
+                  ? '↓'
+                  : '→';
             return (
               <li key={tile.name}>
                 <button
@@ -46,8 +57,9 @@ export function MarketDirectionStrip({ data }: Props) {
                     {tile.value} <span className="text-[10.5px] font-semibold text-[var(--muted)]">{tile.unit}</span>
                   </div>
                   <div className="text-[10.5px] text-[var(--muted)]">
-                    {arrow} {tile.wowPct >= 0 ? '+' : ''}
-                    {tile.wowPct.toFixed(1)}% WoW
+                    {wowAvailable
+                      ? `${arrow} ${tile.wowPct! >= 0 ? '+' : ''}${tile.wowPct!.toFixed(1)}% WoW`
+                      : `${arrow} n/a · insufficient prior period`}
                   </div>
                   {/* DATA-AUDIT-2026-05-17 defect #11 — surface the
                       synthetic-for-demo (or any indicator) disclosure

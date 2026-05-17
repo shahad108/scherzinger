@@ -31,7 +31,8 @@ const MONTHS = [
 function syntheticSeries(tile: MarketTile): { month: string; value: number }[] {
   // 12 monthly points anchored at the tile's current value. Use the WoW
   // direction as the slope hint; add a small seasonal wobble.
-  const slope = tile.wowPct / 4; // a rough monthly trajectory proxy
+  // DATA-AUDIT pass-2 D14 — wowPct may be null when smoothed.
+  const slope = (tile.wowPct ?? 0) / 4; // a rough monthly trajectory proxy
   const base = tile.value;
   return MONTHS.map((m, i) => {
     const monthsFromNow = i - (MONTHS.length - 1);
@@ -107,8 +108,9 @@ export function MarketTileDrawer({ tile, open, onClose }: Props) {
             </span>
             <span className="text-[12px] text-[var(--muted)]">{tile.unit}</span>
             <span className="tag-chip">
-              {tile.wowPct >= 0 ? '↑' : '↓'} {tile.wowPct >= 0 ? '+' : ''}
-              {tile.wowPct.toFixed(1)}% WoW
+              {typeof tile.wowPct === 'number' && Number.isFinite(tile.wowPct)
+                ? `${tile.wowPct >= 0 ? '↑' : '↓'} ${tile.wowPct >= 0 ? '+' : ''}${tile.wowPct.toFixed(1)}% WoW`
+                : '– n/a · insufficient prior period'}
             </span>
           </section>
 
