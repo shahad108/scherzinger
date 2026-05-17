@@ -13,9 +13,15 @@ interface Props {
   options: PriceOptionsBundle;
   optionsSub: string;
   onActiveChange?: (view: ActiveOptionView) => void;
+  /**
+   * Pricing Studio v3 / Phase 1 — render in the demoted, compact row state
+   * below the new RecommendationHero. Hides the "Why this price?" link
+   * (the hero owns that CTA now) and tightens the heading copy.
+   */
+  compact?: boolean;
 }
 
-export function PriceOptions({ options, optionsSub, onActiveChange }: Props) {
+export function PriceOptions({ options, optionsSub, onActiveChange, compact = false }: Props) {
   const [active, setActive] = useState<ActiveOpt>('floor');
   const [customPrice, setCustomPrice] = useState('');
 
@@ -44,15 +50,20 @@ export function PriceOptions({ options, optionsSub, onActiveChange }: Props) {
   return (
     <>
       <div className="ws-options-head">
-        <h4>Pick a target price</h4>
+        <h4>{compact ? 'Alternatives' : 'Pick a target price'}</h4>
         <span className="ws-opts-sub">
-          {optionsSub} ·{' '}
-          <button type="button" className="link-btn">
-            🔍 Why this price?
-          </button>
+          {optionsSub}
+          {!compact && (
+            <>
+              {' · '}
+              <button type="button" className="link-btn">
+                🔍 Why this price?
+              </button>
+            </>
+          )}
         </span>
       </div>
-      <div className="ws-options">
+      <div className={`ws-options${compact ? ' ws-options--compact' : ''}`}>
         <button
           type="button"
           className={`ws-opt hold${active === 'hold' ? ' active' : ''}`}

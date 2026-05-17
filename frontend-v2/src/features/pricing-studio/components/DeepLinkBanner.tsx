@@ -125,6 +125,12 @@ function breadcrumbLabel(
   abTest: string | null,
   rec: string | null,
 ): string {
+  // Pricing Studio v3 / Phase 1 — explicit deep-link sources surface a
+  // recognisable breadcrumb so Frank knows where he came from.
+  if (source === 'action-center' && rec) return 'From Action Center recommendation';
+  if (source === 'forecasting' && queue === 'next-move')
+    return 'From Forecasting next-move strip';
+  if (source === 'margin') return 'From Margin Cockpit leak watcher';
   if (source) return `From ${prettyScreen(source)}`;
   if (queue) return `Queue: ${queueTitle(queue)}`;
   if (abTest) return 'A/B test detail';
@@ -153,6 +159,8 @@ function queueTitle(queue: string): string {
       return 'Repricing queue';
     case 'renewals':
       return 'Renewal queue';
+    case 'next-move':
+      return 'Next-move strip';
     default:
       return queue.replace(/[-_]/g, ' ');
   }

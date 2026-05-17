@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useStudio } from '@/data/api/useStudio';
+import { useLivePricing } from '@/hooks/useLivePricing';
 import { PageHead } from './components/PageHead';
 import { SkuPicker } from './components/SkuPicker';
 import { WorkbenchHero, type HeroView } from './components/WorkbenchHero';
@@ -14,18 +15,32 @@ import { CrossLinks } from './components/CrossLinks';
 import { StudioSkeleton } from './components/StudioSkeleton';
 import { DeepLinkBanner } from './components/DeepLinkBanner';
 import { ProposalContextPanel } from './components/ProposalContextPanel';
+// Pricing Studio v3 / Phase 1 — new top-of-workbench surfaces.
+import { RecommendationHero } from './components/RecommendationHero';
+import { RecommendationKpiTiles } from './components/RecommendationKpiTiles';
+import { WtpBandStrip } from './components/WtpBandStrip';
+import { WinProbCurve } from './components/WinProbCurve';
+import { DriverWaterfall } from './components/DriverWaterfall';
+import { LineageDrawer } from './components/LineageDrawer';
+import { LineageDrawerProvider } from './lineage/LineageDrawerContext';
+import { parseDecimal } from './lib/decimal';
 
 export default function PricingStudioPage() {
   const [params, setParams] = useSearchParams();
   // Phase 21 — full deep-link filter quartet flows through `useStudio` so a
   // refresh preserves the exact slice the user landed on.
-  const { data, isLoading } = useStudio({
+  const studioParams = {
     aid: params.get('aid') ?? undefined,
     tier: params.get('tier') ?? undefined,
     family: params.get('family') ?? undefined,
     cluster: params.get('cluster') ?? undefined,
     scenario_id: params.get('scenario_id') ?? undefined,
-  });
+  };
+  const { data, isLoading } = useStudio(studioParams);
+  // Pricing Studio v3 / Phase 1 — live-wired tick + toast surface. The data
+  // we read from `useStudio` above is still authoritative; this hook just
+  // invalidates that cache and surfaces lastTickAt for the freshness chip.
+  const live = useLivePricing(studioParams);
   // Phase 2 — `aid` from the URL drives initial selection so deep links
   // from Action Center / Margin / Forecasting land on the exact SKU.
   // Local state then overrides if the user picks a different SKU.
@@ -124,52 +139,113 @@ export default function PricingStudioPage() {
   const wb = selectedSku?.workbench ?? data.workbench;
   const fanPrice = activeOption?.price ?? wb.fanout.fanPrice;
 
+  // Phase 1 — derive a numeric current price for Δ calculations. The
+  // existing heroView.currentPrice is a pre-formatted string ("€118.00").
+  // We strip non-digits + parse so the new tiles can compute one delta
+  // without forcing the BFF to ship a parallel numeric field.
+  const currentPriceValue = (() => {
+    const cleaned = (heroView.currentPrice ?? '').replace(/[^\d,.\-]/g, '').replace(',', '.');
+    const n = parseDecimal(cleaned);
+    return Number.isFinite(n) ? n : undefined;
+  })();
+  // Pre-formatted current margin (string) — used as the "Projected DB2 at
+  // current" subtitle on the KPI tiles. Real projected-DB2 at recommended
+  // ships in Phase 3 with option_margin.
+  const deepLinkSource = params.get('source');
+
   return (
-    <section id="screen-studio" className="w-full px-6 py-6">
-      <PageHead header={data.header} />
-      <DeepLinkBanner effectiveAid={effectiveAid} skuFound={!requestedSkuMissing} />
+    <LineageDrawerProvider>
+      <section id="screen-studio" className="w-full px-6 py-6">
+        <PageHead header={data.header} />
+        <DeepLinkBanner effectiveAid={effectiveAid} skuFound={!requestedSkuMissing} />
 
-      <div className="ws-grid">
-        <SkuPicker
-          skus={data.skus}
-          filters={data.filters}
-          toggles={data.toggles}
-          selectedAid={effectiveAid}
-          onSelect={handleSelectSku}
-        />
-
-        <div className="ws-bench">
-          <WorkbenchHero hero={heroView} />
-
-          <PriceOptions
-            options={wb.options}
-            optionsSub={wb.optionsSub}
-            onActiveChange={setActiveOption}
+        <div className="ws-grid">
+          <SkuPicker
+            skus={data.skus}
+            filters={data.filters}
+            toggles={data.toggles}
+            selectedAid={effectiveAid}
+            onSelect={handleSelectSku}
           />
 
-          <div className="ws-body">
-            <CustomerFanout data={wb.fanout} fanPrice={fanPrice} />
-            <CostHistory cost={wb.cost} history={wb.history} />
+          <div className="ws-bench">
+            <WorkbenchHero hero={heroView} />
+
+            {/* Phase 1 — Recommendation hero card replaces the top-of-page
+                price options. Reads typed BFF blocks; PriceOptions is
+                demoted to a compact alternatives row below. */}
+            <RecommendationHero
+              aid={effectiveAid}
+              recommendation={wb.recommendation}
+              wtp={wb.wtp}
+              winProbCurve={wb.win_prob_curve}
+              competitorRef={wb.competitor_ref}
+              currentPriceLabel={heroView.currentPrice}
+              currentPriceValue={currentPriceValue}
+              lastTickAt={live.lastTickAt}
+              source={deepLinkSource}
+            />
+
+            <RecommendationKpiTiles
+              aid={effectiveAid}
+              recommendation={wb.recommendation}
+              winProbCurve={wb.win_prob_curve}
+              currentPriceLabel={heroView.currentPrice}
+              currentPriceValue={currentPriceValue}
+              currentMarginLabel={heroView.currentMargin}
+              // Phase 3 will wire projectedDb2Label from wb.option_margin.
+            />
+
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <WinProbCurve
+                curve={wb.win_prob_curve}
+                recommendedPrice={wb.recommendation?.recommended_price}
+              />
+              <DriverWaterfall
+                drivers={wb.recommendation?.drivers}
+                emphasiseFloor={deepLinkSource === 'margin'}
+              />
+            </div>
+
+            <WtpBandStrip
+              wtp={wb.wtp}
+              recommendedPrice={wb.recommendation?.recommended_price}
+              floor={wb.recommendation?.band.min}
+              className="mt-3"
+            />
+
+            <PriceOptions
+              options={wb.options}
+              optionsSub={wb.optionsSub}
+              onActiveChange={setActiveOption}
+              compact
+            />
+
+            <div className="ws-body">
+              <CustomerFanout data={wb.fanout} fanPrice={fanPrice} />
+              <CostHistory cost={wb.cost} history={wb.history} />
+            </div>
+
+            {showComparable && <ComparablePanel data={data.comparable} />}
+
+            <ProposalContextPanel
+              articleId={effectiveAid}
+              recommendationId={params.get('recommendation')}
+            />
+
+            <DecisionFooter
+              data={wb.decision}
+              activeOption={activeOption}
+              currentPriceLabel={heroView.currentPrice}
+            />
+
+            <RationaleMemo data={wb.memo} />
           </div>
-
-          {showComparable && <ComparablePanel data={data.comparable} />}
-
-          <ProposalContextPanel
-            articleId={effectiveAid}
-            recommendationId={params.get('recommendation')}
-          />
-
-          <DecisionFooter
-            data={wb.decision}
-            activeOption={activeOption}
-            currentPriceLabel={heroView.currentPrice}
-          />
-
-          <RationaleMemo data={wb.memo} />
         </div>
-      </div>
 
-      <CrossLinks links={data.crossLinks} />
-    </section>
+        <CrossLinks links={data.crossLinks} />
+        <LineageDrawer aid={effectiveAid} />
+      </section>
+    </LineageDrawerProvider>
   );
 }
