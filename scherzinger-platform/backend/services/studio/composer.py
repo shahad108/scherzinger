@@ -7,15 +7,20 @@ on demand from /studio/workbench/{aid}.
 """
 from __future__ import annotations
 
+import logging
 import time
-from typing import Any
+from datetime import datetime, timedelta, timezone
+from typing import Any, Optional
 
 from fastapi import HTTPException, status
+from sqlalchemy import func, select
 
 from backend.database import SessionLocal
 from backend.services import recommendation_service
 
 from ._seed import load_seed
+
+logger = logging.getLogger(__name__)
 
 CACHE_TTL_SECONDS = 60
 _CACHE: dict[tuple[Any, ...], tuple[float, dict[str, Any]]] = {}
@@ -23,6 +28,59 @@ _CACHE: dict[tuple[Any, ...], tuple[float, dict[str, Any]]] = {}
 
 def invalidate_cache() -> None:
     _CACHE.clear()
+
+
+def _resolve_data_through() -> Optional[datetime]:
+    """Return the most-recent ingestion timestamp across cost_state +
+    competitor signals + invoice ledger.
+
+    Best-effort: if any source is unavailable we treat it as missing.
+    Tests stub this directly via monkeypatch.
+    """
+    try:
+        from backend.models.invoice import Invoice
+        from backend.models.pricing.cost_state import CostStateRow
+
+        candidates: list[datetime] = []
+        with SessionLocal() as db:
+            try:
+                cs = db.execute(
+                    select(func.max(CostStateRow.last_ingested_at))
+                ).scalar_one_or_none()
+                if cs is not None:
+                    candidates.append(_ensure_aware(cs))
+            except Exception:
+                logger.exception("dataThrough: cost_state probe failed")
+            try:
+                inv = db.execute(select(func.max(Invoice.date))).scalar_one_or_none()
+                if inv is not None:
+                    # Date → end-of-day UTC datetime.
+                    candidates.append(
+                        datetime(
+                            inv.year, inv.month, inv.day, 23, 59, 59, tzinfo=timezone.utc
+                        )
+                    )
+            except Exception:
+                logger.exception("dataThrough: invoice probe failed")
+        return max(candidates) if candidates else None
+    except Exception:
+        logger.exception("dataThrough: resolver failed")
+        return None
+
+
+def _ensure_aware(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def _compute_data_through() -> str:
+    """ISO-8601 freshness chip value. Falls back to ``now - 24h`` when no
+    signals are present so the chip always renders something."""
+    resolved = _resolve_data_through()
+    if resolved is None:
+        resolved = datetime.now(timezone.utc) - timedelta(hours=24)
+    return resolved.isoformat().replace("+00:00", "Z")
 
 
 def _persona_gate(persona: str) -> None:
@@ -145,6 +203,10 @@ async def build_studio_shell(
             "cluster": cluster,
             "scenarioId": scenario_id,
         },
+        # Pricing Studio v3 / Phase 10 — canonical freshness chip value.
+        # Mirrors the Forecasting payload so the FE can reuse the same
+        # ``<FreshnessChip dataThrough={…} />`` component.
+        "dataThrough": _compute_data_through(),
     }
     _CACHE[key] = (now, payload)
     return payload

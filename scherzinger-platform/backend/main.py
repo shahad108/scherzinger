@@ -8,6 +8,7 @@ from backend.api.v1 import (
     audit,
     auth,
     benchmarks,
+    briefing,
     costs,
     dashboard,
     events as pricing_events,
@@ -15,6 +16,7 @@ from backend.api.v1 import (
     forecast_annotations,
     forecast_overrides,
     forecasts,
+    lineage,
     margins,
     models_registry,
     notes,
@@ -123,6 +125,10 @@ app.include_router(
 
 # Phase 21 (Pricing Studio v3): SSE event channel.
 app.include_router(pricing_events.router, prefix="/api/v1")
+
+# Phase 21 (Pricing Studio v3 / Phase 10): lineage drawer + trust signals.
+app.include_router(lineage.router, prefix="/api/v1")
+app.include_router(briefing.router, prefix="/api/v1")
 
 # Phase 21 (Pricing Studio v3 / Phase 5): approval workflow + WS collab channel.
 app.include_router(approvals.router, prefix="/api/v1")
