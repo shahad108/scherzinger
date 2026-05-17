@@ -1,16 +1,24 @@
-import { Bell, Calendar, ChevronDown, MoreHorizontal, UserPlus } from 'lucide-react';
+import { useEffect } from 'react';
+import { Bell, Calendar, MoreHorizontal, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { TopBarSearch } from './TopBarSearch';
 import { PersonaSwitcher } from './PersonaSwitcher';
 import { useUiAction } from '@/hooks/useUiAction';
+import { LanguageToggle } from '@/components/LanguageToggle';
+import { useUserLanguage } from '@/data/api/useUserLanguage';
 
 export function TopBar() {
   const { i18n, t } = useTranslation();
   const runAction = useUiAction();
   const lang = (i18n.language ?? 'de').slice(0, 2).toLowerCase();
-  const toggleLang = () => {
-    void i18n.changeLanguage(lang === 'de' ? 'en' : 'de');
-  };
+  // Pricing Studio v3 / Phase 10 — mirror the server-stored language into
+  // i18n so existing translated copy (Forecasting v2.2) follows the toggle.
+  const { lang: serverLang } = useUserLanguage();
+  useEffect(() => {
+    if (serverLang && serverLang !== lang) {
+      void i18n.changeLanguage(serverLang);
+    }
+  }, [serverLang, lang, i18n]);
 
   return (
     <header className="pz-topbar" aria-label="Top utility bar">
@@ -90,15 +98,7 @@ export function TopBar() {
 
       <PersonaSwitcher />
 
-      <button
-        type="button"
-        className="pz-lang"
-        aria-label="Language"
-        onClick={toggleLang}
-        title={lang === 'de' ? 'Switch to English' : 'Auf Deutsch umschalten'}
-      >
-        {lang === 'de' ? 'De' : 'En'} <ChevronDown size={9} />
-      </button>
+      <LanguageToggle />
 
       <div className="pz-date">
         <Calendar size={14} />
