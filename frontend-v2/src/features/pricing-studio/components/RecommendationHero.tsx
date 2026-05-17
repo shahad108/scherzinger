@@ -129,6 +129,8 @@ export function RecommendationHero({
       drivers: recommendation.drivers,
       wtp: wtp ?? null,
       recommendedPrice: recommendation.recommended_price,
+      confidenceLevel: recommendation.confidence_level,
+      nDeals: wtp?.n_deals ?? null,
     });
 
   return (
@@ -398,8 +400,8 @@ function CompetitorLine({
         </span>
       )}
       {recLower && (
-        <span className="rounded-full bg-[var(--green-bg)] px-2 py-[1px] text-[10.5px] font-semibold uppercase tracking-wide text-[var(--green)]">
-          below ours
+        <span className="rounded-full bg-[var(--amber-bg)] px-2 py-[1px] text-[10.5px] font-semibold uppercase tracking-wide text-[var(--amber)]">
+          ⚠ below ours
         </span>
       )}
     </div>

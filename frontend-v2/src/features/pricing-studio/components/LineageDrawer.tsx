@@ -12,11 +12,38 @@ import { useLineageDrawer } from '@/features/pricing-studio/lineage/LineageDrawe
 import { usePricingLineage } from '@/data/api/usePricingLineage';
 import { usePricingStream } from '@/hooks/usePricingStream';
 import type { LineageSourceRow } from '@/data/api/usePricingLineage';
+import type { ConfidenceLevel } from '@/types/studio';
 import { ChevronRight, RefreshCw } from 'lucide-react';
 import { DriverWaterfall } from './DriverWaterfall';
 import { WtpBandStrip } from './WtpBandStrip';
 
 const REC_UPDATED_TOPIC = 'pricing.recommendation_updated';
+
+// Confidence chip palette mirrors RecommendationHero so the drawer reads
+// consistently when a "Why this price?" click flows through.
+const CONFIDENCE_CHIP_TONE: Record<
+  ConfidenceLevel,
+  { label: string; bg: string; fg: string; border: string }
+> = {
+  low: {
+    label: 'low',
+    bg: 'var(--rose-bg)',
+    fg: 'var(--rose-deep)',
+    border: 'var(--rose-border)',
+  },
+  med: {
+    label: 'medium',
+    bg: 'var(--amber-bg)',
+    fg: 'var(--amber)',
+    border: 'var(--amber-border)',
+  },
+  high: {
+    label: 'high',
+    bg: 'var(--green-bg)',
+    fg: 'var(--green)',
+    border: 'var(--green-border)',
+  },
+};
 
 interface Props {
   /** Optional aid to filter the SSE stream by. */
@@ -64,6 +91,8 @@ function LineageDrawerBody({ refId, subjectTitle, aid }: BodyProps) {
     drivers,
     wtp,
     recommendedPrice,
+    confidenceLevel,
+    nDeals,
   } = useLineageDrawer();
   // Pass workbench context into the synthesiser so the always-on frame
   // (cost-state · competitor · won-deal sample · elasticity model) is
@@ -99,12 +128,15 @@ function LineageDrawerBody({ refId, subjectTitle, aid }: BodyProps) {
         <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
           Why this number?
         </div>
-        <h2
-          id={headingId}
-          className="mt-1 font-display text-[18px] font-bold tracking-[-0.018em] text-[var(--ink)]"
-        >
-          {subjectTitle}
-        </h2>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <h2
+            id={headingId}
+            className="font-display text-[18px] font-bold tracking-[-0.018em] text-[var(--ink)]"
+          >
+            {subjectTitle}
+          </h2>
+          <ConfidenceChip level={confidenceLevel} nDeals={nDeals} />
+        </div>
         {lineage.ref && (
           <div className="mt-2 text-[11px] text-[var(--muted)]">
             <span className="font-semibold text-[var(--ink-3)]">
@@ -258,6 +290,39 @@ function SourceRow({ source }: { source: LineageSourceRow }) {
         </div>
       )}
     </li>
+  );
+}
+
+function ConfidenceChip({
+  level,
+  nDeals,
+}: {
+  level: ConfidenceLevel | null;
+  nDeals: number | null;
+}) {
+  if (!level && (nDeals === null || nDeals === undefined)) return null;
+  const tone = level ? CONFIDENCE_CHIP_TONE[level] : null;
+  const labelLevel = tone ? `confidence: ${tone.label}` : null;
+  const labelDeals =
+    nDeals !== null && nDeals !== undefined && Number.isFinite(nDeals)
+      ? `n=${nDeals} deals`
+      : null;
+  const text = [labelLevel, labelDeals].filter(Boolean).join(' · ');
+  const style = tone
+    ? { background: tone.bg, color: tone.fg, borderColor: tone.border }
+    : {
+        background: 'var(--surface-soft)',
+        color: 'var(--muted)',
+        borderColor: 'var(--hairline)',
+      };
+  return (
+    <span
+      data-testid="lineage-drawer-confidence-chip"
+      className="inline-flex items-center gap-1 rounded-full border px-2 py-[2px] text-[10.5px] font-semibold uppercase tracking-[0.04em]"
+      style={style}
+    >
+      {text}
+    </span>
   );
 }
 

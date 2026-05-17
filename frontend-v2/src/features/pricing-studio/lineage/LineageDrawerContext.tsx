@@ -9,6 +9,7 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type {
+  ConfidenceLevel,
   LineageRefBlock,
   RecommendationDriver,
   WtpBlock,
@@ -24,6 +25,10 @@ interface LineageDrawerState {
   wtp: WtpBlock | null;
   /** Optional recommended price (decimal-as-string) used by the WTP strip. */
   recommendedPrice: string | null;
+  /** Optional confidence level for the header chip. */
+  confidenceLevel: ConfidenceLevel | null;
+  /** Optional sample-size badge for the header chip. */
+  nDeals: number | null;
   /** Open the drawer for a given lineage ref. ``null`` is a no-op. */
   openLineage: (ref: LineageRefBlock | null | undefined, opts?: OpenOpts) => void;
   closeLineage: () => void;
@@ -38,6 +43,10 @@ export interface OpenOpts {
   wtp?: WtpBlock | null;
   /** Recommended price (decimal-as-string) used by the WTP strip overlay. */
   recommendedPrice?: string | null;
+  /** Confidence level — surfaces the `confidence: X · n=Y deals` header chip. */
+  confidenceLevel?: ConfidenceLevel | null;
+  /** Sample-size — surfaces the `n=Y deals` half of the header chip. */
+  nDeals?: number | null;
 }
 
 interface InternalState {
@@ -46,6 +55,8 @@ interface InternalState {
   drivers: RecommendationDriver[] | null;
   wtp: WtpBlock | null;
   recommendedPrice: string | null;
+  confidenceLevel: ConfidenceLevel | null;
+  nDeals: number | null;
 }
 
 const EMPTY_STATE: InternalState = {
@@ -54,6 +65,8 @@ const EMPTY_STATE: InternalState = {
   drivers: null,
   wtp: null,
   recommendedPrice: null,
+  confidenceLevel: null,
+  nDeals: null,
 };
 
 const LineageDrawerCtx = createContext<LineageDrawerState | null>(null);
@@ -70,6 +83,8 @@ export function LineageDrawerProvider({ children }: { children: ReactNode }) {
         drivers: opts?.drivers ?? null,
         wtp: opts?.wtp ?? null,
         recommendedPrice: opts?.recommendedPrice ?? null,
+        confidenceLevel: opts?.confidenceLevel ?? null,
+        nDeals: opts?.nDeals ?? null,
       });
     },
     [],
@@ -86,6 +101,8 @@ export function LineageDrawerProvider({ children }: { children: ReactNode }) {
       drivers: state.drivers,
       wtp: state.wtp,
       recommendedPrice: state.recommendedPrice,
+      confidenceLevel: state.confidenceLevel,
+      nDeals: state.nDeals,
       openLineage,
       closeLineage,
     }),
@@ -97,6 +114,8 @@ export function LineageDrawerProvider({ children }: { children: ReactNode }) {
       state.drivers,
       state.wtp,
       state.recommendedPrice,
+      state.confidenceLevel,
+      state.nDeals,
     ],
   );
 

@@ -121,4 +121,31 @@ describe('LineageDrawer', () => {
     expect(screen.getByTestId('wtp-band-strip')).toBeInTheDocument();
   });
 
+  it('renders the confidence + n-deals chip when both are provided', () => {
+    render(
+      <LineageDrawerProvider>
+        <Opener opts={{ confidenceLevel: 'med', nDeals: 14 }} />
+        <LineageDrawer aid="200832-E" />
+      </LineageDrawerProvider>,
+    );
+    act(() => {
+      fireEvent.click(screen.getByTestId('opener'));
+    });
+    const chip = screen.getByTestId('lineage-drawer-confidence-chip');
+    expect(chip).toHaveTextContent(/confidence: medium/i);
+    expect(chip).toHaveTextContent(/n=14 deals/i);
+  });
+
+  it('omits the confidence chip when neither confidenceLevel nor nDeals is provided', () => {
+    render(
+      <LineageDrawerProvider>
+        <Opener />
+        <LineageDrawer aid="200832-E" />
+      </LineageDrawerProvider>,
+    );
+    act(() => {
+      fireEvent.click(screen.getByTestId('opener'));
+    });
+    expect(screen.queryByTestId('lineage-drawer-confidence-chip')).not.toBeInTheDocument();
+  });
 });

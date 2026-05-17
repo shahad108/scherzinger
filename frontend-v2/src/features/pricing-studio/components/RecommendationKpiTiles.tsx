@@ -53,12 +53,14 @@ export function RecommendationKpiTiles({
 }: Props) {
   const { openLineage } = useLineageDrawer();
   // Shared "rich" lineage opts so any rec-anchored tile opens a fully-populated
-  // drawer (drivers waterfall + WTP strip).
+  // drawer (drivers waterfall + WTP strip + confidence chip).
   const recOpenOpts = recommendation
     ? {
         drivers: recommendation.drivers,
         wtp: wtp ?? null,
         recommendedPrice: recommendation.recommended_price,
+        confidenceLevel: recommendation.confidence_level,
+        nDeals: wtp?.n_deals ?? null,
       }
     : null;
 
