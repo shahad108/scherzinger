@@ -177,22 +177,28 @@ def build_pocket_waterfall_from_db(
         quoted_total = float(qt[0] or 0) if qt else 0.0
         booked_total = float(qt[1] or 0) if qt else 0.0
 
-        # If the list/quoted are zero but invoiced isn't (e.g. no quote
-        # ledger rows for this cluster window), back-fill list = invoiced so
-        # the waterfall still renders monotonically rather than flat-line.
-        if quoted_total <= 0 and invoiced_total > 0:
-            quoted_total = invoiced_total
-        if booked_total <= 0 and invoiced_total > 0:
-            booked_total = invoiced_total
+        # D13: quote ledger and invoice ledger aren't on the same scale —
+        # the quote ledger contains lost/open quotes that never invoice
+        # and the invoice ledger contains back-office orders that never
+        # had a quote. Forcing booked → invoiced (downstream) collapsed
+        # db2 to 0% pocket. Instead we use invoiced revenue as the
+        # canonical "booked" value (the realized order book), and leave
+        # the quote-revenue leakage to a separate quoteToRevenue block.
         if list_total <= 0 and invoiced_total > 0:
             list_total = invoiced_total
+        if quoted_total <= 0 and invoiced_total > 0:
+            quoted_total = invoiced_total
+        # Booked = invoiced revenue (realized orders); the previous
+        # "won-quote revenue" interpretation was on a different ledger
+        # and broke the waterfall chain.
+        booked_total = invoiced_total if invoiced_total > 0 else booked_total
 
-        # Enforce monotonic-down ordering for the waterfall — if upstream is
-        # smaller than downstream the chart looks nonsensical.
+        # Anchor: list >= quoted >= booked >= invoiced >= db2.
         quoted_total = min(quoted_total, list_total) if list_total > 0 else quoted_total
         booked_total = min(booked_total, quoted_total) if quoted_total > 0 else booked_total
         invoiced_total = min(invoiced_total, booked_total) if booked_total > 0 else invoiced_total
-        db2_total = min(db2_total, invoiced_total) if invoiced_total > 0 else db2_total
+        if invoiced_total > 0 and db2_total > invoiced_total:
+            db2_total = invoiced_total
 
         # Per-cluster net-price histograms (price = revenue / quantity).
         cluster_filter_p = ""
