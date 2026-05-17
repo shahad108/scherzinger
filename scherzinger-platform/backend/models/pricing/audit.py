@@ -36,6 +36,7 @@ class PricingAuditAction(str, Enum):
     ROLLBACK = "rollback"
     AB_TEST_CREATED = "ab_test_created"
     AB_TEST_PROMOTED = "ab_test_promoted"
+    AB_TEST_HELD = "ab_test_held"
 
 
 class PricingAuditTargetKind(str, Enum):
