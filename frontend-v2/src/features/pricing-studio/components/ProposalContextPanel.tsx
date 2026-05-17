@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { CheckCircle2, Clock, FileText, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useProposals, useSubmitProposal } from '@/data/api/useProposals';
 import type { ProposalRow } from '@/data/api/useRecommendation';
+import { ApprovalStepper } from './ApprovalStepper';
 
 const STATUS_TONE: Record<ProposalRow['status'], { bg: string; fg: string; label: string; icon: React.ComponentType<{ size?: number }> }> = {
   draft: { bg: 'var(--surface-soft)', fg: 'var(--ink-2)', label: 'Draft', icon: FileText },
@@ -53,6 +54,26 @@ export function ProposalContextPanel({ articleId, recommendationId }: Props) {
           </p>
         </div>
       </div>
+      {items.map((p) =>
+        p.status === 'pending_approval' ||
+        p.status === 'approved' ||
+        p.status === 'rejected' ||
+        p.status === 'implemented' ? (
+          <ApprovalStepper
+            key={`stepper-${p.id}`}
+            proposal={{
+              id: p.id,
+              status: p.status,
+              article_id: p.article_id,
+              payload: p.payload,
+              created_by:
+                ((p.payload as Record<string, unknown> | undefined)?.created_by as
+                  | string
+                  | undefined) ?? null,
+            }}
+          />
+        ) : null,
+      )}
       <ul className="flex flex-col gap-2">
         {items.map((p) => {
           const tone = STATUS_TONE[p.status] ?? STATUS_TONE.draft;

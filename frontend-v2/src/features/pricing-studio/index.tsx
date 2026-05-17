@@ -34,6 +34,9 @@ import { CostTrajectoryDrawer } from './components/CostTrajectoryDrawer';
 import { AuditDrawer } from './components/AuditDrawer';
 import { WhatChangedStrip } from './components/WhatChangedStrip';
 import { auditFeedKey } from '@/data/api/useAuditFeed';
+// Pricing Studio v3 / Phase 5 — approval inbox + SSE-driven invalidation.
+import { ApprovalInboxBell } from './components/ApprovalInboxBell';
+import { approvalInboxKey } from '@/data/api/useApprovalInbox';
 
 export default function PricingStudioPage() {
   const [params, setParams] = useSearchParams();
@@ -183,6 +186,17 @@ export default function PricingStudioPage() {
   });
   const lastAuditEventTsRef = useRef<number | null>(null);
 
+  // Phase 5 — SSE channel for `proposal.*` topics. When the backend emits
+  // proposal.submitted / approved / rejected / changes_requested / recalled
+  // / commented we invalidate the approval-instance + approval-inbox query
+  // caches so any open stepper or inbox refetches within ~1s.
+  const proposalStream = usePricingStream({
+    topic: 'proposal',
+    aid: effectiveAid || null,
+    enabled: Boolean(effectiveAid),
+  });
+  const lastProposalEventTsRef = useRef<number | null>(null);
+
   // F4: SSE-driven cache invalidation for the fanout block.
   // `useLivePricing` already invalidates the studio key on every tick;
   // we additionally drop the per-price fanout cache so the re-score
@@ -221,6 +235,19 @@ export default function PricingStudioPage() {
     if (auditDrawerOpen) setAuditBadge(0);
   }, [auditDrawerOpen]);
 
+  // Phase 5 — react to `proposal.*` events: invalidate the approval
+  // instance cache for any open stepper + the global approval inbox.
+  useEffect(() => {
+    const evt = proposalStream.lastEvent;
+    if (!evt) return;
+    if (!evt.topic.startsWith('proposal.')) return;
+    if (lastProposalEventTsRef.current === evt.ts) return;
+    lastProposalEventTsRef.current = evt.ts;
+    queryClient.invalidateQueries({ queryKey: ['approval-instance'] });
+    queryClient.invalidateQueries({ queryKey: approvalInboxKey() });
+    queryClient.invalidateQueries({ queryKey: ['pricing-proposals'] });
+  }, [proposalStream.lastEvent, queryClient]);
+
   if (isLoading || !data || !heroView) {
     return <StudioSkeleton />;
   }
@@ -251,7 +278,17 @@ export default function PricingStudioPage() {
   return (
     <LineageDrawerProvider>
       <section id="screen-studio" className="w-full px-6 py-6">
-        <PageHead header={data.header} />
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <PageHead header={data.header} />
+          </div>
+          {/* TODO §5.6: lift the bell into the app shell once placement
+              is settled. For now it sits in the Studio page header so
+              Phase 5 is functionally complete. */}
+          <div className="mt-2 shrink-0">
+            <ApprovalInboxBell />
+          </div>
+        </div>
         <DeepLinkBanner effectiveAid={effectiveAid} skuFound={!requestedSkuMissing} />
 
         <div className="ws-grid">
