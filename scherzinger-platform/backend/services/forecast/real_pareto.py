@@ -211,17 +211,27 @@ def build_pareto(db: Session, *, tier: str | None = None) -> dict[str, Any]:
         )
         params["rtier"] = tier.lower()
 
+    # D11: YoY = (LTM - prior_LTM) / prior_LTM × 100, where prior_LTM is
+    # the 12-month window ending 12 months BEFORE the current LTM window.
+    # The previous version compared H2 vs H1 within a single 12mo window
+    # (a half-over-half delta), which inverted the trend for customers
+    # with strong recent recovery (e.g., 101690).
     sql_customers = f"""
+        WITH bounds AS (
+            SELECT MAX(date) AS max_d FROM invoices
+        )
         SELECT i.customer_id,
                (SELECT commodity_group FROM invoices i2
                   WHERE i2.customer_id = i.customer_id
                   GROUP BY commodity_group ORDER BY SUM(revenue) DESC LIMIT 1) AS cluster,
                SUM(i.revenue) AS ltm_revenue,
                AVG(i.db2_margin) AS avg_margin,
-               SUM(CASE WHEN i.date >= (SELECT MAX(date) - INTERVAL '6 months' FROM invoices)
-                        THEN i.revenue ELSE 0 END) AS h2_revenue,
-               SUM(CASE WHEN i.date <  (SELECT MAX(date) - INTERVAL '6 months' FROM invoices)
-                        THEN i.revenue ELSE 0 END) AS h1_revenue,
+               SUM(i.revenue) AS h2_revenue,
+               (SELECT COALESCE(SUM(i3.revenue), 0)
+                  FROM invoices i3, bounds b
+                  WHERE i3.customer_id = i.customer_id
+                    AND i3.date >= b.max_d - INTERVAL '24 months'
+                    AND i3.date <  b.max_d - INTERVAL '12 months') AS h1_revenue,
                COUNT(*) AS n_obs
         FROM invoices i
         WHERE {' AND '.join(where_clauses)}
