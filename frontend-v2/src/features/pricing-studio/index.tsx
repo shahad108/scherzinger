@@ -37,6 +37,11 @@ import { auditFeedKey } from '@/data/api/useAuditFeed';
 // Pricing Studio v3 / Phase 5 — approval inbox + SSE-driven invalidation.
 import { ApprovalInboxBell } from './components/ApprovalInboxBell';
 import { approvalInboxKey } from '@/data/api/useApprovalInbox';
+// Pricing Studio v3 / Phase 6 — batch repricing.
+import { BatchWorkbench } from './components/BatchWorkbench';
+import { BatchApprovalDrawer } from './components/BatchApprovalDrawer';
+import { useBatch, batchKey, type ScopeFilter } from '@/data/api/useBatch';
+import type { SkuPickerMode } from './components/SkuPicker';
 
 export default function PricingStudioPage() {
   const [params, setParams] = useSearchParams();
@@ -72,6 +77,24 @@ export default function PricingStudioPage() {
   // since the last time you looked".
   const [auditDrawerOpen, setAuditDrawerOpen] = useState(false);
   const [auditBadge, setAuditBadge] = useState(0);
+
+  // Phase 6 — Batch repricing state. Mode + the staged AID set live on
+  // the URL so refresh / deep-link preserves them; the active batch_id
+  // (post-preview) also lives there so a refresh re-loads the same batch.
+  const urlMode = (params.get('mode') as SkuPickerMode | null) ?? null;
+  const [pickerMode, setPickerMode] = useState<SkuPickerMode>(
+    urlMode === 'batch' ? 'batch' : 'single',
+  );
+  const urlBatchAids = useMemo(() => {
+    const raw = params.get('batch_aids') ?? params.get('aids');
+    return raw ? raw.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  }, [params]);
+  const [batchAids, setBatchAids] = useState<string[]>(urlBatchAids);
+  const urlBatchId = params.get('batch_id');
+  const [activeBatchId, setActiveBatchId] = useState<string | null>(urlBatchId);
+  const [batchLockedAids, setBatchLockedAids] = useState<string[]>([]);
+  const [batchDrawerOpen, setBatchDrawerOpen] = useState(false);
+  const [staleBatchAids, setStaleBatchAids] = useState<Set<string>>(new Set());
 
   // Phase 21 — SKU-picker clicks must update the URL so refresh preserves
   // the selection. Wrap setSelectedAid + setSearchParams in a single handler
@@ -235,6 +258,154 @@ export default function PricingStudioPage() {
     if (auditDrawerOpen) setAuditBadge(0);
   }, [auditDrawerOpen]);
 
+  // Phase 6 — fetch the active batch (preview + items + KPI). The hook
+  // is enabled only when an activeBatchId is set; switching batches is
+  // a cache hit once the user has previewed.
+  const batchQuery = useBatch(activeBatchId);
+  const activeBatch = batchQuery.data ?? null;
+
+  // Phase 6 — URL ↔ state sync. Mode + batch AIDs + active batch id all
+  // round-trip through search params so refresh + deep links preserve
+  // the working set.
+  useEffect(() => {
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (pickerMode === 'batch') next.set('mode', 'batch');
+      else next.delete('mode');
+      if (batchAids.length > 0) next.set('batch_aids', batchAids.join(','));
+      else {
+        next.delete('batch_aids');
+        next.delete('aids');
+      }
+      if (activeBatchId) next.set('batch_id', activeBatchId);
+      else next.delete('batch_id');
+      return next;
+    }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickerMode, batchAids, activeBatchId]);
+
+  // Phase 6 — dedicated pricing.cost_moved subscription. The shell-wide
+  // `usePricingStream` instance bound to the selected AID won't fire for
+  // cost moves on OTHER AIDs in the staged batch, so we open a second
+  // stream scoped to the batch's first AID (the bus filters per-key, but
+  // any in-batch hit is relevant — we de-dupe via the Set below).
+  const costStream = usePricingStream({
+    topic: 'pricing',
+    aid: batchAids[0] ?? null,
+    enabled: pickerMode === 'batch' && batchAids.length >= 1,
+  });
+  useEffect(() => {
+    const evt = costStream.lastEvent ?? null;
+    if (!evt) return;
+    if (evt.topic !== 'pricing.cost_moved') return;
+    const movedAid = evt.aid;
+    if (!movedAid) return;
+    const inBatch =
+      batchAids.includes(movedAid) ||
+      activeBatch?.items.some((it) => it.aid === movedAid);
+    if (!inBatch) return;
+    setStaleBatchAids((prev) => {
+      if (prev.has(movedAid)) return prev;
+      const next = new Set(prev);
+      next.add(movedAid);
+      return next;
+    });
+  }, [costStream.lastEvent, batchAids, activeBatch]);
+
+  // Re-run when proposal events affect a batch's proposal_ids.
+  useEffect(() => {
+    const evt = proposalStream.lastEvent;
+    if (!evt) return;
+    if (!evt.topic.startsWith('proposal.')) return;
+    if (!activeBatchId) return;
+    const proposalId = (evt.payload as Record<string, unknown>)?.proposal_id;
+    if (typeof proposalId !== 'string') return;
+    const inBatch = activeBatch?.items.some((it) => it.proposal_id === proposalId);
+    if (!inBatch) return;
+    queryClient.invalidateQueries({ queryKey: batchKey(activeBatchId) });
+  }, [proposalStream.lastEvent, activeBatch, activeBatchId, queryClient]);
+
+  // Phase 6 — handlers for the picker + workbench + drawer.
+  const handleModeChange = (mode: SkuPickerMode) => {
+    setPickerMode(mode);
+    if (mode === 'single') {
+      // Leaving batch mode discards the staged batch but keeps the
+      // URL aid intact so the user lands on a sensible single workbench.
+      setBatchAids([]);
+      setActiveBatchId(null);
+      setBatchLockedAids([]);
+      setStaleBatchAids(new Set());
+    }
+  };
+
+  const handleToggleAid = (aid: string) => {
+    setBatchAids((prev) =>
+      prev.includes(aid) ? prev.filter((x) => x !== aid) : [...prev, aid],
+    );
+  };
+
+  const handleBuildBatch = (aids: string[]) => {
+    // Build batch in the URL: switch to batch mode, persist aids, drop
+    // any prior batch_id. The Batch Workbench renders + the user previews.
+    setBatchAids(aids);
+    setActiveBatchId(null);
+    setBatchLockedAids([]);
+    setStaleBatchAids(new Set());
+  };
+
+  const handleBatchCreated = (batchId: string) => {
+    setActiveBatchId(batchId);
+    setStaleBatchAids(new Set());
+  };
+
+  const handleToggleLock = (aid: string) => {
+    setBatchLockedAids((prev) =>
+      prev.includes(aid) ? prev.filter((x) => x !== aid) : [...prev, aid],
+    );
+  };
+
+  const handleCommitClick = () => {
+    setBatchDrawerOpen(true);
+  };
+
+  const handleBatchCancelled = () => {
+    setActiveBatchId(null);
+    setBatchAids([]);
+    setBatchLockedAids([]);
+    setStaleBatchAids(new Set());
+    setBatchDrawerOpen(false);
+  };
+
+  const handleBatchCommitted = () => {
+    setActiveBatchId(null);
+    setBatchAids([]);
+    setBatchLockedAids([]);
+    setStaleBatchAids(new Set());
+    setBatchDrawerOpen(false);
+    setPickerMode('single');
+  };
+
+  // Open lineage / single-SKU workbench for a batch row.
+  const handleOpenLineageForAid = (aid: string) => {
+    setSelectedAid(aid);
+    setPickerMode('single');
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('aid', aid);
+      next.delete('mode');
+      return next;
+    });
+  };
+
+  const inBatchMode = pickerMode === 'batch' && batchAids.length >= 2;
+  const scopeFilterForCreate: ScopeFilter = useMemo(() => {
+    const f: ScopeFilter = {};
+    if (studioParams.tier) f.tier = [studioParams.tier];
+    if (studioParams.family) f.family = [studioParams.family];
+    if (studioParams.cluster) f.cluster = [studioParams.cluster];
+    return f;
+  }, [studioParams.tier, studioParams.family, studioParams.cluster]);
+
   // Phase 5 — react to `proposal.*` events: invalidate the approval
   // instance cache for any open stepper + the global approval inbox.
   useEffect(() => {
@@ -298,8 +469,29 @@ export default function PricingStudioPage() {
             toggles={data.toggles}
             selectedAid={effectiveAid}
             onSelect={handleSelectSku}
+            mode={pickerMode}
+            onModeChange={handleModeChange}
+            selectedAids={batchAids}
+            onToggleAid={handleToggleAid}
+            onBuildBatch={handleBuildBatch}
           />
 
+          {inBatchMode ? (
+            <div className="ws-bench">
+              <BatchWorkbench
+                aids={batchAids}
+                batch={activeBatch}
+                staleAids={staleBatchAids}
+                lockedAids={batchLockedAids}
+                onToggleLock={handleToggleLock}
+                onBatchCreated={handleBatchCreated}
+                onOpenLineageForAid={handleOpenLineageForAid}
+                onCommitClick={handleCommitClick}
+                onCancelClick={handleBatchCancelled}
+                scopeFilter={scopeFilterForCreate}
+              />
+            </div>
+          ) : (
           <div className="ws-bench">
             <WorkbenchHero
               hero={heroView}
@@ -407,10 +599,19 @@ export default function PricingStudioPage() {
 
             <RationaleMemo data={wb.memo} />
           </div>
+          )}
         </div>
 
         <CrossLinks links={data.crossLinks} />
         <LineageDrawer aid={effectiveAid} />
+        <BatchApprovalDrawer
+          open={batchDrawerOpen}
+          onOpenChange={setBatchDrawerOpen}
+          batch={activeBatch}
+          lockedAids={batchLockedAids}
+          onCommitted={handleBatchCommitted}
+          onCancelled={handleBatchCancelled}
+        />
         <AuditDrawer
           open={auditDrawerOpen}
           onOpenChange={setAuditDrawerOpen}
