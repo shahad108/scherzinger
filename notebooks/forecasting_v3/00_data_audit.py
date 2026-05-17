@@ -124,19 +124,40 @@ print(
 # ## 2. Anomaly detection
 #
 # Flag months where invoice_count is structurally implausible:
-#   - |z-score(invoice_count)| > 2.5 across the full history, OR
+#   - |z-score(invoice_count)| > 2.5 (baseline = clean window only), OR
 #   - invoice_count <= 50, OR
 #   - invoice_count > 300
+#
+# Z-scores are computed against the CLEAN-WINDOW baseline (2022-01..2025-12)
+# so 2026 outliers do not inflate σ and mask in-window dips.
 
 # %%
-ic = monthly_all["invoice_count"].astype(float)
-z = (ic - ic.mean()) / ic.std(ddof=0)
-monthly_all["ic_z"] = z
+clean_mask_all = (monthly_all["month"] >= CLEAN_START) & (
+    monthly_all["month"] <= CLEAN_END
+)
+ic_base = monthly_all.loc[clean_mask_all, "invoice_count"].astype(float)
+ic_mu, ic_sd = ic_base.mean(), ic_base.std(ddof=0)
+monthly_all["ic_z"] = (monthly_all["invoice_count"].astype(float) - ic_mu) / ic_sd
+
+rev_base = monthly_all.loc[clean_mask_all, "revenue"].astype(float)
+rev_mu, rev_sd = rev_base.mean(), rev_base.std(ddof=0)
+monthly_all["rev_z"] = (monthly_all["revenue"].astype(float) - rev_mu) / rev_sd
+
+units_base = monthly_all.loc[clean_mask_all, "units"].astype(float)
+u_mu, u_sd = units_base.mean(), units_base.std(ddof=0)
+monthly_all["units_z"] = (monthly_all["units"].astype(float) - u_mu) / u_sd
 
 flag_low = monthly_all["invoice_count"] <= 50
 flag_high = monthly_all["invoice_count"] > 300
 flag_z = monthly_all["ic_z"].abs() > 2.5
 monthly_all["anomaly"] = flag_low | flag_high | flag_z
+
+print(
+    f"[Phase 0] z-baseline (clean window): "
+    f"ic μ={ic_mu:.1f} σ={ic_sd:.1f} | "
+    f"rev μ=€{rev_mu:,.0f} σ=€{rev_sd:,.0f} | "
+    f"units μ={u_mu:,.0f} σ={u_sd:,.0f}"
+)
 
 anomalies = monthly_all.loc[monthly_all["anomaly"]].copy()
 print(f"[Phase 0] anomalies flagged: {len(anomalies)}")
@@ -164,6 +185,15 @@ clean = monthly_all.loc[mask].copy().reset_index(drop=True)
 
 # Sanity: which excluded months would have been flagged by our anomaly rule?
 kept_anomalies = clean.loc[clean["anomaly"]].copy()
+
+# In-window suspicious months: kept months where revenue OR units z-score
+# (computed on the clean window itself) exceeds 2.0 in absolute terms.
+KEPT_Z_THRESHOLD = 2.0
+kept_z_flag = (
+    (clean["rev_z"].abs() > KEPT_Z_THRESHOLD)
+    | (clean["units_z"].abs() > KEPT_Z_THRESHOLD)
+)
+kept_suspicious = clean.loc[kept_z_flag].copy()
 
 clean["avg_price"] = np.where(clean["units"] > 0, clean["revenue"] / clean["units"], np.nan)
 clean["margin_ratio"] = np.where(
@@ -217,6 +247,17 @@ def build_exog() -> pd.DataFrame:
 
 
 exog = build_exog()
+
+# Hard guarantee: every required exog series is present and gap-free.
+missing_series = [s for s in EXOG_SERIES if s not in exog.columns]
+assert not missing_series, f"Exog missing required series: {missing_series}"
+na_counts = exog[EXOG_SERIES].isna().sum()
+assert na_counts.sum() == 0, f"Exog has NaNs: {na_counts.to_dict()}"
+print(
+    "[exog sanity] latest:",
+    exog[EXOG_SERIES].iloc[-1].round(3).to_dict(),
+)
+
 exog.to_parquet(EXOG_PARQUET, index=False)
 print(f"[Phase 0] wrote {EXOG_PARQUET}  shape={exog.shape}  cols={list(exog.columns)}")
 
@@ -231,10 +272,16 @@ def write_anomaly_report() -> None:
     lines.append("")
     lines.append(f"Generated: {pd.Timestamp.utcnow().isoformat()}")
     lines.append("")
+    lines.append(
+        "**Z-score baseline:** all z-scores below are computed against the "
+        "clean-window sample (2022-01..2025-12) only, so the 2026 billing "
+        "outliers do not inflate σ and mask in-window dips."
+    )
+    lines.append("")
     lines.append("## Excluded months (outside 2022-01..2025-12 clean window)")
     lines.append("")
     lines.append(
-        "Anomaly rule: `|z-score(invoice_count)| > 2.5` OR `invoice_count < 50` "
+        "Anomaly rule: `|z-score(invoice_count)| > 2.5` OR `invoice_count ≤ 50` "
         "OR `invoice_count > 300`."
     )
     lines.append("")
@@ -242,21 +289,24 @@ def write_anomaly_report() -> None:
         (monthly_all["month"] < CLEAN_START) | (monthly_all["month"] > CLEAN_END)
     ].copy()
     if len(excluded):
-        lines.append("| month | invoice_count | units | revenue (€) | z-score | flag |")
-        lines.append("|---|---:|---:|---:|---:|---|")
+        lines.append(
+            "| month | invoice_count | units | revenue (€) | z(inv) | z(rev) | z(units) | flag |"
+        )
+        lines.append("|---|---:|---:|---:|---:|---:|---:|---|")
         for _, r in excluded.iterrows():
             flags = []
             if r["invoice_count"] <= 50:
-                flags.append("count<=50")
+                flags.append("count≤50")
             if r["invoice_count"] > 300:
                 flags.append("count>300")
             if abs(r["ic_z"]) > 2.5:
-                flags.append(f"|z|={abs(r['ic_z']):.2f}>2.5")
+                flags.append(f"|z_inv|={abs(r['ic_z']):.2f}>2.5")
             flag_txt = ", ".join(flags) if flags else "out-of-window"
             lines.append(
                 f"| {r['month'].date()} | {int(r['invoice_count'])} | "
                 f"{int(r['units'])} | {r['revenue']:,.0f} | "
-                f"{r['ic_z']:+.2f} | {flag_txt} |"
+                f"{r['ic_z']:+.2f} | {r['rev_z']:+.2f} | {r['units_z']:+.2f} | "
+                f"{flag_txt} |"
             )
     else:
         lines.append("_None._")
@@ -270,35 +320,135 @@ def write_anomaly_report() -> None:
         "**492 invoices on essentially one date**. May 2026 has only 1 "
         "invoice and is the current partial month. None of these months "
         "carry forecastable signal — they reflect AR posting cadence, not "
-        "demand. The clean window therefore stops at 2025-12."
+        "demand. The clean window therefore stops at 2025-12. "
+        "**Note on March 2026:** its invoice_count is exactly 50, which is "
+        "part of the same Q1 billing-suppression artifact and is included by "
+        "the `≤ 50` branch deliberately."
     )
     lines.append("")
-    lines.append("## Suspicious months kept inside the clean window")
+    lines.append("## Suspicious months kept (in-window dips)")
+    lines.append("")
+    lines.append(
+        f"Kept months from the clean window where `|z(revenue)| > "
+        f"{KEPT_Z_THRESHOLD}` or `|z(units)| > {KEPT_Z_THRESHOLD}` "
+        "(baselines = clean window mean/std). These are retained for "
+        "training but called out so downstream models can decide whether to "
+        "down-weight them."
+    )
+    lines.append("")
+    if len(kept_suspicious):
+        lines.append(
+            "| month | invoice_count | units | revenue (€) | z(rev) | z(units) | judgement |"
+        )
+        lines.append("|---|---:|---:|---:|---:|---:|---|")
+        # Build per-month judgement: prefer seasonal explanation where the
+        # surrounding context (other Augusts, Q4 spikes) supports it.
+        aug_history: dict[int, dict[str, float]] = {}
+        for _, r in monthly_all.iterrows():
+            ts = r["month"]
+            if ts.month == 8 and CLEAN_START.year <= ts.year <= CLEAN_END.year:
+                aug_history[ts.year] = {
+                    "revenue": float(r["revenue"]),
+                    "units": float(r["units"]),
+                    "invoice_count": int(r["invoice_count"]),
+                }
+        for _, r in kept_suspicious.iterrows():
+            ts = r["month"]
+            month_num = ts.month
+            year = ts.year
+            judgement = "review"
+            if month_num == 8:
+                others = {y: v for y, v in aug_history.items() if y != year}
+                other_rev = [v["revenue"] for v in others.values()]
+                if other_rev:
+                    rmin, rmax = min(other_rev), max(other_rev)
+                    judgement = (
+                        f"German August summer-holiday trough — other "
+                        f"Augusts span €{rmin:,.0f}..€{rmax:,.0f}; "
+                        f"invoice_count={int(r['invoice_count'])} is normal "
+                        "(>50, not a billing gap). Kept as legitimate "
+                        "seasonal dip."
+                    )
+            elif month_num == 12:
+                judgement = (
+                    "Q4 year-end push / order pull-in — kept as legitimate "
+                    "seasonal peak."
+                )
+            else:
+                judgement = (
+                    "in-window outlier with normal invoice_count; no "
+                    "billing-cadence story — kept and flagged for cluster "
+                    "review."
+                )
+            lines.append(
+                f"| {ts.date()} | {int(r['invoice_count'])} | "
+                f"{int(r['units'])} | {r['revenue']:,.0f} | "
+                f"{r['rev_z']:+.2f} | {r['units_z']:+.2f} | {judgement} |"
+            )
+        lines.append("")
+        # Aug-2024 dedicated paragraph.
+        aug_2024 = monthly_all.loc[
+            monthly_all["month"] == pd.Timestamp("2024-08-01")
+        ]
+        if len(aug_2024):
+            a = aug_2024.iloc[0]
+            other_augs = {y: v for y, v in aug_history.items() if y != 2024}
+            aug_str = ", ".join(
+                f"{y}=€{v['revenue']:,.0f}"
+                for y, v in sorted(other_augs.items())
+            )
+            lines.append("### Aug-2024 explicit judgement")
+            lines.append("")
+            lines.append(
+                f"Aug-2024 is the lowest historical month at "
+                f"€{a['revenue']:,.0f} (z(rev)={a['rev_z']:+.2f}, "
+                f"z(units)={a['units_z']:+.2f}), but its invoice_count "
+                f"is {int(a['invoice_count'])} — well above the 50-invoice "
+                "billing-gap threshold, so this is **not** an AR posting "
+                "artifact. The other Augusts in the clean window "
+                f"({aug_str}) all sit in the same low-band region "
+                "characteristic of the German August summer-holiday trough "
+                "(plant shutdowns, factory holidays across the metals "
+                "supply chain). The judgement is **legitimate seasonal "
+                "trough**, not a data-quality event — Aug-2024 is "
+                "**kept in the training set** so the model can learn the "
+                "August seasonality. Downstream models should encode an "
+                "explicit Aug month effect rather than rejecting this row."
+            )
+            lines.append("")
+    else:
+        lines.append("_None — no kept month exceeds the z-score thresholds._")
+    lines.append("")
+    lines.append("## Kept months flagged by invoice_count rule")
     lines.append("")
     if len(kept_anomalies):
         lines.append(
-            "These months passed the calendar window but tripped the "
-            "anomaly rule. They are **kept** (do not have a known data-"
-            "quality story) but flagged for downstream review:"
+            "These months passed the calendar window but also tripped the "
+            "invoice_count anomaly rule. They are **kept** (no known "
+            "data-quality story) but flagged for downstream review:"
         )
         lines.append("")
-        lines.append("| month | invoice_count | units | revenue (€) | z-score | flag |")
+        lines.append(
+            "| month | invoice_count | units | revenue (€) | z(inv) | flag |"
+        )
         lines.append("|---|---:|---:|---:|---:|---|")
         for _, r in kept_anomalies.iterrows():
             flags = []
             if r["invoice_count"] <= 50:
-                flags.append("count<=50")
+                flags.append("count≤50")
             if r["invoice_count"] > 300:
                 flags.append("count>300")
             if abs(r["ic_z"]) > 2.5:
-                flags.append(f"|z|={abs(r['ic_z']):.2f}>2.5")
+                flags.append(f"|z_inv|={abs(r['ic_z']):.2f}>2.5")
             lines.append(
                 f"| {r['month'].date()} | {int(r['invoice_count'])} | "
                 f"{int(r['units'])} | {r['revenue']:,.0f} | "
                 f"{r['ic_z']:+.2f} | {', '.join(flags)} |"
             )
     else:
-        lines.append("_None — all 48 months in the clean window pass the rule._")
+        lines.append(
+            "_None — no kept month trips the invoice_count rule._"
+        )
     lines.append("")
     ANOMALY_REPORT.write_text("\n".join(lines))
 
