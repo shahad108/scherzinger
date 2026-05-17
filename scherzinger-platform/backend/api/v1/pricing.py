@@ -227,14 +227,111 @@ def submit_proposal(
     ctx: AuthContext = Depends(require_auth),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
+    """Phase 5 — submit a draft proposal into the approval workflow.
+
+    Consults ``approval_rules.should_route_for_approval`` via the
+    workflow service; builds an ``approval_instance`` with one step per
+    routed role. Auto-approve rules short-circuit straight to ``approved``;
+    everything else lands in ``pending_approval`` until the routed
+    approvers decide.
+    """
+    from backend.services.pricing import approval_workflow
+
     row = _get_proposal(db, proposal_id, ctx)
     if row.created_by != ctx.user_id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "only the creator can submit this proposal")
-    row.status = "pending_approval" if row.approval_required else "approved"
+    if row.status not in {"draft", "changes_requested"}:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            f"proposal cannot be submitted from status {row.status!r}",
+        )
+
+    instance, decision = approval_workflow.submit_proposal_for_approval(
+        session=db,
+        proposal=row,
+        actor=str(ctx.user_id),
+    )
     db.commit()
     db.refresh(row)
+    db.refresh(instance)
     invalidate_action_center_cache()
+    return {
+        "proposal": workflow_service.serialize_proposal(row),
+        "approval_instance": approval_workflow.serialize_instance(instance),
+        "decision": {
+            "needs": list(decision.needs),
+            "thresholds_hit": list(decision.thresholds_hit),
+            "auto_approve": decision.auto_approve and not decision.needs and not decision.block,
+            "block": decision.block,
+            "reasons": list(decision.reasons),
+        },
+    }
+
+
+@router.post("/proposals/{proposal_id}/recall")
+def recall_proposal(
+    proposal_id: UUID,
+    ctx: AuthContext = Depends(require_auth),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Phase 5 (§5.5) — auto-recall a still-draft proposal.
+
+    Only the proposal creator can recall, and only while in ``draft``.
+    Submitted/approved/rejected proposals cannot be recalled.
+    """
+    from backend.services.pricing import approval_workflow
+
+    row = _get_proposal(db, proposal_id, ctx)
+    if row.created_by != ctx.user_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "only the creator can recall this proposal")
+    try:
+        approval_workflow.recall_proposal(session=db, proposal=row, actor=str(ctx.user_id))
+    except approval_workflow.ApprovalWorkflowError as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    db.commit()
+    db.refresh(row)
     return workflow_service.serialize_proposal(row)
+
+
+@router.get("/proposals/{proposal_id}/approval")
+def get_proposal_approval(
+    proposal_id: UUID,
+    ctx: AuthContext = Depends(require_auth),  # noqa: ARG001 (auth gate)
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Phase 5 — full approval instance + step history for the stepper."""
+    from backend.models.pricing.approval import ApprovalAction, ApprovalInstance
+    from backend.services.pricing import approval_workflow
+
+    row = _get_proposal(db, proposal_id, ctx)
+    instance = (
+        db.query(ApprovalInstance)
+        .filter(ApprovalInstance.proposal_id == row.id)
+        .order_by(ApprovalInstance.created_at.desc())
+        .first()
+    )
+    if instance is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no approval instance for this proposal")
+    actions = (
+        db.query(ApprovalAction)
+        .filter(ApprovalAction.approval_instance_id == instance.id)
+        .order_by(ApprovalAction.at.asc())
+        .all()
+    )
+    return {
+        "approval_instance": approval_workflow.serialize_instance(instance),
+        "actions": [
+            {
+                "id": str(a.id),
+                "actor": a.actor,
+                "decision": a.decision,
+                "comment": a.comment,
+                "at": a.at.isoformat() if a.at else None,
+            }
+            for a in actions
+        ],
+        "proposal": workflow_service.serialize_proposal(row),
+    }
 
 
 @router.post("/proposals/{proposal_id}/approve")

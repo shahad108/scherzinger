@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.v1 import (
     ab_tests,
     actions,
+    approvals,
     audit,
     auth,
     benchmarks,
@@ -31,6 +32,7 @@ from backend.api.v1 import (
     shell,
     simulations,
     stats,
+    ws_proposal,
 )
 from backend.auth.middleware import CSRFMiddleware, JWTAuthMiddleware
 from backend.config import settings
@@ -121,6 +123,56 @@ app.include_router(
 
 # Phase 21 (Pricing Studio v3): SSE event channel.
 app.include_router(pricing_events.router, prefix="/api/v1")
+
+# Phase 21 (Pricing Studio v3 / Phase 5): approval workflow + WS collab channel.
+app.include_router(approvals.router, prefix="/api/v1")
+app.include_router(ws_proposal.router, prefix="/api/v1")
+
+
+@app.on_event("startup")
+def _seed_approval_routes_on_startup() -> None:
+    """Phase 5 — refresh ``approval_routes`` from the JSON seed.
+
+    Idempotent. Lets re-runs against an existing DB pick up new rules
+    without forcing a migration. Failures are logged but never block
+    app boot — the rules engine still reads the JSON directly.
+    """
+    import logging
+
+    from backend.database import SessionLocal
+    from backend.services.pricing.approval_seed import seed_approval_routes
+
+    log = logging.getLogger(__name__)
+    try:
+        session = SessionLocal()
+        try:
+            seed_approval_routes(session)
+            session.commit()
+        finally:
+            session.close()
+    except Exception:
+        log.exception("approval_routes startup seed failed")
+
+
+@app.on_event("startup")
+async def _wire_approval_event_listener() -> None:
+    """Phase 5 — invalidate the inbox cache on proposal.* events."""
+    import asyncio
+    import logging
+
+    from backend.api.v1.approvals import invalidate_inbox_cache
+    from backend.services.events import subscribe
+
+    log = logging.getLogger(__name__)
+
+    async def _listen() -> None:
+        try:
+            async for _event in subscribe("proposal."):
+                invalidate_inbox_cache()
+        except Exception:
+            log.exception("approval inbox event listener crashed")
+
+    asyncio.create_task(_listen())
 
 
 @app.get("/health")
