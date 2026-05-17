@@ -28,6 +28,15 @@ export function RejectionList({ rows }: { rows: RejectionRow[] }) {
             <div className="min-w-[200px] flex-1">
               <div className="font-display text-sm font-bold text-[var(--ink)]">{r.code}</div>
               <div className="mt-0.5 text-xs leading-relaxed text-[var(--muted)]">{r.subtitle}</div>
+              {r.data_quality ? (
+                <div
+                  data-testid="rejection-data-quality"
+                  className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-amber-700"
+                  title={r.data_quality}
+                >
+                  Data quality: {r.data_quality}
+                </div>
+              ) : null}
             </div>
             <div className="text-right">
               <div className="font-display text-base font-bold tabular-nums text-[var(--red)]">

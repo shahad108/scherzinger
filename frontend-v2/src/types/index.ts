@@ -278,6 +278,11 @@ export interface RejectionRow {
   lostRevenue: string;
   share: string;
   owner: string;
+  // Present when the BFF wants to disclose a data-quality treatment for
+  // this row (e.g. KA — code that functions as "reason unrecorded"). Render
+  // as an inline note so the user sees the caveat, not just the rank.
+  // DATA-AUDIT-2026-05-17 defect #8.
+  data_quality?: string;
 }
 
 export interface AuditRow {
