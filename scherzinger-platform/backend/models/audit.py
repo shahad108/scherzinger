@@ -91,6 +91,10 @@ class AbTest(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )
+    # --- Phase 21 (Pricing Studio v3 / Phase 8) — eligibility + criterion ---
+    eligibility_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    criterion_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    target_sample: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
 class AbTestResult(Base):
