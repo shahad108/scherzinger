@@ -143,6 +143,37 @@ describe('CustomerFanout (v3 typed block)', () => {
     expect(screen.queryByTestId('fan-queued-B')).not.toBeInTheDocument();
   });
 
+  // SF3 (Phase 2.2.5): the pane subtitle context label is BFF truth.
+  it('header subtitle reflects block.context_label (not the legacy regex parse)', () => {
+    wrap(
+      <CustomerFanout
+        data={legacyPane}
+        fanPrice="€6.50"
+        block={fanoutBlock([fanoutRow()], { context_label: 'at proposed €6.50' })}
+        proposedPriceDecimal="6.50"
+        aid="200832-E"
+      />,
+    );
+    const sub = screen.getByTestId('ws-pane-sub');
+    expect(sub).toHaveTextContent(/at proposed €6\.50/i);
+    // The legacy "(cost-floor)" parenthetical from data.paneSub must NOT
+    // leak through when the BFF block is authoritative.
+    expect(sub).not.toHaveTextContent(/cost-floor/i);
+  });
+
+  it('falls back to the legacy paneSub parse when block is absent', () => {
+    wrap(
+      <CustomerFanout
+        data={legacyPane}
+        fanPrice="€5.10"
+        block={undefined}
+        proposedPriceDecimal={null}
+        aid="200832-E"
+      />,
+    );
+    expect(screen.getByTestId('ws-pane-sub')).toHaveTextContent(/cost-floor/i);
+  });
+
   it('clicking a row opens the drill-in drawer', () => {
     wrap(
       <CustomerFanout

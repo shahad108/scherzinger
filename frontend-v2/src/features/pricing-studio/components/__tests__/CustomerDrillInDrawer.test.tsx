@@ -1,26 +1,36 @@
 // Pricing Studio v3 / Phase 2 — CustomerDrillInDrawer tests.
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { CustomerDrillInDrawer } from '../CustomerDrillInDrawer';
 import { drillInPayload } from './fixtures-phase2';
+import type { CustomerDrillInPayload } from '@/types/studio';
+
+// The default payload returned by the mocked hook — overridable per-test
+// via ``setMockPayload`` so individual cases can assert on different
+// tones / proposal shapes without coupling to module-level state.
+let mockPayload: CustomerDrillInPayload = drillInPayload();
+const setMockPayload = (p: CustomerDrillInPayload) => {
+  mockPayload = p;
+};
 
 // Mock the data hook so the drawer renders with deterministic input
 // without round-tripping through the BFF mock JSON loader.
 vi.mock('@/data/api/useCustomerDrillIn', () => ({
   useCustomerDrillIn: vi.fn(() => ({
-    data: drillInPayload(),
+    data: mockPayload,
     isLoading: false,
     isError: false,
   })),
 }));
 
+const createProposalMutate = vi.fn();
 vi.mock('@/data/api/useProposals', () => ({
   useCreateProposal: () => ({
-    mutate: vi.fn(),
+    mutate: createProposalMutate,
     isPending: false,
   }),
 }));
@@ -47,6 +57,11 @@ function wrap(ui: ReactNode) {
 const customer = { id: '101580', name: 'Customer 101580' };
 
 describe('CustomerDrillInDrawer', () => {
+  beforeEach(() => {
+    setMockPayload(drillInPayload());
+    createProposalMutate.mockReset();
+  });
+
   it('renders all 5 sections when open with a proposed price', async () => {
     wrap(
       <CustomerDrillInDrawer
@@ -101,6 +116,80 @@ describe('CustomerDrillInDrawer', () => {
       expect(loc).toContain('source=studio');
       expect(loc).toContain('aid=200832-E');
     });
+  });
+
+  // SF1 (Phase 2.2.5): cent-precision contract.
+  it('queues a proposal with proposed_price as a STRING (not a number)', () => {
+    wrap(
+      <CustomerDrillInDrawer
+        open
+        onOpenChange={() => {}}
+        customer={customer}
+        aid="200832-E"
+        proposedPrice="5.10"
+      />,
+    );
+    fireEvent.click(screen.getByTestId('drill-in-queue-proposal'));
+    expect(createProposalMutate).toHaveBeenCalledTimes(1);
+    const [body] = createProposalMutate.mock.calls[0];
+    // Must pass the original decimal-as-string — never round-trip
+    // through Number() because that drops cent precision.
+    expect(body.proposed_price).toBe('5.10');
+    expect(typeof body.proposed_price).toBe('string');
+  });
+
+  // SF2 (Phase 2.2.5): tone is BFF truth — drawer reads ``at_proposed.tone``
+  // and never re-thresholds ``risk_if_moved``.
+  it('maps the BFF-computed tone field to the at-proposed card', () => {
+    setMockPayload(
+      drillInPayload({
+        // Synthesize a "low risk but explicitly alert" payload: if the
+        // drawer were re-deriving thresholds it would NOT pick alert.
+        // The BFF must be authoritative.
+        at_proposed: {
+          delta_vs_last_paid: '0.30',
+          delta_pct: '6.25',
+          risk_if_moved: '0.05',
+          tone: 'alert',
+        },
+      }),
+    );
+    wrap(
+      <CustomerDrillInDrawer
+        open
+        onOpenChange={() => {}}
+        customer={customer}
+        aid="200832-E"
+        proposedPrice="5.10"
+      />,
+    );
+    const card = screen.getByTestId('drill-in-at-proposed-card');
+    expect(card).toHaveAttribute('data-tone', 'alert');
+  });
+
+  it('falls back to plain when the BFF tone field is absent', () => {
+    setMockPayload(
+      drillInPayload({
+        // Pre-SF2 BFF builds may omit the field entirely. Confirm the
+        // drawer doesn't crash and renders neutral styling.
+        at_proposed: {
+          delta_vs_last_paid: '0.10',
+          delta_pct: '2.0',
+          risk_if_moved: '0.80',
+        } as never,
+      }),
+    );
+    wrap(
+      <CustomerDrillInDrawer
+        open
+        onOpenChange={() => {}}
+        customer={customer}
+        aid="200832-E"
+        proposedPrice="5.10"
+      />,
+    );
+    const card = screen.getByTestId('drill-in-at-proposed-card');
+    expect(card).toHaveAttribute('data-tone', 'plain');
   });
 
   it('ESC closes the drawer (onOpenChange called with false)', () => {

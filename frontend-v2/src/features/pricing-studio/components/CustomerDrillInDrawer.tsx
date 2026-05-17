@@ -231,8 +231,11 @@ function AtProposed({
   const risk = parseDecimal(atProposed.risk_if_moved);
   const wallet = parseDecimal(walletSharePct);
 
-  const riskTone: 'alert' | 'warn' | 'plain' =
-    !Number.isFinite(risk) ? 'plain' : risk >= 0.65 ? 'alert' : risk >= 0.35 ? 'warn' : 'plain';
+  // SF2 (Phase 2.2.5): tone is BFF truth — read it off the payload and
+  // map to CSS. We NEVER re-derive the thresholds here so the FE and
+  // BFF can't drift. The optional fallback ('plain') only handles older
+  // BFF builds that haven't shipped the tone field yet.
+  const riskTone: 'alert' | 'warn' | 'plain' = atProposed.tone ?? 'plain';
   const riskClass =
     riskTone === 'alert'
       ? 'bg-[var(--rose-bg)] border-[var(--rose-tint)] text-[var(--rose-deep)]'
@@ -245,7 +248,11 @@ function AtProposed({
       <SectionTitle>
         At proposed {propLabel && <span className="text-[var(--rose-deep)]">{propLabel}</span>}
       </SectionTitle>
-      <div className={`rounded-[var(--r-md)] border p-3 ${riskClass}`}>
+      <div
+        className={`rounded-[var(--r-md)] border p-3 ${riskClass}`}
+        data-testid="drill-in-at-proposed-card"
+        data-tone={riskTone}
+      >
         <div className="flex items-baseline justify-between gap-3">
           <div>
             <div className="text-[10.5px] font-bold uppercase tracking-wide opacity-80">
@@ -428,18 +435,21 @@ function ActionsFooter({
   const pushToast = useActionFeedbackStore((s) => s.pushToast);
   const createProposal = useCreateProposal();
 
-  const propNum = parseDecimal(proposedPrice);
-
   const handleQueue = () => {
     // TODO(p5: approval-wired) — customer-specific proposals get their
     // own approval rules in Phase 5. For now we fire-and-forget the
     // existing /pricing/proposals POST with a customer-scoped payload
     // and surface a toast. The proposal is enqueued; reviewers see it
     // in Action Center.
+    //
+    // SF1 (Phase 2.2.5): pass the raw decimal STRING so the BFF gets
+    // canonical cent precision. Never round-trip through Number() — it
+    // would silently drop trailing zeros / split cents. The proposals
+    // API accepts ``string | number`` for the price fields.
     createProposal.mutate(
       {
         article_id: aid,
-        proposed_price: Number.isFinite(propNum) ? propNum : null,
+        proposed_price: proposedPrice ?? null,
         payload: { customer_id: customerId, source: 'studio.drill_in' },
       },
       {

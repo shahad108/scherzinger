@@ -61,12 +61,16 @@ export function useProposals(params: ProposalListParams) {
   });
 }
 
+// Price fields accept either a JS number (legacy clients) or a canonical
+// decimal STRING (preferred — see SF1, Pricing Studio v3 / Phase 2.2.5).
+// Cent-precise clients (CustomerDrillInDrawer) MUST send strings so the
+// value never round-trips through a JS float.
 export interface CreateProposalBody {
   article_id: string;
   recommendation_id?: string | null;
-  current_price?: number | null;
-  proposed_price?: number | null;
-  delta_pp?: number | null;
+  current_price?: number | string | null;
+  proposed_price?: number | string | null;
+  delta_pp?: number | string | null;
   approval_required?: boolean;
   payload?: Record<string, unknown>;
 }
@@ -125,14 +129,25 @@ export function useSubmitProposal() {
   });
 }
 
+function toNumberOrNull(v: number | string | null | undefined): number | null {
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'number') return v;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 function synthCreate(body: CreateProposalBody): ProposalRow {
+  // The pure-mock fallback approximates the BFF, which serialises
+  // proposed_price as a number in the response shape. String-typed
+  // inputs are coerced through Number() at the mock boundary — real
+  // BFF preserves cent precision via Decimal end-to-end.
   const row: ProposalRow = {
     id: `mock-${Date.now()}`,
     recommendation_id: body.recommendation_id ?? null,
     article_id: body.article_id,
-    current_price: body.current_price ?? null,
-    proposed_price: body.proposed_price ?? null,
-    delta_pp: body.delta_pp ?? null,
+    current_price: toNumberOrNull(body.current_price),
+    proposed_price: toNumberOrNull(body.proposed_price),
+    delta_pp: toNumberOrNull(body.delta_pp),
     status: 'draft',
     approval_required: body.approval_required ?? false,
     payload: body.payload ?? {},

@@ -362,6 +362,12 @@ export interface CustomerFanoutBlock {
   aid: string;
   /** Decimal-as-string or null when this is the default (no proposed) fanout. */
   proposed_price: string | null;
+  /** SF3 (Phase 2.2.5): BFF-computed pane subtitle context — e.g.
+   * ``"at proposed €5.10"`` when a price is supplied, ``"cost-floor"`` for
+   * the default fanout. The workbench header renders this verbatim so it
+   * never goes stale relative to the active re-score. Optional only for
+   * backwards compat with older BFF builds. */
+  context_label?: string;
   rows: CustomerFanoutRow[];
   lineage_ref: string | null;
 }
@@ -389,6 +395,11 @@ export interface DrillInAtProposed {
   delta_pct: string | null;
   /** Decimal 0..1 churn-weighted risk. */
   risk_if_moved: string | null;
+  /** SF2 (Phase 2.2.5): BFF-computed tone — drawer renders, never re-derives.
+   * Sourced from ``customer_risk.compute_tone`` so thresholds live in one
+   * place. Optional only for backwards compat with older BFF builds; new
+   * code should always read this rather than re-thresholding ``risk_if_moved``. */
+  tone?: FanoutRowTone;
 }
 
 export interface DrillInThisSku {

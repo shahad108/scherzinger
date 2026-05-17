@@ -81,6 +81,9 @@ export const drillInPayload = (
     delta_vs_last_paid: '0.30',
     delta_pct: '6.25',
     risk_if_moved: '0.72',
+    // SF2: tone is BFF-computed; fixtures mirror the wire shape so
+    // components exercise the read path end-to-end.
+    tone: 'alert',
   },
   wallet_top_skus: [
     { aid: '200832-E', share_pct: '0.3800', ltm_eur: '7680.00' },

@@ -45,12 +45,21 @@ export function CustomerFanout({ data, fanPrice, block, proposedPriceDecimal, ai
   // ship a partial object — guard for that.
   const useBlock = Boolean(block && Array.isArray(block.rows) && block.rows.length > 0);
 
+  // SF3 (Phase 2.2.5): prefer the BFF-computed context label so a slider
+  // re-score updates the header in lockstep with the row tones. Fall
+  // back to the legacy regex parse of paneSub only when the block isn't
+  // present (mock JSON path).
+  const contextLabel =
+    (useBlock && block?.context_label) ||
+    data.paneSub.match(/\(([^)]+)\)/)?.[1] ||
+    'cost-floor';
+
   return (
     <div className="ws-pane">
       <h4>
         Customer fan-out · this SKU only
-        <span className="ws-pane-sub">
-          if priced at <b>{fanPrice}</b> ({data.paneSub.match(/\(([^)]+)\)/)?.[1] ?? 'cost-floor'})
+        <span className="ws-pane-sub" data-testid="ws-pane-sub">
+          if priced at <b>{fanPrice}</b> ({contextLabel})
         </span>
       </h4>
       <p className="cluster-note">{renderInline(data.clusterNote)}</p>
