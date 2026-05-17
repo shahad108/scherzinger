@@ -1,16 +1,22 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { DecisionData } from '@/types/studio';
 import { renderInline } from './renderInline';
 import type { ActiveOptionView } from './PriceOptions';
 import { useCreateProposal } from '@/data/api/useProposals';
 import { useUiAction } from '@/hooks/useUiAction';
+import { proposalPdfUrl } from '@/data/api/usePublishPrice';
+import { PublishConfirmationDrawer } from './PublishConfirmationDrawer';
 
 interface Props {
   data: DecisionData;
   activeOption: ActiveOptionView | null;
   /** Current catalog price string from the workbench hero (e.g. "€ 4.10"). */
   currentPriceLabel?: string | null;
+  /** Optional proposal id linked to the active option (enables Publish + PDF). */
+  proposalId?: string | null;
+  /** Called when "View approval stepper" is clicked. Scrolls to ProposalContextPanel. */
+  onScrollToApproval?: () => void;
 }
 
 function parsePrice(s: string | null | undefined): number | null {
@@ -21,11 +27,18 @@ function parsePrice(s: string | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export function DecisionFooter({ data, activeOption, currentPriceLabel }: Props) {
+export function DecisionFooter({
+  data,
+  activeOption,
+  currentPriceLabel,
+  proposalId,
+  onScrollToApproval,
+}: Props) {
   const [params] = useSearchParams();
   const [effectiveDate, setEffectiveDate] = useState(data.effectiveDate);
   const [notify, setNotify] = useState(data.notifyDefaults);
   const [error, setError] = useState<string | null>(null);
+  const [publishOpen, setPublishOpen] = useState(false);
   const createProposal = useCreateProposal();
   const runUiAction = useUiAction();
 
@@ -39,6 +52,16 @@ export function DecisionFooter({ data, activeOption, currentPriceLabel }: Props)
     proposedPriceNum != null && currentPriceNum != null && currentPriceNum > 0
       ? ((proposedPriceNum - currentPriceNum) / currentPriceNum) * 100
       : null;
+
+  // Decimal-as-string for the Publish mutation. Re-derived from the active
+  // option's price string so cent precision is preserved end-to-end (the
+  // BFF's PublishIn accepts a Decimal, never a JS float).
+  const proposedPriceDecimal = useMemo(() => {
+    if (proposedPriceNum == null) return null;
+    // Active option label looks like "€5.10" or "5,10" — normalise.
+    const cleaned = String(proposed).replace(/[^\d,.\-]/g, '').replace(',', '.');
+    return cleaned.length > 0 ? cleaned : null;
+  }, [proposed, proposedPriceNum]);
 
   function buildBody(approvalRequired: boolean) {
     return {
@@ -151,38 +174,80 @@ export function DecisionFooter({ data, activeOption, currentPriceLabel }: Props)
         <button
           type="button"
           className="btn dark"
-          title="Push-to-quoting needs the quoting BFF endpoint."
-          onClick={() =>
-            runUiAction({
-              disabledReason:
-                'Push-to-quoting flips the live price book — backend endpoint required (Phase 7+).',
-            })
+          data-testid="decision-footer-push"
+          title={
+            proposedPriceDecimal
+              ? 'Open the publish confirmation drawer.'
+              : 'Pick a price option first.'
           }
+          onClick={() => {
+            if (!proposedPriceDecimal) {
+              setError('Pick a price option before publishing.');
+              return;
+            }
+            setError(null);
+            setPublishOpen(true);
+          }}
+          disabled={!proposedPriceDecimal}
         >
           ⚡ Push to quoting
         </button>
+        {onScrollToApproval && (
+          <button
+            type="button"
+            className="btn"
+            data-testid="decision-footer-view-stepper"
+            onClick={() => onScrollToApproval()}
+            title="Approval routing is decided by approval_rules — jump to the stepper."
+          >
+            ↗ View approval stepper
+          </button>
+        )}
         <button
           type="button"
           className="btn"
-          onClick={() => handleSave(true, 'Escalated to Till for approval')}
-          disabled={createProposal.isPending}
-        >
-          ↗ Escalate to Till
-        </button>
-        <button
-          type="button"
-          className="btn"
-          title="Branded PDF needs the reports endpoint."
-          onClick={() =>
-            runUiAction({
-              disabledReason:
-                'Branded PDF export ships in Phase 6 (reports MVP).',
-            })
+          data-testid="decision-footer-pdf"
+          title={
+            proposalId
+              ? 'Open the branded proposal PDF in a new tab.'
+              : 'Save the proposal first — PDF is tied to a proposal id.'
           }
+          onClick={() => {
+            if (!proposalId) {
+              runUiAction({
+                disabledReason:
+                  'Branded PDF needs a saved proposal — save as draft first.',
+              });
+              return;
+            }
+            if (typeof window !== 'undefined') {
+              window.open(
+                proposalPdfUrl(proposalId),
+                '_blank',
+                'noopener,noreferrer',
+              );
+            }
+          }}
+          disabled={!proposalId}
         >
           📄 Branded PDF
         </button>
       </div>
+
+      <PublishConfirmationDrawer
+        open={publishOpen}
+        onOpenChange={setPublishOpen}
+        aid={articleId}
+        proposedPrice={proposedPriceDecimal}
+        currentPriceLabel={currentPriceLabel ?? null}
+        sourceProposalId={proposalId ?? null}
+        notifyDefaults={{
+          sales: notify.sales,
+          customers: notify.customers,
+          escalate: notify.escalate,
+        }}
+        onViewAudit={onScrollToApproval}
+      />
     </div>
   );
 }

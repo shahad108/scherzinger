@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useStudio } from '@/data/api/useStudio';
+import { useProposals } from '@/data/api/useProposals';
 import { useLivePricing } from '@/hooks/useLivePricing';
 import { usePricingStream } from '@/hooks/usePricingStream';
 import { useFanoutRescore } from '@/data/api/useFanoutRescore';
@@ -42,6 +43,9 @@ import { BatchWorkbench } from './components/BatchWorkbench';
 import { BatchApprovalDrawer } from './components/BatchApprovalDrawer';
 import { useBatch, batchKey, type ScopeFilter } from '@/data/api/useBatch';
 import type { SkuPickerMode } from './components/SkuPicker';
+// Pricing Studio v3 / Phase 7 — push-to-quoting SSE invalidation + toast.
+import { priceBookKey } from '@/data/api/usePublishPrice';
+import { useActionFeedbackStore } from '@/stores/actionFeedbackStore';
 
 export default function PricingStudioPage() {
   const [params, setParams] = useSearchParams();
@@ -63,6 +67,17 @@ export default function PricingStudioPage() {
   // we read from `useStudio` above is still authoritative; this hook just
   // invalidates that cache and surfaces lastTickAt for the freshness chip.
   const live = useLivePricing(studioParams);
+  // Phase 7 — dedicated stream subscription used to detect
+  // `pricing.price_set` (hero "Live since…" flip via the existing studio
+  // invalidation) and `pricing.price_rolled_back` (toast). We re-use the
+  // existing `pricing` topic from `useLivePricing`; this hook is read-only
+  // — it just observes the lastEvent to drive UI reactions below.
+  const pricingStream = usePricingStream({
+    topic: 'pricing',
+    aid: studioParams.aid ?? null,
+    enabled: Boolean(studioParams.aid),
+  });
+  const lastPricingPushEventTsRef = useRef<number | null>(null);
   // Phase 2 — `aid` from the URL drives initial selection so deep links
   // from Action Center / Margin / Forecasting land on the exact SKU.
   // Local state then overrides if the user picks a different SKU.
@@ -122,6 +137,25 @@ export default function PricingStudioPage() {
   }, [urlAid]);
 
   const effectiveAid = selectedAid ?? data?.defaultAid ?? '';
+  // Phase 7 — derive a proposal id for DecisionFooter's Push-to-quoting +
+  // Branded PDF buttons. We pick the most recently updated non-rejected
+  // proposal for the open SKU, scoped to the deep-link recommendation when
+  // one is present (so a user landing from Action Center sees the right
+  // proposal). The hook is enabled-only when an aid is known.
+  const proposalsForAid = useProposals({
+    article_id: effectiveAid || undefined,
+    recommendation_id: params.get('recommendation') ?? undefined,
+  });
+  const latestProposalId = useMemo(() => {
+    const items = proposalsForAid.data?.items ?? [];
+    const live = items.filter((p) => p.status !== 'rejected');
+    if (live.length === 0) return null;
+    // useProposals returns rows in BFF order — fall back to ISO compare.
+    const sorted = [...live].sort((a, b) =>
+      (b.updated_at ?? '').localeCompare(a.updated_at ?? ''),
+    );
+    return sorted[0]?.id ?? null;
+  }, [proposalsForAid.data]);
   const selectedSku = useMemo(
     () => data?.skus.find((s) => s.aid === effectiveAid) ?? null,
     [data, effectiveAid],
@@ -198,6 +232,11 @@ export default function PricingStudioPage() {
     enabled: Boolean(proposedPriceDecimal) && Boolean(effectiveAid),
   });
 
+  // Phase 7 — toast for `pricing.price_rolled_back`. The hero current-price
+  // tile flip is already handled by useLivePricing's ['studio'] invalidation;
+  // we just surface the rollback as a transient toast.
+  const pushToast = useActionFeedbackStore((s) => s.pushToast);
+
   // Phase 4 — SSE channel for `audit.appended`. The audit drawer subscribes
   // to the same topic locally so it can drive its flash highlight; this
   // page-level subscription drives the badge counter + invalidates the
@@ -234,6 +273,41 @@ export default function PricingStudioPage() {
     // cache so the drawer reloads fresh data on the next render.
     queryClient.invalidateQueries({ queryKey: ['cost-outlook'] });
   }, [live.lastTickAt, queryClient]);
+
+  // Phase 7 — react to `pricing.price_set` and `pricing.price_rolled_back`.
+  //   - price_set        → invalidate the local price-book cache so the
+  //                        Publish drawer reflects the new active row.
+  //                        The hero "Live since…" stamp flips through the
+  //                        ['studio'] invalidation already wired by
+  //                        `useLivePricing`.
+  //   - price_rolled_back → toast + price-book invalidation.
+  useEffect(() => {
+    const evt = pricingStream.lastEvent;
+    if (!evt) return;
+    if (
+      evt.topic !== 'pricing.price_set' &&
+      evt.topic !== 'pricing.price_rolled_back'
+    ) {
+      return;
+    }
+    if (evt.aid && effectiveAid && evt.aid !== effectiveAid) return;
+    if (lastPricingPushEventTsRef.current === evt.ts) return;
+    lastPricingPushEventTsRef.current = evt.ts;
+
+    if (effectiveAid) {
+      queryClient.invalidateQueries({ queryKey: priceBookKey(effectiveAid) });
+    }
+
+    if (evt.topic === 'pricing.price_rolled_back') {
+      const reason =
+        (evt.payload as Record<string, unknown> | undefined)?.reason;
+      const label =
+        typeof reason === 'string' && reason
+          ? `Price rolled back: ${reason}`
+          : `Price rolled back on ${evt.aid ?? effectiveAid}.`;
+      pushToast(label, 'warning');
+    }
+  }, [pricingStream.lastEvent, effectiveAid, queryClient, pushToast]);
 
   // Phase 4 — react to `audit.appended` events:
   //   - invalidate the audit feed cache so the open drawer re-fetches
@@ -595,6 +669,13 @@ export default function PricingStudioPage() {
               data={wb.decision}
               activeOption={activeOption}
               currentPriceLabel={heroView.currentPrice}
+              proposalId={latestProposalId}
+              onScrollToApproval={() => {
+                window.setTimeout(() => {
+                  const el = document.getElementById('proposal-context-panel');
+                  el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 50);
+              }}
             />
 
             <RationaleMemo data={wb.memo} />
