@@ -25,6 +25,10 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from .v3_loader import is_enabled as _v3_enabled
+from .v3_loader import metadata as _v3_metadata
+from .v3_loader import project_v3 as _v3_project
+
 
 _MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -216,9 +220,19 @@ def build_hero(
     history_rows = history_rows[-12:]
     actuals = [v for (_, v) in history_rows]
 
-    # Project forward.
+    # Project forward. Prefer the v3 supervised cache when the feature flag is
+    # on AND the parquet returns data for this mode; otherwise fall back to the
+    # 4-step WMA.
     n_project = max(1, min(horizon_months, 12))
-    projection = _wma_project(actuals, n_periods=n_project)
+    projection_v3: list[dict[str, Any]] | None = None
+    if _v3_enabled():
+        projection_v3 = _v3_project(mode, n_periods=n_project)
+    model_label = "v3" if projection_v3 is not None else "wma"
+    projection: list[float] = (
+        [float(p["p50"]) for p in projection_v3]
+        if projection_v3 is not None
+        else _wma_project(actuals, n_periods=n_project)
+    )
 
     # Compose series: 12 actuals + n_project projected points.
     series: list[dict[str, Any]] = []
@@ -250,8 +264,15 @@ def build_hero(
         year_offset, new_m = divmod(new_m - 1, 12)
         new_m += 1
         proj_date = date(last_d.year + year_offset, new_m, 1)
-        low_p80, high_p80 = _band(actuals, p, sigma_multiplier=1.28, non_negative=non_negative)
-        low_p95, high_p95 = _band(actuals, p, sigma_multiplier=1.96, non_negative=non_negative)
+        if projection_v3 is not None:
+            v3_point = projection_v3[i - 1]
+            low_p80 = float(v3_point["p80Low"])
+            high_p80 = float(v3_point["p80High"])
+            low_p95 = float(v3_point["p95Low"])
+            high_p95 = float(v3_point["p95High"])
+        else:
+            low_p80, high_p80 = _band(actuals, p, sigma_multiplier=1.28, non_negative=non_negative)
+            low_p95, high_p95 = _band(actuals, p, sigma_multiplier=1.96, non_negative=non_negative)
         series.append(
             {
                 "month": _month_label(proj_date),
@@ -303,10 +324,28 @@ def build_hero(
     else:
         forecast12mo_total = sum(values_horizon)
 
+    if model_label == "v3":
+        heuristic = {
+            "label": "Hero series · v3 supervised",
+            "rule": (
+                "primary = winner-model point forecast (revenue: AutoETS+MinT-OLS, "
+                "volume: Ensemble[Theta,AutoETS,SN], margin: AutoETS on db2_margin)."
+                " band = trained quantiles (p10/p90 for P80; widened by 1.96/1.28 for P95)."
+            ),
+            "qualifier": "Cached from notebooks/forecasting_v3/output (6h TTL).",
+        }
+    else:
+        heuristic = {
+            "label": "Hero series · 4-step WMA",
+            "rule": "primary = 0.4·t-1 + 0.3·t-2 + 0.2·t-3 + 0.1·t-4 · band = ±σ of last-12-month residuals.",
+            "qualifier": "Will be replaced by trained-quantile model in Phase 9.",
+        }
+
     out = {
         "caption": caption,
         "mode": mode,
         "unit": unit,
+        "model": model_label,
         "series": series,
         "forecast12moTotal": forecast12mo_total,
         "currentMonthPartial": current_partial,
@@ -351,14 +390,15 @@ def build_hero(
                 "p95HitPct": p95_pct,
                 "footnote": f"In-window coverage on {n_actuals} months of actuals.",
             },
-            "heuristic": {
-                "label": "Hero series · 4-step WMA",
-                "rule": "primary = 0.4·t-1 + 0.3·t-2 + 0.2·t-3 + 0.1·t-4 · band = ±σ of last-12-month residuals.",
-                "qualifier": "Will be replaced by trained-quantile model in Phase 9.",
-            },
+            "heuristic": heuristic,
         },
         "source": "live",
     }
+    if model_label == "v3":
+        try:
+            out["modelCard"] = _v3_metadata()
+        except Exception:
+            pass
     return out
 
 
