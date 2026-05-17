@@ -58,8 +58,16 @@ export interface PVMBar {
 
 export interface PlanPoint {
   month: string;            // YYYY-MM
-  plan: number;
+  // `plan` is nullable: the BFF returns null for the entire series when
+  // no authoritative plan_targets table is available for the dataset.
+  // (DATA-AUDIT-2026-05-17, defect #4)
+  plan: number | null;
   actual: number | null;    // null for future months
+}
+
+export interface BlockMeta {
+  status: 'ok' | 'degraded' | 'missing';
+  reason?: string;
 }
 
 export interface PlanResetEntry {
@@ -79,10 +87,12 @@ export interface PlanVarianceAttribution {
 
 export interface PlanTracking {
   points: PlanPoint[];
-  cumulativeGapEur: number;
-  cumulativeGapPct: number;
+  // Nullable when the block is degraded — see PlanPoint.plan note.
+  cumulativeGapEur: number | null;
+  cumulativeGapPct: number | null;
   recentMonthAttribution: PlanVarianceAttribution | null;
   resetLog: PlanResetEntry[];
+  meta?: BlockMeta;
 }
 
 export interface PocketStep {

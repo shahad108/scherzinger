@@ -30,19 +30,50 @@ export function PlanTrackingStrip({ data }: Props) {
   const [showReset, setShowReset] = useState(false);
   if (!data || !data.points || data.points.length === 0) return null;
 
+  // DATA-AUDIT-2026-05-17 defect #4 — when the BFF marks this block
+  // degraded (no authoritative plan_targets table), render an honest
+  // "plan unavailable" affordance instead of a fabricated headline.
+  const degraded = data.meta?.status === 'degraded' || data.cumulativeGapEur == null;
+  if (degraded) {
+    return (
+      <section
+        data-testid="plan-tracking-strip"
+        data-degraded="true"
+        className="mb-4 rounded-[12px] border border-dashed border-[var(--hairline)] bg-[var(--surface-soft)] p-4 text-[12.5px] text-[var(--ink-2)]"
+      >
+        <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+          Plan vs Actual — current FY
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-display text-[14px] font-bold tracking-tight">
+            Plan target unavailable
+          </span>
+          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-amber-700">
+            Data missing
+          </span>
+        </div>
+        <p className="mt-1 text-[12px] text-[var(--muted)]">
+          {data.meta?.reason ?? 'Plan targets not configured for this dataset'}.
+          Cumulative gap and per-month plan lines are hidden until an
+          authoritative plan_targets feed is wired in.
+        </p>
+      </section>
+    );
+  }
+
   // Build cumulative series so the line shows YTD trajectory.
   let cumPlan = 0;
   let cumActual = 0;
   const series = data.points.map((p) => {
-    cumPlan += p.plan;
+    if (p.plan != null) cumPlan += p.plan;
     if (p.actual != null) cumActual += p.actual;
     return {
       month: p.month,
-      cumPlan,
+      cumPlan: p.plan != null ? cumPlan : null,
       cumActual: p.actual != null ? cumActual : null,
     };
   });
-  const tone = gapTone(data.cumulativeGapEur);
+  const tone = gapTone(data.cumulativeGapEur ?? 0);
   const attr = data.recentMonthAttribution;
 
   return (
@@ -54,7 +85,7 @@ export function PlanTrackingStrip({ data }: Props) {
         </div>
         <div className="flex items-center gap-2">
           <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[12px] font-semibold ${tone.bg} ${tone.fg}`}>
-            {tone.label}: {formatEur(data.cumulativeGapEur)} ({data.cumulativeGapPct >= 0 ? '+' : ''}{data.cumulativeGapPct.toFixed(1)}%)
+            {tone.label}: {formatEur(data.cumulativeGapEur ?? 0)} ({(data.cumulativeGapPct ?? 0) >= 0 ? '+' : ''}{(data.cumulativeGapPct ?? 0).toFixed(1)}%)
           </span>
           <button
             type="button"

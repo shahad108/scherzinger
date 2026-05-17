@@ -3,6 +3,15 @@
 Reads plan from data/plan.json. Joins with realized monthly revenue from the
 invoice service (same source as real_hero.py). Returns cumulative gap + variance
 attribution from the existing PVM payload + plan-reset audit log.
+
+# Data-honesty note (DATA-AUDIT-2026-05-17, defect #4)
+# --------------------------------------------------
+# The values in `plan.json` are hand-crafted demo targets, NOT extracted from
+# any `plan_targets` table inside Scherzinger's ERP. Because the BFF cannot
+# stand behind those numbers, the block is returned in a `degraded` state so
+# the UI can render an "unavailable" affordance and avoid surfacing a
+# fabricated cumulative-gap headline. Plan values + cumulativeGap are nulled
+# out; actuals + reset-log are preserved (they ARE real).
 """
 from __future__ import annotations
 from pathlib import Path
@@ -30,26 +39,16 @@ def build_plan_tracking(
     plan_rows = _load_plan(mode, cluster)
     actuals = actuals_by_month or {}
     points = []
-    # Cumulative gap compares plan vs actual *only up to the last closed
-    # month*, otherwise we'd compare an in-progress year against a full-year
-    # plan and the gap would always look catastrophic.
-    cum_plan_to_actual = 0.0
-    cum_actual = 0.0
-    last_actual_month: str | None = None
     for r in plan_rows:
-        plan_v = float(r["value"])
         actual_v = actuals.get(r["month"])
+        # Plan target intentionally nulled — see module docstring. Demo plan
+        # values exist in plan.json but are not authoritative; surfacing them
+        # would create a misleading cumulative-gap headline.
         points.append({
             "month": r["month"],
-            "plan": plan_v,
+            "plan": None,
             "actual": actual_v,
         })
-        if actual_v is not None:
-            cum_plan_to_actual += plan_v
-            cum_actual += actual_v
-            last_actual_month = r["month"]
-    gap_eur = cum_actual - cum_plan_to_actual if last_actual_month else 0.0
-    gap_pct = (gap_eur / cum_plan_to_actual * 100) if cum_plan_to_actual else 0.0
     reset_log: list[dict[str, Any]] = []
     for r in plan_rows:
         for entry in r.get("reset_log", []):
@@ -61,8 +60,12 @@ def build_plan_tracking(
             })
     return {
         "points": points,
-        "cumulativeGapEur": gap_eur,
-        "cumulativeGapPct": gap_pct,
+        "cumulativeGapEur": None,
+        "cumulativeGapPct": None,
         "recentMonthAttribution": pvm_attribution or None,
         "resetLog": reset_log,
+        "meta": {
+            "status": "degraded",
+            "reason": "Plan targets not configured for this dataset",
+        },
     }

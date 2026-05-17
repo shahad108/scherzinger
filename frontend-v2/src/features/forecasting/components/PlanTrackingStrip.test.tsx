@@ -56,4 +56,19 @@ describe('PlanTrackingStrip', () => {
     render(<PlanTrackingStrip data={{ ...base, resetLog: [] }} />);
     expect(screen.getByTestId('plan-reset-history-button')).toBeDisabled();
   });
+
+  it('renders the degraded affordance when meta.status is degraded', () => {
+    const degraded: PlanTracking = {
+      ...base,
+      cumulativeGapEur: null,
+      cumulativeGapPct: null,
+      points: base.points.map((p) => ({ ...p, plan: null })),
+      meta: { status: 'degraded', reason: 'Plan targets not configured for this dataset' },
+    };
+    render(<PlanTrackingStrip data={degraded} />);
+    const strip = screen.getByTestId('plan-tracking-strip');
+    expect(strip).toHaveAttribute('data-degraded', 'true');
+    expect(screen.getByText(/Plan target unavailable/i)).toBeInTheDocument();
+    expect(screen.getByText(/Plan targets not configured/i)).toBeInTheDocument();
+  });
 });
