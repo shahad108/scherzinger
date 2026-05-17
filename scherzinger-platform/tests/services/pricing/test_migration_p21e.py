@@ -33,7 +33,11 @@ def _load_migration_module():
 
 def test_p21e_chain_and_revision_ids() -> None:
     mod = _load_migration_module()
-    assert mod.revision == "p21e_proposal_payload_customer_index"
+    # Phase 4 renamed this revision id from the original
+    # ``p21e_proposal_payload_customer_index`` (36 chars) to fit inside
+    # the legacy ``alembic_version.version_num`` VARCHAR(32) column —
+    # the original chain failed at version-stamp time on Postgres.
+    assert mod.revision == "p21e_prop_pay_cust_idx"
     assert mod.down_revision == "p21d_customer_on_sku_snapshot"
 
 

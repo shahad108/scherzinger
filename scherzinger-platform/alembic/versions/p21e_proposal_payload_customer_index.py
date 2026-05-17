@@ -14,7 +14,7 @@ projection used by the BFF, while being narrow (only active proposals).
 
 Reversible. Chained after p21d.
 
-Revision ID: p21e_proposal_payload_customer_index
+Revision ID: p21e_prop_pay_cust_idx
 Revises: p21d_customer_on_sku_snapshot
 Create Date: 2026-05-17
 """
@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from alembic import op
 
-revision = "p21e_proposal_payload_customer_index"
+revision = "p21e_prop_pay_cust_idx"
 down_revision = "p21d_customer_on_sku_snapshot"
 branch_labels = None
 depends_on = None
