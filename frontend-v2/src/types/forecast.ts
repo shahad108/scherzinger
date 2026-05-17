@@ -800,17 +800,25 @@ export interface CalibrationPayload {
 // Phase 7 — Market direction.
 export interface MarketTile {
   name: string;
-  value: number;
+  value: number | null;
   unit: string;
   wowPct: number | null;
+  // Optional explanatory label rendered when wowPct is null (e.g. suppression
+  // reason from the BFF). Falls back to a generic "insufficient prior period"
+  // when omitted.
+  wowLabel?: string | null;
   tone: 'green' | 'amber' | 'red' | 'ink-3';
   context: string;
   external?: boolean;
   indicator?: string;
+  // Period over which `wowPct` was computed. The strip uses this for the
+  // chip suffix ("MoM" for monthly series, "DoD" for daily, etc.). Defaults
+  // to "WoW" when not provided for back-compat.
+  periodLabel?: 'DoD' | 'WoW' | 'MoM' | 'QoQ' | 'YoY';
 }
 
 export interface MarketDirection {
-  source: 'seed' | 'live';
+  source: 'seed' | 'live' | 'synthetic';
   tiles: MarketTile[];
   digest: {
     wow: string;

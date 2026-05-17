@@ -109,8 +109,8 @@ export function MarketTileDrawer({ tile, open, onClose }: Props) {
             <span className="text-[12px] text-[var(--muted)]">{tile.unit}</span>
             <span className="tag-chip">
               {typeof tile.wowPct === 'number' && Number.isFinite(tile.wowPct)
-                ? `${tile.wowPct >= 0 ? '↑' : '↓'} ${tile.wowPct >= 0 ? '+' : ''}${tile.wowPct.toFixed(1)}% WoW`
-                : '– n/a · insufficient prior period'}
+                ? `${tile.wowPct >= 0 ? '↑' : '↓'} ${tile.wowPct >= 0 ? '+' : ''}${tile.wowPct.toFixed(1)}% ${tile.periodLabel ?? 'WoW'}`
+                : `– ${tile.wowLabel ?? 'n/a · insufficient prior period'}`}
             </span>
           </section>
 
@@ -118,7 +118,7 @@ export function MarketTileDrawer({ tile, open, onClose }: Props) {
 
           <section>
             <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-[var(--muted)]">
-              Last 12 months (synthetic)
+              Last 12 months · series anchor
             </h3>
             <div style={{ height: 180 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -139,8 +139,10 @@ export function MarketTileDrawer({ tile, open, onClose }: Props) {
               </ResponsiveContainer>
             </div>
             <div className="mt-1 text-[10.5px] text-[var(--muted)]">
-              Anchored at the current value; slope inferred from WoW. Wire to
-              <code className="mx-1">market_series.parquet</code> when the dedicated endpoint ships.
+              Drawer chart is anchored at the current observation with slope
+              inferred from the latest delta. The headline value and delta are
+              live from the FRED-normalised <code className="mx-1">market_series.parquet</code>
+              (see the indicator chip on the tile for the exact series & date).
             </div>
           </section>
         </div>

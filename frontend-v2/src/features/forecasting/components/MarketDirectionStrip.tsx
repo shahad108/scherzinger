@@ -17,7 +17,7 @@ export function MarketDirectionStrip({ data }: Props) {
           <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)]">
             External market direction
           </h2>
-          <span className="tag-chip">WoW: {data.digest.wow}</span>
+          <span className="tag-chip">{data.digest.wow}</span>
         </div>
         <ul className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-8">
           {data.tiles.map((tile) => {
@@ -41,6 +41,9 @@ export function MarketDirectionStrip({ data }: Props) {
                 : tile.wowPct! < 0
                   ? '↓'
                   : '→';
+            const period = tile.periodLabel ?? 'WoW';
+            const fallbackLabel =
+              tile.wowLabel ?? `n/a · insufficient prior period`;
             return (
               <li key={tile.name}>
                 <button
@@ -54,12 +57,12 @@ export function MarketDirectionStrip({ data }: Props) {
                     {tile.name}
                   </div>
                   <div className="mt-0.5 font-display text-[15px] font-bold tabular-nums text-[var(--ink)]">
-                    {tile.value} <span className="text-[10.5px] font-semibold text-[var(--muted)]">{tile.unit}</span>
+                    {tile.value ?? '—'} <span className="text-[10.5px] font-semibold text-[var(--muted)]">{tile.unit}</span>
                   </div>
                   <div className="text-[10.5px] text-[var(--muted)]">
                     {wowAvailable
-                      ? `${arrow} ${tile.wowPct! >= 0 ? '+' : ''}${tile.wowPct!.toFixed(1)}% WoW`
-                      : `${arrow} n/a · insufficient prior period`}
+                      ? `${arrow} ${tile.wowPct! >= 0 ? '+' : ''}${tile.wowPct!.toFixed(1)}% ${period}`
+                      : `${arrow} ${fallbackLabel}`}
                   </div>
                   {/* DATA-AUDIT-2026-05-17 defect #11 — surface the
                       synthetic-for-demo (or any indicator) disclosure
