@@ -3,11 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TrustStrip } from '@/features/action-center/components/TrustStrip';
 import { SkuTable } from '@/features/action-center/components/SkuTable';
-import { BucketGrid } from '@/features/action-center/components/BucketGrid';
 import { LostQuoteCard } from '@/features/action-center/components/LostQuoteCard';
 import { ReportCard } from '@/features/action-center/components/ReportCard';
 import { PageHead } from '@/features/action-center/components/PageHead';
-import type { BucketCard, LostQuoteData, SkuRow, TrustTile } from '@/types';
+import type { LostQuoteData, SkuRow, TrustTile } from '@/types';
 
 describe('Action Center button wiring', () => {
   it('emits the clicked trust tile for drawer handling', () => {
@@ -89,24 +88,6 @@ describe('Action Center button wiring', () => {
     ];
     render(<SkuTable rows={rows} />);
     const btn = screen.getByRole('button', { name: /Open in Studio/i });
-    expect(btn).toBeDisabled();
-    expect(btn).toHaveAttribute('title', 'Action not available');
-  });
-
-  it('renders bucket action button disabled when the bucket carries no typed action', () => {
-    const buckets: BucketCard[] = [
-      {
-        id: 'bucket-x',
-        title: 'Test bucket',
-        subtitle: '0 SKUs',
-        tags: [],
-        avatars: [],
-        cta: 'Open',
-        // intentionally no ``action``
-      },
-    ];
-    render(<BucketGrid buckets={buckets} />);
-    const btn = screen.getByRole('button', { name: /Open/i });
     expect(btn).toBeDisabled();
     expect(btn).toHaveAttribute('title', 'Action not available');
   });

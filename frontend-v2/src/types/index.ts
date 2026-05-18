@@ -72,14 +72,25 @@ export interface MovableHero {
   };
 }
 
-export interface BucketCard {
+/**
+ * BucketFilterRow chip (plan §2.5).
+ *
+ * Composed in `buckets.py` from the resolved decisions block — so chip
+ * counts always agree with what DecisionCards renders. `id === 'all'`
+ * is the pinned chip that clears the filter; its `queueRoute` is a
+ * typed noop intent. Every other chip is one of the canonical decision
+ * queues (`churn` / `cost_riser` / `margin_erosion` / `other`).
+ */
+export interface BucketFilter {
   id: string;
-  title: string;
-  subtitle: string;
-  tags: Tag[];
-  avatars: string[];
-  cta: string;
-  action?: ActionIntent;
+  label: string;
+  count: number;
+  queueRoute: ActionIntent;
+  tone: 'neutral' | 'warning' | 'positive';
+}
+
+export interface BucketsBlock {
+  filters: BucketFilter[];
 }
 
 export interface DecisionMeta {
@@ -135,6 +146,12 @@ export interface DecisionCard {
   snoozeAction?: ActionIntent;
   sliceAbAction?: ActionIntent;
   recommendationId?: string;
+  /**
+   * Stable queue id (`churn` / `cost_riser` / `margin_erosion` / `other`)
+   * attached by the backend ranker. Drives the BucketFilterRow chip
+   * counts and filtering — plan §2.5.
+   */
+  queue?: string;
   /**
    * Backend (decisions.py) attaches a typed financialImpact block so the
    * TodaySummaryStrip can sum recoverableMargin across decisions without
@@ -390,7 +407,7 @@ export interface ActionCenterData {
   meta?: ActionCenterMeta;
   header: ActionCenterHeader;
   movableHero: MovableHero;
-  buckets: BucketCard[];
+  buckets: BucketsBlock;
   decisions: DecisionCard[];
   trust: TrustTile[];
   lostQuote: LostQuoteData;

@@ -108,6 +108,7 @@ def _churn_candidates(db, cluster: str | None) -> list[dict[str, Any]]:
             {
                 "_score": impact_score,
                 "_kind": "churn",
+                "queue": "churn",
                 "severity": "warning" if score < 0.85 else "critical",
                 "title": f"Churn risk · Customer {cid}",
                 "headline": f"Customer {cid} risk {score:.2f} ({tier} tier) · ~€{revenue:,.0f}/yr at risk",
@@ -182,6 +183,7 @@ def _cost_riser_candidates(db) -> list[dict[str, Any]]:
             {
                 "_score": impact_score,
                 "_kind": "cost_riser",
+                "queue": "cost_riser",
                 "severity": "warning",
                 "title": f"Cost riser · Article {aid} ({commodity})",
                 "headline": f"Article {aid} unit cost +{cc * 100:.1f}% — pass-through pending",
@@ -294,6 +296,7 @@ def _margin_erosion_candidates(db) -> list[dict[str, Any]]:
             {
                 "_score": impact,
                 "_kind": "margin_erosion",
+                "queue": "margin_erosion",
                 "severity": "critical",
                 "title": f"Margin erosion · SKU {aid} ({desc})",
                 "headline": f"Article {aid} ({desc}, {commodity}) · margin {last_y:.1f}% → {this_y:.1f}% over 1yr",
@@ -426,6 +429,9 @@ def _rank_and_format(
     for i, c in enumerate(candidates[: max(1, min(limit, 200))], start=1):
         c.pop("_score", None)
         c.pop("_kind", None)
+        # Iron rule §2.5 — every decision row must carry a stable queue id
+        # so BucketFilterRow can filter without label parsing.
+        c.setdefault("queue", "other")
         c["rank"] = str(i)
         out.append(c)
     return out

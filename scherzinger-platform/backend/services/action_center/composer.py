@@ -61,7 +61,7 @@ _BLOCK_FALLBACKS: dict[str, Any] = {
         "lockedPct": 0,
         "spark": [],
     },
-    "buckets": [],
+    "buckets": {"filters": []},
     "decisions": [],
     "trust": [],
     "lostQuote": {
@@ -231,6 +231,38 @@ async def _resolve_summary(
     return payload, {"status": status_str, "reason": None}
 
 
+async def _resolve_buckets(
+    *,
+    decisions: Any,
+    decisions_status: str | None,
+) -> tuple[dict[str, Any], dict[str, str | None]]:
+    """Compose the BucketFilterRow payload after decisions resolves.
+
+    Status policy:
+      - decisions degraded → buckets degraded (propagate the upstream
+        reason so the chip strip locks too).
+      - decisions empty / live with 0 rows → buckets empty.
+      - filters list ≥ 1 → buckets live.
+    """
+    if decisions_status == "degraded":
+        return _BLOCK_FALLBACKS["buckets"], {
+            "status": "degraded",
+            "reason": "Bucket filters unavailable — decision ranking degraded.",
+        }
+    try:
+        forwarded = decisions if isinstance(decisions, list) else []
+        payload = await buckets_block.build(forwarded)
+    except Exception:
+        return _BLOCK_FALLBACKS["buckets"], {
+            "status": "degraded",
+            "reason": "buckets live data unavailable.",
+        }
+    filters = payload.get("filters") or []
+    if not filters:
+        return payload, {"status": "empty", "reason": None}
+    return payload, {"status": "live", "reason": None}
+
+
 async def _resolve_block(name: str, builder) -> tuple[Any, dict[str, str | None]]:
     try:
         value = await builder()
@@ -302,7 +334,6 @@ async def build_action_center(
     (
         (header, header_meta),
         (movable_hero, movable_hero_meta),
-        (buckets, buckets_meta),
         (decisions, decisions_meta),
         (trust, trust_meta),
         (lost_quote, lost_quote_meta),
@@ -315,7 +346,6 @@ async def build_action_center(
     ) = await asyncio.gather(
         _resolve_block("header", lambda: header_block.build(user_name=user_name, week=week)),
         _resolve_block("movableHero", lambda: movable_hero_block.build(week=week, cluster=cluster)),
-        _resolve_block("buckets", lambda: buckets_block.build(hide_locked=hide_locked)),
         _resolve_block("decisions", lambda: decisions_block.build(cluster=cluster, limit=max(3, limit))),
         _resolve_block("trust", trust_block.build),
         _resolve_block("lostQuote", lost_quote_block.build),
@@ -334,14 +364,20 @@ async def build_action_center(
         _resolve_block("abTests", abtests_stub.build),
     )
 
-    # Second-pass block: summary depends on three outputs above
-    # (decisions / movableHero / trust). Running it inside the gather
-    # would introduce a circular dependency; running it serially after
-    # the gather completes adds <5ms (no SQL except blocked-quote count).
+    # Second-pass blocks:
+    #   * summary depends on decisions / movableHero / trust.
+    #   * buckets is now composed from resolved decisions so the chip
+    #     counts match what DecisionCards renders.
+    # Running these inside the gather would introduce circular dependencies;
+    # running them serially after the gather adds <5ms (no SQL).
     summary_payload, summary_meta = await _resolve_summary(
         decisions=decisions,
         movable_hero=movable_hero,
         trust=trust,
+        decisions_status=decisions_meta.get("status"),
+    )
+    buckets, buckets_meta = await _resolve_buckets(
+        decisions=decisions,
         decisions_status=decisions_meta.get("status"),
     )
 

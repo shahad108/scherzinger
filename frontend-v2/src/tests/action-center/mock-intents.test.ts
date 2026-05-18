@@ -12,9 +12,20 @@ describe('action-center mock — Phase 1 intents', () => {
     expect(mock.movableHero.action.route).toBe('/pricing');
   });
 
-  it('every bucket carries an action intent', () => {
-    expect(mock.buckets.length).toBeGreaterThan(0);
-    for (const b of mock.buckets) expect(b.action).toBeTruthy();
+  it('every bucket filter chip carries a typed queueRoute intent', () => {
+    // Plan §2.5 — buckets reshaped to a {filters:[...]} chip strip.
+    // The pinned "all" chip carries a typed noop intent; every other
+    // chip routes to its decision queue in Pricing Studio.
+    expect(mock.buckets.filters.length).toBeGreaterThan(0);
+    expect(mock.buckets.filters[0].id).toBe('all');
+    for (const f of mock.buckets.filters) {
+      expect(f.queueRoute).toBeTruthy();
+      if (f.id === 'all') {
+        expect(f.queueRoute.noop).toBe(true);
+      } else {
+        expect(f.queueRoute.route).toBe('/pricing');
+      }
+    }
   });
 
   it('every decision carries primaryAction + secondaryAction + recommendationId', () => {

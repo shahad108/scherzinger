@@ -100,4 +100,10 @@ export interface ActionIntent {
    * — additive with ``query`` for filter side-effects.
    */
   scroll?: string;
+  /**
+   * Typed no-op marker — emitted by the pinned ``"all"`` filter chip in
+   * BucketFilterRow (plan §2.5). The dispatcher short-circuits without
+   * routing or mutating.
+   */
+  noop?: boolean;
 }

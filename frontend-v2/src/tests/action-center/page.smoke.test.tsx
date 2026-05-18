@@ -5,7 +5,7 @@
  * so apiFetch reads action-center.json out of bundled mocks. The test
  * asserts every block heading renders and no error strip is shown.
  */
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -29,8 +29,11 @@ describe('Action Center page', () => {
       expect(screen.getByText(/Good morning, Frank/i)).toBeInTheDocument(),
     );
 
-    // A representative heading from each block
-    expect(screen.getAllByText(/Movable bucket/i).length).toBeGreaterThan(0);
+    // A representative heading from each block.
+    // Plan §2.5 — Movable/Locked SKU cards are replaced by the
+    // BucketFilterRow chip strip.
+    expect(screen.getByTestId('bucket-filter-row')).toBeInTheDocument();
+    expect(screen.getByTestId('bucket-filter-all')).toBeInTheDocument();
     expect(screen.getByText(/Today's analyst decisions/i)).toBeInTheDocument();
     expect(screen.getByText(/SKU pricing engine/i)).toBeInTheDocument();
     expect(screen.getByText(/A\/B Test Tracker/i)).toBeInTheDocument();
@@ -53,4 +56,40 @@ describe('Action Center page', () => {
     );
     expect(screen.queryByText(/Fehler:/i)).not.toBeInTheDocument();
   });
+
+  it('clicking the churn chip filters DecisionCards to churn-queue rows only', async () => {
+    render(withProviders(<ActionCenterPage />));
+    await waitFor(() =>
+      expect(screen.getByText(/Good morning, Frank/i)).toBeInTheDocument(),
+    );
+
+    // Sanity: all three mock decision headlines render in DecisionCards
+    // before filtering. DecisionCards renders ``d.headline ?? d.title``,
+    // so we assert against the unique headline copy.
+    expect(
+      screen.getByText(/Article 200832-E .* margin 30\.6% → 6\.4%/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Article 204604 .* margin 32\.7% → 11\.8%/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Article 205169 .* margin 70\.1% → 44\.2%/),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('bucket-filter-churn'));
+
+    // Only the churn-queue decision (205169) survives the filter.
+    await waitFor(() =>
+      expect(
+        screen.queryByText(/Article 200832-E .* margin 30\.6% → 6\.4%/),
+      ).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByText(/Article 204604 .* margin 32\.7% → 11\.8%/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Article 205169 .* margin 70\.1% → 44\.2%/),
+    ).toBeInTheDocument();
+  });
 });
+

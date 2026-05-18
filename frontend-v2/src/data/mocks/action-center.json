@@ -29,46 +29,57 @@
       "toast": "Opening the repricing queue in Pricing Studio."
     }
   },
-  "buckets": [
-    {
-      "id": "movable",
-      "title": "Movable bucket",
-      "subtitle": "808 SKUs · 4 commodity groups · BKAES leads",
-      "tags": [
-        { "label": "€3.88M open", "tone": "neutral" },
-        { "label": "Movable", "tone": "info" }
-      ],
-      "avatars": ["FK", "HM", "TH", "+5"],
-      "cta": "View SKUs",
-      "action": {
-        "sourceScreen": "action-center",
-        "cluster": "movable",
-        "route": "/pricing",
-        "query": { "filter": "movable", "source": "action-center" },
-        "toast": "Opening movable bucket in Pricing Studio."
+  "buckets": {
+    "filters": [
+      {
+        "id": "all",
+        "label": "All",
+        "count": 3,
+        "queueRoute": { "sourceScreen": "action-center", "noop": true },
+        "tone": "neutral"
+      },
+      {
+        "id": "margin_erosion",
+        "label": "Margin erosion",
+        "count": 1,
+        "queueRoute": {
+          "sourceScreen": "action-center",
+          "route": "/pricing",
+          "query": { "queue": "margin_erosion", "source": "action-center" },
+          "toast": "Opening Margin erosion queue in Pricing Studio."
+        },
+        "tone": "warning"
+      },
+      {
+        "id": "cost_riser",
+        "label": "Cost risers",
+        "count": 1,
+        "queueRoute": {
+          "sourceScreen": "action-center",
+          "route": "/pricing",
+          "query": { "queue": "cost_riser", "source": "action-center" },
+          "toast": "Opening Cost risers queue in Pricing Studio."
+        },
+        "tone": "warning"
+      },
+      {
+        "id": "churn",
+        "label": "Churn risk",
+        "count": 1,
+        "queueRoute": {
+          "sourceScreen": "action-center",
+          "route": "/pricing",
+          "query": { "queue": "churn", "source": "action-center" },
+          "toast": "Opening Churn risk queue in Pricing Studio."
+        },
+        "tone": "warning"
       }
-    },
-    {
-      "id": "locked",
-      "title": "Locked bucket",
-      "subtitle": "207 SKUs · 18 contracts · earliest renew Q3 '26",
-      "tags": [
-        { "label": "€2.37M locked", "tone": "neutral" },
-        { "label": "In renewal queue", "tone": "warning" }
-      ],
-      "avatars": ["MD", "TI", "+3"],
-      "cta": "View renewals",
-      "action": {
-        "sourceScreen": "action-center",
-        "route": "/forecasting",
-        "query": { "queue": "renewals" },
-        "toast": "Opening renewal candidates in Forecasting."
-      }
-    }
-  ],
+    ]
+  },
   "decisions": [
     {
       "rank": "1",
+      "queue": "margin_erosion",
       "severity": "warning",
       "title": "Margin erosion · SKU 200832-E (Elektro-Zahnradpumpe)",
       "why": "Same article sold to Customer 101580 at €4.10 vs Customer 102330 at €6.80, same Tier-2 volume.",
@@ -170,6 +181,7 @@
     },
     {
       "rank": "2",
+      "queue": "cost_riser",
       "severity": "warning",
       "title": "Cluster leak · SKU 204604 (Zahnradpumpe)",
       "why": "BKAGG cluster shows margin erosion across 31 SKUs below critical threshold; this is the highest-revenue example.",
@@ -271,6 +283,7 @@
     },
     {
       "rank": "3",
+      "queue": "churn",
       "severity": "warning",
       "title": "Renewal watch · SKU 205169 (Zahnradpumpe)",
       "why": "Recommend: queue for August renewal review, do not act now.",

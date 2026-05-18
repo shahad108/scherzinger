@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useActionCenter } from '@/data/api/useActionCenter';
 import { PageHead } from './components/PageHead';
 import { MovableHero } from './components/MovableHero';
-import { BucketGrid } from './components/BucketGrid';
+import { BucketFilterRow } from './components/BucketFilterRow';
 import { DecisionCards } from './components/DecisionCards';
 import { TrustStrip } from './components/TrustStrip';
 import { TrustDrawer } from './components/TrustDrawer';
@@ -61,6 +62,13 @@ export function ActionCenterPage() {
   const [hideLocked, setHideLocked] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [trustTile, setTrustTile] = useState<TrustTile | null>(null);
+  // Plan §2.5 — BucketFilterRow chips filter the decision list in-place.
+  // Initial filter id is seeded from ?queue= so deep links from Pricing
+  // Studio (or any cross-screen jump) land on the right chip.
+  const [searchParams] = useSearchParams();
+  const [queueFilter, setQueueFilter] = useState<string>(
+    searchParams.get('queue') ?? 'all',
+  );
   const runUiAction = useUiAction();
   const user = useAuthStore((s) => s.user);
   // Page-level "Show all" toggle bumps ?limit= so every list block (decisions,
@@ -99,6 +107,16 @@ export function ActionCenterPage() {
         : undefined;
   const reportReady =
     Boolean(traceId) && auditStatus !== 'degraded' && auditStatus !== 'locked';
+
+  // Plan §2.5 — BucketFilterRow filters the decision list in-place.
+  // ``all`` clears the filter; every other id matches the queue field
+  // the backend ranker attaches to each decision row. Plain expression
+  // (not useMemo) so the hook order stays stable across the early-return
+  // paths above.
+  const visibleDecisions =
+    queueFilter === 'all'
+      ? data.decisions
+      : data.decisions.filter((d) => d.queue === queueFilter);
 
   return (
     <div className="mx-auto max-w-[1400px] px-8 py-6">
@@ -170,31 +188,27 @@ export function ActionCenterPage() {
           />
         </>
       )}
+      <div id="sec-decisions" className="scroll-mt-20" aria-hidden />
       {blocks?.buckets.status === 'locked' ? (
         <LockedBlock
-          title="Bucket overview"
+          title="Action queues"
           hint={blocks.buckets.reason ?? undefined}
           traceId={traceId}
         />
       ) : blocks?.buckets.status === 'degraded' ? (
         <DegradedBlock
-          title="Bucket overview unavailable"
-          hint={blocks.buckets.reason ?? 'Bucket metrics are currently unavailable.'}
+          title="Action queues unavailable"
+          hint={blocks.buckets.reason ?? 'Action queue filters are currently unavailable.'}
           traceId={traceId}
         />
       ) : (
-        <BucketGrid
-          buckets={data.buckets}
-          onAction={(bucket) => {
-            if (bucket.action) {
-              runUiAction(bucket.action);
-            } else {
-              warnMissingAction(`bucket:${bucket.id}`);
-            }
-          }}
+        <BucketFilterRow
+          filters={data.buckets.filters}
+          active={queueFilter}
+          onChange={setQueueFilter}
+          onAction={runUiAction}
         />
       )}
-      <div id="sec-decisions" className="scroll-mt-20" aria-hidden />
       {blocks?.decisions.status === 'locked' ? (
         <LockedBlock
           title="Today's analyst decisions"
@@ -208,7 +222,7 @@ export function ActionCenterPage() {
           traceId={traceId}
         />
       ) : (
-        <DecisionCards decisions={data.decisions} onAction={runUiAction} />
+        <DecisionCards decisions={visibleDecisions} onAction={runUiAction} />
       )}
       {blocks?.trust.status === 'locked' ? (
         <LockedBlock

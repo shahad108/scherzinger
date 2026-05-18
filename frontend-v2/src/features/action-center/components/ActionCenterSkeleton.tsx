@@ -62,7 +62,7 @@ export function ActionCenterSkeleton() {
         <Bar w="100%" h={48} />
       </Card>
 
-      {/* BucketGrid: 4 tiles */}
+      {/* BucketFilterRow: chip strip placeholder */}
       <div
         style={{
           display: 'grid',

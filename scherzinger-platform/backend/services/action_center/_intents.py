@@ -220,6 +220,34 @@ def sku_action(*, article_id: str, status: str) -> dict[str, Any]:
     }
 
 
+def noop_intent() -> dict[str, Any]:
+    """Typed no-op intent emitted for the pinned "All" filter chip.
+
+    The frontend dispatcher recognises ``noop: True`` and short-circuits;
+    nothing routes, nothing mutates. We still emit a typed object (rather
+    than ``None``) so callers can rely on ``queueRoute`` being non-null
+    — plan §4 iron rule 7.
+    """
+    return {
+        "sourceScreen": "action-center",
+        "noop": True,
+    }
+
+
+def queue_route_intent(queue_id: str, label: str) -> dict[str, Any]:
+    """Open a specific decision queue in Pricing Studio.
+
+    Used by the BucketFilterRow chips (cmd-click / right-click) to escape
+    out of the in-page filter into the full queue view.
+    """
+    return {
+        "sourceScreen": "action-center",
+        "route": "/pricing",
+        "query": {"queue": queue_id, "source": "action-center"},
+        "toast": f"Opening {label} queue in Pricing Studio.",
+    }
+
+
 def bucket_action(bucket_id: str) -> dict[str, Any]:
     if bucket_id == "locked":
         return {

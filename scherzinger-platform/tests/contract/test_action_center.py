@@ -97,10 +97,38 @@ def test_action_center_hide_locked_filters_sku_table(client: TestClient) -> None
     assert all("locked" not in r["status"].lower() for r in filtered["skuTable"])
 
 
-def test_action_center_hide_locked_filters_buckets(client: TestClient) -> None:
-    filtered = client.get(URL, params={"hide_locked": "true"}).json()
-    bucket_ids = {b["id"] for b in filtered["buckets"]}
-    assert "locked" not in bucket_ids
+def test_buckets_emit_filter_shape(client: TestClient) -> None:
+    """Plan §2.5 — BucketFilterRow contract.
+
+    The buckets block now ships a ``{filters: [...]}`` payload where the
+    first chip is always the pinned ``"all"`` filter and the remainder
+    are non-empty decision queues sorted by count desc. Every chip
+    carries a typed ``queueRoute`` intent so the frontend never invents
+    fallbacks (plan §4 iron rule 7).
+    """
+    body = client.get(URL).json()
+    buckets = body["buckets"]
+    assert isinstance(buckets, dict)
+    filters = buckets.get("filters")
+    assert isinstance(filters, list)
+
+    # Empty / degraded states return an empty filters list; nothing more
+    # to assert there.
+    if body["meta"]["blocks"]["buckets"]["status"] != "live":
+        return
+
+    assert len(filters) >= 1
+    assert filters[0]["id"] == "all"
+
+    required = {"id", "label", "count", "queueRoute", "tone"}
+    for f in filters:
+        assert required.issubset(f.keys()), f
+        assert f["queueRoute"] is not None
+        assert isinstance(f["queueRoute"], dict)
+
+    # Non-"all" filters sorted by count desc.
+    rest_counts = [int(f["count"]) for f in filters[1:]]
+    assert rest_counts == sorted(rest_counts, reverse=True)
 
 
 def test_action_center_etag_round_trip(client: TestClient) -> None:
@@ -295,11 +323,14 @@ def test_action_blocks_always_carry_typed_action_intents(client: TestClient) -> 
             assert isinstance(row["action"], dict)
 
     if blocks["buckets"]["status"] == "live":
-        for bucket in body["buckets"]:
-            assert bucket.get("action") is not None, (
-                f"Bucket {bucket.get('id')} missing typed action"
+        # Plan §2.5 — buckets reshaped to a {filters:[...]} chip strip;
+        # every chip carries a typed queueRoute intent (the pinned "all"
+        # chip emits a typed noop).
+        for chip in body["buckets"]["filters"]:
+            assert chip.get("queueRoute") is not None, (
+                f"Filter chip {chip.get('id')} missing typed queueRoute"
             )
-            assert isinstance(bucket["action"], dict)
+            assert isinstance(chip["queueRoute"], dict)
 
 
 def test_decisions_carry_typed_action_intents(client: TestClient) -> None:
