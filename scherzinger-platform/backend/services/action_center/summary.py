@@ -134,16 +134,20 @@ def _open_actions_tile(
     actions: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     count = len(decisions or [])
+    # When there are no open decisions the tile must emit ``None`` so the
+    # composer's empty-status guard (``all(t.value in (None, '—'))``) can
+    # actually classify the strip as ``empty``. The frontend renders ``—``
+    # for null values, so the visible UI is unchanged.
     return {
         "id": "open_actions",
         "label": "Open actions",
-        "value": str(count) if count > 0 else "0",
+        "value": str(count) if count > 0 else None,
         "delta": None,
         "deltaDirection": "flat",
         "tone": "neutral" if count == 0 else "warning",
         "sourceBlockId": "decisions",
         "action": actions["open_actions"],
-        "locked": False,
+        "locked": count == 0,
     }
 
 

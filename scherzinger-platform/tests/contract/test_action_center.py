@@ -200,6 +200,36 @@ def test_decisions_carry_financial_impact_shape(client: TestClient) -> None:
         assert isinstance(rm["value"], (int, float))
 
 
+def test_summary_block_empty_status_when_all_tiles_null(monkeypatch) -> None:
+    """Plan §2.3 — when every tile value is None the composer classifies
+    the strip as ``empty`` (not ``live``). Drives the frontend's empty-
+    state copy. Verified directly off ``_resolve_summary`` so the
+    classifier logic doesn't depend on real DB state.
+    """
+    import asyncio
+
+    from backend.services.action_center import summary as summary_block
+    from backend.services.action_center.composer import _resolve_summary
+
+    # Stub the only tile builder that does its own SQL (``blocked_quotes``)
+    # so this test exercises the classifier logic, not the dev DB.
+    monkeypatch.setattr(summary_block, "_blocked_quotes_count", lambda: None)
+
+    payload, meta = asyncio.run(
+        _resolve_summary(decisions=[], movable_hero={}, trust=[])
+    )
+    # Composer always returns 5 tiles regardless of status so the React
+    # layout never shifts.
+    assert len(payload.get("tiles") or []) == 5
+    assert meta["status"] == "empty"
+    # And the open_actions tile in particular must emit None (not "0") so
+    # the empty-status guard fires — Fix 4 regression check.
+    open_actions = next(
+        t for t in payload["tiles"] if t["id"] == "open_actions"
+    )
+    assert open_actions["value"] is None
+
+
 def test_action_center_decisions_respect_limit(client: TestClient) -> None:
     """Phase-4 cap was hard-coded to 3. Commit-4 swapped that for the
     ``limit`` query param (default 5, max 200). Default response carries at

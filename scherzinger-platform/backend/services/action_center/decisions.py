@@ -51,10 +51,14 @@ def _sane_margin(v: float | None) -> float | None:
 
 def _financial_impact(value: float | None) -> dict[str, Any]:
     """Wrap a € amount in the typed financialImpact shape so the
-    TodaySummaryStrip can sum a single field per card. ``None`` keeps the
-    contract honest when no recoverable margin can be derived.
+    TodaySummaryStrip can sum a single field per card.
+
+    Returns ``{"recoverableMargin": None}`` only when the input is
+    missing or non-numeric (i.e. *not derivable*). Zero or negative
+    values are still surfaced honestly — the strip's sum then reflects
+    reality rather than silently dropping data points.
     """
-    if value is None or not (isinstance(value, (int, float))) or value <= 0:
+    if value is None or not isinstance(value, (int, float)):
         return {"recoverableMargin": None}
     return {
         "recoverableMargin": {

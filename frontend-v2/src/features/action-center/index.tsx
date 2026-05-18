@@ -114,7 +114,12 @@ export function ActionCenterPage() {
           traceId={traceId}
         />
       ) : data.summary?.tiles ? (
-        <TodaySummaryStrip tiles={data.summary.tiles} onAction={runUiAction} />
+        <TodaySummaryStrip
+          tiles={data.summary.tiles}
+          onAction={runUiAction}
+          trustHeadline={data.trust?.[0] ?? null}
+          onModelTrustTile={(tile) => setTrustTile(tile)}
+        />
       ) : null}
       {blocks?.movableHero.status === 'degraded' ? (
         <DegradedBlock

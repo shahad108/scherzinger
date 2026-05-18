@@ -12,14 +12,14 @@
  */
 import { act, cleanup, render, screen, fireEvent } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import actionCenterMock from '@/data/mocks/action-center.json';
 import ActionCenterPage from '@/features/action-center';
 import { TodaySummaryStrip } from '@/features/action-center/components/TodaySummaryStrip';
 import { useAuthStore, type MeUser } from '@/stores/authStore';
-import type { ActionCenterData, SummaryTile } from '@/types';
+import type { ActionCenterData, SummaryTile, TrustTile } from '@/types';
 
 const useActionCenter = vi.hoisted(() => vi.fn());
 vi.mock('@/data/api/useActionCenter', () => ({ useActionCenter }));
@@ -183,7 +183,31 @@ describe('TodaySummaryStrip', () => {
     expect(screen.getByTestId('summary-tile-model_trust')).toHaveTextContent('82%');
   });
 
-  it('dispatches the drawer intent when model_trust is clicked', () => {
+  it('invokes onModelTrustTile (TrustDrawer path) when model_trust is clicked', () => {
+    const onAction = vi.fn();
+    const onModelTrustTile = vi.fn();
+    const headline: TrustTile = {
+      label: 'Pattern accuracy',
+      value: '82%',
+      caption: 'Headline trust tile.',
+    };
+    render(
+      <TodaySummaryStrip
+        tiles={TILES}
+        onAction={onAction}
+        trustHeadline={headline}
+        onModelTrustTile={onModelTrustTile}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('summary-tile-model_trust'));
+    expect(onModelTrustTile).toHaveBeenCalledTimes(1);
+    expect(onModelTrustTile).toHaveBeenCalledWith(headline);
+    // Generic action pipeline must NOT fire — the TrustDrawer surface
+    // owns this click, not ActionDrawerHost.
+    expect(onAction).not.toHaveBeenCalled();
+  });
+
+  it('falls back to onAction when onModelTrustTile is not wired', () => {
     const onAction = vi.fn();
     render(<TodaySummaryStrip tiles={TILES} onAction={onAction} />);
     fireEvent.click(screen.getByTestId('summary-tile-model_trust'));
@@ -191,6 +215,31 @@ describe('TodaySummaryStrip', () => {
     const intent = onAction.mock.calls[0][0];
     expect(intent.drawer).toBeDefined();
     expect(intent.drawer.title).toMatch(/Pattern accuracy/i);
+  });
+
+  it('opens TrustDrawer when model_trust tile is clicked inside the page', () => {
+    act(() => {
+      useAuthStore.setState({ user: FRANK, isLoading: false });
+    });
+    const payload = buildPayload();
+    // Ensure the page has a non-empty trust block so the headline tile
+    // is available for the strip.
+    payload.trust = [
+      {
+        label: 'Pattern accuracy',
+        value: '82%',
+        caption: 'Headline trust tile.',
+      },
+    ];
+    useActionCenter.mockReturnValue({
+      data: payload,
+      isLoading: false,
+      error: null,
+    });
+    render(withProviders(<ActionCenterPage />));
+    fireEvent.click(screen.getByTestId('summary-tile-model_trust'));
+    // TrustDrawer header includes the literal copy "Model trust drawer".
+    expect(screen.getByText(/Model trust drawer/i)).toBeInTheDocument();
   });
 
   it('dispatches the /quotes?status=blocked route when blocked_quotes is clicked', () => {
@@ -207,6 +256,35 @@ describe('TodaySummaryStrip', () => {
     render(<TodaySummaryStrip tiles={TILES} onAction={onAction} />);
     fireEvent.click(screen.getByTestId('summary-tile-movable_revenue'));
     expect(onAction.mock.calls[0][0].scroll).toBe('#sec-movable');
+  });
+
+  it('persists ?queue=margin to the URL when recoverable_margin is clicked inside the page', () => {
+    act(() => {
+      useAuthStore.setState({ user: FRANK, isLoading: false });
+    });
+    useActionCenter.mockReturnValue({
+      data: buildPayload(),
+      isLoading: false,
+      error: null,
+    });
+    let captured: URLSearchParams | null = null;
+    function LocationProbe() {
+      const loc = useLocation();
+      captured = new URLSearchParams(loc.search);
+      return null;
+    }
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={['/action-center']}>
+          <ActionCenterPage />
+          <LocationProbe />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    fireEvent.click(screen.getByTestId('summary-tile-recoverable_margin'));
+    expect(captured).not.toBeNull();
+    expect(captured!.get('queue')).toBe('margin');
   });
 
   it('renders a lock chip and em-dash when locked', () => {

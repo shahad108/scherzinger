@@ -11,14 +11,19 @@ export interface UiActionDeps {
   mutate?: typeof runAction;
 }
 
-function buildTo(intent: ActionIntent): string | null {
-  if (!intent.route) return null;
+function buildQueryString(query: Record<string, unknown> | undefined): string {
   const qs = new URLSearchParams();
-  for (const [k, v] of Object.entries(intent.query ?? {})) {
+  for (const [k, v] of Object.entries(query ?? {})) {
     if (v === undefined || v === null || v === '') continue;
     qs.set(k, String(v));
   }
-  return `${intent.route}${qs.toString() ? `?${qs}` : ''}${intent.hash ? `#${intent.hash}` : ''}`;
+  return qs.toString();
+}
+
+function buildTo(intent: ActionIntent): string | null {
+  if (!intent.route) return null;
+  const qs = buildQueryString(intent.query);
+  return `${intent.route}${qs ? `?${qs}` : ''}${intent.hash ? `#${intent.hash}` : ''}`;
 }
 
 function handleScroll(anchor: string): void {
@@ -53,6 +58,23 @@ export async function executeUiAction(intent: ActionIntent, deps: UiActionDeps):
   }
 
   if (intent.drawer) deps.drawer(intent.drawer);
+
+  // Scroll-with-query intents (e.g. recoverable_margin tile pushes
+  // ``?queue=margin`` without a route) update the URL search params in
+  // place so downstream blocks (BucketFilterRow, DecisionCards filter)
+  // can read the filter from ``useSearchParams`` without ever leaving
+  // the page. Run this BEFORE the scroll so the filter is applied to
+  // whatever lands on screen.
+  const sameOriginQs =
+    !intent.route && intent.query && Object.keys(intent.query).length > 0
+      ? buildQueryString(intent.query)
+      : '';
+  if (sameOriginQs) {
+    // Omitting ``pathname`` keeps the current path — React Router only
+    // updates the search string, which is what BucketFilterRow /
+    // DecisionCards (Task 3) read via useSearchParams.
+    deps.navigate({ search: `?${sameOriginQs}` }, { replace: true });
+  }
 
   // Smooth in-page scroll intents — additive, fires before any
   // navigation/mutation so the page lands on the right block before any
