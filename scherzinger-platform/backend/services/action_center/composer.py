@@ -346,7 +346,7 @@ async def build_action_center(
     ) = await asyncio.gather(
         _resolve_block("header", lambda: header_block.build(user_name=user_name, week=week)),
         _resolve_block("movableHero", lambda: movable_hero_block.build(week=week, cluster=cluster)),
-        _resolve_block("decisions", lambda: decisions_block.build(cluster=cluster, limit=max(3, limit))),
+        _resolve_block("decisions", lambda: decisions_block.build(cluster=cluster, limit=max(12, limit))),
         _resolve_block("trust", trust_block.build),
         _resolve_block("lostQuote", lost_quote_block.build),
         _resolve_block(

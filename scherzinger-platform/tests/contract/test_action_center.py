@@ -155,9 +155,11 @@ def test_summary_block_shape(client: TestClient) -> None:
     summary = body["summary"]
     tiles = summary["tiles"]
 
-    assert len(tiles) == 5
+    # Movable revenue lives in the dedicated MovableHero block above the
+    # strip — keeping it as a tile here duplicated the same number twice
+    # on the screen. Strip is now 4 complementary KPIs.
+    assert len(tiles) == 4
     assert [t["id"] for t in tiles] == [
-        "movable_revenue",
         "open_actions",
         "recoverable_margin",
         "blocked_quotes",
@@ -194,7 +196,6 @@ def test_summary_block_scroll_intents(client: TestClient) -> None:
     scroll intents (anchor-only, no full-page navigation)."""
     body = client.get(URL).json()
     tiles = {t["id"]: t for t in body["summary"]["tiles"]}
-    assert tiles["movable_revenue"]["action"].get("scroll") == "#sec-movable"
     assert tiles["open_actions"]["action"].get("scroll") == "#sec-decisions"
     assert tiles["recoverable_margin"]["action"].get("scroll") == "#sec-decisions"
     assert (tiles["recoverable_margin"]["action"].get("query") or {}).get(
@@ -259,9 +260,9 @@ def test_summary_block_empty_status_when_all_tiles_null(monkeypatch) -> None:
             decisions_status="degraded",
         )
     )
-    # Composer always returns 5 tiles regardless of status so the React
-    # layout never shifts.
-    assert len(payload.get("tiles") or []) == 5
+    # Composer always returns 4 tiles regardless of status so the React
+    # layout never shifts. (Movable revenue lives in MovableHero above.)
+    assert len(payload.get("tiles") or []) == 4
     assert meta["status"] == "empty"
     # When the decisions upstream is degraded, open_actions must lock —
     # value=None + locked=True — distinguishing "data unavailable" from
@@ -379,14 +380,13 @@ def test_header_exposes_workspace_scope_and_export_context(client: TestClient) -
 
 
 def test_action_center_decisions_respect_limit(client: TestClient) -> None:
-    """Phase-4 cap was hard-coded to 3. Commit-4 swapped that for the
-    ``limit`` query param (default 5, max 200). Default response carries at
-    most ``limit`` decisions; an explicit limit lets the frontend's
-    "Show all" expander pull the full ranked list.
+    """Composer floors the default at ``max(12, limit)`` so the page always
+    has enough rows to interleave 3 source queues (churn / cost_riser /
+    margin_erosion) without collapsing to a single queue.
     """
     body = client.get(URL).json()
     assert isinstance(body["decisions"], list)
-    assert len(body["decisions"]) <= 5
+    assert len(body["decisions"]) <= 12
 
     big = client.get(URL, params={"limit": 50}).json()
     # Wider limit can never return fewer rows than the default.

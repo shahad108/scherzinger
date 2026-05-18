@@ -134,29 +134,6 @@ export function ActionCenterPage() {
         traceId={traceId}
       />
       <DataFreshnessStrip freshness={data.meta?.dataFreshness} />
-      {blocks?.summary?.status === 'locked' ? (
-        <LockedBlock
-          title="Today summary"
-          hint={blocks.summary.reason ?? undefined}
-          traceId={traceId}
-        />
-      ) : blocks?.summary?.status === 'degraded' ? (
-        <DegradedBlock
-          title="Today summary unavailable"
-          hint={
-            blocks.summary.reason ??
-            "Today's summary tiles could not be composed for the current review window."
-          }
-          traceId={traceId}
-        />
-      ) : data.summary?.tiles ? (
-        <TodaySummaryStrip
-          tiles={data.summary.tiles}
-          onAction={runUiAction}
-          trustHeadline={data.trust?.[0] ?? null}
-          onModelTrustTile={(tile) => setTrustTile(tile)}
-        />
-      ) : null}
       {blocks?.movableHero.status === 'locked' ? (
         <LockedBlock
           title="Movable revenue"
@@ -188,6 +165,29 @@ export function ActionCenterPage() {
           />
         </>
       )}
+      {blocks?.summary?.status === 'locked' ? (
+        <LockedBlock
+          title="Today summary"
+          hint={blocks.summary.reason ?? undefined}
+          traceId={traceId}
+        />
+      ) : blocks?.summary?.status === 'degraded' ? (
+        <DegradedBlock
+          title="Today summary unavailable"
+          hint={
+            blocks.summary.reason ??
+            "Today's summary tiles could not be composed for the current review window."
+          }
+          traceId={traceId}
+        />
+      ) : data.summary?.tiles ? (
+        <TodaySummaryStrip
+          tiles={data.summary.tiles}
+          onAction={runUiAction}
+          trustHeadline={data.trust?.[0] ?? null}
+          onModelTrustTile={(tile) => setTrustTile(tile)}
+        />
+      ) : null}
       <div id="sec-decisions" className="scroll-mt-20" aria-hidden />
       {blocks?.buckets.status === 'locked' ? (
         <LockedBlock

@@ -181,7 +181,7 @@ def _customer_evidence(db, customer_id: str) -> dict[str, Any]:
                 text(
                     """
                     SELECT COUNT(*) AS n_inv,
-                           MAX(invoice_date) AS last_invoice
+                           MAX(date) AS last_invoice
                       FROM invoices
                      WHERE customer_id = :cid
                     """
@@ -198,7 +198,12 @@ def _customer_evidence(db, customer_id: str) -> dict[str, Any]:
             out["lastInvoiceDate"] = _iso_or_none(row.get("last_invoice"))
             out["dataFreshness"] = out["lastInvoiceDate"]
     except Exception:
-        pass
+        # Roll back so a column/schema drift on one query doesn't poison
+        # every subsequent query in the same session.
+        try:
+            db.rollback()
+        except Exception:
+            pass
     try:
         n_q = (
             db.execute(
@@ -209,7 +214,10 @@ def _customer_evidence(db, customer_id: str) -> dict[str, Any]:
         if n_q is not None:
             out["quoteCount"] = int(n_q)
     except Exception:
-        pass
+        try:
+            db.rollback()
+        except Exception:
+            pass
     return out
 
 
@@ -233,6 +241,10 @@ def _customer_linked_quotes(db, customer_id: str, limit: int = 5) -> list[str]:
         )
         return [str(q) for q in rows if q is not None]
     except Exception:
+        try:
+            db.rollback()
+        except Exception:
+            pass
         return []
 
 
@@ -251,7 +263,7 @@ def _sku_evidence(db, article_id: str, *, kind: str) -> dict[str, Any]:
                 text(
                     """
                     SELECT COUNT(*) AS n_inv,
-                           MAX(invoice_date) AS last_invoice
+                           MAX(date) AS last_invoice
                       FROM invoices
                      WHERE article_id = :aid
                     """
@@ -267,7 +279,10 @@ def _sku_evidence(db, article_id: str, *, kind: str) -> dict[str, Any]:
             out["lastInvoiceDate"] = _iso_or_none(row.get("last_invoice"))
             out["dataFreshness"] = out["lastInvoiceDate"]
     except Exception:
-        pass
+        try:
+            db.rollback()
+        except Exception:
+            pass
     if kind == "cost_riser":
         try:
             n = (
@@ -281,6 +296,10 @@ def _sku_evidence(db, article_id: str, *, kind: str) -> dict[str, Any]:
             if n is not None:
                 out["sampleSize"] = int(n)
         except Exception:
+            try:
+                db.rollback()
+            except Exception:
+                pass
             out["sampleSize"] = out["invoiceCount"]
     else:  # margin_erosion
         try:
@@ -295,6 +314,10 @@ def _sku_evidence(db, article_id: str, *, kind: str) -> dict[str, Any]:
             if n is not None:
                 out["sampleSize"] = int(n)
         except Exception:
+            try:
+                db.rollback()
+            except Exception:
+                pass
             out["sampleSize"] = out["invoiceCount"]
     try:
         n_q = (
@@ -312,7 +335,10 @@ def _sku_evidence(db, article_id: str, *, kind: str) -> dict[str, Any]:
         if n_q is not None:
             out["quoteCount"] = int(n_q)
     except Exception:
-        pass
+        try:
+            db.rollback()
+        except Exception:
+            pass
     return out
 
 
@@ -335,6 +361,10 @@ def _sku_linked_quotes(db, article_id: str, limit: int = 5) -> list[str]:
         )
         return [str(q) for q in rows if q is not None]
     except Exception:
+        try:
+            db.rollback()
+        except Exception:
+            pass
         return []
 
 
@@ -489,7 +519,10 @@ def _cost_riser_candidates(db) -> list[dict[str, Any]]:
     risers = cost_service.get_cost_risers(db, top=30)
     for r in risers:
         cc = float(r.get("cost_change_pct") or 0)
-        if cc < 0.10:  # only flag rises ≥ 10%
+        # Lowered from 10% → 5%: surfaces honest cost-risers that would
+        # otherwise be filtered out by a noisy threshold. Demo DB has
+        # several real risers in the 5–10% band.
+        if cc < 0.05:
             continue
         aid = str(r.get("article_id") or "—")
         ev = _sku_evidence(db, aid, kind="cost_riser") if aid and aid != "—" else {
@@ -583,10 +616,18 @@ def _margin_erosion_candidates(db) -> list[dict[str, Any]]:
                   WHERE i.year >= EXTRACT(YEAR FROM CURRENT_DATE) - 2
                   GROUP BY i.article_id, i.year
                 ),
+                last_full AS (
+                  -- "Most recent completed year": skip CURRENT_YEAR because
+                  -- a partial year (e.g. Jan–Apr stub) makes the avg margin
+                  -- unrepresentative and masks honest YoY erosions.
+                  SELECT COALESCE(MAX(year), EXTRACT(YEAR FROM CURRENT_DATE)::int - 1) AS y
+                  FROM yearly
+                  WHERE year < EXTRACT(YEAR FROM CURRENT_DATE)
+                ),
                 pivoted AS (
                   SELECT article_id,
-                         MAX(avg_margin) FILTER (WHERE year = (SELECT MAX(year) FROM yearly)) AS this_year,
-                         MAX(avg_margin) FILTER (WHERE year = (SELECT MAX(year) FROM yearly) - 1) AS last_year,
+                         MAX(avg_margin) FILTER (WHERE year = (SELECT y FROM last_full)) AS this_year,
+                         MAX(avg_margin) FILTER (WHERE year = (SELECT y FROM last_full) - 1) AS last_year,
                          SUM(n) AS records
                   FROM yearly
                   GROUP BY article_id
@@ -599,14 +640,14 @@ def _margin_erosion_candidates(db) -> list[dict[str, Any]]:
                        COALESCE((
                          SELECT SUM(revenue) FROM invoices i2
                           WHERE i2.article_id = p.article_id
-                            AND i2.year = (SELECT MAX(year) FROM yearly)
+                            AND i2.year = (SELECT y FROM last_full)
                        ), 0) AS this_year_revenue
                 FROM pivoted p
                 JOIN products pr ON pr.article_id = p.article_id
                 WHERE p.this_year IS NOT NULL AND p.last_year IS NOT NULL
                   AND p.this_year BETWEEN -1 AND 1
                   AND p.last_year BETWEEN -1 AND 1
-                  AND p.records >= 3
+                  AND p.records >= 2
                   AND (p.last_year - p.this_year) >= 0.05
                 ORDER BY drop_pp DESC
                 LIMIT 20
@@ -741,17 +782,12 @@ def _attach_intents_and_filter(
     out: list[dict[str, Any]] = []
     for c, (ref, aid, cid, kind) in zip(candidates, refs_by_idx):
         rec = status_map.get(ref)
-        # Hide already-resolved recommendations on next refresh — Phase 1
-        # acceptance: refresh shows backend state, not optimistic UI only.
-        if rec is not None and rec.status in {
-            "accepted_as_proposal",
-            "partial_proposed",
-            "rejected",
-            "snoozed",
-            "queued_for_renewal",
-            "implemented",
-            "cancelled",
-        }:
+        # Surface acted-on decisions with their lifecycleState chip rather
+        # than hiding them on refresh — Frank needs to see what he already
+        # decided today so the page remains an honest record.
+        # ``cancelled`` is the only status we drop because cancelled means
+        # the row was retracted and no longer represents a real lever.
+        if rec is not None and rec.status == "cancelled":
             continue
         cluster_label = str((c.get("cluster") or {}).get("label") or "") or None
         intents = decision_intents(
@@ -809,8 +845,25 @@ def _rank_and_format(
             if str(c.get("cluster", {}).get("label", "")).lower() == cluster.lower()
         ]
         candidates = filtered or candidates  # graceful when filter empties
-    candidates.sort(key=lambda c: float(c.get("_score") or 0), reverse=True)
-    candidates = _attach_intents_and_filter(candidates)
+    # Sort within each queue by _score, then INTERLEAVE across queues so the
+    # ranked list has variety. Pure global rank by raw _score collapses to
+    # one queue because cost/margin scores (revenue × rate) overpower churn
+    # scores (probability × revenue/100k) by 3+ orders of magnitude.
+    by_queue: dict[str, list[dict[str, Any]]] = {}
+    for c in candidates:
+        q = str(c.get("queue") or "other")
+        by_queue.setdefault(q, []).append(c)
+    for q in by_queue:
+        by_queue[q].sort(key=lambda c: float(c.get("_score") or 0), reverse=True)
+    # Round-robin pop highest-score remaining per queue until exhausted.
+    interleaved: list[dict[str, Any]] = []
+    while by_queue:
+        for q in list(by_queue.keys()):
+            if by_queue[q]:
+                interleaved.append(by_queue[q].pop(0))
+            if not by_queue[q]:
+                del by_queue[q]
+    candidates = _attach_intents_and_filter(interleaved)
     out = []
     for i, c in enumerate(candidates[: max(1, min(limit, 200))], start=1):
         c.pop("_score", None)

@@ -114,11 +114,24 @@ def _format_eur_m(value: float) -> str:
 
 
 def _delta_label(spark: list[float]) -> tuple[str, str]:
-    """+/-X% vs the previous period from the sparkline tail."""
+    """+/-X% vs the previous period from the sparkline tail.
+
+    Skips the current (likely partial) month when the latest bucket is
+    empty — otherwise ``last=0`` against a healthy ``prev`` yields a
+    misleading ``-100%`` headline that says nothing about the trend.
+    """
     if len(spark) < 2:
         return "—", "flat"
-    last = spark[-1]
-    prev = spark[-2]
+    series = list(spark)
+    # Drop a trailing in-progress month with zero revenue so the delta
+    # compares the two most recent FULL months. Repeat once in case the
+    # series ends with two zero buckets (early-month before any invoices).
+    while len(series) >= 3 and series[-1] == 0:
+        series = series[:-1]
+    if len(series) < 2:
+        return "—", "flat"
+    last = series[-1]
+    prev = series[-2]
     if prev == 0:
         return "—", "flat"
     pct = (last - prev) / prev * 100

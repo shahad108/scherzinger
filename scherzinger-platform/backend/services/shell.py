@@ -68,6 +68,10 @@ def _live_section_subs(db: Session) -> dict[str, str]:
         # Decisions count — same heuristic the composer uses (margin
         # erosion + cost risers + churn ≥ threshold). Cheap COUNT-only
         # query so we don't re-run the full builders here.
+        # Mirror the thresholds used by ``decisions.py`` so the rail count
+        # tracks the ranked list on the page. Threshold changes here MUST
+        # be applied to decisions.py in lockstep, and vice versa, or the
+        # right-rail will lie about how much work is queued.
         decisions_count = db.execute(
             text(
                 """
@@ -79,16 +83,20 @@ def _live_section_subs(db: Session) -> dict[str, str]:
                   WHERE i.year >= EXTRACT(YEAR FROM CURRENT_DATE) - 2
                   GROUP BY i.article_id, i.year
                 ),
+                last_full AS (
+                  SELECT COALESCE(MAX(year), EXTRACT(YEAR FROM CURRENT_DATE)::int - 1) AS y
+                  FROM yearly WHERE year < EXTRACT(YEAR FROM CURRENT_DATE)
+                ),
                 pivoted AS (
                   SELECT article_id,
-                         MAX(m) FILTER (WHERE year = (SELECT MAX(year) FROM yearly)) AS this_y,
-                         MAX(m) FILTER (WHERE year = (SELECT MAX(year) FROM yearly) - 1) AS last_y,
+                         MAX(m) FILTER (WHERE year = (SELECT y FROM last_full)) AS this_y,
+                         MAX(m) FILTER (WHERE year = (SELECT y FROM last_full) - 1) AS last_y,
                          SUM(n) AS records
                   FROM yearly GROUP BY article_id
                 )
                 SELECT COUNT(*) FROM pivoted
                  WHERE this_y BETWEEN -1 AND 1 AND last_y BETWEEN -1 AND 1
-                   AND records >= 3 AND (last_y - this_y) >= 0.05
+                   AND records >= 2 AND (last_y - this_y) >= 0.05
                 """
             )
         ).scalar() or 0
@@ -96,15 +104,20 @@ def _live_section_subs(db: Session) -> dict[str, str]:
             text(
                 """
                 SELECT COUNT(DISTINCT article_id) FROM product_cost_trends
-                 WHERE cost_change_pct >= 0.10
-                   AND period_start = (SELECT MAX(period_start) FROM product_cost_trends)
+                 WHERE cost_change_pct >= 0.05
                 """
             )
         ).scalar() or 0
         churn = db.execute(
             text("SELECT COUNT(*) FROM customer_risk_scores WHERE risk_score >= 0.7")
         ).scalar() or 0
-        total_decisions = int(decisions_count) + int(risers) + int(churn)
+        # Clip to the display cap the Action Center decisions block uses
+        # (see composer.py: limit=max(12, ...)). Without this clip, raw
+        # candidate counts overstate the rail (e.g. 155 vs 12 shown).
+        DISPLAY_CAP = 12
+        total_decisions = min(
+            int(decisions_count) + int(risers) + int(churn), DISPLAY_CAP
+        )
 
         # D15: Lost-quote differential — must match the same degraded/live
         # rule the Action Center lostQuote builder uses. If either group

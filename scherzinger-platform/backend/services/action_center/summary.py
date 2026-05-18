@@ -1,18 +1,21 @@
-"""TodaySummaryStrip — 5 fixed-id KPI tiles for Action Center.
+"""TodaySummaryStrip — 4 fixed-id KPI tiles for Action Center.
 
 Plan ref: docs/ACTION_CENTER_PLAN.md §2.3.
 
-The strip lives ABOVE ``MovableHero`` and answers "what matters today?" in
-five numbers. Every tile carries a typed ``ActionIntent`` so the React
-component never has to invent fallback routes or labels.
+The strip lives BELOW ``MovableHero`` and answers "what else matters
+today?" in four numbers complementary to the hero. Every tile carries a
+typed ``ActionIntent`` so the React component never has to invent
+fallback routes or labels.
 
 Tile order is fixed and never reorderable:
 
-    1. movable_revenue   — mirrors MovableHero
-    2. open_actions      — count of decisions after filter
-    3. recoverable_margin — Σ decisions[i].financialImpact.recoverableMargin
-    4. blocked_quotes    — pricing proposals where approval is still required
-    5. model_trust       — headline value from the existing trust block
+    1. open_actions      — count of decisions after filter
+    2. recoverable_margin — Σ decisions[i].financialImpact.recoverableMargin
+    3. blocked_quotes    — pricing proposals where approval is still required
+    4. model_trust       — headline value from the existing trust block
+
+(Movable revenue used to be a fifth tile but it duplicated MovableHero
+verbatim — value, delta, sparkline. Dropped 2026-05-18.)
 """
 from __future__ import annotations
 
@@ -251,7 +254,6 @@ async def build(
     )
 
     tiles = [
-        _movable_revenue_tile(movable_hero or {}, actions),
         _open_actions_tile(decisions, actions),
         _recoverable_margin_tile(decisions or [], actions),
         _blocked_quotes_tile(actions),
