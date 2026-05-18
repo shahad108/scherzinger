@@ -192,3 +192,98 @@ def startup():
 
     with engine.connect() as conn:
         conn.execute(text("SELECT 1"))
+
+
+@app.on_event("startup")
+def _start_scheduled_publish_runner() -> None:
+    """Phase A6 — APScheduler kicker for the scheduled-publish queue.
+
+    Polls ``scheduled_publishes`` every 60 seconds and fires every
+    pending row whose ``effective_at`` is in the past. Skipped under
+    pytest so the suite never races with a background thread.
+    """
+    import logging
+    import os
+
+    log = logging.getLogger(__name__)
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        log.info("scheduled_publish_runner: skipped (pytest)")
+        return
+    if os.getenv("PRYZM_DISABLE_SCHEDULER", "").lower() in {"1", "true", "yes"}:
+        log.info("scheduled_publish_runner: skipped (PRYZM_DISABLE_SCHEDULER)")
+        return
+    try:
+        from backend.services.pricing.scheduled_publish_runner import (
+            start_scheduler,
+        )
+
+        start_scheduler()
+    except Exception:
+        log.exception("scheduled_publish_runner failed to start")
+
+
+@app.on_event("shutdown")
+def _stop_scheduled_publish_runner() -> None:
+    """Gracefully stop the APScheduler kicker on app shutdown."""
+    import logging
+
+    log = logging.getLogger(__name__)
+    try:
+        from backend.services.pricing.scheduled_publish_runner import (
+            stop_scheduler,
+        )
+
+        stop_scheduler()
+    except Exception:
+        log.exception("scheduled_publish_runner failed to stop")
+
+
+@app.on_event("startup")
+def _prime_approval_rules_cache_on_startup() -> None:
+    """Phase A8 — warm the rules cache + start the file-watcher.
+
+    Falls back to the seeded ``approval_routes`` table when the JSON file
+    is missing or malformed so a typo in the rules file no longer 500s
+    every proposal submission. The file watcher hot-reloads the cache on
+    save; both this hook and ``start_file_watcher`` short-circuit under
+    pytest so test suites never race with a background thread.
+    """
+    import logging
+    import os
+
+    from backend.database import SessionLocal
+    from backend.services.pricing.approval_rules import (
+        load_rules,
+        start_file_watcher,
+    )
+
+    log = logging.getLogger(__name__)
+    try:
+        session = SessionLocal()
+        try:
+            load_rules(db=session)
+        finally:
+            session.close()
+    except Exception:
+        log.exception("approval_rules cache warm-up failed")
+
+    if not os.getenv("PYTEST_CURRENT_TEST"):
+        try:
+            start_file_watcher()
+        except Exception:
+            log.exception("approval_rules file watcher failed to start")
+
+
+@app.on_event("shutdown")
+def _stop_approval_rules_watcher_on_shutdown() -> None:
+    """Phase A8 — stop the watchdog observer cleanly on shutdown."""
+    import logging
+
+    try:
+        from backend.services.pricing.approval_rules import stop_file_watcher
+
+        stop_file_watcher()
+    except Exception:
+        logging.getLogger(__name__).exception(
+            "approval_rules watcher failed to stop"
+        )
