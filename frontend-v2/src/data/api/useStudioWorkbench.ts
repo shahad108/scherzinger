@@ -5,9 +5,9 @@
  * picker fetches a workbench by aid only when the user lands on a
  * different SKU. React Query caches per aid for 60s.
  *
- * In mock mode the legacy ``buildWorkbench`` derivation in
- * ``data/api/studio-workbench.ts`` still produces a usable workbench
- * client-side, so this hook is a no-op in that environment.
+ * Pricing Studio v3 / Phase C1 — the client no longer derives a synthetic
+ * workbench from a hard-coded seed-customer table; the BFF
+ * (``/screens/studio/workbench/{aid}``) is the single source of truth.
  */
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/client';

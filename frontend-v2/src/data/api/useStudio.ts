@@ -2,8 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/client';
 import { qk, type StudioParams } from '@/lib/api/queryKeys';
 import type { SkuListEntry, StudioShell } from '@/types/studio';
-import { buildWorkbench } from './studio-workbench';
 
+/**
+ * Pricing Studio v3 / Phase C1 — the shell endpoint only carries the
+ * default-AID workbench. Non-default SKUs are lazy-fetched per-aid via
+ * ``useStudioWorkbench`` (Phase 8 P8.T3). We no longer derive a
+ * client-side workbench from a hard-coded seed-customer table; the
+ * BFF is the single source of truth.
+ */
 function enrichSkus(data: StudioShell): StudioShell {
   return {
     ...data,
@@ -11,8 +17,7 @@ function enrichSkus(data: StudioShell): StudioShell {
       if (sku.aid === data.defaultAid) {
         return { ...sku, workbench: data.workbench };
       }
-      if (!sku.workbenchPatch) return sku;
-      return { ...sku, workbench: buildWorkbench(sku, sku.workbenchPatch, data.workbench) };
+      return sku;
     }),
   };
 }
