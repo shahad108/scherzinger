@@ -65,6 +65,21 @@ export default function PricingStudioPage() {
   const [cheatSheetOpen, setCheatSheetOpen] = useState(false);
   // Phase 21 — full deep-link filter quartet flows through `useStudio` so a
   // refresh preserves the exact slice the user landed on.
+  // Pricing Studio plan B3 — Action Center customer-only churn rows route
+  // here with `?customer=<cid>`. Forward as `customer_id` so the BFF
+  // scopes `shell.skus[]` to that customer's purchased SKUs.
+  const urlCustomerId = params.get('customer') ?? undefined;
+  // Pricing Studio plan B4 — queue chip in URL (`?queue=churn` etc.).
+  // The BFF accepts {churn, cost_riser, margin_erosion}; unknown values
+  // are forwarded unchanged and the BFF will return the unfiltered list.
+  const urlQueueRaw = params.get('queue') ?? undefined;
+  const urlQueue =
+    urlQueueRaw === 'churn' ||
+    urlQueueRaw === 'cost_riser' ||
+    urlQueueRaw === 'margin_erosion'
+      ? urlQueueRaw
+      : undefined;
+
   const studioParams = {
     aid: params.get('aid') ?? undefined,
     tier: params.get('tier') ?? undefined,
@@ -75,6 +90,9 @@ export default function PricingStudioPage() {
     // when (source, reason) is a recognised tuple.
     source: params.get('source') ?? undefined,
     reason: params.get('reason') ?? undefined,
+    // Pricing Studio plan B3 + B4 — customer scope + queue chip.
+    customer_id: urlCustomerId,
+    queue: urlQueue,
   };
   const { data, isLoading } = useStudio(studioParams);
   // Pricing Studio v3 / Phase 1 — live-wired tick + toast surface. The data
@@ -187,6 +205,23 @@ export default function PricingStudioPage() {
   useEffect(() => {
     if (urlAid) setSelectedAid(urlAid);
   }, [urlAid]);
+
+  // Pricing Studio plan B3 — customer-scope auto-select. When the URL
+  // carries `?customer=` (no `?aid`), pick the first SKU returned by the
+  // BFF (which is ordered by impact, so this lands on the highest-impact
+  // / highest-margin SKU the customer buys — answer to plan §11 Q2).
+  // Local picks win after the user clicks something else.
+  useEffect(() => {
+    if (urlAid) return;
+    if (!urlCustomerId) return;
+    if (selectedAid) return;
+    const firstAid = data?.skus?.[0]?.aid;
+    // setState in an effect is intentional here: we wait for the
+    // customer-scoped shell to load, then promote the highest-impact
+    // SKU as the initial selection. The plan §11 Q2 answer.
+    // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
+    if (firstAid) setSelectedAid(firstAid);
+  }, [urlCustomerId, urlAid, data?.skus]);
 
   const effectiveAid = selectedAid ?? data?.defaultAid ?? '';
   // Pricing Studio v3 / Phase 13 (p13) — per-SKU workbench, lazy-fetched.

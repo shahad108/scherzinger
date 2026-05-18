@@ -43,7 +43,9 @@ const actionCenterFixture = JSON.parse(
 // Pricing Studio v3 / Phase 1+3+5+9 — typed BFF blocks injected into the
 // shipped studio.json so the new Studio v3 surfaces (RecommendationHero,
 // TriggerBanner, ApprovalStepper, AlertButton, ...) all render.
-function buildStudioPayload(opts: { source?: string; reason?: string } = {}) {
+// Exported for tests that need to mutate the returned shell payload
+// (e.g. customer + queue scoping in `pricing-studio-routing.spec.ts`).
+export function buildStudioPayload(opts: { source?: string; reason?: string } = {}) {
   const recommendation = {
     aid: '200832-E',
     recommended_price: '4.65',

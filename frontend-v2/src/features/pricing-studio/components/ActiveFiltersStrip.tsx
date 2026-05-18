@@ -14,13 +14,31 @@ interface ChipDef {
   value: string;
 }
 
-const FILTER_KEYS: Array<{ key: string; label: string }> = [
+const QUEUE_LABELS: Record<string, string> = {
+  churn: 'Churn risk',
+  cost_riser: 'Cost riser',
+  margin_erosion: 'Margin erosion',
+};
+
+const FILTER_KEYS: Array<{
+  key: string;
+  label: string;
+  format?: (raw: string) => string;
+}> = [
   { key: 'tier', label: 'Tier' },
   { key: 'family', label: 'Family' },
   { key: 'cluster', label: 'Cluster' },
   { key: 'scenario_id', label: 'Scenario' },
   { key: 'source', label: 'From' },
   { key: 'reason', label: 'Reason' },
+  // Pricing Studio plan B3/B4 — surface the customer scope + queue chip
+  // so Frank can see (and clear) the slice he landed on from Action Center.
+  { key: 'customer', label: 'Customer' },
+  {
+    key: 'queue',
+    label: 'Queue',
+    format: (raw) => QUEUE_LABELS[raw] ?? raw,
+  },
 ];
 
 export function ActiveFiltersStrip() {
@@ -28,9 +46,9 @@ export function ActiveFiltersStrip() {
 
   const chips: ChipDef[] = useMemo(() => {
     const out: ChipDef[] = [];
-    for (const { key, label } of FILTER_KEYS) {
+    for (const { key, label, format } of FILTER_KEYS) {
       const value = params.get(key);
-      if (value) out.push({ key, label, value });
+      if (value) out.push({ key, label, value: format ? format(value) : value });
     }
     return out;
   }, [params]);

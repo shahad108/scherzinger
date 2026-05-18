@@ -75,6 +75,12 @@ export type StudioParams = ShellParams & {
   // unknown tuples return null and the banner is suppressed.
   source?: string;
   reason?: string;
+  // Pricing Studio plan B3/B4 — when Action Center routes the user with
+  // a customer scope or a queue chip, the BFF filters `shell.skus[]`
+  // accordingly. These params are forwarded as `customer_id` + `queue`
+  // query strings to `GET /screens/studio`.
+  customer_id?: string;
+  queue?: 'churn' | 'cost_riser' | 'margin_erosion';
 };
 
 export type AiParams = ShellParams;
