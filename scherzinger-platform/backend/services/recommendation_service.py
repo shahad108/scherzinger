@@ -77,6 +77,11 @@ SELECT p.article_id,
 """)
 
 
+# Phase B7 — left in place for backward-compat tests/imports, but the
+# canonical confidence resolver is
+# :func:`backend.services._shared.cluster_confidence.get_cluster_confidence`.
+# We no longer query this directly; we delegate per-commodity via the
+# shared helper so Action Center and Pricing Studio always agree.
 _CLUSTER_CONFIDENCE_SQL = text("""
 SELECT entity_id, MAX(metric_value) AS confidence
   FROM model_registry
@@ -160,10 +165,27 @@ def get_sku_recommendations_bulk(
     })
     confidence_by_group: dict[str, float] = {}
     if commodity_groups:
-        for c in db.execute(
-            _CLUSTER_CONFIDENCE_SQL, {"groups": commodity_groups}
-        ).mappings().all():
-            confidence_by_group[c["entity_id"]] = float(c["confidence"])
+        # Phase B7 — delegate to the shared cluster-confidence resolver
+        # so the score we attach to per-SKU recommendations always
+        # matches the score the Action Center decision row carries for
+        # the same commodity_group.
+        from backend.services._shared.cluster_confidence import (
+            get_cluster_confidence,
+        )
+
+        for cg in commodity_groups:
+            try:
+                entry = get_cluster_confidence(db, commodity_group=cg)
+            except Exception:
+                try:
+                    db.rollback()
+                except Exception:
+                    pass
+                continue
+            if entry.get("source") in ("model_registry", "heuristic"):
+                # Surface as 0..1 ratio for backward compat with the
+                # downstream driver/heuristic code that multiplies by 100.
+                confidence_by_group[cg] = float(entry.get("score") or 0) / 100.0
 
     out: dict[str, dict[str, Any]] = {}
     for r in rows:

@@ -118,6 +118,33 @@ def test_studio_workbench_endpoint(client: TestClient) -> None:
     assert {"options", "fanout", "cost", "history", "decision", "memo"} <= set(body.keys())
 
 
+def test_studio_workbench_hero_carries_dual_margin(client: TestClient) -> None:
+    """Phase B6 — hero exposes BOTH trailing 12mo and point margin
+    explicitly, with labels, so the analyst can tell which source any
+    single margin number came from. Either field may be None when the
+    underlying source is unavailable; the labels must always be set.
+    """
+    aid = _default_aid(client)
+    wb = _fetch_workbench(client, aid)
+    hero = wb.get("hero") or {}
+    assert "trailing_margin" in hero, "hero missing trailing_margin (B6)"
+    assert "point_margin" in hero, "hero missing point_margin (B6)"
+    assert (
+        hero.get("trailing_margin_label") == "Trailing 12mo margin"
+    ), f"hero trailing_margin_label wrong: {hero.get('trailing_margin_label')!r}"
+    assert (
+        hero.get("point_margin_label") == "Current point margin"
+    ), f"hero point_margin_label wrong: {hero.get('point_margin_label')!r}"
+    # When either margin is missing, the block status must reflect it
+    # as degraded or empty (never 'live').
+    hero_status = (wb.get("meta") or {}).get("blocks", {}).get("hero", {})
+    if hero.get("trailing_margin") is None or hero.get("point_margin") is None:
+        assert hero_status.get("status") in ("degraded", "empty", "locked"), (
+            f"hero status must not be 'live' when a margin source is "
+            f"missing; got {hero_status!r}"
+        )
+
+
 def test_studio_workbench_unknown_aid_404(client: TestClient) -> None:
     res = client.get(f"{SHELL}/workbench/does-not-exist-aid")
     assert res.status_code == 404
@@ -376,12 +403,16 @@ def test_workbench_blocks_with_live_status_have_payload(client: TestClient) -> N
         )
 
 
-def test_cross_screen_sku_parity_placeholder(client: TestClient) -> None:
-    """B5 placeholder — once cross-screen parity ships, every decision
-    in ``action-center.decisions[].article_id`` must appear in
-    ``studio.shell.skus[].aid``. For now we lock in the structural
-    contract (both endpoints serve lists of dicts with the right keys)
-    so the test exists ready to be promoted to a real superset check.
+def test_cross_screen_sku_parity(client: TestClient) -> None:
+    """Phase B5 — every decision row's ``article_id`` (when present) must
+    appear in the Pricing Studio shell's SKU picker for the same queue.
+
+    Action Center exposes decisions[].article_id (Phase B5 surfacing).
+    Pricing Studio exposes skus[].aid; when scoped by ``?queue=<slice>``
+    the picker narrows to the queue universe returned by the shared
+    ``action_queue.get_action_queue_skus`` helper. Parity is enforced
+    per-queue so we catch drift if cost_riser drops an aid that
+    decisions still references.
     """
     shell = client.get(URL_STUDIO).json()
     skus = shell.get("skus")
@@ -391,27 +422,32 @@ def test_cross_screen_sku_parity_placeholder(client: TestClient) -> None:
         assert "aid" in sku, f"studio.shell.skus entry missing 'aid': {sku!r}"
 
     ac = client.get(URL_ACTION_CENTER).json()
-    decisions = ac.get("decisions")
+    decisions = ac.get("decisions") or []
     assert isinstance(decisions, list), "action-center.decisions must be a list"
-    if ac["meta"]["blocks"]["decisions"]["status"] == "live":
-        for decision in decisions:
-            assert isinstance(decision, dict), (
-                "every action-center.decisions entry must be a dict"
-            )
-            # Decisions reference SKUs through ``article_id`` (Phase B5
-            # will lock this onto the parity check). Today the field may
-            # not yet exist on every row — guard so the placeholder
-            # passes until B5 lands.
-            assert "article_id" in decision or "recommendationId" in decision, (
-                f"decision row missing both article_id and recommendationId: "
-                f"{decision!r}"
-            )
 
-    # Phase B5 will replace the placeholder below with:
-    #
-    #     sku_aids = {s["aid"] for s in skus}
-    #     ac_aids = {d["article_id"] for d in decisions if d.get("article_id")}
-    #     assert ac_aids <= sku_aids, ac_aids - sku_aids
-    #
-    # For now, just lock in the structural shape so this test stays
-    # green until then.
+    # Group action-center decision aids by queue.
+    ac_aids_by_queue: dict[str, set[str]] = {}
+    for d in decisions:
+        if not isinstance(d, dict):
+            continue
+        aid = d.get("article_id")
+        if not aid:
+            continue
+        q = str(d.get("queue") or "other").lower()
+        ac_aids_by_queue.setdefault(q, set()).add(str(aid))
+
+    # For each queue, ask the Studio for its scoped picker and assert
+    # the picker is a superset.
+    for queue, ac_aids in ac_aids_by_queue.items():
+        if not ac_aids:
+            continue
+        scoped = client.get(URL_STUDIO, params={"queue": queue}).json()
+        scoped_aids = {
+            str(s["aid"]) for s in (scoped.get("skus") or []) if s.get("aid")
+        }
+        missing = ac_aids - scoped_aids
+        assert not missing, (
+            f"Cross-screen parity broken for queue={queue}: aids in the "
+            f"action-center decisions list that are NOT in the studio "
+            f"picker for the same queue: {sorted(missing)}"
+        )

@@ -288,12 +288,19 @@ async def get_studio(
     family: str | None = None,
     cluster: str | None = None,
     scenario_id: str | None = None,
+    queue: str | None = None,
+    customer_id: str | None = None,
     ctx: AuthContext = Depends(require_auth),
 ):
     """Phase 8: live composition for Pricing Studio shell.
 
     Phase 21 adds the deep-link filter quartet (tier/family/cluster/scenario_id)
     so the URL round-trips a full slice of the Studio.
+
+    Phase B5 (Pricing Studio plan §5) adds ``queue`` + ``customer_id``
+    so the picker can scope to the same slice the Action Center
+    decision queue is showing (e.g. ``?queue=churn``,
+    ``?customer_id=CUST-1234``). Both are optional; absent = default.
     """
     effective_persona = persona or ctx.persona
     payload = await build_studio_shell(
@@ -307,6 +314,8 @@ async def get_studio(
         family=family,
         cluster=cluster,
         scenario_id=scenario_id,
+        queue=queue,
+        customer_id=customer_id,
     )
     raw = json.dumps(payload, sort_keys=True).encode("utf-8")
     etag = '"' + hashlib.sha256(raw).hexdigest()[:16] + '"'

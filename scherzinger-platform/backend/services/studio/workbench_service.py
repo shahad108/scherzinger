@@ -977,9 +977,21 @@ def _replace_legacy_blocks(
         workbench.setdefault("options", {})
 
     # -- hero margin recompute ---------------------------------------
+    # Phase B6: hero exposes BOTH a trailing 12-month invoice-derived
+    # margin AND a point-in-time price_state/cost_state margin. The FE
+    # renders them side-by-side so the analyst can tell which source
+    # any single number came from. If either source is missing we keep
+    # the available one and tag the block as degraded with a reason
+    # pointing at the missing source.
     try:
+        from sqlalchemy import text as _text
+
         from backend.models.pricing.cost_state import CostStateRow as _CR2
         from backend.models.pricing.pricing_state import PriceStateRow as _PR2
+
+        trailing_margin: Optional[str] = None
+        point_margin: Optional[str] = None
+        missing_sources: list[str] = []
 
         with SessionLocal() as db:
             try:
@@ -996,29 +1008,97 @@ def _replace_legacy_blocks(
                     f"Hero query failed ({type(exc).__name__})"
                 )
                 cost_row3 = price_row3 = None
+            # Trailing 12mo margin from the invoice ledger.
+            try:
+                trailing_row = (
+                    db.execute(
+                        _text(
+                            """
+                            SELECT AVG(db2_margin) AS avg_margin
+                              FROM invoices
+                             WHERE article_id = :aid
+                               AND db2_margin IS NOT NULL
+                               AND date >= (CURRENT_DATE - INTERVAL '12 months')
+                            """
+                        ),
+                        {"aid": aid},
+                    )
+                    .mappings()
+                    .first()
+                )
+                if trailing_row and trailing_row.get("avg_margin") is not None:
+                    try:
+                        trailing_margin = str(Decimal(str(trailing_row["avg_margin"])).quantize(Decimal("0.0001")))
+                    except Exception:
+                        trailing_margin = None
+            except Exception:
+                logger.exception(
+                    "studio:workbench:legacy.hero trailing aid=%s", aid
+                )
+                _safe_rollback(db)
+                trailing_margin = None
+        if trailing_margin is None:
+            missing_sources.append("trailing_margin (no invoices in last 12mo)")
+
+        # Point-in-time margin from price_state / cost_state.
         if (
             price_row3 is not None
             and price_row3.current_price is not None
             and cost_row3 is not None
             and cost_row3.unit_cost is not None
         ):
-            cp = float(price_row3.current_price)
-            uc = float(cost_row3.unit_cost)
+            cp = Decimal(str(price_row3.current_price))
+            uc = Decimal(str(cost_row3.unit_cost))
             if cp > 0:
-                margin_pct = (cp - uc) / cp * 100
+                try:
+                    point_margin = str(
+                        ((cp - uc) / cp).quantize(Decimal("0.0001"))
+                    )
+                except Exception:
+                    point_margin = None
+        if point_margin is None:
+            missing_sources.append("point_margin (price_state or cost_state missing)")
+
+        # Backward-compat scalar (the legacy frontend reads currentMargin
+        # / currentMarginPct directly off the hero). Prefer the point
+        # margin when present, fall back to the trailing margin.
+        hero = dict(workbench.get("hero") or {})
+        # Phase B6 — explicit dual margin fields with labels.
+        hero["trailing_margin"] = trailing_margin
+        hero["point_margin"] = point_margin
+        hero["trailing_margin_label"] = "Trailing 12mo margin"
+        hero["point_margin_label"] = "Current point margin"
+
+        chosen = point_margin or trailing_margin
+        if chosen is not None:
+            try:
+                margin_pct = float(Decimal(chosen)) * 100
                 tone = (
                     "good"
                     if margin_pct >= 25
                     else ("amber" if margin_pct >= 0 else "bad")
                 )
-                hero = dict(workbench.get("hero") or {})
                 sign = "+" if margin_pct >= 0 else "−"
                 hero["currentMargin"] = f"{sign}{abs(margin_pct):.1f}% margin"
                 hero["currentMarginTone"] = tone
                 hero["currentMarginPct"] = round(margin_pct, 2)
-                hero["currentPrice"] = _format_eur(price_row3.current_price)
-                workbench["hero"] = hero
-                block_status["hero"] = _live()
+            except Exception:
+                pass
+        if price_row3 is not None and price_row3.current_price is not None:
+            hero["currentPrice"] = _format_eur(price_row3.current_price)
+        workbench["hero"] = hero
+
+        if trailing_margin is not None and point_margin is not None:
+            block_status["hero"] = _live()
+        elif trailing_margin is None and point_margin is None:
+            block_status["hero"] = _empty(
+                "Hero margin unavailable: both invoice trailing margin and "
+                "price_state/cost_state point margin are missing"
+            )
+        else:
+            block_status["hero"] = _degraded(
+                "Hero margin partial — missing: " + "; ".join(missing_sources)
+            )
     except Exception as exc:
         logger.exception("studio:workbench:legacy.hero session aid=%s", aid)
         block_status["hero"] = _degraded(

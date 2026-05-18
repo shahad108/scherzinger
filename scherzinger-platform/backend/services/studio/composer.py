@@ -197,6 +197,8 @@ def _load_skus_from_db(
     tier: Optional[str] = None,
     family: Optional[str] = None,
     cluster: Optional[str] = None,
+    queue: Optional[str] = None,
+    customer_id: Optional[str] = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Load the SKU picker rows from live tables.
 
@@ -206,6 +208,14 @@ def _load_skus_from_db(
     Phase A3: this used to merge ``studio.json`` rows; now it returns
     only what's actually in price_state + cost_state. An empty DB yields
     an empty list, not a seeded shape.
+
+    Phase B5: when ``queue`` or ``customer_id`` is supplied, the SKU
+    list is further enriched with the canonical action-queue universe
+    (cost_riser / margin_erosion / churn) returned by
+    :func:`backend.services._shared.action_queue.get_action_queue_skus`.
+    Each enriched SKU carries ``queue`` / ``revenue_at_risk`` /
+    ``commodity_group`` so the picker can render the queue chip + EUR
+    risk for the same rows the Action Center decisions list does.
     """
     skus: list[dict[str, Any]] = []
     try:
@@ -218,6 +228,28 @@ def _load_skus_from_db(
                 c.aid: c
                 for c in db.execute(select(CostStateRow)).scalars().all()
             }
+            # Phase B5 — pull the canonical queue universe so we can
+            # enrich each SKU with the same queue+risk fields the
+            # Action Center surfaces. Soft-fail: if the helper raises,
+            # we keep the price-state shell so the picker still renders.
+            queue_by_aid: dict[str, dict[str, Any]] = {}
+            try:
+                from backend.services._shared.action_queue import (
+                    get_action_queue_skus,
+                )
+
+                for entry in get_action_queue_skus(
+                    db, queue=queue, customer_id=customer_id
+                ):
+                    queue_by_aid[str(entry["article_id"])] = entry
+            except Exception:
+                logger.exception("studio:shell:queue_enrichment failed")
+                try:
+                    db.rollback()
+                except Exception:
+                    pass
+                queue_by_aid = {}
+
             for pr in price_rows:
                 aid = pr.aid
                 cr = cost_by_aid.get(aid)
@@ -232,6 +264,7 @@ def _load_skus_from_db(
                     margin_tone = (
                         "hi" if margin_pct >= 25 else ("mid" if margin_pct >= 0 else "lo")
                     )
+                queue_entry = queue_by_aid.get(aid)
                 skus.append(
                     {
                         "aid": aid,
@@ -245,8 +278,55 @@ def _load_skus_from_db(
                         "tagTone": None,
                         "locked": False,
                         "isNew": False,
+                        # Phase B5 — shared enrichment from the canonical
+                        # action-queue helper. Always present so the FE
+                        # can render the queue chip / risk EUR honestly.
+                        "queue": queue_entry.get("queue") if queue_entry else None,
+                        "revenueAtRisk": (
+                            queue_entry.get("revenue_at_risk") if queue_entry else None
+                        ),
+                        "commodityGroup": (
+                            queue_entry.get("commodity_group") if queue_entry else None
+                        ),
                     }
                 )
+            # Phase B5 — when caller scoped to a queue or a customer the
+            # picker should surface SKUs that match the slice so the
+            # parity contract (decisions[].article_id ⊆ skus[].aid)
+            # holds. We:
+            #   1) restrict price_state-derived rows to the slice;
+            #   2) APPEND queue-only aids (those that lack a price_state
+            #      row) so cross-screen parity is honest even when the
+            #      operational tables haven't backfilled price_state yet.
+            if queue or customer_id:
+                allowed = set(queue_by_aid.keys())
+                existing_aids = {str(s.get("aid")) for s in skus}
+                skus = [s for s in skus if str(s.get("aid")) in allowed]
+                missing_aids = allowed - existing_aids
+                for missing_aid in sorted(missing_aids):
+                    entry = queue_by_aid.get(missing_aid) or {}
+                    skus.append(
+                        {
+                            "aid": missing_aid,
+                            "margin": None,
+                            "marginTone": None,
+                            "productLine": None,
+                            "cluster": None,
+                            "meta": "",
+                            "flag": None,
+                            "tag": "Pricing pending",
+                            "tagTone": "warning",
+                            "locked": False,
+                            "isNew": False,
+                            "queue": entry.get("queue"),
+                            "revenueAtRisk": entry.get("revenue_at_risk"),
+                            "commodityGroup": entry.get("commodity_group"),
+                            # Honest signal to the FE: the queue helper
+                            # found this aid in the action data but we
+                            # don't yet have pricing state for it.
+                            "pricingState": "pending",
+                        }
+                    )
     except Exception as exc:
         logger.exception("studio:shell:sku_list failed")
         return [], {
@@ -285,6 +365,8 @@ async def build_studio_shell(
     family: str | None = None,
     cluster: str | None = None,
     scenario_id: str | None = None,
+    queue: str | None = None,
+    customer_id: str | None = None,
 ) -> dict[str, Any]:
     _persona_gate(persona)
 
@@ -299,13 +381,21 @@ async def build_studio_shell(
         family,
         cluster,
         scenario_id,
+        queue,
+        customer_id,
     )
     cached = _CACHE.get(key)
     now = time.monotonic()
     if cached is not None and now - cached[0] < CACHE_TTL_SECONDS:
         return cached[1]
 
-    skus, sku_status = _load_skus_from_db(tier=tier, family=family, cluster=cluster)
+    skus, sku_status = _load_skus_from_db(
+        tier=tier,
+        family=family,
+        cluster=cluster,
+        queue=queue,
+        customer_id=customer_id,
+    )
 
     # Optional `filter_value` narrowing (legacy `filter=` query param).
     if filter_value:
@@ -385,6 +475,8 @@ async def build_studio_shell(
             "family": family,
             "cluster": cluster,
             "scenarioId": scenario_id,
+            "queue": queue,
+            "customerId": customer_id,
         },
         # Pricing Studio v3 / Phase 10 — canonical freshness chip value.
         "dataThrough": _compute_data_through(),

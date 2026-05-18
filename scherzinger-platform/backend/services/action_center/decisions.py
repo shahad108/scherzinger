@@ -33,12 +33,23 @@ from sqlalchemy import text
 from backend.database import SessionLocal
 from backend.services import cost_service, risk_service, workflow_service
 
+from backend.services._shared.cluster_confidence import (
+    get_cluster_confidence as _shared_get_cluster_confidence,
+)
+
 from ._intents import decision_intents, stable_recommendation_ref
 from ._seed import ActionCenterBlockError
 
 
 def _conf_from_n(n: int) -> int:
-    """Sample-size → confidence %. Matches sku_table for consistency."""
+    """Sample-size → confidence %. Matches sku_table for consistency.
+
+    Phase B7: kept as a private fallback only; the canonical confidence
+    source is :func:`backend.services._shared.cluster_confidence.get_cluster_confidence`.
+    Other call sites in this module that previously pre-computed
+    ``_confScore`` from this function now defer to the shared helper at
+    intent-attach time so Action Center and Pricing Studio cannot drift.
+    """
     if n >= 3:
         return max(45, min(95, int(math.log10(n + 1) * 30 + 35)))
     return max(20, n * 8)
@@ -740,18 +751,35 @@ def _margin_erosion_candidates(db) -> list[dict[str, Any]]:
 # ----- ranker -------------------------------------------------------------
 
 def _candidate_ref(c: dict[str, Any]) -> tuple[str, str | None, str | None]:
-    """Derive (source_ref, article_id, customer_id) for a candidate."""
+    """Derive (source_ref, article_id, customer_id) for a candidate.
+
+    Phase B5: prefers ``linkedSkuIds[0]`` for SKU-keyed kinds because it
+    is the *only* trustworthy source — title parsing falls down whenever
+    the title format is changed (e.g. "Margin erosion · SKU 201036").
+    """
     kind = str(c.get("_kind") or "decision")
     if kind == "churn":
         # title format: "Churn risk · Customer {cid}"
         cid = str(c.get("title", "")).split("Customer", 1)[-1].strip() or None
         return stable_recommendation_ref(kind, cid), None, cid
-    # cost_riser / margin_erosion both encode the article_id in the title.
-    aid = str(c.get("title", "")).split("Article", 1)[-1].split("(", 1)[0].strip().strip("·") or None
-    aid = aid.strip() or None
+    # cost_riser / margin_erosion: prefer the typed linkedSkuIds list
+    # (set by the candidate builders) before falling back to a title
+    # parse for older candidates that don't carry it.
+    aid: str | None = None
+    linked = c.get("linkedSkuIds")
+    if isinstance(linked, list) and linked:
+        first = linked[0]
+        if first not in (None, "", "—"):
+            aid = str(first).strip() or None
     if not aid:
-        # Fallback to "SKU {aid}" pattern.
-        aid = str(c.get("title", "")).split("SKU", 1)[-1].split("(", 1)[0].strip() or None
+        # Title parse fallbacks (preserved for backward-compat).
+        title = str(c.get("title", ""))
+        if "Article" in title:
+            aid = title.split("Article", 1)[-1].split("(", 1)[0].strip().strip("·") or None
+        if not aid and "SKU" in title:
+            aid = title.split("SKU", 1)[-1].split("(", 1)[0].strip().strip("·") or None
+        if aid:
+            aid = aid.strip() or None
     return stable_recommendation_ref(kind, aid), aid, None
 
 
@@ -769,6 +797,11 @@ def _attach_intents_and_filter(
     status_map: dict[str, Any] = {}
     model_card: dict[str, Any] = {"id": None, "version": None, "trainedAt": None}
     feature_importance: list[dict[str, Any]] = []
+    # Phase B7 — cluster confidence resolved via the shared helper so
+    # Action Center and Pricing Studio agree on the confidence score for
+    # the same (commodity_group, customer_id) pair. Keyed by
+    # (commodity_group, customer_id) so each candidate gets its own row.
+    confidence_by_key: dict[tuple[str | None, str | None], dict[str, Any]] = {}
     try:
         with SessionLocal() as db:
             status_map = workflow_service.get_recommendation_status_map(
@@ -776,6 +809,27 @@ def _attach_intents_and_filter(
             )
             model_card = _active_model_card(db)
             feature_importance = _feature_importance_for(db, model_card)
+            for c, (_ref, aid, cid, _kind) in zip(candidates, refs_by_idx):
+                # cluster label is the commodity_group for cost_riser /
+                # margin_erosion candidates; for churn it's the risk
+                # tier (not a commodity_group) so we pass it as None and
+                # rely on the customer_id path.
+                cluster_lbl = (c.get("cluster") or {}).get("label")
+                is_commodity = bool(aid) and bool(cluster_lbl)
+                key = (cluster_lbl if is_commodity else None, cid)
+                if key in confidence_by_key:
+                    continue
+                try:
+                    confidence_by_key[key] = _shared_get_cluster_confidence(
+                        db,
+                        commodity_group=cluster_lbl if is_commodity else None,
+                        customer_id=cid,
+                    )
+                except Exception:
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass
     except Exception:
         status_map = {}
 
@@ -800,19 +854,45 @@ def _attach_intents_and_filter(
         )
         c["recommendationId"] = ref
         c["id"] = ref
+        # Phase B5 — surface article_id/customer_id at top level so the
+        # Studio cross-screen parity contract can assert
+        # ``studio.skus[].aid ⊇ decisions[].article_id`` without parsing
+        # titles or digging into the typed intent payload.
+        c["article_id"] = aid
+        c["customer_id"] = cid
         backend_status = rec.status if rec else "open"
         c["status"] = backend_status
         c["lifecycleState"] = _lifecycle_from_status(backend_status)
         # Plan §2.6 B13 — standardised confidence block. Always present.
-        score = int(c.pop("_confScore", 50) or 0)
+        # Phase B7: pull the score from the shared cluster-confidence
+        # helper when we have a key for it; otherwise fall back to the
+        # candidate's pre-computed sample-size score so sparse data
+        # still surfaces a non-zero confidence.
+        cluster_lbl = (c.get("cluster") or {}).get("label")
+        is_commodity = bool(aid) and bool(cluster_lbl)
+        conf_entry = confidence_by_key.get(
+            (cluster_lbl if is_commodity else None, cid)
+        )
+        if conf_entry and conf_entry.get("source") != "unknown":
+            score = int(conf_entry.get("score") or 0)
+            shared_sample = conf_entry.get("sample_size")
+            shared_model = conf_entry.get("model") or model_card
+        else:
+            score = int(c.pop("_confScore", 50) or 0)
+            shared_sample = None
+            shared_model = model_card
         score = max(0, min(100, score))
         sample = c.pop("_confSample", None)
+        if shared_sample is not None:
+            sample = shared_sample
         c["confidence"] = {
             "score": score,
             "sampleSize": int(sample) if isinstance(sample, (int, float)) else None,
             "tone": _conf_tone(score),
-            "model": dict(model_card),
+            "model": dict(shared_model),
         }
+        if conf_entry and conf_entry.get("source"):
+            c["confidence"]["source"] = conf_entry["source"]
         # Plan §2.6 B14 — empty list is honest when model_registry is bare.
         c["featureImportance"] = list(feature_importance)
         # Plan §2.6 B15 — explicit empty arrays beat missing keys.

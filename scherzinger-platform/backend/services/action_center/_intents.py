@@ -83,7 +83,17 @@ def decision_intents(
     title: str,
     source_kind: str,
 ) -> dict[str, dict[str, Any]]:
-    """Primary = accept, secondary = open the right downstream surface."""
+    """Primary = accept (also deep-links to Pricing Studio for the row's
+    aid + rec_id), secondary = open the right downstream surface.
+
+    Phase B1 (Pricing Studio plan §5): primaryAction now embeds the
+    canonical Studio deep-link query alongside the accept-recommendation
+    mutation. The FE dispatches the mutation, then routes to ``/pricing``
+    with ``aid``, ``recommendation``, ``source=action-center`` and
+    ``reason=<queue>``. Churn rows that have NO article_id (customer-
+    level only) emit ``customer=<cid>`` instead so the studio can scope
+    by customer.
+    """
     base_ctx = {
         "recommendationId": rec_id,
         "articleId": article_id,
@@ -101,12 +111,40 @@ def decision_intents(
         "cluster": cluster,
         "after": {"headline": title},
     }
+    # Phase B1 — primary deep-link query.
+    primary_query: dict[str, Any]
+    if article_id:
+        primary_query = {
+            "aid": article_id,
+            "recommendation": rec_id,
+            "source": "action-center",
+            "reason": source_kind,
+        }
+    elif customer_id:
+        # Churn rows that are customer-only (no aid) deep-link by customer
+        # so the Studio can scope to the customer's SKU slice.
+        primary_query = {
+            "customer": customer_id,
+            "recommendation": rec_id,
+            "source": "action-center",
+            "reason": source_kind,
+        }
+    else:
+        primary_query = {
+            "recommendation": rec_id,
+            "source": "action-center",
+            "reason": source_kind,
+        }
+    # Drop empty values so the FE builds clean URLs.
+    primary_query = {k: v for k, v in primary_query.items() if v not in (None, "")}
     primary = {
         **base_ctx,
         "kind": "accept_recommendation",
         "targetType": "recommendation",
         "targetId": rec_id,
         "body": accept_body,
+        "route": "/pricing",
+        "query": primary_query,
         "toast": f'Accepted "{title}".',
     }
     if source_kind == "churn":
