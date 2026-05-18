@@ -18,6 +18,7 @@ import { AuditTrail } from './components/AuditTrail';
 import { ReportCard } from './components/ReportCard';
 import { ActionCenterSkeleton } from './components/ActionCenterSkeleton';
 import { DegradedBlock } from './components/DegradedBlock';
+import { LockedBlock } from './components/LockedBlock';
 import { TodaySummaryStrip } from './components/TodaySummaryStrip';
 import { useUiAction } from '@/hooks/useUiAction';
 import { useAuthStore } from '@/stores/authStore';
@@ -86,11 +87,18 @@ export function ActionCenterPage() {
   const personaLabel = PERSONA_LABEL[user?.ui_persona ?? 'frank'] ?? 'Workspace';
   const breadcrumbLabel = `${personaLabel} · ${firstName ?? 'Operator'}`;
   const greeting = resolveGreeting(data.header.greeting, firstName);
+  // Plan §7 — both ``degraded`` (runtime failure) and ``locked`` (data
+  // source not yet connected) prevent a viable report export. The
+  // disabled reason copy distinguishes the two.
+  const auditStatus = blocks?.audit.status;
   const reportDisabledReason =
-    blocks?.audit.status === 'degraded'
-      ? blocks.audit.reason ?? 'Report export is unavailable because the audit trail is currently degraded.'
-      : undefined;
-  const reportReady = Boolean(traceId) && blocks?.audit.status !== 'degraded';
+    auditStatus === 'degraded'
+      ? blocks?.audit.reason ?? 'Report export is unavailable because the audit trail is currently degraded.'
+      : auditStatus === 'locked'
+        ? blocks?.audit.reason ?? 'Report export is unavailable because the audit trail data source is not yet connected.'
+        : undefined;
+  const reportReady =
+    Boolean(traceId) && auditStatus !== 'degraded' && auditStatus !== 'locked';
 
   return (
     <div className="mx-auto max-w-[1400px] px-8 py-6">
@@ -108,7 +116,13 @@ export function ActionCenterPage() {
         traceId={traceId}
       />
       <DataFreshnessStrip freshness={data.meta?.dataFreshness} />
-      {blocks?.summary?.status === 'degraded' ? (
+      {blocks?.summary?.status === 'locked' ? (
+        <LockedBlock
+          title="Today summary"
+          hint={blocks.summary.reason ?? undefined}
+          traceId={traceId}
+        />
+      ) : blocks?.summary?.status === 'degraded' ? (
         <DegradedBlock
           title="Today summary unavailable"
           hint={
@@ -125,7 +139,13 @@ export function ActionCenterPage() {
           onModelTrustTile={(tile) => setTrustTile(tile)}
         />
       ) : null}
-      {blocks?.movableHero.status === 'degraded' ? (
+      {blocks?.movableHero.status === 'locked' ? (
+        <LockedBlock
+          title="Movable revenue"
+          hint={blocks.movableHero.reason ?? undefined}
+          traceId={traceId}
+        />
+      ) : blocks?.movableHero.status === 'degraded' ? (
         <DegradedBlock
           title="Movable revenue unavailable"
           hint={blocks.movableHero.reason ?? 'Movable revenue could not be calculated for the current review window.'}
@@ -150,7 +170,13 @@ export function ActionCenterPage() {
           />
         </>
       )}
-      {blocks?.buckets.status === 'degraded' ? (
+      {blocks?.buckets.status === 'locked' ? (
+        <LockedBlock
+          title="Bucket overview"
+          hint={blocks.buckets.reason ?? undefined}
+          traceId={traceId}
+        />
+      ) : blocks?.buckets.status === 'degraded' ? (
         <DegradedBlock
           title="Bucket overview unavailable"
           hint={blocks.buckets.reason ?? 'Bucket metrics are currently unavailable.'}
@@ -169,7 +195,13 @@ export function ActionCenterPage() {
         />
       )}
       <div id="sec-decisions" className="scroll-mt-20" aria-hidden />
-      {blocks?.decisions.status === 'degraded' ? (
+      {blocks?.decisions.status === 'locked' ? (
+        <LockedBlock
+          title="Today's analyst decisions"
+          hint={blocks.decisions.reason ?? undefined}
+          traceId={traceId}
+        />
+      ) : blocks?.decisions.status === 'degraded' ? (
         <DegradedBlock
           title="Today's analyst decisions unavailable"
           hint={blocks.decisions.reason ?? 'Decision ranking is currently unavailable.'}
@@ -178,7 +210,13 @@ export function ActionCenterPage() {
       ) : (
         <DecisionCards decisions={data.decisions} onAction={runUiAction} />
       )}
-      {blocks?.trust.status === 'degraded' ? (
+      {blocks?.trust.status === 'locked' ? (
+        <LockedBlock
+          title="Trust indicators"
+          hint={blocks.trust.reason ?? undefined}
+          traceId={traceId}
+        />
+      ) : blocks?.trust.status === 'degraded' ? (
         <DegradedBlock
           title="Trust indicators unavailable"
           hint={blocks.trust.reason ?? 'Trust indicators could not be calculated for the current review window.'}
@@ -198,7 +236,13 @@ export function ActionCenterPage() {
         </>
       )}
       <TrustDrawer open={!!trustTile} onClose={() => setTrustTile(null)} focusedTile={trustTile} />
-      {blocks?.lostQuote.status === 'degraded' ? (
+      {blocks?.lostQuote.status === 'locked' ? (
+        <LockedBlock
+          title="Lost-quote analysis"
+          hint={blocks.lostQuote.reason ?? undefined}
+          traceId={traceId}
+        />
+      ) : blocks?.lostQuote.status === 'degraded' ? (
         <DegradedBlock
           title="Lost-quote analysis unavailable"
           hint={blocks.lostQuote.reason ?? 'Lost-quote analysis is temporarily unavailable.'}
@@ -223,7 +267,13 @@ export function ActionCenterPage() {
           />
         </>
       )}
-      {blocks?.skuTable.status === 'degraded' ? (
+      {blocks?.skuTable.status === 'locked' ? (
+        <LockedBlock
+          title="SKU pricing engine"
+          hint={blocks.skuTable.reason ?? undefined}
+          traceId={traceId}
+        />
+      ) : blocks?.skuTable.status === 'degraded' ? (
         <DegradedBlock
           title="SKU pricing engine unavailable"
           hint={blocks.skuTable.reason ?? 'SKU-level pricing rows are temporarily unavailable.'}
@@ -241,7 +291,13 @@ export function ActionCenterPage() {
           }}
         />
       )}
-      {blocks?.longTail.status === 'degraded' ? (
+      {blocks?.longTail.status === 'locked' ? (
+        <LockedBlock
+          title="Long-tail coverage"
+          hint={blocks.longTail.reason ?? undefined}
+          traceId={traceId}
+        />
+      ) : blocks?.longTail.status === 'degraded' ? (
         <DegradedBlock
           title="Long-tail coverage unavailable"
           hint={blocks.longTail.reason ?? 'Long-tail coverage is temporarily unavailable.'}
@@ -250,7 +306,13 @@ export function ActionCenterPage() {
       ) : (
         <LongTailCoverage data={data.longTail} />
       )}
-      {blocks?.negotiation.status === 'degraded' ? (
+      {blocks?.negotiation.status === 'locked' ? (
+        <LockedBlock
+          title="Negotiation cockpit"
+          hint={blocks.negotiation.reason ?? undefined}
+          traceId={traceId}
+        />
+      ) : blocks?.negotiation.status === 'degraded' ? (
         <DegradedBlock
           title="Negotiation cockpit unavailable"
           hint={blocks.negotiation.reason ?? 'Negotiation metrics are temporarily unavailable.'}
@@ -259,7 +321,13 @@ export function ActionCenterPage() {
       ) : (
         <NegotiationCockpit data={data.negotiation} />
       )}
-      {blocks?.abTests.status === 'degraded' ? (
+      {blocks?.abTests.status === 'locked' ? (
+        <LockedBlock
+          title="A/B test tracker"
+          hint={blocks.abTests.reason ?? undefined}
+          traceId={traceId}
+        />
+      ) : blocks?.abTests.status === 'degraded' ? (
         <DegradedBlock
           title="A/B test tracker unavailable"
           hint={blocks.abTests.reason ?? 'A/B test state is temporarily unavailable.'}
@@ -268,7 +336,13 @@ export function ActionCenterPage() {
       ) : (
         <AbTestList tests={data.abTests} onAction={runUiAction} />
       )}
-      {blocks?.rejections.status === 'degraded' ? (
+      {blocks?.rejections.status === 'locked' ? (
+        <LockedBlock
+          title="Rejection analysis"
+          hint={blocks.rejections.reason ?? undefined}
+          traceId={traceId}
+        />
+      ) : blocks?.rejections.status === 'degraded' ? (
         <DegradedBlock
           title="Rejection analysis unavailable"
           hint={blocks.rejections.reason ?? 'Rejection-code reporting is temporarily unavailable.'}
@@ -277,7 +351,13 @@ export function ActionCenterPage() {
       ) : (
         <RejectionList rows={data.rejections} />
       )}
-      {blocks?.audit.status === 'degraded' ? (
+      {blocks?.audit.status === 'locked' ? (
+        <LockedBlock
+          title="Audit trail"
+          hint={blocks.audit.reason ?? undefined}
+          traceId={traceId}
+        />
+      ) : blocks?.audit.status === 'degraded' ? (
         <DegradedBlock
           title="Audit trail unavailable"
           hint={blocks.audit.reason ?? 'Audit history is temporarily unavailable.'}

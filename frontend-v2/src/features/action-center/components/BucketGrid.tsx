@@ -14,7 +14,11 @@ export function BucketGrid({
   }
   return (
     <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-      {buckets.map((b) => (
+      {buckets.map((b) => {
+        // Task 2 quality fix — when the backend omits a typed action intent
+        // we render the CTA as disabled (rather than a silent no-op).
+        const disabled = !b.action;
+        return (
         <div
           key={b.id}
           className="flex flex-col gap-3 rounded-[14px] border border-[var(--border)] bg-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-pop)]"
@@ -77,6 +81,8 @@ export function BucketGrid({
             <button
               type="button"
               onClick={() => onAction?.(b)}
+              disabled={disabled}
+              title={disabled ? 'Action not available' : undefined}
               className="inline-flex items-center text-[12.5px] font-medium text-white transition-colors"
               style={{
                 background: '#101418',
@@ -86,16 +92,23 @@ export function BucketGrid({
                 gap: 12,
                 boxShadow: '0 1px 0 rgba(0,0,0,0.06)',
                 border: 'none',
+                opacity: disabled ? 0.5 : 1,
+                cursor: disabled ? 'not-allowed' : 'pointer',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = '#252a33')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = '#101418')}
+              onMouseEnter={(e) => {
+                if (!disabled) e.currentTarget.style.background = '#252a33';
+              }}
+              onMouseLeave={(e) => {
+                if (!disabled) e.currentTarget.style.background = '#101418';
+              }}
             >
               {b.cta}
               <ArrowRight size={14} />
             </button>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

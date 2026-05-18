@@ -95,6 +95,31 @@ describe('Action Center degraded states', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('renders a locked card (not live data, not degraded) when status === "locked"', () => {
+    act(() => {
+      useAuthStore.setState({ user: FRANK, isLoading: false });
+    });
+    const payload = buildPayload();
+    payload.meta!.blocks!.decisions = {
+      status: 'locked',
+      reason: 'Phase 4 unlock pending — decisions data source not yet wired.',
+    };
+    useActionCenter.mockReturnValue({ data: payload, isLoading: false, error: null });
+
+    render(withProviders(<ActionCenterPage />));
+
+    // Locked copy is shown, not the live SKU body nor the degraded amber copy.
+    expect(
+      screen.getByText(/Locked — data source not yet connected\./i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Today's analyst decisions unavailable/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Article 200832-E \(Elektro-Zahnradpumpe, BKAES\)/i),
+    ).not.toBeInTheDocument();
+  });
+
   it('uses the authenticated user in the page breadcrumb instead of hardcoded Frank copy', () => {
     act(() => {
       useAuthStore.setState({ user: PETRA, isLoading: false });

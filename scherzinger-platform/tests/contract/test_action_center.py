@@ -302,6 +302,34 @@ def test_action_blocks_always_carry_typed_action_intents(client: TestClient) -> 
             assert isinstance(bucket["action"], dict)
 
 
+def test_decisions_carry_typed_action_intents(client: TestClient) -> None:
+    """Plan §4 / iron rule 7 — every decision row must carry the full set
+    of typed action intents (``primaryAction``, ``secondaryAction``,
+    ``partialAction``, ``snoozeAction``, ``sliceAbAction``) so the frontend
+    never has to fabricate a fallback intent. Guarded on ``live`` status —
+    ``empty`` / ``degraded`` blocks emit no rows.
+    """
+    body = client.get(URL).json()
+    blocks = body["meta"]["blocks"]
+    if blocks["decisions"]["status"] != "live":
+        return
+    required = (
+        "primaryAction",
+        "secondaryAction",
+        "partialAction",
+        "snoozeAction",
+        "sliceAbAction",
+    )
+    for row in body["decisions"]:
+        for key in required:
+            assert row.get(key) is not None, (
+                f"decision {row.get('recommendationId') or row.get('title')!r} missing {key}"
+            )
+            assert isinstance(row[key], dict), (
+                f"decision {row.get('recommendationId') or row.get('title')!r} {key} must be a typed action dict"
+            )
+
+
 def test_header_exposes_workspace_scope_and_export_context(client: TestClient) -> None:
     """Plan §4 / §2.1 F2 — the header block carries ``workspaceScope`` and
     ``exportContext`` drawer-item arrays. Both are empty today and unlock

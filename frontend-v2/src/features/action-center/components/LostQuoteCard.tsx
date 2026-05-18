@@ -43,6 +43,9 @@ export function LostQuoteCard({ data, onOpen }: { data: LostQuoteData; onOpen?: 
   const overall = gap?.overall ?? null;
   const isSignificant = typeof data.pValue === 'number' && data.pValue < 0.05;
   const diffSign = data.differential > 0 ? '+' : '';
+  // Task 2 quality fix — disable Open analysis when the backend payload
+  // omits a typed action intent (no silent no-op buttons).
+  const disabled = !data.action;
 
   return (
     <>
@@ -154,7 +157,13 @@ export function LostQuoteCard({ data, onOpen }: { data: LostQuoteData; onOpen?: 
               <button
                 type="button"
                 onClick={onOpen}
-                className="inline-flex items-center gap-1 rounded-md bg-[var(--rose)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--rose-deep)]"
+                disabled={disabled}
+                title={disabled ? 'Action not available' : undefined}
+                className={
+                  disabled
+                    ? 'inline-flex cursor-not-allowed items-center gap-1 rounded-md bg-[var(--rose)] px-3 py-1.5 text-xs font-semibold text-white opacity-50'
+                    : 'inline-flex items-center gap-1 rounded-md bg-[var(--rose)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--rose-deep)]'
+                }
               >
                 Open analysis
                 <ArrowRight size={12} />

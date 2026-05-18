@@ -217,14 +217,28 @@ export function SkuTable({
                   </span>
                 </td>
                 <td className="px-3 py-2.5">
-                  <button
-                    type="button"
-                    onClick={() => onAction?.(r)}
-                    className="inline-flex items-center gap-1 rounded-md border border-[var(--hairline)] bg-white px-2.5 py-1 text-[11px] font-semibold text-[var(--ink-2)] transition-all hover:border-[var(--ink-2)] hover:bg-[var(--grey-bg)]"
-                  >
-                    {r.actionLabel}
-                    <ArrowRight size={11} />
-                  </button>
+                  {(() => {
+                    // Task 2 quality fix — disable when typed action intent
+                    // is missing instead of rendering a silent no-op button.
+                    const disabled = !r.action;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => onAction?.(r)}
+                        disabled={disabled}
+                        title={disabled ? 'Action not available' : undefined}
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded-md border border-[var(--hairline)] bg-white px-2.5 py-1 text-[11px] font-semibold text-[var(--ink-2)] transition-all',
+                          disabled
+                            ? 'cursor-not-allowed opacity-50'
+                            : 'hover:border-[var(--ink-2)] hover:bg-[var(--grey-bg)]',
+                        )}
+                      >
+                        {r.actionLabel}
+                        <ArrowRight size={11} />
+                      </button>
+                    );
+                  })()}
                 </td>
               </tr>
             ))}

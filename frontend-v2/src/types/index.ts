@@ -314,7 +314,7 @@ export interface AuditRow {
   delta: string;
 }
 
-export type ActionCenterBlockStatus = 'live' | 'empty' | 'degraded';
+export type ActionCenterBlockStatus = 'live' | 'empty' | 'degraded' | 'locked';
 
 export interface ActionCenterBlockMeta {
   status: ActionCenterBlockStatus;
