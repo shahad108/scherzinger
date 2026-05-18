@@ -37,6 +37,7 @@ export function MovableHero({ hero, onAction }: Props) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+      data-testid="ac-movable-hero"
       className="mb-6 scroll-mt-20 rounded-[14px] border border-[var(--border)] bg-white shadow-[var(--shadow-card)]"
       style={{ padding: '24px 28px 22px' }}
       id="sec-movable"
@@ -85,7 +86,10 @@ export function MovableHero({ hero, onAction }: Props) {
           </div>
 
           <div className="flex items-baseline gap-3">
-            <span className="font-display text-[56px] font-bold leading-none tracking-tight tabular-nums text-[var(--ink)]">
+            <span
+              data-testid="ac-movable-value"
+              className="font-display text-[56px] font-bold leading-none tracking-tight tabular-nums text-[var(--ink)]"
+            >
               {hero.value}
             </span>
             <span
@@ -170,6 +174,7 @@ export function MovableHero({ hero, onAction }: Props) {
             </span>
             <Link
               to="/pricing#queue"
+              data-testid="ac-movable-cta"
               onClick={() => onAction?.()}
               className="inline-flex items-center gap-1.5 rounded-lg text-[12.5px] font-semibold text-white shadow-sm transition-colors"
               style={{ background: 'var(--ink)', padding: '9px 14px' }}

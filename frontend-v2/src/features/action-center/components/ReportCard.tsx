@@ -87,7 +87,10 @@ export function ReportCard({
   }
 
   return (
-    <div className="mb-6 rounded-xl border border-[var(--hairline)] bg-white p-5 shadow-[var(--shadow)]">
+    <div
+      data-testid="ac-report-card"
+      className="mb-6 rounded-xl border border-[var(--hairline)] bg-white p-5 shadow-[var(--shadow)]"
+    >
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-[var(--hairline)] pb-4">
         <div>
           <h2 className="font-display text-lg font-bold tracking-tight text-[var(--ink)]">
@@ -178,6 +181,7 @@ export function ReportCard({
               )}
               <button
                 type="button"
+                data-testid="ac-report-generate"
                 onClick={handleGenerate}
                 disabled={!enabled || generate.isPending}
                 className="inline-flex items-center gap-1 rounded-md bg-[var(--ink)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-black disabled:opacity-60"
@@ -211,6 +215,7 @@ export function ReportCard({
             </div>
             <button
               type="button"
+              data-testid="ac-report-send"
               onClick={handleSend}
               disabled={sendDisabled || send.isPending}
               title={

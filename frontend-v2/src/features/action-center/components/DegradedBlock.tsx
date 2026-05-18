@@ -10,6 +10,8 @@ export function DegradedBlock({
   return (
     <div
       role="alert"
+      data-testid="ac-degraded-block"
+      data-title={title}
       style={{
         margin: '14px 0',
         padding: '14px 16px',

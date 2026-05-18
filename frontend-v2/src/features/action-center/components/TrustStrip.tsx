@@ -17,11 +17,12 @@ export function TrustStrip({
           Click any tile for feature importance & training history.
         </p>
       </div>
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-        {tiles.map((t) => (
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4" data-testid="ac-trust-strip">
+        {tiles.map((t, idx) => (
           <button
             key={t.label}
             type="button"
+            data-testid={`ac-trust-tile-${idx}`}
             onClick={() => onTile?.(t)}
             className="rounded-xl border border-[var(--hairline)] bg-white p-4 text-left shadow-[var(--shadow)] transition-all hover:-translate-y-0.5 hover:border-[var(--ink-2)] hover:shadow-[var(--shadow-md)]"
           >

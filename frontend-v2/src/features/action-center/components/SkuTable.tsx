@@ -232,6 +232,8 @@ function SortableHeader({
     >
       <button
         type="button"
+        data-testid={`ac-sku-header-${column}`}
+        data-active={active ? 'true' : 'false'}
         onClick={() => onSort(column)}
         aria-sort={active ? (state.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
         className={cn(
@@ -403,7 +405,10 @@ export function SkuTable({
           </button>
         </div>
       )}
-      <div className="mb-6 overflow-hidden rounded-xl border border-[var(--hairline)] bg-white shadow-[var(--shadow)]">
+      <div
+        data-testid="ac-sku-table"
+        className="mb-6 overflow-hidden rounded-xl border border-[var(--hairline)] bg-white shadow-[var(--shadow)]"
+      >
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-[var(--surface-soft)]">
@@ -451,6 +456,7 @@ export function SkuTable({
               return (
                 <tr
                   key={r.article}
+                  data-testid={`ac-sku-row-${r.article}`}
                   className={cn(
                     'group border-b border-[var(--hairline)] last:border-b-0 transition-colors hover:bg-[var(--surface-soft)]',
                     isSelected && 'bg-[var(--surface-soft)]',
@@ -476,6 +482,7 @@ export function SkuTable({
                       </button>
                       {isStale && (
                         <span
+                          data-testid={`ac-sku-stale-chip-${r.article}`}
                           title={`Last price change: ${r.lastMoveDays} days ago`}
                           className="inline-flex items-center rounded-full border border-[var(--amber-border)] bg-[var(--amber-bg)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--amber)]"
                         >

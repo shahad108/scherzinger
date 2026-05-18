@@ -51,7 +51,7 @@ export function TrustDrawer({ open, onClose, focusedTile }: Props) {
 
   return (
     <Drawer open={open} onOpenChange={(o) => !o && onClose()} width={560}>
-      <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex h-full flex-col overflow-hidden" data-testid="ac-trust-drawer">
         <header className="border-b border-[var(--hairline)] px-6 pb-4 pt-5">
           <div className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--muted)]">
             Model trust drawer

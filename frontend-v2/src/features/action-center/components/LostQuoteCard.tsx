@@ -49,7 +49,7 @@ export function LostQuoteCard({ data, onOpen }: { data: LostQuoteData; onOpen?: 
 
   return (
     <>
-      <div className="mb-3">
+      <div className="mb-3" data-testid="ac-lost-quote-card">
         <h2 className="font-display text-lg font-bold tracking-tight text-[var(--ink)]">
           Lost-quote margin differential
         </h2>
@@ -125,7 +125,10 @@ export function LostQuoteCard({ data, onOpen }: { data: LostQuoteData; onOpen?: 
                 Secondary signal — won vs. price-lost quotes (current year)
               </div>
               <div className="mt-2 flex items-baseline gap-2">
-                <div className="font-display text-[22px] font-bold tabular-nums text-[var(--ink)]">
+                <div
+                  data-testid="ac-lost-quote-differential"
+                  className="font-display text-[22px] font-bold tabular-nums text-[var(--ink)]"
+                >
                   {diffSign}{data.differential}pp
                 </div>
                 <div className="text-[11px] text-[var(--muted)]">
@@ -156,6 +159,7 @@ export function LostQuoteCard({ data, onOpen }: { data: LostQuoteData; onOpen?: 
               </span>
               <button
                 type="button"
+                data-testid="ac-lost-quote-cta"
                 onClick={onOpen}
                 disabled={disabled}
                 title={disabled ? 'Action not available' : undefined}

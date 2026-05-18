@@ -17,7 +17,7 @@ export function NegotiationCockpit({ data }: { data: NegotiationData }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <div className="mb-3 flex items-end justify-between">
+      <div className="mb-3 flex items-end justify-between" data-testid="ac-negotiation">
         <div>
           <h2 className="font-display text-lg font-bold tracking-tight text-[var(--ink)]">
             Annual list-price negotiation cockpit
@@ -28,6 +28,8 @@ export function NegotiationCockpit({ data }: { data: NegotiationData }) {
         </div>
         <button
           onClick={() => setOpen((v) => !v)}
+          data-testid="ac-negotiation-expand"
+          aria-expanded={open}
           className="inline-flex items-center gap-1.5 rounded-full border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--grey-bg)]"
         >
           {open ? 'Collapse' : 'Expand'}
@@ -40,6 +42,7 @@ export function NegotiationCockpit({ data }: { data: NegotiationData }) {
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
+            data-testid="ac-negotiation-body"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}

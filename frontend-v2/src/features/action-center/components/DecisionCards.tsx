@@ -242,10 +242,11 @@ function FeedbackRow({
     : { background: '#fff', borderColor: 'var(--border)', color: 'var(--ink-2)', padding: '8px 12px', fontWeight: 500 };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2" data-testid={`ac-decision-feedback-${id}`}>
       <div className="relative inline-flex">
         <button
           type="button"
+          data-testid={`ac-decision-accept-${id}`}
           onClick={() => {
             setAct('acc');
             setOpen(false);
@@ -295,6 +296,7 @@ function FeedbackRow({
       </div>
       <button
         type="button"
+        data-testid={`ac-decision-reject-${id}`}
         onClick={() => { setAct('rej'); onReject?.(decision); }}
         className={baseFbtn}
         style={rejStyle}
@@ -552,7 +554,7 @@ export function DecisionCards({
         </div>
       </div>
 
-      <div className="mb-6 flex flex-col gap-3.5">
+      <div className="mb-6 flex flex-col gap-3.5" data-testid="ac-decisions">
         {visible.map((d, i) => {
           const cardId = d.id ?? d.recommendationId ?? d.rank;
           const isExpanded = expandedId === cardId;
@@ -560,6 +562,8 @@ export function DecisionCards({
           return (
           <motion.div
             key={d.rank + d.title}
+            data-testid={`ac-decision-card-${cardId}`}
+            data-queue={d.queue}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
@@ -570,6 +574,7 @@ export function DecisionCards({
               <div className="flex items-center gap-3.5">
                 <button
                   type="button"
+                  data-testid={`ac-decision-rank-${cardId}`}
                   aria-label={`Toggle evidence for decision ${d.rank}`}
                   aria-expanded={isExpanded}
                   onClick={() => setExpandedId(isExpanded ? null : cardId)}
@@ -597,6 +602,7 @@ export function DecisionCards({
                     <span>{[d.tag, d.daysOpenLabel, d.authorityLabel].filter(Boolean).join(' · ')}</span>
                     <button
                       type="button"
+                      data-testid={`ac-decision-why-${cardId}`}
                       onClick={() => setExpandedId(isExpanded ? null : cardId)}
                       className="rounded-md px-2 py-0.5 text-[11.5px] font-semibold text-[var(--rose-deep)] underline-offset-2 transition-colors hover:bg-[var(--rose-tint)] hover:underline"
                       aria-expanded={isExpanded}
@@ -896,6 +902,7 @@ export function DecisionCards({
                 )}
                 <button
                   type="button"
+                  data-testid={`ac-decision-primary-${cardId}`}
                   onClick={() => {
                     // Phase 1 contract: prefer the backend-attached secondary
                     // action intent (typically a Pricing Studio deep link with

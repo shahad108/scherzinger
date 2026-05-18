@@ -34,7 +34,7 @@ export function PageHead({
 }: Props) {
   return (
     <>
-      <div className="mb-3 text-xs text-[var(--muted)]">
+      <div className="mb-3 text-xs text-[var(--muted)]" data-testid="ac-breadcrumb">
         <span>Cockpit</span>
         <span className="mx-1.5 text-[var(--muted-2)]">/</span>
         <span>{breadcrumbLabel}</span>
@@ -44,11 +44,15 @@ export function PageHead({
 
       <div className="mb-[22px] flex flex-wrap items-start justify-between gap-x-3.5 gap-y-6">
         <div className="min-w-0 flex-1 basis-[360px]">
-          <h1 className="font-display text-[34px] font-bold leading-[1.1] tracking-[-0.028em] text-[var(--ink)]">
+          <h1
+            data-testid="ac-greeting"
+            className="font-display text-[34px] font-bold leading-[1.1] tracking-[-0.028em] text-[var(--ink)]"
+          >
             {greeting}
           </h1>
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[12px] text-[var(--muted)]">
             <span
+              data-testid="ac-week-chip"
               className="text-[11.5px]"
               style={{
                 background: 'var(--surface)',

@@ -55,7 +55,10 @@ function DeltaChip({ delta, direction, tone }: { delta: string; direction: 'up' 
 
 export function TodaySummaryStrip({ tiles, onAction, trustHeadline, onModelTrustTile }: Props) {
   return (
-    <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
+    <div
+      data-testid="ac-summary-strip"
+      className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5"
+    >
       {tiles.map((tile) => {
         const locked = tile.locked || tile.value == null;
         const displayValue = locked ? '—' : tile.value;
@@ -104,7 +107,10 @@ export function TodaySummaryStrip({ tiles, onAction, trustHeadline, onModelTrust
                 </span>
               )}
             </div>
-            <div className="mt-3 font-display text-[30px] font-bold leading-none tabular-nums text-[var(--ink)]">
+            <div
+              data-testid={`summary-tile-${tile.id}-value`}
+              className="mt-3 font-display text-[30px] font-bold leading-none tabular-nums text-[var(--ink)]"
+            >
               {displayValue}
             </div>
             {tile.delta && !locked && (

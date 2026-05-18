@@ -18,6 +18,8 @@ export function LockedBlock({
   return (
     <div
       role="note"
+      data-testid="ac-locked-block"
+      data-title={title}
       aria-label="Locked — data source not yet connected"
       style={{
         margin: '14px 0',
