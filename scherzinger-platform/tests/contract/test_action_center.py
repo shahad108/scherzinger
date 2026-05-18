@@ -391,3 +391,87 @@ def test_action_center_decisions_respect_limit(client: TestClient) -> None:
     big = client.get(URL, params={"limit": 50}).json()
     # Wider limit can never return fewer rows than the default.
     assert len(big["decisions"]) >= len(body["decisions"])
+
+
+# Allowed lifecycleState enum mirrors decisions._LIFECYCLE_VALUES.
+_LIFECYCLE_ALLOWED = {
+    "open",
+    "accepted",
+    "rejected",
+    "partial",
+    "snoozed",
+    "ab_running",
+    "ab_promoted",
+}
+_CONF_TONES = {"high", "mid", "low"}
+_EVIDENCE_KEYS = {
+    "invoiceCount",
+    "quoteCount",
+    "lastInvoiceDate",
+    "sampleSize",
+    "dataFreshness",
+}
+_MODEL_KEYS = {"id", "version", "trainedAt"}
+
+
+def test_decisions_carry_evidence_confidence_lifecycle_and_links(
+    client: TestClient,
+) -> None:
+    """Plan §2.6 B12/B13/B14/B15 — every decision row exposes:
+
+    * ``evidence`` dict (sub-fields may be null, keys are stable)
+    * ``confidence`` block with int score, tone enum, and a model card
+      whose sub-fields may be null but whose keys are always present
+    * ``featureImportance`` list (possibly empty when registry not ready)
+    * ``linkedQuoteIds`` / ``linkedSkuIds`` as list (possibly empty)
+    * ``lifecycleState`` enum value the frontend chip understands
+
+    Guarded on ``live`` status — ``empty`` / ``degraded`` blocks emit no
+    rows.
+    """
+    body = client.get(URL).json()
+    if body["meta"]["blocks"]["decisions"]["status"] != "live":
+        return
+    rows = body["decisions"]
+    assert rows, "live status implies at least one decision row"
+    for row in rows:
+        ref = row.get("recommendationId") or row.get("title")
+        # Evidence — stable key shape.
+        ev = row.get("evidence")
+        assert isinstance(ev, dict), f"{ref!r} evidence must be a dict"
+        assert _EVIDENCE_KEYS.issubset(ev.keys()), (
+            f"{ref!r} evidence keys = {sorted(ev.keys())}, missing "
+            f"{sorted(_EVIDENCE_KEYS - set(ev.keys()))}"
+        )
+        # Confidence — score, tone, model.
+        conf = row.get("confidence")
+        assert isinstance(conf, dict), f"{ref!r} confidence must be a dict"
+        score = conf.get("score")
+        assert isinstance(score, int), f"{ref!r} confidence.score not int"
+        assert 0 <= score <= 100, f"{ref!r} confidence.score out of range"
+        assert conf.get("tone") in _CONF_TONES, (
+            f"{ref!r} confidence.tone {conf.get('tone')!r} not in {_CONF_TONES}"
+        )
+        model = conf.get("model")
+        assert isinstance(model, dict), f"{ref!r} confidence.model must be dict"
+        assert _MODEL_KEYS.issubset(model.keys()), (
+            f"{ref!r} confidence.model keys = {sorted(model.keys())}"
+        )
+        # Feature importance — list, may be empty.
+        fi = row.get("featureImportance")
+        assert isinstance(fi, list), f"{ref!r} featureImportance must be list"
+        for entry in fi:
+            assert isinstance(entry, dict)
+            assert "feature" in entry and "weightPct" in entry
+        # Linked ids.
+        for key in ("linkedQuoteIds", "linkedSkuIds"):
+            val = row.get(key)
+            assert isinstance(val, list), f"{ref!r} {key} must be list"
+            assert all(isinstance(x, str) for x in val), (
+                f"{ref!r} {key} contains non-string entries"
+            )
+        # Lifecycle state.
+        assert row.get("lifecycleState") in _LIFECYCLE_ALLOWED, (
+            f"{ref!r} lifecycleState {row.get('lifecycleState')!r} not in "
+            f"{_LIFECYCLE_ALLOWED}"
+        )

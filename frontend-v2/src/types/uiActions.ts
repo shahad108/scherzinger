@@ -24,7 +24,11 @@ export type FormDrawerKind =
   | 'saved_view_save'
   | 'add_reviewer'
   // Phase 11 — share a Frank decision with Till or Heiko.
-  | 'share_decision';
+  | 'share_decision'
+  // Plan §2.6 F11 — full lineage drawer dispatched from DecisionCards
+  // inline evidence panel. ActionDrawerHost may render a default form
+  // until the dedicated lineage component ships in Phase B.
+  | 'lineage';
 
 export interface ActionDrawerContext {
   recommendationId?: string;

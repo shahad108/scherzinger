@@ -44,6 +44,332 @@ def _conf_from_n(n: int) -> int:
     return max(20, n * 8)
 
 
+def _conf_tone(score: int) -> str:
+    """Map a 0..100 confidence score to one of {high, mid, low}.
+
+    Used by the standardised ``confidence`` block on every decision row
+    so the frontend doesn't have to re-bucket the same number.
+    """
+    if score >= 75:
+        return "high"
+    if score >= 50:
+        return "mid"
+    return "low"
+
+
+def _iso_or_none(value: Any) -> str | None:
+    """Best-effort ISO string for date/datetime/string values from SQL."""
+    if value is None:
+        return None
+    if hasattr(value, "isoformat"):
+        try:
+            return value.isoformat()
+        except Exception:  # pragma: no cover — defensive
+            return None
+    return str(value)
+
+
+def _active_model_card(db) -> dict[str, Any]:
+    """Return the most-recently-trained ``model_registry`` row as a small
+    descriptor. When the table is empty or missing (dev DBs without the
+    registry populated yet), every sub-field is ``None`` so the frontend
+    can render the "Locked — model registry pending" placeholder.
+    """
+    empty = {"id": None, "version": None, "trainedAt": None}
+    try:
+        row = (
+            db.execute(
+                text(
+                    """
+                    SELECT model_name, version, trained_at
+                      FROM model_registry
+                     ORDER BY trained_at DESC NULLS LAST
+                     LIMIT 1
+                    """
+                )
+            )
+            .mappings()
+            .first()
+        )
+    except Exception:
+        return empty
+    if row is None:
+        return empty
+    return {
+        "id": str(row.get("model_name")) if row.get("model_name") else None,
+        "version": str(row.get("version")) if row.get("version") else None,
+        "trainedAt": _iso_or_none(row.get("trained_at")),
+    }
+
+
+def _feature_importance_for(db, model_card: dict[str, Any]) -> list[dict[str, Any]]:
+    """Top-3 ``feature_importance`` entries from the active model row.
+
+    Reads the JSONB ``feature_importance`` column on ``model_registry``.
+    Returns an empty list when the column is missing, empty, or shaped
+    unexpectedly — the frontend treats `[] + model.id == None` as locked.
+    """
+    model_id = model_card.get("id")
+    if not model_id:
+        return []
+    try:
+        row = (
+            db.execute(
+                text(
+                    """
+                    SELECT feature_importance
+                      FROM model_registry
+                     WHERE model_name = :name
+                     ORDER BY trained_at DESC NULLS LAST
+                     LIMIT 1
+                    """
+                ),
+                {"name": model_id},
+            )
+            .mappings()
+            .first()
+        )
+    except Exception:
+        return []
+    if row is None:
+        return []
+    raw = row.get("feature_importance")
+    if not raw:
+        return []
+    items: list[tuple[str, float]] = []
+    # Accept either {feature: weight} dict or [{feature, weight|weightPct}]
+    if isinstance(raw, dict):
+        for k, v in raw.items():
+            try:
+                items.append((str(k), float(v)))
+            except Exception:
+                continue
+    elif isinstance(raw, list):
+        for entry in raw:
+            if not isinstance(entry, dict):
+                continue
+            name = entry.get("feature") or entry.get("name")
+            weight = entry.get("weightPct")
+            if weight is None:
+                weight = entry.get("weight")
+            try:
+                if name is not None and weight is not None:
+                    items.append((str(name), float(weight)))
+            except Exception:
+                continue
+    if not items:
+        return []
+    # Normalise to percent 0..100 if values look like 0..1 ratios.
+    max_w = max(abs(w) for _, w in items)
+    scale = 100.0 if 0 < max_w <= 1.0 else 1.0
+    items.sort(key=lambda kv: abs(kv[1]), reverse=True)
+    return [{"feature": n, "weightPct": round(w * scale, 2)} for n, w in items[:3]]
+
+
+def _customer_evidence(db, customer_id: str) -> dict[str, Any]:
+    """Evidence pack for a churn row — counts and dates from real invoices."""
+    out: dict[str, Any] = {
+        "invoiceCount": None,
+        "quoteCount": None,
+        "lastInvoiceDate": None,
+        "sampleSize": None,
+        "dataFreshness": None,
+    }
+    try:
+        row = (
+            db.execute(
+                text(
+                    """
+                    SELECT COUNT(*) AS n_inv,
+                           MAX(invoice_date) AS last_invoice
+                      FROM invoices
+                     WHERE customer_id = :cid
+                    """
+                ),
+                {"cid": customer_id},
+            )
+            .mappings()
+            .first()
+        )
+        if row is not None:
+            n_inv = int(row.get("n_inv") or 0)
+            out["invoiceCount"] = n_inv
+            out["sampleSize"] = n_inv
+            out["lastInvoiceDate"] = _iso_or_none(row.get("last_invoice"))
+            out["dataFreshness"] = out["lastInvoiceDate"]
+    except Exception:
+        pass
+    try:
+        n_q = (
+            db.execute(
+                text("SELECT COUNT(*) FROM quotes WHERE customer_id = :cid"),
+                {"cid": customer_id},
+            ).scalar()
+        )
+        if n_q is not None:
+            out["quoteCount"] = int(n_q)
+    except Exception:
+        pass
+    return out
+
+
+def _customer_linked_quotes(db, customer_id: str, limit: int = 5) -> list[str]:
+    try:
+        rows = (
+            db.execute(
+                text(
+                    """
+                    SELECT quote_id
+                      FROM quotes
+                     WHERE customer_id = :cid
+                     ORDER BY quote_date DESC NULLS LAST
+                     LIMIT :lim
+                    """
+                ),
+                {"cid": customer_id, "lim": limit},
+            )
+            .scalars()
+            .all()
+        )
+        return [str(q) for q in rows if q is not None]
+    except Exception:
+        return []
+
+
+def _sku_evidence(db, article_id: str, *, kind: str) -> dict[str, Any]:
+    """Evidence pack for cost_riser/margin_erosion rows — SKU-scoped."""
+    out: dict[str, Any] = {
+        "invoiceCount": None,
+        "quoteCount": None,
+        "lastInvoiceDate": None,
+        "sampleSize": None,
+        "dataFreshness": None,
+    }
+    try:
+        row = (
+            db.execute(
+                text(
+                    """
+                    SELECT COUNT(*) AS n_inv,
+                           MAX(invoice_date) AS last_invoice
+                      FROM invoices
+                     WHERE article_id = :aid
+                    """
+                ),
+                {"aid": article_id},
+            )
+            .mappings()
+            .first()
+        )
+        if row is not None:
+            n_inv = int(row.get("n_inv") or 0)
+            out["invoiceCount"] = n_inv
+            out["lastInvoiceDate"] = _iso_or_none(row.get("last_invoice"))
+            out["dataFreshness"] = out["lastInvoiceDate"]
+    except Exception:
+        pass
+    if kind == "cost_riser":
+        try:
+            n = (
+                db.execute(
+                    text(
+                        "SELECT COUNT(*) FROM product_cost_trends WHERE article_id = :aid"
+                    ),
+                    {"aid": article_id},
+                ).scalar()
+            )
+            if n is not None:
+                out["sampleSize"] = int(n)
+        except Exception:
+            out["sampleSize"] = out["invoiceCount"]
+    else:  # margin_erosion
+        try:
+            n = (
+                db.execute(
+                    text(
+                        "SELECT COUNT(*) FROM quote_invoice_links WHERE article_id = :aid"
+                    ),
+                    {"aid": article_id},
+                ).scalar()
+            )
+            if n is not None:
+                out["sampleSize"] = int(n)
+        except Exception:
+            out["sampleSize"] = out["invoiceCount"]
+    try:
+        n_q = (
+            db.execute(
+                text(
+                    """
+                    SELECT COUNT(DISTINCT q.quote_id)
+                      FROM quote_invoice_links q
+                     WHERE q.article_id = :aid
+                    """
+                ),
+                {"aid": article_id},
+            ).scalar()
+        )
+        if n_q is not None:
+            out["quoteCount"] = int(n_q)
+    except Exception:
+        pass
+    return out
+
+
+def _sku_linked_quotes(db, article_id: str, limit: int = 5) -> list[str]:
+    try:
+        rows = (
+            db.execute(
+                text(
+                    """
+                    SELECT DISTINCT quote_id
+                      FROM quote_invoice_links
+                     WHERE article_id = :aid
+                     LIMIT :lim
+                    """
+                ),
+                {"aid": article_id, "lim": limit},
+            )
+            .scalars()
+            .all()
+        )
+        return [str(q) for q in rows if q is not None]
+    except Exception:
+        return []
+
+
+# Allowed lifecycleState enum — frontend renders one chip variant per value.
+_LIFECYCLE_VALUES = {
+    "open",
+    "accepted",
+    "rejected",
+    "partial",
+    "snoozed",
+    "ab_running",
+    "ab_promoted",
+}
+
+
+def _lifecycle_from_status(status: str | None) -> str:
+    """Project the workflow-internal status string to the public lifecycle
+    enum the frontend chip understands. Unknown/None → ``open``.
+    """
+    s = (status or "").lower()
+    if s in {"accepted_as_proposal", "implemented"}:
+        return "accepted"
+    if s in {"partial_proposed"}:
+        return "partial"
+    if s in {"rejected", "cancelled"}:
+        return "rejected"
+    if s in {"snoozed", "queued_for_renewal"}:
+        return "snoozed"
+    if s in {"in_ab_test", "ab_running"}:
+        return "ab_running"
+    if s in {"ab_promoted"}:
+        return "ab_promoted"
+    return "open"
+
+
 def _sane_margin(v: float | None) -> float | None:
     """Drop margins outside [-100%, 100%] — they're data-quality noise."""
     if v is None:
@@ -81,6 +407,11 @@ def _churn_candidates(db, cluster: str | None) -> list[dict[str, Any]]:
         if score < 0.7:
             continue
         cid = str(r.get("customer_id") or "—")
+        ev = _customer_evidence(db, cid) if cid and cid != "—" else {
+            "invoiceCount": None, "quoteCount": None, "lastInvoiceDate": None,
+            "sampleSize": None, "dataFreshness": None,
+        }
+        linked_quotes = _customer_linked_quotes(db, cid) if cid and cid != "—" else []
         tier = str(r.get("risk_tier") or "—")
         # Estimate revenue at risk = sum of last-year invoices for this customer.
         revenue = (
@@ -142,6 +473,11 @@ def _churn_candidates(db, cluster: str | None) -> list[dict[str, Any]]:
                 "secondaryCta": "Open customer detail",
                 "cta": "Approval flow · Quotes & Guardrails",
                 "financialImpact": _financial_impact(recoverable),
+                "evidence": ev,
+                "_confSample": ev.get("invoiceCount"),
+                "_confScore": int(score * 100),
+                "linkedQuoteIds": linked_quotes,
+                "linkedSkuIds": [],
             }
         )
     return out
@@ -156,6 +492,11 @@ def _cost_riser_candidates(db) -> list[dict[str, Any]]:
         if cc < 0.10:  # only flag rises ≥ 10%
             continue
         aid = str(r.get("article_id") or "—")
+        ev = _sku_evidence(db, aid, kind="cost_riser") if aid and aid != "—" else {
+            "invoiceCount": None, "quoteCount": None, "lastInvoiceDate": None,
+            "sampleSize": None, "dataFreshness": None,
+        }
+        linked_quotes = _sku_linked_quotes(db, aid) if aid and aid != "—" else []
         unit = float(r.get("avg_hkvoll_per_unit") or 0)
         commodity = str(r.get("commodity_group") or "—")
         impact_score = cc * 100 * float(r.get("record_count") or 1)
@@ -217,6 +558,11 @@ def _cost_riser_candidates(db) -> list[dict[str, Any]]:
                 "secondaryCta": "Push to negotiation cockpit",
                 "cta": "Open in Studio →",
                 "financialImpact": _financial_impact(recoverable),
+                "evidence": ev,
+                "_confSample": ev.get("sampleSize"),
+                "_confScore": _conf_from_n(int(r.get("record_count") or 0)),
+                "linkedQuoteIds": linked_quotes,
+                "linkedSkuIds": [aid] if aid and aid != "—" else [],
             }
         )
     return out
@@ -277,6 +623,11 @@ def _margin_erosion_candidates(db) -> list[dict[str, Any]]:
         if sane_this is None or sane_last is None:
             continue
         aid = str(r.get("article_id") or "—")
+        ev = _sku_evidence(db, aid, kind="margin_erosion") if aid and aid != "—" else {
+            "invoiceCount": None, "quoteCount": None, "lastInvoiceDate": None,
+            "sampleSize": None, "dataFreshness": None,
+        }
+        linked_quotes = _sku_linked_quotes(db, aid) if aid and aid != "—" else []
         this_y = sane_this * 100
         last_y = sane_last * 100
         drop = (sane_last - sane_this) * 100
@@ -335,6 +686,11 @@ def _margin_erosion_candidates(db) -> list[dict[str, Any]]:
                 "secondaryCta": "Insert From Library",
                 "cta": "Open in Studio →",
                 "financialImpact": _financial_impact(recoverable),
+                "evidence": ev,
+                "_confSample": ev.get("sampleSize"),
+                "_confScore": _conf_from_n(n),
+                "linkedQuoteIds": linked_quotes,
+                "linkedSkuIds": [aid] if aid and aid != "—" else [],
             }
         )
     return out
@@ -370,11 +726,15 @@ def _attach_intents_and_filter(
         refs_by_idx.append((ref, aid, cid, str(c.get("_kind") or "decision")))
 
     status_map: dict[str, Any] = {}
+    model_card: dict[str, Any] = {"id": None, "version": None, "trainedAt": None}
+    feature_importance: list[dict[str, Any]] = []
     try:
         with SessionLocal() as db:
             status_map = workflow_service.get_recommendation_status_map(
                 db, [r[0] for r in refs_by_idx]
             )
+            model_card = _active_model_card(db)
+            feature_importance = _feature_importance_for(db, model_card)
     except Exception:
         status_map = {}
 
@@ -403,7 +763,33 @@ def _attach_intents_and_filter(
             source_kind=kind,
         )
         c["recommendationId"] = ref
-        c["status"] = rec.status if rec else "open"
+        c["id"] = ref
+        backend_status = rec.status if rec else "open"
+        c["status"] = backend_status
+        c["lifecycleState"] = _lifecycle_from_status(backend_status)
+        # Plan §2.6 B13 — standardised confidence block. Always present.
+        score = int(c.pop("_confScore", 50) or 0)
+        score = max(0, min(100, score))
+        sample = c.pop("_confSample", None)
+        c["confidence"] = {
+            "score": score,
+            "sampleSize": int(sample) if isinstance(sample, (int, float)) else None,
+            "tone": _conf_tone(score),
+            "model": dict(model_card),
+        }
+        # Plan §2.6 B14 — empty list is honest when model_registry is bare.
+        c["featureImportance"] = list(feature_importance)
+        # Plan §2.6 B15 — explicit empty arrays beat missing keys.
+        c.setdefault("linkedQuoteIds", [])
+        c.setdefault("linkedSkuIds", [])
+        # Plan §2.6 B12 — evidence pack always present (sub-fields may be null).
+        c.setdefault("evidence", {
+            "invoiceCount": None,
+            "quoteCount": None,
+            "lastInvoiceDate": None,
+            "sampleSize": None,
+            "dataFreshness": None,
+        })
         c["primaryAction"] = intents["primaryAction"]
         c["secondaryAction"] = intents["secondaryAction"]
         c["partialAction"] = intents["partialAction"]

@@ -61,6 +61,99 @@ function ChipCluster({ c }: { c: NonNullable<DecisionCard['cluster']> }) {
   );
 }
 
+type LifecycleState = NonNullable<DecisionCard['lifecycleState']>;
+
+const LIFECYCLE_LABEL: Record<LifecycleState, string> = {
+  open: 'Open',
+  accepted: 'Accepted',
+  rejected: 'Rejected',
+  partial: 'Partial',
+  snoozed: 'Snoozed',
+  ab_running: 'A/B running',
+  ab_promoted: 'A/B promoted',
+};
+
+// Tone classes — rose for positive lifecycle (accepted/promoted), amber for
+// in-flight states, warm-gray for neutral. Uses theme tokens only.
+function lifecycleStyle(state: LifecycleState): React.CSSProperties {
+  switch (state) {
+    case 'accepted':
+    case 'ab_promoted':
+      return {
+        background: 'var(--rose-tint)',
+        color: 'var(--rose-deep)',
+        borderColor: 'var(--rose-soft)',
+      };
+    case 'partial':
+    case 'ab_running':
+    case 'snoozed':
+      return {
+        background: 'var(--amber-bg)',
+        color: 'var(--amber)',
+        borderColor: 'var(--amber-border)',
+      };
+    default:
+      return {
+        background: 'var(--surface-sunken)',
+        color: 'var(--ink-2)',
+        borderColor: 'var(--hairline)',
+      };
+  }
+}
+
+function LifecycleChip({ state }: { state: LifecycleState }) {
+  const style = lifecycleStyle(state);
+  return (
+    <span
+      data-testid={`lifecycle-chip-${state}`}
+      className="inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.04em]"
+      style={{
+        ...style,
+        border: `1px solid ${style.borderColor as string}`,
+        borderRadius: 999,
+        padding: '3px 9px',
+      }}
+    >
+      {LIFECYCLE_LABEL[state]}
+    </span>
+  );
+}
+
+function LockedDrivers() {
+  return (
+    <div
+      data-testid="locked-drivers"
+      className="mt-2 inline-flex items-center gap-2 rounded-lg border border-[var(--hairline)] px-3 py-2 text-[11.5px] text-[var(--muted)]"
+      style={{ background: 'var(--surface-sunken)' }}
+    >
+      <span aria-hidden>🔒</span>
+      Feature importance ships with the model registry (Phase 2).
+    </div>
+  );
+}
+
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toISOString().slice(0, 10);
+}
+
+function formatNum(value: number | null | undefined): string {
+  return value === null || value === undefined ? '—' : String(value);
+}
+
+function primaryCtaLabel(d: DecisionCard): string {
+  // Plan §2.6 F13 — uniform CTA copy. Override whatever the backend sent.
+  if (d.queue === 'cost_riser' || d.queue === 'margin_erosion') {
+    return 'Open in Pricing Studio';
+  }
+  if (d.queue === 'churn') {
+    return 'Open customer';
+  }
+  return d.primaryCta ?? d.cta ?? 'Open';
+}
+
 function ChipContract({ kind }: { kind: NonNullable<DecisionCard['contract']> }) {
   const map = {
     movable: { dot: 'var(--green)',  label: 'Movable' },
@@ -241,6 +334,8 @@ export function DecisionCards({
   // immediately; on POST /actions failure they re-appear with a MessageStrip.
   const [accepted, setAccepted] = useState<Set<string>>(new Set());
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // Plan §2.6 F10 — inline evidence panel state. One row open at a time.
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const acceptMutation = useAcceptDecision();
   const declineMutation = useDeclineDecision();
 
@@ -458,7 +553,11 @@ export function DecisionCards({
       </div>
 
       <div className="mb-6 flex flex-col gap-3.5">
-        {visible.map((d, i) => (
+        {visible.map((d, i) => {
+          const cardId = d.id ?? d.recommendationId ?? d.rank;
+          const isExpanded = expandedId === cardId;
+          const lifecycle: LifecycleState = d.lifecycleState ?? 'open';
+          return (
           <motion.div
             key={d.rank + d.title}
             initial={{ opacity: 0, y: 8 }}
@@ -469,24 +568,41 @@ export function DecisionCards({
             {/* Top section: rank + title + tools, then chips */}
             <div style={{ padding: '18px 22px' }}>
               <div className="flex items-center gap-3.5">
-                <div
-                  className="grid shrink-0 place-items-center font-display text-[13px] font-bold"
+                <button
+                  type="button"
+                  aria-label={`Toggle evidence for decision ${d.rank}`}
+                  aria-expanded={isExpanded}
+                  onClick={() => setExpandedId(isExpanded ? null : cardId)}
+                  className="grid shrink-0 place-items-center font-display text-[13px] font-bold transition-colors hover:bg-[var(--hairline)]"
                   style={{
                     width: 34,
                     height: 34,
                     borderRadius: 10,
                     background: 'var(--surface-sunken)',
                     color: 'var(--ink-2)',
+                    border: 'none',
+                    cursor: 'pointer',
                   }}
                 >
                   {d.rank}
-                </div>
+                </button>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[15.5px] font-bold leading-[1.3] tracking-[-0.012em] text-[var(--ink)]">
-                    {d.headline ?? d.title}
+                  <div className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1 text-[15.5px] font-bold leading-[1.3] tracking-[-0.012em] text-[var(--ink)]">
+                      {d.headline ?? d.title}
+                    </div>
+                    <LifecycleChip state={lifecycle} />
                   </div>
-                  <div className="mt-1 text-[12px] text-[var(--muted)]">
-                    {[d.tag, d.daysOpenLabel, d.authorityLabel].filter(Boolean).join(' · ')}
+                  <div className="mt-1 flex items-center gap-2 text-[12px] text-[var(--muted)]">
+                    <span>{[d.tag, d.daysOpenLabel, d.authorityLabel].filter(Boolean).join(' · ')}</span>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(isExpanded ? null : cardId)}
+                      className="rounded-md px-2 py-0.5 text-[11.5px] font-semibold text-[var(--rose-deep)] underline-offset-2 transition-colors hover:bg-[var(--rose-tint)] hover:underline"
+                      aria-expanded={isExpanded}
+                    >
+                      {isExpanded ? 'Hide' : 'Why this?'}
+                    </button>
                   </div>
                 </div>
                 <div className="flex items-center" style={{ gap: 6 }}>
@@ -653,6 +769,91 @@ export function DecisionCards({
               )}
             </div>
 
+            {/* Inline evidence panel — plan §2.6 F10/F11/F12. Toggled by the
+                rank chip or the "Why this?" button. Stays inside the card
+                frame; the full lineage drawer is a separate Phase B route. */}
+            {isExpanded && (
+              <div
+                data-testid={`evidence-panel-${cardId}`}
+                style={{ padding: '14px 22px', borderTop: '1px solid var(--hairline)', background: 'var(--surface-soft)' }}
+              >
+                <div className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">
+                  Evidence
+                </div>
+                <div className="mt-1 text-[12.5px] text-[var(--ink-2)]">
+                  Invoices: <b className="tabular-nums">{formatNum(d.evidence?.invoiceCount)}</b>
+                  {' · '}Quotes: <b className="tabular-nums">{formatNum(d.evidence?.quoteCount)}</b>
+                  {' · '}Last invoice: <b>{formatDate(d.evidence?.lastInvoiceDate)}</b>
+                  {' · '}Sample size: <b className="tabular-nums">{formatNum(d.evidence?.sampleSize)}</b>
+                </div>
+
+                <div className="mt-3 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">
+                  Confidence
+                </div>
+                {d.confidence ? (
+                  <div className="mt-1 text-[12.5px] text-[var(--ink-2)]">
+                    Score: <b className="tabular-nums">{d.confidence.score}%</b>
+                    {' · '}Tone: <b>{d.confidence.tone}</b>
+                    {' · '}Model:{' '}
+                    <b>{d.confidence.model.id ?? '—'}</b>
+                    {d.confidence.model.version ? <> v<b>{d.confidence.model.version}</b></> : null}
+                    {' · '}Trained: <b>{formatDate(d.confidence.model.trainedAt)}</b>
+                  </div>
+                ) : (
+                  <div className="mt-1 text-[12.5px] text-[var(--muted)]">—</div>
+                )}
+
+                <div className="mt-3 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--muted)]">
+                  Top drivers
+                </div>
+                {d.featureImportance && d.featureImportance.length > 0 ? (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {d.featureImportance.map((f) => (
+                      <span
+                        key={f.feature}
+                        className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[var(--ink-2)]"
+                        style={{ background: 'var(--surface-sunken)', borderRadius: 7, padding: '4px 9px' }}
+                      >
+                        {f.feature}
+                        <b className="tabular-nums">{f.weightPct}%</b>
+                      </span>
+                    ))}
+                  </div>
+                ) : !d.confidence?.model.id ? (
+                  <LockedDrivers />
+                ) : (
+                  <div className="mt-1 text-[12px] text-[var(--muted)]">
+                    No driver decomposition available yet.
+                  </div>
+                )}
+
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onAction?.({
+                        drawer: {
+                          title: `Lineage: ${d.headline ?? d.title}`,
+                          description: 'Full lineage and audit trail for this recommendation.',
+                          formKind: 'lineage',
+                          context: {
+                            recommendationId: d.recommendationId ?? cardId,
+                            articleId: d.primaryAction?.articleId,
+                            customerId: d.primaryAction?.customerId,
+                            cluster: d.primaryAction?.cluster,
+                            headline: d.headline ?? d.title,
+                          },
+                        },
+                      })
+                    }
+                    className="rounded-lg border border-[var(--border)] bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--surface-soft)]"
+                  >
+                    See full lineage
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Bottom section: feedback row + CTA row, SAME ac-section */}
             <div style={{ padding: '18px 22px', borderTop: '1px solid var(--hairline)' }}>
               <FeedbackRow
@@ -752,12 +953,13 @@ export function DecisionCards({
                     e.currentTarget.style.boxShadow = '0 1px 0 rgba(0,0,0,0.06)';
                   }}
                 >
-                  {d.primaryCta ?? d.cta}
+                  {primaryCtaLabel(d)}
                 </button>
               </div>
             </div>
           </motion.div>
-        ))}
+          );
+        })}
       </div>
     </>
   );

@@ -170,6 +170,51 @@ export interface DecisionCard {
     | 'in_ab_test'
     | 'implemented'
     | 'cancelled';
+  /** Stable id alias for recommendationId; emitted by backend for B12 lookup. */
+  id?: string;
+  /**
+   * Public lifecycle enum projected from workflow status — plan §2.6 B12.
+   * Drives the inline lifecycle chip on every decision card.
+   */
+  lifecycleState?:
+    | 'open'
+    | 'accepted'
+    | 'rejected'
+    | 'partial'
+    | 'snoozed'
+    | 'ab_running'
+    | 'ab_promoted';
+  /**
+   * Plan §2.6 B12 — small evidence dict surfaced inline (no drawer).
+   * Every sub-field may be null when the underlying source is missing;
+   * the keys themselves are always present.
+   */
+  evidence?: {
+    invoiceCount: number | null;
+    quoteCount: number | null;
+    lastInvoiceDate: string | null;
+    sampleSize: number | null;
+    dataFreshness: string | null;
+  };
+  /**
+   * Plan §2.6 B13 — standardised confidence block. ``model.id`` null →
+   * frontend renders the LockedDrivers placeholder.
+   */
+  confidence?: {
+    score: number;
+    sampleSize: number | null;
+    tone: 'high' | 'mid' | 'low';
+    model: {
+      id: string | null;
+      version: string | null;
+      trainedAt: string | null;
+    };
+  };
+  /** Plan §2.6 B14 — top-3 drivers; empty list while registry pending. */
+  featureImportance?: Array<{ feature: string; weightPct: number }>;
+  /** Plan §2.6 B15 — deep-link targets without a separate lookup. */
+  linkedQuoteIds?: string[];
+  linkedSkuIds?: string[];
 }
 
 export interface TrustTile {
