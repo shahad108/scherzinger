@@ -57,7 +57,7 @@ export function TodaySummaryStrip({ tiles, onAction, trustHeadline, onModelTrust
   return (
     <div
       data-testid="ac-summary-strip"
-      className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5"
+      className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
     >
       {tiles.map((tile) => {
         const locked = tile.locked || tile.value == null;
