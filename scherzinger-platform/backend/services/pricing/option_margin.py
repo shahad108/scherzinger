@@ -73,7 +73,11 @@ def _load_cluster(*, aid: str, db_session: Session) -> Optional[str]:
             {"aid": aid},
         ).fetchone()
     except Exception:
-        logger.exception("option_margin._load_cluster aid=%s", aid)
+        logger.exception("pricing:option_margin:_load_cluster aid=%s", aid)
+        try:
+            db_session.rollback()
+        except Exception:
+            pass
         return None
     if row is None:
         return None
@@ -111,7 +115,11 @@ def _extract_cluster_ratios(
     try:
         wf = build_pocket_waterfall_from_db(db_session, cluster=cluster)
     except Exception:
-        logger.exception("option_margin._extract_cluster_ratios aid=%s", aid)
+        logger.exception("pricing:option_margin:_extract_cluster_ratios aid=%s", aid)
+        try:
+            db_session.rollback()
+        except Exception:
+            pass
         return (
             _SEED_QUOTED_OVER_LIST,
             _SEED_BOOKED_OVER_QUOTED,

@@ -132,7 +132,11 @@ def _load_customer_ids_for_aid(*, aid: str, db_session: Session) -> list[str]:
             {"aid": aid},
         ).fetchall()
     except Exception:
-        logger.exception("customer_fanout._load_customer_ids_for_aid aid=%s", aid)
+        logger.exception("pricing:customer_fanout:_load_customer_ids_for_aid aid=%s", aid)
+        try:
+            db_session.rollback()
+        except Exception:
+            pass
         return []
     return [str(r[0]) for r in rows if r[0] is not None]
 
@@ -167,7 +171,11 @@ def _bulk_load_history_on_aid(
             {"aid": aid, "cids": list(customer_ids)},
         ).fetchall()
     except Exception:
-        logger.exception("customer_fanout._bulk_load_history_on_aid aid=%s", aid)
+        logger.exception("pricing:customer_fanout:_bulk_load_history_on_aid aid=%s", aid)
+        try:
+            db_session.rollback()
+        except Exception:
+            pass
         return {}
     out: dict[str, list[dict]] = {cid: [] for cid in customer_ids}
     for r in rows:
@@ -218,7 +226,11 @@ def _bulk_load_master(
             stmt, {"cids": list(customer_ids)}
         ).fetchall()
     except Exception:
-        logger.exception("customer_fanout._bulk_load_master")
+        logger.exception("pricing:customer_fanout:_bulk_load_master")
+        try:
+            db_session.rollback()
+        except Exception:
+            pass
         return {cid: None for cid in customer_ids}
     out: dict[str, Optional[dict]] = {cid: None for cid in customer_ids}
     for r in rows:
@@ -256,7 +268,11 @@ def _bulk_load_risk_scores(
             stmt, {"cids": list(customer_ids)}
         ).fetchall()
     except Exception:
-        logger.exception("customer_fanout._bulk_load_risk_scores")
+        logger.exception("pricing:customer_fanout:_bulk_load_risk_scores")
+        try:
+            db_session.rollback()
+        except Exception:
+            pass
         return {cid: dict(default) for cid in customer_ids}
     # Lazy import to keep the constant in one place.
     from backend.services.pricing.customer_on_sku import _CHURN_DAMPING_FACTOR
@@ -297,7 +313,11 @@ def _bulk_load_customer_ltm_eur(
             stmt, {"cids": list(customer_ids)}
         ).fetchall()
     except Exception:
-        logger.exception("customer_fanout._bulk_load_customer_ltm_eur")
+        logger.exception("pricing:customer_fanout:_bulk_load_customer_ltm_eur")
+        try:
+            db_session.rollback()
+        except Exception:
+            pass
         return {cid: Decimal("0") for cid in customer_ids}
     out: dict[str, Decimal] = {cid: Decimal("0") for cid in customer_ids}
     for r in rows:
@@ -327,8 +347,12 @@ def _load_active_proposals_for_aid(
         ).fetchall()
     except Exception:
         logger.exception(
-            "customer_fanout._load_active_proposals_for_aid aid=%s", aid
+            "pricing:customer_fanout:_load_active_proposals_for_aid aid=%s", aid
         )
+        try:
+            db_session.rollback()
+        except Exception:
+            pass
         return set()
     out: set[str] = set()
     for r in rows:
@@ -405,8 +429,14 @@ def build_customer_fanout(
                 prefetched=prefetched,
             )
         except Exception:
-            logger.exception("customer_fanout build_customer_on_sku aid=%s cid=%s",
-                             aid, cid)
+            logger.exception(
+                "pricing:customer_fanout:build_customer_on_sku aid=%s cid=%s",
+                aid, cid,
+            )
+            try:
+                db_session.rollback()
+            except Exception:
+                pass
             continue
         rows.append(
             _serialize_row(cos=cos, proposal_queued=cid in active)

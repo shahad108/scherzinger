@@ -149,7 +149,11 @@ def _steel_pct_from_market_direction(db_session: Optional[Session]) -> Optional[
     try:
         md = get_market_direction(db_session)
     except Exception:
-        logger.exception("trigger_context._steel_pct_from_market_direction failed")
+        logger.exception("pricing:trigger_context:_steel_pct_from_market_direction failed")
+        try:
+            db_session.rollback()
+        except Exception:
+            pass
         return None
     for tile in md.get("tiles", []):
         name = str(tile.get("name") or "")
@@ -160,6 +164,10 @@ def _steel_pct_from_market_direction(db_session: Optional[Session]) -> Optional[
             try:
                 return Decimal(str(wow))
             except Exception:
+                logger.debug(
+                    "pricing:trigger_context: bad wowPct=%r — pure-data parse, no DB",
+                    wow,
+                )
                 return None
     return None
 

@@ -1,21 +1,22 @@
 """Per-SKU workbench + comparable services.
 
-Phase 8 stub — each helper slices the seed today; later phases flesh out
-the real derivation per §14.3 P8.T2:
-
-    build_options(unit_cost, current_price, target_margin, annual_units,
-                  customer_count, cluster_id) → hold/floor/market/A-B options
-    build_fanout(unit_cost, target_margin, current_price, annual_units,
-                 cluster_id, top_n=6) → fan-out rows from real customers,
-                 weighted by share, with per-customer churn risk
-    build_cost(unit_cost, components, target_margin, cluster_id)
-    build_decision(...) / build_memo(...)
-
-Phase 21 / Pricing Studio v3 §1.2.5: the workbench also carries
-``recommendation``, ``wtp``, ``win_prob_curve`` and ``competitor_ref``
-when the services can compute them. Each is optional — on ``None`` or
-exception we omit the field so the frontend can render a
-``DataMissingBadge`` instead of 500ing.
+Phase A2 + A3 + A4 (Pricing Studio plan §5):
+    * No seed-merge anywhere. Workbench is built from a small empty
+      scaffold plus DB-derived blocks (recommendation, wtp, win-prob
+      curve, competitor ref, fanout, cost-history, option margins,
+      legacy fanout/cost/history/memo).
+    * Each block reports a status via ``meta.blocks[<block>]`` using the
+      same enum the Action Center composer uses:
+        - ``'live'``    real data present
+        - ``'empty'``   underlying query returned nothing (legitimate)
+        - ``'degraded'`` an exception was caught — we logged + rolled
+                        back the txn — the FE shows the degraded chip
+        - ``'locked'``  data source not connected at all (today only
+                        competitor_ref falls here)
+    * Every ``except`` that handles a DB call now calls ``db.rollback()``
+      on the active session before swallowing — same pattern as
+      ``backend/services/action_center/decisions.py``. This stops a
+      single failing query from poisoning the rest of the txn.
 """
 from __future__ import annotations
 
@@ -36,53 +37,101 @@ from backend.services.pricing import recommendation as recommendation_mod
 from backend.services.pricing import wtp as wtp_mod
 from backend.services.pricing.envelope import resolve_envelope
 
-from ._seed import load_seed
+from ._seed import StudioBlockError  # noqa: F401 — re-exported for callers
 
 logger = logging.getLogger(__name__)
 
 
+# ---------------------------------------------------------------------------
+# Status-meta helpers
+# ---------------------------------------------------------------------------
+
+
+def _live(reason: str | None = None) -> dict[str, Any]:
+    return {"status": "live", "reason": reason}
+
+
+def _empty(reason: str | None = None) -> dict[str, Any]:
+    return {"status": "empty", "reason": reason}
+
+
+def _degraded(reason: str) -> dict[str, Any]:
+    return {"status": "degraded", "reason": reason}
+
+
+def _locked(reason: str) -> dict[str, Any]:
+    return {"status": "locked", "reason": reason}
+
+
+def _safe_rollback(db) -> None:
+    """Best-effort rollback. Never raises."""
+    try:
+        db.rollback()
+    except Exception:
+        # Swallowing here is correct — the caller is already in an error
+        # path; the session will close on the with-block exit anyway.
+        pass
+
+
 def _format_eur(value: Decimal | float | None) -> str:
-    """Format a Decimal/float as a euro label using the same conventions
-    the seed uses (e.g. ``"€4.20"``, ``"€1,240"``)."""
+    """Format a Decimal/float as a euro label (e.g. ``"€4.20"``, ``"€1,240"``)."""
     if value is None:
         return "—"
     try:
         v = Decimal(str(value))
     except Exception:
+        logger.debug("studio:workbench:_format_eur non-numeric input=%r", value)
         return "—"
-    # Drop the cents if the value is a whole number ≥ €100, otherwise keep
-    # 2dp. Mirrors the studio.json conventions exactly.
     if v == v.to_integral_value() and v >= 100:
         return f"€{int(v):,}"
     return f"€{v:,.2f}"
 
 
-def _find_sku(aid: str) -> dict[str, Any] | None:
-    seed = load_seed()
-    for s in seed.get("skus", []):
-        if str(s.get("aid")) == aid:
-            return s
-    if seed.get("defaultAid") == aid:
-        return {"aid": aid}
-    return None
+# ---------------------------------------------------------------------------
+# Existence check (no more seed-find)
+# ---------------------------------------------------------------------------
+
+
+def _sku_exists(aid: str) -> tuple[bool, dict[str, Any]]:
+    """Return (exists, sku_info). ``sku_info`` carries the canonical fields
+    we previously read from ``studio.json`` shortHero — when missing we
+    return an empty dict and the workbench renders with empty blocks.
+
+    An aid is considered to exist if it has a row in ``price_state`` OR
+    in ``cost_state``. Either is enough to construct a meaningful
+    workbench shell.
+    """
+    try:
+        from backend.models.pricing.cost_state import CostStateRow
+        from backend.models.pricing.pricing_state import PriceStateRow
+
+        with SessionLocal() as db:
+            try:
+                pr = db.execute(
+                    select(PriceStateRow).where(PriceStateRow.aid == aid)
+                ).scalar_one_or_none()
+                cr = db.execute(
+                    select(CostStateRow).where(CostStateRow.aid == aid)
+                ).scalar_one_or_none()
+            except Exception:
+                logger.exception("studio:workbench:sku_exists aid=%s", aid)
+                _safe_rollback(db)
+                return False, {}
+            if pr is None and cr is None:
+                return False, {}
+            sku: dict[str, Any] = {"aid": aid}
+            if pr is not None:
+                sku["cluster"] = getattr(pr, "cluster", None)
+            return True, sku
+    except Exception:
+        logger.exception("studio:workbench:sku_exists aid=%s — DB unavailable", aid)
+        return False, {}
 
 
 def _resolve_envelope(
     aid: str, db
 ) -> tuple[Decimal, Decimal]:
-    """Resolve a (floor, ceiling) envelope for the win-prob curve.
-
-    Delegates to ``backend.services.pricing.envelope.resolve_envelope`` —
-    the canonical cascade used by BOTH the workbench attach and the
-    recommendation composer's optimiser. Keeping both call sites on the
-    same cascade guarantees the recommended price is on-grid relative to
-    the curve the UI renders.
-
-    Reads ``PriceStateRow`` and ``CostStateRow`` once and feeds them
-    straight to the canonical resolver.
-    """
-    from sqlalchemy import select
-
+    """Resolve a (floor, ceiling) envelope for the win-prob curve."""
     from backend.models.pricing.cost_state import CostStateRow
     from backend.models.pricing.pricing_state import PriceStateRow
 
@@ -95,124 +144,9 @@ def _resolve_envelope(
     return resolve_envelope(price_row, cost_row)
 
 
-def _attach_phase3_signals(
-    workbench: dict[str, Any],
-    aid: str,
-    *,
-    source: Optional[str] = None,
-    reason: Optional[str] = None,
-    cluster: Optional[str] = None,
-) -> None:
-    """Phase 3: option_margins fanout, cost_history (per-SKU), trigger_context.
-
-    Each block is optional. Failures are swallowed and logged — the
-    workbench shell still renders, the frontend shows a DataMissingBadge.
-    """
-    try:
-        from backend.services.pricing.option_margin import build_option_margins
-
-        rec = workbench.get("recommendation") or {}
-        rec_price_raw = rec.get("recommended_price") if isinstance(rec, dict) else None
-        rec_price: Optional[Decimal] = None
-        if rec_price_raw is not None:
-            try:
-                rec_price = Decimal(str(rec_price_raw))
-            except Exception:
-                rec_price = None
-        with SessionLocal() as db:
-            margins = build_option_margins(
-                aid=aid,
-                db_session=db,
-                recommended_price=rec_price,
-            )
-            workbench["option_margins"] = [m.model_dump(mode="json") for m in margins]
-            db.commit()
-    except Exception:
-        logger.exception("workbench.option_margins failed aid=%s", aid)
-
-    try:
-        with SessionLocal() as db:
-            cost_decomp = get_commodity_trajectories(db, aid=aid)
-            # Per-SKU cost_history payload: cluster commodity trajectory
-            # (already narrowed to the SKU's cluster when aid is set).
-            workbench["cost_history"] = {
-                "points": [],
-                "commodities": cost_decomp.get("groups", []),
-                "quarters": cost_decomp.get("quarters", []),
-                "source": cost_decomp.get("source", "synthetic"),
-            }
-            db.commit()
-    except Exception:
-        logger.exception("workbench.cost_history failed aid=%s", aid)
-
-    if source and reason:
-        try:
-            from backend.services.pricing.trigger_context import build_trigger_context
-
-            with SessionLocal() as db:
-                ctx = build_trigger_context(
-                    aid=aid,
-                    source=source,
-                    reason=reason,
-                    cluster=cluster,
-                    db_session=db,
-                )
-                if ctx is not None:
-                    workbench["trigger_context"] = ctx.model_dump(mode="json")
-                db.commit()
-        except Exception:
-            logger.exception(
-                "workbench.trigger_context failed aid=%s source=%s reason=%s",
-                aid,
-                source,
-                reason,
-            )
-
-
-def _attach_phase8_signals(
-    workbench: dict[str, Any],
-    aid: str,
-) -> None:
-    """Phase 8: surface the active A/B test summary on the workbench so
-    the PriceOptions card can render a real flow when a test is in flight.
-
-    Best-effort: any failure is swallowed and logged — the workbench
-    still renders, the frontend simply omits the active_ab_test block.
-    """
-    try:
-        from backend.services.pricing.ab_test import get_active_ab_test_summary
-
-        with SessionLocal() as db:
-            summary = get_active_ab_test_summary(aid=aid, db_session=db)
-            if summary is not None:
-                workbench["active_ab_test"] = summary
-    except Exception:
-        logger.exception("workbench.active_ab_test failed aid=%s", aid)
-
-
-def _attach_phase2_signals(
-    workbench: dict[str, Any],
-    aid: str,
-) -> None:
-    """Phase 2: customer-fanout block (BFF-computed, no proposed price yet).
-
-    Initial fanout uses ``proposed_price=None`` so ``risk_if_moved`` is
-    null and ``tone`` defaults to ``plain`` for every row. The frontend
-    POSTs ``/screens/studio/fanout`` with the user-selected price to
-    re-score on demand.
-    """
-    try:
-        from backend.services.pricing.customer_fanout import build_customer_fanout
-
-        with SessionLocal() as db:
-            payload = build_customer_fanout(
-                aid=aid, proposed_price=None, db_session=db
-            )
-            workbench["customer_fanout"] = payload
-            db.commit()
-    except Exception:
-        logger.exception("workbench customer_fanout failed aid=%s", aid)
-        # Leave the field absent — workbench shell + Phase 1 blocks still render.
+# ---------------------------------------------------------------------------
+# Phase-1 signal attach (recommendation / wtp / win-prob / competitor)
+# ---------------------------------------------------------------------------
 
 
 def _attach_phase1_signals(
@@ -220,15 +154,28 @@ def _attach_phase1_signals(
     aid: str,
     tier: Optional[str],
     cluster: Optional[str] = None,
-) -> None:
-    """Best-effort: attach recommendation + WTP + curve + competitor.
+) -> dict[str, dict[str, Any]]:
+    """Attach recommendation / WTP / win-prob curve / competitor_ref.
 
-    Each field is optional. We swallow exceptions per spec — the frontend
-    renders ``<DataMissingBadge reason=…>`` when a field is missing. Every
-    exception is logged with ``aid`` so we still see them in prod.
+    Each block writes its own status into the returned dict. On exception
+    we log, roll back the session (so subsequent queries don't see an
+    aborted txn), and emit ``status='degraded'`` with a short reason.
+
+    The shared ``db`` session is the bug-prone bit — without rollback,
+    a single failing SQL (e.g. column-name typo) would poison every
+    subsequent query in the block. This is the same fix-pattern we
+    applied to ``action_center/decisions.py``.
     """
+    block_status: dict[str, dict[str, Any]] = {
+        "recommendation": _empty("No recommendation yet for this aid"),
+        "wtp": _empty("No WTP band computed for this aid"),
+        "win_prob_curve": _empty("No win-prob curve computed for this aid"),
+        "competitor_ref": _locked("Competitor data source not connected"),
+    }
+
     try:
         with SessionLocal() as db:
+            # --- recommendation ---------------------------------------
             try:
                 rec = recommendation_mod.build_recommendation(
                     aid=aid,
@@ -236,11 +183,19 @@ def _attach_phase1_signals(
                     cluster=cluster,
                     db_session=db,
                 )
-                workbench["recommendation"] = rec.model_dump(mode="json")
-            except Exception:
+                if rec is not None:
+                    workbench["recommendation"] = rec.model_dump(mode="json")
+                    block_status["recommendation"] = _live()
+            except Exception as exc:
                 logger.exception(
-                    "workbench.recommendation failed aid=%s tier=%s", aid, tier
+                    "studio:workbench:recommendation aid=%s tier=%s", aid, tier
                 )
+                _safe_rollback(db)
+                block_status["recommendation"] = _degraded(
+                    f"Recommendation builder failed ({type(exc).__name__})"
+                )
+
+            # --- WTP band --------------------------------------------
             try:
                 wtp_band = wtp_mod.build_wtp(
                     aid=aid,
@@ -251,8 +206,15 @@ def _attach_phase1_signals(
                 )
                 if wtp_band is not None:
                     workbench["wtp"] = wtp_band.model_dump(mode="json")
-            except Exception:
-                logger.exception("workbench.wtp failed aid=%s tier=%s", aid, tier)
+                    block_status["wtp"] = _live()
+            except Exception as exc:
+                logger.exception("studio:workbench:wtp aid=%s tier=%s", aid, tier)
+                _safe_rollback(db)
+                block_status["wtp"] = _degraded(
+                    f"WTP builder failed ({type(exc).__name__})"
+                )
+
+            # --- win-prob curve --------------------------------------
             try:
                 floor, ceiling = _resolve_envelope(aid, db)
                 curve = elasticity_mod.build_win_prob_curve(
@@ -265,36 +227,276 @@ def _attach_phase1_signals(
                 )
                 if curve is not None:
                     workbench["win_prob_curve"] = curve.model_dump(mode="json")
-            except Exception:
+                    block_status["win_prob_curve"] = _live()
+            except Exception as exc:
                 logger.exception(
-                    "workbench.win_prob_curve failed aid=%s tier=%s", aid, tier
+                    "studio:workbench:win_prob_curve aid=%s tier=%s", aid, tier
                 )
+                _safe_rollback(db)
+                block_status["win_prob_curve"] = _degraded(
+                    f"Win-prob curve builder failed ({type(exc).__name__})"
+                )
+
+            # --- competitor_ref --------------------------------------
             try:
                 comp = build_competitor_ref(aid=aid, n_days=90, db_session=db)
                 if comp is not None:
                     workbench["competitor_ref"] = comp.model_dump(mode="json")
+                    block_status["competitor_ref"] = _live()
                 else:
-                    # Explicit None tells the frontend "no competitor data" without
-                    # ambiguity between "not computed" vs "computed-and-empty".
                     workbench["competitor_ref"] = None
+                    # Stays as 'locked' — the data source isn't connected.
+            except Exception as exc:
+                logger.exception("studio:workbench:competitor_ref aid=%s", aid)
+                _safe_rollback(db)
+                block_status["competitor_ref"] = _degraded(
+                    f"Competitor lookup failed ({type(exc).__name__})"
+                )
+
+            try:
+                db.commit()
             except Exception:
                 logger.exception(
-                    "workbench.competitor_ref failed aid=%s", aid
+                    "studio:workbench:phase1 final commit failed aid=%s", aid
                 )
-            db.commit()
-    except Exception:
-        # Database itself unavailable — leave the optional fields off so
-        # the workbench shell still renders. Logged for ops visibility.
-        logger.exception("workbench Phase 1 signal attach failed aid=%s", aid)
+                _safe_rollback(db)
+    except Exception as exc:
+        # Database itself unavailable — leave optional fields off and
+        # mark every block degraded. Workbench shell still renders.
+        logger.exception("studio:workbench:phase1 session setup failed aid=%s", aid)
+        reason = f"DB session unavailable ({type(exc).__name__})"
+        for key in block_status:
+            if block_status[key].get("status") in ("empty", "live"):
+                block_status[key] = _degraded(reason)
+
+    return block_status
+
+
+# ---------------------------------------------------------------------------
+# Phase-2 customer-fanout
+# ---------------------------------------------------------------------------
+
+
+def _attach_phase2_signals(
+    workbench: dict[str, Any],
+    aid: str,
+) -> dict[str, Any]:
+    """Phase 2: customer-fanout block (BFF-computed, no proposed price)."""
+    try:
+        from backend.services.pricing.customer_fanout import build_customer_fanout
+
+        with SessionLocal() as db:
+            try:
+                payload = build_customer_fanout(
+                    aid=aid, proposed_price=None, db_session=db
+                )
+                workbench["customer_fanout"] = payload
+                rows = (payload or {}).get("rows") or []
+                try:
+                    db.commit()
+                except Exception:
+                    logger.exception(
+                        "studio:workbench:phase2 commit failed aid=%s", aid
+                    )
+                    _safe_rollback(db)
+                if rows:
+                    return _live()
+                return _empty("No customers buying this aid in the lookback window")
+            except Exception as exc:
+                logger.exception("studio:workbench:customer_fanout aid=%s", aid)
+                _safe_rollback(db)
+                return _degraded(
+                    f"Customer fanout failed ({type(exc).__name__})"
+                )
+    except Exception as exc:
+        logger.exception("studio:workbench:phase2 session setup failed aid=%s", aid)
+        return _degraded(f"DB session unavailable ({type(exc).__name__})")
+
+
+# ---------------------------------------------------------------------------
+# Phase-3 option-margins / cost-history / trigger-context
+# ---------------------------------------------------------------------------
+
+
+def _attach_phase3_signals(
+    workbench: dict[str, Any],
+    aid: str,
+    *,
+    source: Optional[str] = None,
+    reason: Optional[str] = None,
+    cluster: Optional[str] = None,
+) -> dict[str, dict[str, Any]]:
+    """Phase 3: option_margins, cost_history (per-SKU), trigger_context."""
+    block_status: dict[str, dict[str, Any]] = {
+        "option_margins": _empty("No options computed yet"),
+        "cost_history": _empty("No cost history available for this aid"),
+        "trigger_context": _empty(
+            "No trigger context — open the workbench from Action Center to populate"
+        ),
+    }
+
+    # --- option_margins ----------------------------------------------
+    try:
+        from backend.services.pricing.option_margin import build_option_margins
+
+        rec = workbench.get("recommendation") or {}
+        rec_price_raw = rec.get("recommended_price") if isinstance(rec, dict) else None
+        rec_price: Optional[Decimal] = None
+        if rec_price_raw is not None:
+            try:
+                rec_price = Decimal(str(rec_price_raw))
+            except Exception:
+                rec_price = None
+        with SessionLocal() as db:
+            try:
+                margins = build_option_margins(
+                    aid=aid,
+                    db_session=db,
+                    recommended_price=rec_price,
+                )
+                workbench["option_margins"] = [m.model_dump(mode="json") for m in margins]
+                if margins:
+                    block_status["option_margins"] = _live()
+                try:
+                    db.commit()
+                except Exception:
+                    logger.exception(
+                        "studio:workbench:option_margins commit failed aid=%s", aid
+                    )
+                    _safe_rollback(db)
+            except Exception as exc:
+                logger.exception("studio:workbench:option_margins aid=%s", aid)
+                _safe_rollback(db)
+                block_status["option_margins"] = _degraded(
+                    f"Option margins failed ({type(exc).__name__})"
+                )
+    except Exception as exc:
+        logger.exception(
+            "studio:workbench:option_margins session setup failed aid=%s", aid
+        )
+        block_status["option_margins"] = _degraded(
+            f"DB session unavailable ({type(exc).__name__})"
+        )
+
+    # --- cost_history ------------------------------------------------
+    try:
+        with SessionLocal() as db:
+            try:
+                cost_decomp = get_commodity_trajectories(db, aid=aid)
+                workbench["cost_history"] = {
+                    "points": [],
+                    "commodities": cost_decomp.get("groups", []),
+                    "quarters": cost_decomp.get("quarters", []),
+                    "source": cost_decomp.get("source", "synthetic"),
+                }
+                if cost_decomp.get("groups") or cost_decomp.get("quarters"):
+                    block_status["cost_history"] = _live()
+                try:
+                    db.commit()
+                except Exception:
+                    logger.exception(
+                        "studio:workbench:cost_history commit failed aid=%s", aid
+                    )
+                    _safe_rollback(db)
+            except Exception as exc:
+                logger.exception("studio:workbench:cost_history aid=%s", aid)
+                _safe_rollback(db)
+                block_status["cost_history"] = _degraded(
+                    f"Cost history failed ({type(exc).__name__})"
+                )
+    except Exception as exc:
+        logger.exception(
+            "studio:workbench:cost_history session setup failed aid=%s", aid
+        )
+        block_status["cost_history"] = _degraded(
+            f"DB session unavailable ({type(exc).__name__})"
+        )
+
+    # --- trigger_context ---------------------------------------------
+    if source and reason:
+        try:
+            from backend.services.pricing.trigger_context import build_trigger_context
+
+            with SessionLocal() as db:
+                try:
+                    ctx = build_trigger_context(
+                        aid=aid,
+                        source=source,
+                        reason=reason,
+                        cluster=cluster,
+                        db_session=db,
+                    )
+                    if ctx is not None:
+                        workbench["trigger_context"] = ctx.model_dump(mode="json")
+                        block_status["trigger_context"] = _live()
+                    try:
+                        db.commit()
+                    except Exception:
+                        logger.exception(
+                            "studio:workbench:trigger_context commit failed aid=%s", aid
+                        )
+                        _safe_rollback(db)
+                except Exception as exc:
+                    logger.exception(
+                        "studio:workbench:trigger_context aid=%s source=%s reason=%s",
+                        aid,
+                        source,
+                        reason,
+                    )
+                    _safe_rollback(db)
+                    block_status["trigger_context"] = _degraded(
+                        f"Trigger context failed ({type(exc).__name__})"
+                    )
+        except Exception as exc:
+            logger.exception(
+                "studio:workbench:trigger_context session setup failed aid=%s", aid
+            )
+            block_status["trigger_context"] = _degraded(
+                f"DB session unavailable ({type(exc).__name__})"
+            )
+
+    return block_status
+
+
+# ---------------------------------------------------------------------------
+# Phase-8 active A/B test
+# ---------------------------------------------------------------------------
+
+
+def _attach_phase8_signals(
+    workbench: dict[str, Any],
+    aid: str,
+) -> dict[str, Any]:
+    """Active A/B test summary for the workbench card."""
+    try:
+        from backend.services.pricing.ab_test import get_active_ab_test_summary
+
+        with SessionLocal() as db:
+            try:
+                summary = get_active_ab_test_summary(aid=aid, db_session=db)
+                if summary is not None:
+                    workbench["active_ab_test"] = summary
+                    return _live()
+                return _empty("No active A/B test for this aid")
+            except Exception as exc:
+                logger.exception("studio:workbench:active_ab_test aid=%s", aid)
+                _safe_rollback(db)
+                return _degraded(
+                    f"A/B test lookup failed ({type(exc).__name__})"
+                )
+    except Exception as exc:
+        logger.exception(
+            "studio:workbench:active_ab_test session setup failed aid=%s", aid
+        )
+        return _degraded(f"DB session unavailable ({type(exc).__name__})")
+
+
+# ---------------------------------------------------------------------------
+# Legacy-block derivations (fanout/cost/history/memo/options/hero)
+# ---------------------------------------------------------------------------
 
 
 def _percent_breakdown(breakdown: dict[str, Any]) -> list[dict[str, Any]]:
-    """Normalise a ``CostBreakdown``-shaped dict to integer-percent components.
-
-    Returns the 4 canonical rows the legacy FE expects (material/labor/
-    outsourcing/overhead). Sum is renormalised to 100 when the underlying
-    values are Euros so the rendered bars always fit 0..100%.
-    """
     raw = {
         "material": breakdown.get("material") if breakdown else None,
         "labor": breakdown.get("labor") if breakdown else None,
@@ -311,7 +513,6 @@ def _percent_breakdown(breakdown: dict[str, Any]) -> list[dict[str, Any]]:
     total = sum(vals.values())
     if total <= 0:
         return []
-    # If the breakdown is fractional (~1.0) or Euros (>1.5) — normalise either way.
     scale = 100.0 / total
     pct = {k: round(v * scale, 1) for k, v in vals.items()}
     names = {
@@ -331,16 +532,12 @@ def _quarter_label(at) -> str:
         q = (at.month - 1) // 3 + 1
         return f"{at.year}-Q{q}"
     except Exception:
+        # Pure date-arith fallback; no DB session involved here.
+        logger.debug("studio:workbench:_quarter_label non-date input=%r", at)
         return str(at)[:10] if at else "—"
 
 
 def _derive_history_rows(db, aid: str) -> list[dict[str, Any]]:
-    """Build the repricing-history rows for ``aid`` from pricing_audit.
-
-    Matches rows where ``target_kind='sku' AND target_id=aid AND
-    action='price_set'``. Returns ``[]`` if no events exist — the FE
-    renders an empty-state instead of falling back to seeded fiction.
-    """
     from backend.models.pricing.audit import PricingAuditEntry
 
     out: list[dict[str, Any]] = []
@@ -358,7 +555,8 @@ def _derive_history_rows(db, aid: str) -> list[dict[str, Any]]:
             .all()
         )
     except Exception:
-        logger.exception("workbench.history pricing_audit query failed aid=%s", aid)
+        logger.exception("studio:workbench:history pricing_audit aid=%s", aid)
+        _safe_rollback(db)
         return []
 
     for r in rows:
@@ -404,15 +602,6 @@ def _compute_options_block(
     recommended: Optional[Decimal],
     annual_units: Optional[float] = None,
 ) -> dict[str, Any]:
-    """Derive a per-SKU options block (hold/floor/market/abtest) from
-    price_state + cost_state + the latest recommendation.
-
-    Each option's price comes from a real value (current/floor/ceiling
-    or recommended), never a hardcoded €4.20/€5.10/€5.85. When the
-    inputs are missing we mark the option ``empty`` so the FE renders
-    a "Recommendation pending" badge.
-    """
-
     def _margin_at(price: Optional[Decimal]) -> Optional[float]:
         if price is None or unit_cost is None:
             return None
@@ -421,10 +610,15 @@ def _compute_options_block(
                 return None
             return float((price - unit_cost) / price * 100)
         except Exception:
+            # Pure-arith fallback — no DB session involved.
+            logger.debug(
+                "studio:workbench:_margin_at arith failed price=%s cost=%s",
+                price,
+                unit_cost,
+            )
             return None
 
     def _impact(price: Optional[Decimal]) -> Optional[float]:
-        # Annual recovery / leakage vs current price * annual_units.
         if (
             price is None
             or current_price is None
@@ -435,6 +629,12 @@ def _compute_options_block(
         try:
             return float((price - current_price) * Decimal(str(annual_units)))
         except Exception:
+            logger.debug(
+                "studio:workbench:_impact arith failed price=%s curr=%s units=%s",
+                price,
+                current_price,
+                annual_units,
+            )
             return None
 
     def _fmt_pct(v: Optional[float]) -> str:
@@ -477,7 +677,7 @@ def _compute_options_block(
     else:
         options["hold"] = {"price": None, "empty": "Current price unavailable"}
 
-    # FLOOR = price_state.floor (the recommendation lower band) or recommended
+    # FLOOR = price_state.floor or recommended
     floor_price = floor if floor is not None else recommended
     if floor_price is not None and current_price is not None:
         delta = float(floor_price - current_price)
@@ -509,7 +709,7 @@ def _compute_options_block(
     else:
         options["floor"] = {"price": None, "empty": "Recommendation pending"}
 
-    # MARKET = ceiling (band.max anchor) or recommended * 1.45
+    # MARKET = ceiling or recommended
     market_price = ceiling
     if market_price is None and recommended is not None:
         market_price = recommended
@@ -533,7 +733,6 @@ def _compute_options_block(
     else:
         options["market"] = {"price": None, "empty": "Market anchor unavailable"}
 
-    # AB-test: anchor copy on the FLOOR price if we have one
     floor_label = (
         _format_eur(floor_price) if floor_price is not None else "the recommended price"
     )
@@ -555,41 +754,35 @@ def _compute_options_block(
 
 def _replace_legacy_blocks(
     workbench: dict[str, Any], aid: str, *, sku: dict[str, Any]
-) -> None:
-    """Pricing Studio v3 / Phase 13 — replace legacy seed blocks with
-    per-aid honest derivations.
+) -> dict[str, dict[str, Any]]:
+    """Build the legacy blocks (fanout/cost/options/history/memo/hero) from
+    live tables. Each block reports its status in the returned dict.
 
-    Mutates ``workbench`` in place:
-        - ``fanout`` rows derived from the LIVE ``customer_fanout`` block
-          (which was already attached by ``_attach_phase2_signals``).
-          When that block is empty we drop ``rows`` to ``[]`` and the FE
-          renders the empty state — never the hardcoded 101580/102330/…
-          list for a SKU that doesn't buy them.
-        - ``cost`` composition derived from ``cost_state.breakdown``.
-        - ``history`` rows derived from ``pricing_audit`` for the aid.
-        - ``memo`` title/subject derived from the aid + SKU description.
-
-    All blocks fall back to an empty-state shape when the underlying DB
-    rows don't exist. We swallow exceptions to keep the workbench shell
-    rendering even when a derivation fails.
+    Returned keys: ``fanout``, ``cost``, ``options``, ``hero``,
+    ``history``, ``memo``.
     """
-    # -- fanout ---------------------------------------------------------
+    block_status: dict[str, dict[str, Any]] = {
+        "fanout": _empty("No customers buying this aid"),
+        "cost": _empty("Cost composition not yet ingested for this aid"),
+        "options": _empty("No options derived for this aid"),
+        "hero": _empty("Hero margin unavailable"),
+        "history": _empty("No prior repricings recorded for this aid"),
+        "memo": _empty("Memo will draft once a recommendation is computed"),
+    }
+
+    # -- fanout legacy-shape derivation -------------------------------
     try:
         live_fan = workbench.get("customer_fanout") or {}
         live_rows = live_fan.get("rows") or []
-        legacy_fan = dict(workbench.get("fanout") or {})
-        legacy_fan["rows"] = []  # Always drop the hardcoded seed rows.
+        legacy_fan: dict[str, Any] = {}
+        legacy_fan["rows"] = []
         if not live_rows:
             legacy_fan["empty"] = (
                 "No customers buying this SKU in the trailing 12 months"
             )
-            # Strip the misleading cluster note when we have no real fanout.
             legacy_fan["clusterNote"] = ""
             legacy_fan["footNote"] = ""
         else:
-            # Synthesise legacy-shape rows from real customers so any FE
-            # path that still reads `wb.fanout.rows` (e.g. older tests)
-            # sees REAL ids — not the stub 101580/102330 list.
             synth_rows: list[dict[str, Any]] = []
             for r in live_rows:
                 cid = r.get("customer_id") or ""
@@ -629,29 +822,41 @@ def _replace_legacy_blocks(
                     }
                 )
             legacy_fan["rows"] = synth_rows
-            # Keep the cluster note honest — drop the hardcoded n=247 claim.
             cluster = str(sku.get("cluster") or "") or "—"
             legacy_fan["clusterNote"] = (
                 f"Cluster **{cluster}** · "
                 f"{len(live_rows)} customer(s) on this SKU in the trailing window"
             )
+            block_status["fanout"] = _live()
         workbench["fanout"] = legacy_fan
-    except Exception:
-        logger.exception("workbench._replace fanout failed aid=%s", aid)
+    except Exception as exc:
+        logger.exception("studio:workbench:legacy.fanout aid=%s", aid)
+        block_status["fanout"] = _degraded(
+            f"Fanout shape derivation failed ({type(exc).__name__})"
+        )
+        workbench.setdefault("fanout", {"rows": []})
 
-    # -- cost composition ----------------------------------------------
+    # -- cost composition --------------------------------------------
     try:
         from backend.models.pricing.cost_state import CostStateRow
         from backend.models.pricing.pricing_state import PriceStateRow
 
         with SessionLocal() as db:
-            cost_row = db.execute(
-                select(CostStateRow).where(CostStateRow.aid == aid)
-            ).scalar_one_or_none()
-            price_row = db.execute(
-                select(PriceStateRow).where(PriceStateRow.aid == aid)
-            ).scalar_one_or_none()
-        legacy_cost = dict(workbench.get("cost") or {})
+            try:
+                cost_row = db.execute(
+                    select(CostStateRow).where(CostStateRow.aid == aid)
+                ).scalar_one_or_none()
+                price_row = db.execute(
+                    select(PriceStateRow).where(PriceStateRow.aid == aid)
+                ).scalar_one_or_none()
+            except Exception as exc:
+                logger.exception("studio:workbench:legacy.cost aid=%s", aid)
+                _safe_rollback(db)
+                block_status["cost"] = _degraded(
+                    f"Cost query failed ({type(exc).__name__})"
+                )
+                cost_row = price_row = None
+        legacy_cost: dict[str, Any] = {}
         components: list[dict[str, Any]] = []
         if cost_row is not None and cost_row.breakdown:
             components = _percent_breakdown(cost_row.breakdown)
@@ -664,12 +869,12 @@ def _replace_legacy_blocks(
                 f"Material {material_pct:.0f}% of unit cost · cluster "
                 f"{sku.get('cluster') or '—'}."
             )
+            block_status["cost"] = _live()
         else:
             legacy_cost["components"] = []
             legacy_cost["empty"] = "Cost composition not yet ingested for this SKU"
             legacy_cost["note"] = ""
 
-        # Honest unitCost, floorCalc, paneSub derived per-aid (never €5.10).
         unit_cost = (
             cost_row.unit_cost
             if cost_row is not None and cost_row.unit_cost is not None
@@ -680,15 +885,13 @@ def _replace_legacy_blocks(
             if price_row is not None and price_row.floor is not None
             else None
         )
-        target_margin_pct = 25  # cluster-floor target margin (fixed)
-        if unit_cost is not None:
-            legacy_cost["unitCost"] = f"{float(unit_cost):.2f}"
-        else:
-            legacy_cost["unitCost"] = None
+        target_margin_pct = 25
+        legacy_cost["unitCost"] = (
+            f"{float(unit_cost):.2f}" if unit_cost is not None else None
+        )
         if floor_price is not None:
             legacy_cost["floorCalc"] = f"{float(floor_price):.2f}"
         elif unit_cost is not None:
-            # Derive a floor from cost + target margin if we have no price floor.
             derived_floor = float(unit_cost) / (1 - target_margin_pct / 100.0)
             legacy_cost["floorCalc"] = f"{derived_floor:.2f}"
         else:
@@ -706,39 +909,50 @@ def _replace_legacy_blocks(
         else:
             legacy_cost["paneSub"] = "Cost data unavailable for this SKU"
         workbench["cost"] = legacy_cost
-    except Exception:
-        logger.exception("workbench._replace cost failed aid=%s", aid)
+    except Exception as exc:
+        logger.exception("studio:workbench:legacy.cost session aid=%s", aid)
+        block_status["cost"] = _degraded(
+            f"Cost session unavailable ({type(exc).__name__})"
+        )
+        workbench.setdefault("cost", {"components": []})
 
-    # -- options block (hold / floor / market / abtest) ----------------
-    # Pricing Studio v3 / Phase 13 / D1+D2: per-aid options derived from
-    # price_state + cost_state + recommendation. Never serve €4.20/€5.10/€5.85.
+    # -- options block -----------------------------------------------
     try:
         from backend.models.pricing.cost_state import CostStateRow as _CR
         from backend.models.pricing.pricing_state import PriceStateRow as _PR
 
         with SessionLocal() as db:
-            cost_row2 = db.execute(
-                select(_CR).where(_CR.aid == aid)
-            ).scalar_one_or_none()
-            price_row2 = db.execute(
-                select(_PR).where(_PR.aid == aid)
-            ).scalar_one_or_none()
+            try:
+                cost_row2 = db.execute(
+                    select(_CR).where(_CR.aid == aid)
+                ).scalar_one_or_none()
+                price_row2 = db.execute(
+                    select(_PR).where(_PR.aid == aid)
+                ).scalar_one_or_none()
+            except Exception as exc:
+                logger.exception("studio:workbench:legacy.options query aid=%s", aid)
+                _safe_rollback(db)
+                block_status["options"] = _degraded(
+                    f"Options query failed ({type(exc).__name__})"
+                )
+                cost_row2 = price_row2 = None
         rec = workbench.get("recommendation") or {}
         rec_price = None
         try:
             rec_raw = rec.get("recommended_price") if isinstance(rec, dict) else None
             rec_price = Decimal(str(rec_raw)) if rec_raw is not None else None
         except Exception:
+            logger.debug(
+                "studio:workbench:legacy.options bad rec_price=%r",
+                rec.get("recommended_price"),
+            )
             rec_price = None
         annual_units = None
         try:
-            au = (sku.get("annualUnits") if isinstance(sku, dict) else None) or (
-                (sku.get("shortHero") or {}).get("annualUnits")
-                if isinstance(sku, dict)
-                else None
-            )
+            au = (sku.get("annualUnits") if isinstance(sku, dict) else None)
             annual_units = float(au) if au is not None else None
         except Exception:
+            logger.debug("studio:workbench:legacy.options bad annual_units")
             annual_units = None
         options = _compute_options_block(
             current_price=(price_row2.current_price if price_row2 else None),
@@ -749,21 +963,39 @@ def _replace_legacy_blocks(
             annual_units=annual_units,
         )
         workbench["options"] = options
-    except Exception:
-        logger.exception("workbench._replace options failed aid=%s", aid)
+        if options and (
+            options.get("hold", {}).get("price")
+            or options.get("floor", {}).get("price")
+            or options.get("market", {}).get("price")
+        ):
+            block_status["options"] = _live()
+    except Exception as exc:
+        logger.exception("studio:workbench:legacy.options session aid=%s", aid)
+        block_status["options"] = _degraded(
+            f"Options session unavailable ({type(exc).__name__})"
+        )
+        workbench.setdefault("options", {})
 
-    # -- hero margin recompute (D3) ------------------------------------
+    # -- hero margin recompute ---------------------------------------
     try:
         from backend.models.pricing.cost_state import CostStateRow as _CR2
         from backend.models.pricing.pricing_state import PriceStateRow as _PR2
 
         with SessionLocal() as db:
-            cost_row3 = db.execute(
-                select(_CR2).where(_CR2.aid == aid)
-            ).scalar_one_or_none()
-            price_row3 = db.execute(
-                select(_PR2).where(_PR2.aid == aid)
-            ).scalar_one_or_none()
+            try:
+                cost_row3 = db.execute(
+                    select(_CR2).where(_CR2.aid == aid)
+                ).scalar_one_or_none()
+                price_row3 = db.execute(
+                    select(_PR2).where(_PR2.aid == aid)
+                ).scalar_one_or_none()
+            except Exception as exc:
+                logger.exception("studio:workbench:legacy.hero query aid=%s", aid)
+                _safe_rollback(db)
+                block_status["hero"] = _degraded(
+                    f"Hero query failed ({type(exc).__name__})"
+                )
+                cost_row3 = price_row3 = None
         if (
             price_row3 is not None
             and price_row3.current_price is not None
@@ -784,36 +1016,47 @@ def _replace_legacy_blocks(
                 hero["currentMargin"] = f"{sign}{abs(margin_pct):.1f}% margin"
                 hero["currentMarginTone"] = tone
                 hero["currentMarginPct"] = round(margin_pct, 2)
+                hero["currentPrice"] = _format_eur(price_row3.current_price)
                 workbench["hero"] = hero
-    except Exception:
-        logger.exception("workbench._replace hero margin failed aid=%s", aid)
+                block_status["hero"] = _live()
+    except Exception as exc:
+        logger.exception("studio:workbench:legacy.hero session aid=%s", aid)
+        block_status["hero"] = _degraded(
+            f"Hero session unavailable ({type(exc).__name__})"
+        )
 
-    # -- repricing history ---------------------------------------------
+    # -- repricing history -------------------------------------------
     try:
         with SessionLocal() as db:
-            history_rows = _derive_history_rows(db, aid)
+            try:
+                history_rows = _derive_history_rows(db, aid)
+            except Exception as exc:
+                logger.exception("studio:workbench:legacy.history aid=%s", aid)
+                _safe_rollback(db)
+                block_status["history"] = _degraded(
+                    f"History query failed ({type(exc).__name__})"
+                )
+                history_rows = []
         if history_rows:
             workbench["history"] = history_rows
+            block_status["history"] = _live()
         else:
-            # Empty list + explicit empty hint via a sidecar key (FE already
-            # renders an empty state when historyRows.length === 0).
             workbench["history"] = []
             workbench["history_empty"] = (
                 "No prior repricings recorded for this SKU"
             )
-    except Exception:
-        logger.exception("workbench._replace history failed aid=%s", aid)
+    except Exception as exc:
+        logger.exception("studio:workbench:legacy.history session aid=%s", aid)
+        block_status["history"] = _degraded(
+            f"History session unavailable ({type(exc).__name__})"
+        )
         workbench["history"] = []
 
-    # -- memo (title/subject) ------------------------------------------
+    # -- memo (subject line only — body comes from useBriefing live LLM)
     try:
-        legacy_memo = dict(workbench.get("memo") or {})
+        legacy_memo: dict[str, Any] = {}
         cluster = sku.get("cluster") or "—"
-        description = (sku.get("shortHero") or {}).get("title") or aid
-        # Replace the hardcoded "Subject: Price proposal — Article 200832-E …"
-        # paragraph with one that mentions THIS aid/cluster. The FE prefers
-        # the live `useBriefing` markdown body, so the fallback paragraphs
-        # only matter when the LLM hasn't returned yet.
+        description = aid
         rec = workbench.get("recommendation") or {}
         rec_price = rec.get("recommended_price") if isinstance(rec, dict) else None
         subject_line = (
@@ -821,20 +1064,27 @@ def _replace_legacy_blocks(
             f"({description}, cluster {cluster})"
         )
         if rec_price is None:
-            # No recommendation → fallback memo is meaningless. Drop the
-            # detailed paragraphs and let the FE empty-state handle it.
             legacy_memo["paragraphs"] = [{"body": subject_line}]
             legacy_memo["empty"] = (
                 "Memo will draft once a recommendation is computed"
             )
         else:
-            # Keep the structure but rewrite the subject paragraph; the
-            # remaining paragraphs are 200832-E-specific so drop them too
-            # in favour of the live briefing.
             legacy_memo["paragraphs"] = [{"body": subject_line}]
+            block_status["memo"] = _live()
         workbench["memo"] = legacy_memo
-    except Exception:
-        logger.exception("workbench._replace memo failed aid=%s", aid)
+    except Exception as exc:
+        logger.exception("studio:workbench:legacy.memo aid=%s", aid)
+        block_status["memo"] = _degraded(
+            f"Memo derivation failed ({type(exc).__name__})"
+        )
+        workbench.setdefault("memo", {"paragraphs": []})
+
+    return block_status
+
+
+# ---------------------------------------------------------------------------
+# Public builders
+# ---------------------------------------------------------------------------
 
 
 async def build_workbench(
@@ -844,102 +1094,108 @@ async def build_workbench(
     source: Optional[str] = None,
     reason: Optional[str] = None,
 ) -> dict[str, Any]:
-    """Per-SKU workbench. Today the seed only carries the default SKU's
-    workbench; for any other aid we return that same template tagged with
-    the requested aid so the contract holds end-to-end.
+    """Per-SKU workbench.
 
-    Phase 1 attaches ``recommendation/wtp/win_prob_curve/competitor_ref``
-    as optional fields (omitted on failure, never 500).
-
-    Phase 3 (Pricing Studio v3) adds ``option_margins`` (per-option
-    pocket waterfalls), ``cost_history`` (per-SKU narrowed commodity
-    trajectories) and ``trigger_context`` (the deep-link banner). The
-    ``source``/``reason`` URL params drive the banner — when neither is
-    set the field is omitted.
+    Phase A3: no seed merge. The aid must exist in ``price_state`` or
+    ``cost_state`` (404 otherwise). All workbench blocks are derived
+    from live tables; each carries an entry in ``meta.blocks`` so the
+    frontend can render ``live``/``empty``/``degraded``/``locked``
+    states honestly.
     """
-    sku = _find_sku(aid)
-    if sku is None:
+    exists, sku = _sku_exists(aid)
+    if not exists:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"unknown aid: {aid}"
         )
-    seed = load_seed()
-    workbench = dict(seed["workbench"])
-    if "hero" in workbench:
-        hero = dict(workbench["hero"])
-        hero["aid"] = aid
-        if sku.get("shortHero"):
-            short = sku["shortHero"]
-            hero["title"] = short.get("title", hero.get("title"))
-            hero["sub"] = short.get("sub", hero.get("sub"))
-            # Honour the per-SKU shortHero price/margin overrides — without
-            # these, every non-default SKU rendered the default SKU's
-            # €4.20 / −1.3% in the hero while the recommendation used the
-            # SKU's real price_state, producing nonsense deltas like
-            # "+9704% upside on €284 → €411".
-            for key in (
-                "currentPrice",
-                "currentMargin",
-                "currentMarginTone",
-                "targetText",
-                "meta",
-            ):
-                v = short.get(key)
-                if v not in (None, "", "—"):
-                    hero[key] = v
-        # Also overlay the canonical current_price from price_state so the
-        # hero never lies about reality even when shortHero is absent or
-        # stale (e.g. SKUs in the seed without a shortHero block).
-        try:
-            from sqlalchemy import select
 
-            from backend.models.pricing.pricing_state import PriceStateRow
-
-            with SessionLocal() as db:
-                row = db.execute(
-                    select(PriceStateRow).where(PriceStateRow.aid == aid)
-                ).scalar_one_or_none()
-                if row is not None and row.current_price is not None:
-                    hero["currentPrice"] = _format_eur(row.current_price)
-        except Exception:
-            logger.exception("workbench.hero currentPrice override failed aid=%s", aid)
-        workbench["hero"] = hero
-    workbench["aid"] = aid
+    # Start from a minimal scaffold — empty blocks the FE renders as
+    # "empty" until a builder upgrades them to "live".
+    workbench: dict[str, Any] = {
+        "aid": aid,
+        "hero": {
+            "aid": aid,
+            "title": "—",
+            "sub": "",
+            "currentPrice": None,
+            "currentMargin": None,
+            "targetText": "",
+        },
+        "options": {},
+        "fanout": {"rows": [], "clusterNote": "", "footNote": ""},
+        "cost": {"components": [], "note": ""},
+        "history": [],
+        "decision": {},
+        "memo": {"paragraphs": []},
+    }
     cluster = str(sku.get("cluster") or "") or None
-    _attach_phase1_signals(
+
+    phase1_status = _attach_phase1_signals(
         workbench,
         aid,
         tier or str(sku.get("tier") or "") or None,
         cluster=cluster,
     )
-    _attach_phase2_signals(workbench, aid)
-    _attach_phase3_signals(
+    phase2_status = _attach_phase2_signals(workbench, aid)
+    phase3_status = _attach_phase3_signals(
         workbench,
         aid,
         source=source,
         reason=reason,
         cluster=cluster,
     )
-    _attach_phase8_signals(workbench, aid)
-    # Pricing Studio v3 / Phase 13 — replace the legacy seed blocks
-    # (`fanout`, `cost`, `history`, `memo`) with per-aid derivations so we
-    # never lie about reality.  Each block falls back to a "not yet
-    # available" empty-state when the underlying DB rows don't exist.
-    _replace_legacy_blocks(workbench, aid, sku=sku)
+    phase8_status = _attach_phase8_signals(workbench, aid)
+    legacy_status = _replace_legacy_blocks(workbench, aid, sku=sku)
+
+    # Aggregate per-block status into meta.blocks. Order is stable so
+    # the frontend's iteration is deterministic.
+    meta_blocks: dict[str, Any] = {
+        "recommendation": phase1_status["recommendation"],
+        "wtp": phase1_status["wtp"],
+        "win_prob_curve": phase1_status["win_prob_curve"],
+        "competitor_ref": phase1_status["competitor_ref"],
+        "customer_fanout": phase2_status,
+        "cost_history": phase3_status["cost_history"],
+        "option_margins": phase3_status["option_margins"],
+        "trigger_context": phase3_status["trigger_context"],
+        "active_ab_test": phase8_status,
+        # Legacy-shape blocks the FE reads from the workbench root:
+        "fanout": legacy_status["fanout"],
+        "cost": legacy_status["cost"],
+        "options": legacy_status["options"],
+        "hero": legacy_status["hero"],
+        "history": legacy_status["history"],
+        "memo": legacy_status["memo"],
+        # Decision block is currently a pass-through stub — until F-phase
+        # wires real lifecycle reads it's intentionally empty.
+        "decision": _empty(
+            "Decision lifecycle data is computed on Accept/Reject — see Phase F"
+        ),
+        # Comparable lives on its own endpoint.
+        "comparable": _empty("Use /screens/studio/comparable/{aid}"),
+    }
+    workbench["meta"] = {"blocks": meta_blocks}
     return workbench
 
 
 async def build_comparable(*, aid: str) -> dict[str, Any]:
-    """Comparable-cluster panel. Only meaningful for ``isNew=true`` SKUs;
-    for known SKUs we still return the seed payload so the frontend can
-    decide whether to render.
+    """Comparable-cluster panel. Phase A3: returns an empty rows list
+    when no comparable data exists for the aid — never a seeded payload.
     """
-    sku = _find_sku(aid)
-    if sku is None:
+    exists, sku = _sku_exists(aid)
+    if not exists:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"unknown aid: {aid}"
         )
-    seed = load_seed()
-    comparable = dict(seed["comparable"])
-    comparable["aid"] = aid
-    comparable["isNew"] = bool(sku.get("isNew", False))
+    comparable: dict[str, Any] = {
+        "aid": aid,
+        "isNew": bool(sku.get("isNew", False)),
+        "rows": [],
+        "meta": {
+            "blocks": {
+                "comparable": _empty(
+                    "Comparable lookup not yet connected — needs cluster-similarity index"
+                )
+            }
+        },
+    }
     return comparable

@@ -111,7 +111,11 @@ def _cluster_for_aid(db: Session, aid: str) -> Optional[str]:
             {"aid": aid},
         ).fetchone()
     except Exception:
-        logger.exception("cost_outlook._cluster_for_aid aid=%s", aid)
+        logger.exception("pricing:cost_outlook:_cluster_for_aid aid=%s", aid)
+        try:
+            db.rollback()
+        except Exception:
+            pass
         return None
     if row is None or row[0] is None:
         return None

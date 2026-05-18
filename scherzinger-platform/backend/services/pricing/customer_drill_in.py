@@ -76,8 +76,12 @@ def _load_wallet_top_skus(
         ).fetchall()
     except Exception:
         logger.exception(
-            "customer_drill_in._load_wallet_top_skus cid=%s", customer_id
+            "pricing:customer_drill_in:_load_wallet_top_skus cid=%s", customer_id
         )
+        try:
+            db_session.rollback()
+        except Exception:
+            pass
         return []
     out: list[dict[str, Any]] = []
     for r in rows:
@@ -118,8 +122,14 @@ def _load_history_on_sku(
         ).fetchall()
     except Exception:
         logger.exception(
-            "customer_drill_in._load_history_on_sku cid=%s aid=%s", customer_id, aid
+            "pricing:customer_drill_in:_load_history_on_sku cid=%s aid=%s",
+            customer_id,
+            aid,
         )
+        try:
+            db_session.rollback()
+        except Exception:
+            pass
         return []
     out: list[dict[str, Any]] = []
     for r in rows:

@@ -283,9 +283,13 @@ def submit_proposal_for_approval(
             )
         except Exception:
             logger.exception(
-                "approval_workflow.submit batch_subscribers failed proposal_id=%s",
+                "pricing:approval_workflow:submit batch_subscribers failed proposal_id=%s",
                 proposal.id,
             )
+            try:
+                session.rollback()
+            except Exception:
+                pass
     else:
         _publish_event(
             "proposal.submitted",
@@ -457,11 +461,15 @@ def apply_decision(
             )
     except Exception:
         logger.exception(
-            "approval_workflow.apply_decision batch_subscribers failed "
+            "pricing:approval_workflow:apply_decision batch_subscribers failed "
             "proposal_id=%s decision=%s",
             proposal.id,
             decision.value,
         )
+        try:
+            session.rollback()
+        except Exception:
+            pass
 
     return instance
 

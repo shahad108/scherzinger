@@ -127,10 +127,14 @@ def _load_wtp(
         )
     except Exception:
         logger.exception(
-            "recommendation._load_wtp failed aid=%s customer_id=%s",
+            "pricing:recommendation:_load_wtp failed aid=%s customer_id=%s",
             aid,
             customer_id,
         )
+        try:
+            db_session.rollback()
+        except Exception:
+            pass
         return None
 
 
@@ -138,7 +142,11 @@ def _load_competitor(*, aid: str, db_session: Session) -> Optional[CompetitorRef
     try:
         return build_competitor_ref(aid=aid, n_days=90, db_session=db_session)
     except Exception:
-        logger.exception("recommendation._load_competitor failed aid=%s", aid)
+        logger.exception("pricing:recommendation:_load_competitor failed aid=%s", aid)
+        try:
+            db_session.rollback()
+        except Exception:
+            pass
         return None
 
 
@@ -160,7 +168,11 @@ def _load_curve(
             db_session=db_session,
         )
     except Exception:
-        logger.exception("recommendation._load_curve failed aid=%s", aid)
+        logger.exception("pricing:recommendation:_load_curve failed aid=%s", aid)
+        try:
+            db_session.rollback()
+        except Exception:
+            pass
         return None
 
 
