@@ -815,6 +815,7 @@ export default function PricingStudioPage() {
                 block={fanoutBlock}
                 proposedPriceDecimal={proposedPriceDecimal}
                 aid={effectiveAid}
+                blockMeta={wb.meta?.blocks?.customer_fanout ?? null}
               />
               <CostHistory
                 aid={effectiveAid}
@@ -826,7 +827,16 @@ export default function PricingStudioPage() {
               />
             </div>
 
-            {showComparable && <ComparablePanel data={data.comparable} />}
+            {/* Phase C5 — only render the comparable panel when (a) the SKU
+                is actually new, (b) we have comparable payload, and (c) the
+                BFF marks the block live. New SKUs with a locked/degraded
+                block get a locked overlay; non-new SKUs hide entirely. */}
+            {showComparable && (
+              <ComparablePanelGate
+                data={data.comparable}
+                meta={wb.meta?.blocks?.comparable ?? null}
+              />
+            )}
 
             <ProposalContextPanel
               articleId={effectiveAid}
@@ -846,7 +856,11 @@ export default function PricingStudioPage() {
               }}
             />
 
-            <RationaleMemo aid={effectiveAid} data={wb.memo} />
+            <RationaleMemo
+              aid={effectiveAid}
+              data={wb.memo}
+              blockMeta={wb.meta?.blocks?.memo ?? null}
+            />
           </div>
           )}
         </div>
@@ -941,4 +955,104 @@ export default function PricingStudioPage() {
 function StudioUrlSyncBridge() {
   useLineageUrlSync();
   return null;
+}
+
+// Pricing Studio v3 / Phase C5 — gating wrapper for <ComparablePanel>. The
+// panel only ever renders for new SKUs, and only when the BFF marks the
+// ``meta.blocks.comparable`` block as ``live``. For ``locked`` / ``degraded``
+// states we render a faded overlay over the (still-rendered) panel so
+// Frank can see what would have been there + why it's not available.
+function ComparablePanelGate({
+  data,
+  meta,
+}: {
+  data: import('@/types/studio').ComparablePanel;
+  meta: import('@/types/studio').WorkbenchBlockMeta | null;
+}) {
+  const status = meta?.status ?? 'live';
+  if (status === 'live') {
+    return <ComparablePanel data={data} />;
+  }
+  if (status === 'empty') {
+    // New-SKU + no comparable cluster yet — render a quiet placeholder.
+    return (
+      <div
+        role="note"
+        data-testid="comparable-panel-empty"
+        style={{
+          margin: '8px 0',
+          padding: '14px 16px',
+          borderRadius: 12,
+          background: 'var(--surface-sunken)',
+          border: '1px dashed var(--hairline)',
+          color: 'var(--ink-2)',
+          fontSize: 12.5,
+          lineHeight: 1.45,
+        }}
+      >
+        <div style={{ fontWeight: 700, color: 'var(--ink)', fontSize: 12 }}>
+          No comparable cluster yet
+        </div>
+        <div style={{ marginTop: 4 }}>
+          {meta?.reason ??
+            'New SKU has no similar items with enough history to anchor a price.'}
+        </div>
+      </div>
+    );
+  }
+  // locked / degraded — overlay the panel so the shape stays visible but
+  // it's clearly not actionable. Mirrors the Action Center pattern.
+  const isLocked = status === 'locked';
+  return (
+    <div
+      data-testid={`comparable-panel-${status}`}
+      data-status={status}
+      style={{ position: 'relative' }}
+    >
+      <div style={{ filter: 'blur(0.5px)', opacity: 0.5, pointerEvents: 'none' }}>
+        <ComparablePanel data={data} />
+      </div>
+      <div
+        role={isLocked ? 'note' : 'alert'}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16,
+          background: isLocked
+            ? 'color-mix(in oklab, var(--surface-sunken) 75%, transparent)'
+            : 'color-mix(in oklab, var(--amber-bg) 70%, transparent)',
+          borderRadius: 12,
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 360,
+            padding: '14px 16px',
+            borderRadius: 12,
+            background: 'white',
+            border: isLocked
+              ? '1px dashed var(--hairline)'
+              : '1px solid color-mix(in oklab, var(--amber) 32%, white)',
+            color: 'var(--ink-2)',
+            fontSize: 12.5,
+            lineHeight: 1.45,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div style={{ fontWeight: 700, color: 'var(--ink)', fontSize: 12 }}>
+            {isLocked ? 'Comparable panel is locked' : 'Comparable panel is degraded'}
+          </div>
+          <div style={{ marginTop: 4 }}>
+            {meta?.reason ??
+              (isLocked
+                ? 'Data source not yet connected.'
+                : 'Backend reported a partial failure computing comparables.')}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

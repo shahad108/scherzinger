@@ -16,6 +16,7 @@ import type {
   CustomerFanoutBlock,
   CustomerFanoutRow,
   FanoutPane,
+  WorkbenchBlockMeta,
 } from '@/types/studio';
 import { CustomerDrillInDrawer } from './CustomerDrillInDrawer';
 import { PaidBandMicroBar } from './PaidBandMicroBar';
@@ -35,9 +36,32 @@ interface Props {
   proposedPriceDecimal?: string | null;
   /** Owning aid (used for drill-in URLs). */
   aid: string;
+  /**
+   * Phase A — per-block status from ``workbench.meta.blocks.customer_fanout``.
+   * When non-``'live'`` we render an inline empty/locked/degraded card in
+   * place of the rows; the block payload is then ignored. ``computed_at``
+   * (when present) drives the "Stale data" chip after 7d.
+   */
+  blockMeta?: WorkbenchBlockMeta | null;
 }
 
-export function CustomerFanout({ data, fanPrice, block, proposedPriceDecimal, aid }: Props) {
+const STALE_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000;
+
+function isStale(computedAt: string | null | undefined): boolean {
+  if (!computedAt) return false;
+  const ts = Date.parse(computedAt);
+  if (!Number.isFinite(ts)) return false;
+  return Date.now() - ts > STALE_THRESHOLD_MS;
+}
+
+export function CustomerFanout({
+  data,
+  fanPrice,
+  block,
+  proposedPriceDecimal,
+  aid,
+  blockMeta,
+}: Props) {
   const [openCustomer, setOpenCustomer] = useState<CustomerFanoutRow | null>(null);
 
   // When the BFF v3 block is present render the typed rows; otherwise
@@ -65,6 +89,18 @@ export function CustomerFanout({ data, fanPrice, block, proposedPriceDecimal, ai
     data.paneSub.match(/\(([^)]+)\)/)?.[1] ||
     'cost-floor';
 
+  // Phase A — when the BFF marks the fanout block non-live we render an
+  // inline empty/locked/degraded card and skip the row list entirely. The
+  // rest of the pane (header, alert button) still renders so the user has
+  // context for what would have been here.
+  const blockStatus = blockMeta?.status ?? 'live';
+  const blockNonLive = blockStatus !== 'live';
+
+  // Phase A — "Stale data" amber chip when the upstream computation is
+  // older than 7d. Backend writes ``computed_at`` on the block-meta when
+  // a lineage timestamp is available; if absent we don't render the chip.
+  const stale = isStale(blockMeta?.computed_at);
+
   return (
     <div className="ws-pane">
       <h4 className="flex items-center gap-2">
@@ -74,6 +110,31 @@ export function CustomerFanout({ data, fanPrice, block, proposedPriceDecimal, ai
             if priced at <b>{fanPrice}</b> ({contextLabel})
           </span>
         </span>
+        {stale && (
+          <span
+            data-testid="customer-fanout-stale-chip"
+            title={
+              blockMeta?.computed_at
+                ? `Last computed ${blockMeta.computed_at}`
+                : 'Last computation is more than 7 days old'
+            }
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              whiteSpace: 'nowrap',
+              padding: '2px 8px',
+              borderRadius: 999,
+              background: 'color-mix(in oklab, var(--amber-bg) 70%, white)',
+              border: '1px solid color-mix(in oklab, var(--amber) 32%, white)',
+              color: 'var(--ink)',
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: '0.02em',
+            }}
+          >
+            Stale data
+          </span>
+        )}
         <AlertButton
           triggerKind="churn_spike"
           scope={{ aid }}
@@ -82,7 +143,13 @@ export function CustomerFanout({ data, fanPrice, block, proposedPriceDecimal, ai
         />
       </h4>
       <p className="cluster-note">{renderInline(data.clusterNote)}</p>
-      {isExplicitlyEmpty && (
+      {blockNonLive && (
+        <FanoutStatusCard
+          status={blockStatus}
+          reason={blockMeta?.reason ?? null}
+        />
+      )}
+      {!blockNonLive && isExplicitlyEmpty && (
         <div
           className="rounded-[var(--r-sm)] border border-dashed border-[var(--hairline)] bg-[var(--surface-soft)] px-3 py-3 text-[12px] text-[var(--muted)]"
           data-testid="customer-fanout-empty"
@@ -90,6 +157,7 @@ export function CustomerFanout({ data, fanPrice, block, proposedPriceDecimal, ai
           No customers buy this SKU in the current period — fan-out is empty.
         </div>
       )}
+      {!blockNonLive && (
       <div className="ws-fanout">
         {useBlock
           ? block!.rows.map((r) => (
@@ -127,9 +195,12 @@ export function CustomerFanout({ data, fanPrice, block, proposedPriceDecimal, ai
               </div>
             ))}
       </div>
-      <p className="ws-fan-note">
-        {data.footNote} · <a href="#">show all</a>
-      </p>
+      )}
+      {!blockNonLive && (
+        <p className="ws-fan-note">
+          {data.footNote} · <a href="#">show all</a>
+        </p>
+      )}
 
       <CustomerDrillInDrawer
         open={openCustomer !== null}
@@ -153,12 +224,16 @@ interface BlockRowProps {
 }
 
 function BlockRow({ row, proposedPriceDecimal, onClick }: BlockRowProps) {
-  // Tone is BFF truth — never recompute on the client. We just translate
-  // it to the same CSS class names that already exist on .ws-fan-row.
+  // Tone is BFF truth — never recompute on the client. We pass the
+  // backend's tone string straight through as the CSS-class suffix so
+  // the same row colours land via the existing .ws-fan-row stylesheet.
+  // Do NOT re-threshold from churn_p / risk_if_moved / decline_p here.
   const toneClass = row.tone !== 'plain' ? ` ${row.tone}` : '';
   const churnPct = parseDecimal(row.churn_p);
   const churnLabel = Number.isFinite(churnPct) ? `${(churnPct * 100).toFixed(0)}%` : '—';
-  const churnToneClass = row.tone === 'alert' ? 'alert' : row.tone === 'warn' ? 'warn' : 'plain';
+  // BFF tone is also the source-of-truth for the churn chip colour —
+  // just thread it through as a CSS-class suffix (plain | warn | alert).
+  const churnToneClass = row.tone;
 
   const walletShare = parseDecimal(row.wallet_share_pct);
   const walletLabel = Number.isFinite(walletShare) ? `${(walletShare * 100).toFixed(1)}%` : '—';
@@ -210,5 +285,60 @@ function BlockRow({ row, proposedPriceDecimal, onClick }: BlockRowProps) {
         <span className="ws-fan-churn-chip" data-tone={row.tone}>churn {churnLabel}</span>
       </span>
     </button>
+  );
+}
+
+// --- Phase A status card ----------------------------------------------------
+
+/**
+ * Inline empty / locked / degraded card mirrored from the Action Center
+ * patterns (see ``LockedBlock`` / ``DegradedBlock``). Rendered in place of
+ * the fanout rows when ``meta.blocks.customer_fanout.status !== 'live'``.
+ */
+function FanoutStatusCard({
+  status,
+  reason,
+}: {
+  status: 'empty' | 'degraded' | 'locked' | (string & {});
+  reason: string | null;
+}) {
+  const isDegraded = status === 'degraded';
+  const isLocked = status === 'locked';
+  const title =
+    isDegraded
+      ? 'Customer fan-out is degraded'
+      : isLocked
+        ? 'Customer fan-out is locked'
+        : 'No customer fan-out yet';
+  const hint =
+    reason ??
+    (isDegraded
+      ? 'Backend reported a partial failure computing per-customer risk.'
+      : isLocked
+        ? 'Data source not yet connected for this SKU.'
+        : 'No customers have bought this SKU in the lookback window.');
+  return (
+    <div
+      role={isDegraded ? 'alert' : 'note'}
+      data-testid={`customer-fanout-${status}`}
+      data-status={status}
+      style={{
+        margin: '8px 0',
+        padding: '14px 16px',
+        borderRadius: 12,
+        background: isDegraded
+          ? 'color-mix(in oklab, var(--amber-bg) 60%, white)'
+          : 'var(--surface-sunken)',
+        border: isDegraded
+          ? '1px solid color-mix(in oklab, var(--amber) 32%, white)'
+          : '1px dashed var(--hairline)',
+        color: 'var(--ink-2)',
+        fontSize: 12.5,
+        lineHeight: 1.45,
+      }}
+    >
+      <div style={{ fontWeight: 700, color: 'var(--ink)', fontSize: 12 }}>{title}</div>
+      <div style={{ marginTop: 4 }}>{hint}</div>
+    </div>
   );
 }

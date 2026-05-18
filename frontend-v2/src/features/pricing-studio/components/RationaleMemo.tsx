@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { MemoData, MemoSection } from '@/types/studio';
+import type { MemoData, MemoSection, WorkbenchBlockMeta } from '@/types/studio';
 import { renderInline } from './renderInline';
 import { useBriefing } from '@/data/api/useBriefing';
 
@@ -10,6 +10,12 @@ interface Props {
   data: MemoData;
   /** Persona override for briefing tone. Defaults to ``frank``. */
   persona?: string;
+  /**
+   * Phase A — per-block status from
+   * ``workbench.meta.blocks.memo``. When ``'empty'`` we render the
+   * pre-decision placeholder; ``'live'`` triggers the markdown renderer.
+   */
+  blockMeta?: WorkbenchBlockMeta | null;
 }
 
 /**
@@ -17,6 +23,11 @@ interface Props {
  * `MemoSection[]` shape the seed renderer expects. Splits on blank
  * lines for paragraphs; bullet lines stay inline (renderInline already
  * handles `**bold**` / `*italic*` / `` `code` ``).
+ *
+ * The memo is BFF-authored — we never construct prose client-side from
+ * raw facts (recommendation/wtp/competitor). All authoring lives in
+ * ``services/briefing/*`` so paragraph order, persona tone, and language
+ * are owned by the backend.
  */
 function paragraphsFromMarkdown(md: string): MemoSection[] {
   const trimmed = md.trim();
@@ -28,8 +39,10 @@ function paragraphsFromMarkdown(md: string): MemoSection[] {
     .map((body) => ({ body }));
 }
 
-export function RationaleMemo({ aid, data, persona = 'frank' }: Props) {
+export function RationaleMemo({ aid, data, persona = 'frank', blockMeta }: Props) {
   const briefing = useBriefing(aid ?? null, persona);
+
+  const memoStatus = blockMeta?.status ?? 'live';
 
   const { paragraphs, source } = useMemo(() => {
     const md = briefing.data?.rationale_md?.trim() ?? '';
@@ -44,8 +57,14 @@ export function RationaleMemo({ aid, data, persona = 'frank' }: Props) {
 
   const isDrafting = briefing.isLoading && !briefing.data;
 
+  // Phase C6 — when the backend marks the memo block ``empty`` (no
+  // decision has been authored for this SKU yet) we replace the body
+  // with a quiet placeholder. The header keeps its actions so Frank can
+  // still kick off an email / PDF once the memo lands.
+  const isEmpty = memoStatus === 'empty';
+
   return (
-    <div className="ws-memo" data-source={source}>
+    <div className="ws-memo" data-source={source} data-status={memoStatus}>
       <div className="ws-memo-head">
         <span className="ws-memo-title">{data.title}</span>
         <span className="ws-memo-edit">click to edit</span>
@@ -58,7 +77,7 @@ export function RationaleMemo({ aid, data, persona = 'frank' }: Props) {
         <button type="button" className="btn">
           ⬇ Branded PDF
         </button>
-        {source === 'live' && (
+        {source === 'live' && !isEmpty && (
           <span
             className="ws-memo-source"
             data-testid="rationale-source-chip"
@@ -76,7 +95,14 @@ export function RationaleMemo({ aid, data, persona = 'frank' }: Props) {
         )}
       </div>
       <div className="ws-memo-body" contentEditable suppressContentEditableWarning>
-        {isDrafting ? (
+        {isEmpty ? (
+          <p
+            data-testid="rationale-memo-empty"
+            style={{ color: 'var(--muted)', fontStyle: 'italic', fontSize: 12.5 }}
+          >
+            Memo will be generated when Frank accepts or proposes a price.
+          </p>
+        ) : isDrafting ? (
           <p style={{ color: 'var(--ink-2)', fontStyle: 'italic' }}>Drafting rationale…</p>
         ) : (
           paragraphs.map((p, i) => (
