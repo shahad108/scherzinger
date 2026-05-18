@@ -782,5 +782,85 @@
         }
       }
     }
-  ]
+  ],
+  "summary": {
+    "tiles": [
+      {
+        "id": "movable_revenue",
+        "label": "Movable revenue",
+        "value": "€3.88M",
+        "delta": "+9.2% vs Wk 17",
+        "deltaDirection": "up",
+        "tone": "positive",
+        "sourceBlockId": "movableHero",
+        "locked": false,
+        "action": { "sourceScreen": "action-center", "scroll": "#sec-movable" }
+      },
+      {
+        "id": "open_actions",
+        "label": "Open actions",
+        "value": "5",
+        "delta": null,
+        "deltaDirection": "flat",
+        "tone": "warning",
+        "sourceBlockId": "decisions",
+        "locked": false,
+        "action": { "sourceScreen": "action-center", "scroll": "#sec-decisions" }
+      },
+      {
+        "id": "recoverable_margin",
+        "label": "Recoverable margin",
+        "value": "€186k",
+        "delta": null,
+        "deltaDirection": "flat",
+        "tone": "positive",
+        "sourceBlockId": "decisions",
+        "locked": false,
+        "action": {
+          "sourceScreen": "action-center",
+          "scroll": "#sec-decisions",
+          "query": { "queue": "margin" }
+        }
+      },
+      {
+        "id": "blocked_quotes",
+        "label": "Blocked quotes",
+        "value": "3",
+        "delta": null,
+        "deltaDirection": "flat",
+        "tone": "warning",
+        "sourceBlockId": "quotes",
+        "locked": false,
+        "action": {
+          "sourceScreen": "action-center",
+          "route": "/quotes",
+          "query": { "status": "blocked", "source": "action-center" },
+          "toast": "Opening blocked quotes."
+        }
+      },
+      {
+        "id": "model_trust",
+        "label": "Model trust",
+        "value": "82%",
+        "delta": null,
+        "deltaDirection": "flat",
+        "tone": "neutral",
+        "sourceBlockId": "trust",
+        "locked": false,
+        "action": {
+          "sourceScreen": "action-center",
+          "drawer": {
+            "title": "Pattern accuracy details",
+            "description": "directional accuracy · top cluster",
+            "items": [
+              { "label": "Current value", "value": "82%" },
+              { "label": "Owner", "value": "Frank reviews exceptions before rollout." }
+            ]
+          },
+          "toast": "Pattern accuracy transparency opened",
+          "toastSeverity": "info"
+        }
+      }
+    ]
+  }
 }

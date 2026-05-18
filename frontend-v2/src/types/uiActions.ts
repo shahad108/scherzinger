@@ -89,4 +89,10 @@ export interface ActionIntent {
   traceId?: string;
   returnTo?: string;
   focus?: string;
+  /**
+   * Smooth in-page scroll target (CSS selector, e.g. ``#sec-decisions``).
+   * When set, executeUiAction calls scrollIntoView instead of navigating
+   * — additive with ``query`` for filter side-effects.
+   */
+  scroll?: string;
 }

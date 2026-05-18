@@ -18,6 +18,7 @@ import { AuditTrail } from './components/AuditTrail';
 import { ReportCard } from './components/ReportCard';
 import { ActionCenterSkeleton } from './components/ActionCenterSkeleton';
 import { DegradedBlock } from './components/DegradedBlock';
+import { TodaySummaryStrip } from './components/TodaySummaryStrip';
 import { useUiAction } from '@/hooks/useUiAction';
 import type { ActionIntent } from '@/types/uiActions';
 import { useAuthStore } from '@/stores/authStore';
@@ -103,6 +104,18 @@ export function ActionCenterPage() {
         traceId={traceId}
       />
       <DataFreshnessStrip freshness={data.meta?.dataFreshness} />
+      {blocks?.summary?.status === 'degraded' ? (
+        <DegradedBlock
+          title="Today summary unavailable"
+          hint={
+            blocks.summary.reason ??
+            "Today's summary tiles could not be composed for the current review window."
+          }
+          traceId={traceId}
+        />
+      ) : data.summary?.tiles ? (
+        <TodaySummaryStrip tiles={data.summary.tiles} onAction={runUiAction} />
+      ) : null}
       {blocks?.movableHero.status === 'degraded' ? (
         <DegradedBlock
           title="Movable revenue unavailable"
@@ -144,6 +157,7 @@ export function ActionCenterPage() {
           }}
         />
       )}
+      <div id="sec-decisions" className="scroll-mt-20" aria-hidden />
       {blocks?.decisions.status === 'degraded' ? (
         <DegradedBlock
           title="Today's analyst decisions unavailable"

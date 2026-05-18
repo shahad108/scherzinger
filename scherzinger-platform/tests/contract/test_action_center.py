@@ -1,0 +1,215 @@
+"""Phase 4 contract — composed Action Center.
+
+Verifies the composer:
+  * matches the seed's top-level shape (12 keys)
+  * personalises the greeting from the authenticated user
+  * gates non-Frank personas with a documented 404
+  * honours hide_locked + cluster filters
+  * respects ETag/If-None-Match
+"""
+from __future__ import annotations
+
+from fastapi.testclient import TestClient
+
+
+URL = "/api/v1/screens/action-center"
+
+
+def test_action_center_top_level_shape(client: TestClient) -> None:
+    res = client.get(URL)
+    assert res.status_code == 200, res.text
+    body = res.json()
+    expected_keys = {
+        "meta",
+        "header",
+        "movableHero",
+        "buckets",
+        "decisions",
+        "trust",
+        "lostQuote",
+        "skuTable",
+        "longTail",
+        "negotiation",
+        "rejections",
+        "audit",
+        "abTests",
+        "summary",
+    }
+    assert set(body.keys()) == expected_keys
+
+
+def test_action_center_meta_exposes_trace_and_block_statuses(client: TestClient) -> None:
+    body = client.get(URL).json()
+    meta = body["meta"]
+    assert meta["generatedAt"]
+    assert meta["traceId"]
+    assert set(meta["blocks"].keys()) == {
+        "header",
+        "movableHero",
+        "buckets",
+        "decisions",
+        "trust",
+        "lostQuote",
+        "skuTable",
+        "longTail",
+        "negotiation",
+        "rejections",
+        "audit",
+        "abTests",
+        "summary",
+    }
+    assert all(
+        block["status"] in {"live", "empty", "degraded"}
+        for block in meta["blocks"].values()
+    )
+
+
+def test_action_center_personalises_greeting(client: TestClient) -> None:
+    res = client.get(URL)
+    body = res.json()
+    # Frank is logged in by the conftest client fixture.
+    assert "Frank" in body["header"]["greeting"]
+
+
+def test_action_center_persona_till_returns_404(client: TestClient) -> None:
+    res = client.get(URL, params={"persona": "till"})
+    assert res.status_code == 404
+    body = res.json()
+    assert body["detail"]["code"] == "persona_not_implemented"
+    assert body["detail"]["persona"] == "till"
+    assert "Phase 10" in body["detail"]["message"]
+
+
+def test_action_center_persona_heiko_returns_404(client: TestClient) -> None:
+    res = client.get(URL, params={"persona": "heiko"})
+    assert res.status_code == 404
+    body = res.json()
+    assert body["detail"]["persona"] == "heiko"
+    assert "Phase 11" in body["detail"]["message"]
+
+
+def test_action_center_hide_locked_filters_sku_table(client: TestClient) -> None:
+    full = client.get(URL).json()
+    filtered = client.get(URL, params={"hide_locked": "true"}).json()
+    if full["meta"]["blocks"]["skuTable"]["status"] == "live":
+        assert len(filtered["skuTable"]) <= len(full["skuTable"])
+    assert all("locked" not in r["status"].lower() for r in filtered["skuTable"])
+
+
+def test_action_center_hide_locked_filters_buckets(client: TestClient) -> None:
+    filtered = client.get(URL, params={"hide_locked": "true"}).json()
+    bucket_ids = {b["id"] for b in filtered["buckets"]}
+    assert "locked" not in bucket_ids
+
+
+def test_action_center_etag_round_trip(client: TestClient) -> None:
+    first = client.get(URL)
+    etag = first.headers.get("etag")
+    assert etag, "missing ETag"
+    second = client.get(URL, headers={"If-None-Match": etag})
+    assert second.status_code == 304
+
+
+def test_action_center_etag_changes_with_filters(client: TestClient) -> None:
+    a = client.get(URL).headers["etag"]
+    b = client.get(URL, params={"hide_locked": "true"}).headers["etag"]
+    assert a != b
+
+
+def test_summary_block_shape(client: TestClient) -> None:
+    """Plan §2.3 contract — TodaySummaryStrip ships exactly 5 fixed-id tiles.
+
+    The composer guarantees this shape (status live | empty | degraded)
+    so the React component never has to defend against missing keys.
+    """
+    body = client.get(URL).json()
+    summary = body["summary"]
+    tiles = summary["tiles"]
+
+    assert len(tiles) == 5
+    assert [t["id"] for t in tiles] == [
+        "movable_revenue",
+        "open_actions",
+        "recoverable_margin",
+        "blocked_quotes",
+        "model_trust",
+    ]
+
+    required_keys = {
+        "id",
+        "label",
+        "value",
+        "delta",
+        "deltaDirection",
+        "tone",
+        "sourceBlockId",
+        "action",
+        "locked",
+    }
+    for tile in tiles:
+        assert required_keys.issubset(tile.keys()), tile
+        # Every tile must carry a typed action — no nullable fallbacks.
+        assert tile["action"] is not None, tile["id"]
+        assert isinstance(tile["action"], dict), tile["id"]
+
+    assert body["meta"]["blocks"]["summary"]["status"] in {
+        "live",
+        "empty",
+        "degraded",
+    }
+
+
+def test_summary_block_scroll_intents(client: TestClient) -> None:
+    """movable_revenue, open_actions, recoverable_margin tiles emit
+    scroll intents (anchor-only, no full-page navigation)."""
+    body = client.get(URL).json()
+    tiles = {t["id"]: t for t in body["summary"]["tiles"]}
+    assert tiles["movable_revenue"]["action"].get("scroll") == "#sec-movable"
+    assert tiles["open_actions"]["action"].get("scroll") == "#sec-decisions"
+    assert tiles["recoverable_margin"]["action"].get("scroll") == "#sec-decisions"
+    assert (tiles["recoverable_margin"]["action"].get("query") or {}).get(
+        "queue"
+    ) == "margin"
+    # Blocked quotes is a full-page nav.
+    blocked = tiles["blocked_quotes"]["action"]
+    assert blocked.get("route") == "/quotes"
+    assert (blocked.get("query") or {}).get("status") == "blocked"
+    # Model trust opens a drawer (reuses TrustDrawer).
+    assert tiles["model_trust"]["action"].get("drawer") is not None
+
+
+def test_decisions_carry_financial_impact_shape(client: TestClient) -> None:
+    """Every decision row exposes ``financialImpact.recoverableMargin``.
+
+    Value is either ``null`` (when no recoverable margin can be derived)
+    or a ``{value, currency}`` object — never a bare number.
+    """
+    body = client.get(URL).json()
+    if body["meta"]["blocks"]["decisions"]["status"] != "live":
+        return
+    for d in body["decisions"]:
+        assert "financialImpact" in d, d.get("title")
+        fi = d["financialImpact"]
+        assert isinstance(fi, dict)
+        rm = fi.get("recoverableMargin")
+        if rm is None:
+            continue
+        assert isinstance(rm, dict)
+        assert set(rm.keys()) >= {"value", "currency"}
+        assert rm["currency"] == "EUR"
+        assert isinstance(rm["value"], (int, float))
+
+
+def test_action_center_decisions_respect_limit(client: TestClient) -> None:
+    """Phase-4 cap was hard-coded to 3. Commit-4 swapped that for the
+    ``limit`` query param (default 5, max 200). Default response carries at
+    most ``limit`` decisions; an explicit limit lets the frontend's
+    "Show all" expander pull the full ranked list.
+    """
+    body = client.get(URL).json()
+    assert isinstance(body["decisions"], list)
+    assert len(body["decisions"]) <= 5
+
+    big = client.get(URL, params={"limit": 50}).json()
+    # Wider limit can never return fewer rows than the default.
+    assert len(big["decisions"]) >= len(body["decisions"])

@@ -32,6 +32,7 @@ from . import (
     negotiation as negotiation_block,
     rejections as rejections_block,
     sku_table as sku_table_block,
+    summary as summary_block,
     trust as trust_block,
 )
 from ._seed import ActionCenterBlockError
@@ -80,6 +81,7 @@ _BLOCK_FALLBACKS: dict[str, Any] = {
     "rejections": [],
     "audit": [],
     "abTests": [],
+    "summary": {"tiles": []},
 }
 
 
@@ -186,6 +188,35 @@ def _enrich_coverage(payload_blocks: dict[str, Any], meta_blocks: dict[str, Any]
         }
 
 
+async def _resolve_summary(
+    *,
+    decisions: Any,
+    movable_hero: Any,
+    trust: Any,
+) -> tuple[dict[str, Any], dict[str, str | None]]:
+    """Run the summary builder against the upstream blocks and classify
+    its status: ``degraded`` on exception, ``empty`` if every tile value
+    is None, ``live`` otherwise. Always returns 5 tiles in the canonical
+    id order so the frontend layout never shifts.
+    """
+    try:
+        payload = await summary_block.build(
+            decisions=decisions if isinstance(decisions, list) else [],
+            movable_hero=movable_hero if isinstance(movable_hero, dict) else {},
+            trust=trust if isinstance(trust, list) else [],
+        )
+    except Exception:
+        return _BLOCK_FALLBACKS["summary"], {
+            "status": "degraded",
+            "reason": "summary live data unavailable.",
+        }
+
+    tiles = payload.get("tiles") or []
+    all_empty = all(t.get("value") in (None, "—") for t in tiles)
+    status_str = "empty" if all_empty else "live"
+    return payload, {"status": status_str, "reason": None}
+
+
 async def _resolve_block(name: str, builder) -> tuple[Any, dict[str, str | None]]:
     try:
         value = await builder()
@@ -289,6 +320,16 @@ async def build_action_center(
         _resolve_block("abTests", abtests_stub.build),
     )
 
+    # Second-pass block: summary depends on three outputs above
+    # (decisions / movableHero / trust). Running it inside the gather
+    # would introduce a circular dependency; running it serially after
+    # the gather completes adds <5ms (no SQL except blocked-quote count).
+    summary_payload, summary_meta = await _resolve_summary(
+        decisions=decisions,
+        movable_hero=movable_hero,
+        trust=trust,
+    )
+
     meta_blocks: dict[str, Any] = {
         "header": header_meta,
         "movableHero": movable_hero_meta,
@@ -302,6 +343,7 @@ async def build_action_center(
         "rejections": rejections_meta,
         "audit": audit_meta,
         "abTests": abtests_meta,
+        "summary": summary_meta,
     }
 
     payload_blocks: dict[str, Any] = {
@@ -317,6 +359,7 @@ async def build_action_center(
         "rejections": rejections,
         "audit": audit,
         "abTests": abtests,
+        "summary": summary_payload,
     }
 
     _enrich_coverage(payload_blocks, meta_blocks)

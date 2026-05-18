@@ -37,7 +37,7 @@ export function MovableHero({ hero, onAction }: Props) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-      className="mb-6 rounded-[14px] border border-[var(--border)] bg-white shadow-[var(--shadow-card)]"
+      className="mb-6 scroll-mt-20 rounded-[14px] border border-[var(--border)] bg-white shadow-[var(--shadow-card)]"
       style={{ padding: '24px 28px 22px' }}
       id="sec-movable"
     >

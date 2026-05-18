@@ -122,6 +122,14 @@ export interface DecisionCard {
   snoozeAction?: ActionIntent;
   sliceAbAction?: ActionIntent;
   recommendationId?: string;
+  /**
+   * Backend (decisions.py) attaches a typed financialImpact block so the
+   * TodaySummaryStrip can sum recoverableMargin across decisions without
+   * parsing facts/headline strings.
+   */
+  financialImpact?: {
+    recoverableMargin: { value: number; currency: 'EUR' } | null;
+  };
   status?:
     | 'open'
     | 'accepted_as_proposal'
@@ -331,7 +339,38 @@ export interface ActionCenterMeta {
     rejections: ActionCenterBlockMeta;
     audit: ActionCenterBlockMeta;
     abTests: ActionCenterBlockMeta;
+    summary?: ActionCenterBlockMeta;
   };
+}
+
+/**
+ * TodaySummaryStrip tile — mirrors backend ``summary.py`` exactly.
+ *
+ * Tile order is fixed in the composer (movable_revenue, open_actions,
+ * recoverable_margin, blocked_quotes, model_trust) so the frontend
+ * renders by index without sorting.
+ */
+export type SummaryTileId =
+  | 'movable_revenue'
+  | 'open_actions'
+  | 'recoverable_margin'
+  | 'blocked_quotes'
+  | 'model_trust';
+
+export interface SummaryTile {
+  id: SummaryTileId;
+  label: string;
+  value: string | null;
+  delta?: string | null;
+  deltaDirection: 'up' | 'down' | 'flat';
+  tone: 'positive' | 'negative' | 'neutral' | 'warning';
+  sourceBlockId: string;
+  action: ActionIntent;
+  locked: boolean;
+}
+
+export interface SummaryBlock {
+  tiles: SummaryTile[];
 }
 
 export interface ActionCenterData {
@@ -348,6 +387,7 @@ export interface ActionCenterData {
   rejections: RejectionRow[];
   audit: AuditRow[];
   abTests: AbTestCard[];
+  summary?: SummaryBlock;
 }
 
 /* Margin Cockpit page payload */
