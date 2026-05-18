@@ -296,6 +296,7 @@ export function ActionCenterPage() {
       ) : (
         <SkuTable
           rows={data.skuTable}
+          queueFilter={queueFilter}
           onAction={(row) => {
             if (row.action) {
               runUiAction(row.action);
@@ -303,6 +304,7 @@ export function ActionCenterPage() {
               warnMissingAction(`skuTable:${row.article}`);
             }
           }}
+          onBulk={(intent) => runUiAction(intent)}
         />
       )}
       {blocks?.longTail.status === 'locked' ? (

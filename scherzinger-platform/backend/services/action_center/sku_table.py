@@ -21,6 +21,7 @@ from backend.services import recommendation_service
 
 from ._intents import sku_action
 from ._seed import ActionCenterBlockError
+from .decisions import _active_model_card
 
 
 def _tone(value: float) -> str:
@@ -37,6 +38,133 @@ def _cluster_tone(conf: int) -> str:
     if conf >= 60:
         return "medium"
     return "low"
+
+
+def _conf_tone_std(score: int) -> str:
+    """Map confidence score to the standardised {high, mid, low} tone used
+    by decision rows and the new SkuTable confidence chip. Aligned with
+    ``decisions._conf_tone`` so both blocks share a vocabulary.
+    """
+    if score >= 75:
+        return "high"
+    if score >= 50:
+        return "mid"
+    return "low"
+
+
+def _price_bounds_for(db, aids: list[str]) -> dict[str, dict[str, float | None]]:
+    """Pull ``price_state.floor`` / ``ceiling`` for the given article ids.
+
+    Returns ``{aid: {floor, ceiling}}``. Missing rows are absent from the
+    map; callers default both fields to ``None``. Schema check, plan §2.9
+    B20: the column is ``aid`` (not ``article_id``) — see
+    ``backend/models/pricing/pricing_state.py``.
+    """
+    if not aids:
+        return {}
+    try:
+        rows = (
+            db.execute(
+                text(
+                    """
+                    SELECT aid, floor, ceiling
+                      FROM price_state
+                     WHERE aid = ANY(:aids)
+                    """
+                ),
+                {"aids": list(aids)},
+            )
+            .mappings()
+            .all()
+        )
+    except Exception:
+        return {}
+    out: dict[str, dict[str, float | None]] = {}
+    for r in rows:
+        aid = str(r["aid"])
+        floor = r["floor"]
+        ceil = r["ceiling"]
+        out[aid] = {
+            "floor": float(floor) if floor is not None else None,
+            "ceiling": float(ceil) if ceil is not None else None,
+        }
+    return out
+
+
+def _last_move_days_for(db, aids: list[str]) -> dict[str, int]:
+    """Days since last ``price_set``-class event in ``pricing_audit``.
+
+    The audit table is the canonical source for "when did this SKU's
+    published price last change" — ``price_state.last_set_at`` follows it
+    one-to-one but the audit log is what surfaces in the Studio history
+    strip, so we read the same row here. Plan §2.9 B21.
+
+    Missing audit rows → entry omitted; callers treat as ``None`` rather
+    than ``0`` (which would lie about freshness).
+    """
+    if not aids:
+        return {}
+    try:
+        rows = (
+            db.execute(
+                text(
+                    """
+                    SELECT target_id, MAX(at) AS last_at
+                      FROM pricing_audit
+                     WHERE target_kind = 'sku'
+                       AND target_id = ANY(:aids)
+                     GROUP BY target_id
+                    """
+                ),
+                {"aids": list(aids)},
+            )
+            .mappings()
+            .all()
+        )
+    except Exception:
+        return {}
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+    out: dict[str, int] = {}
+    for r in rows:
+        last_at = r["last_at"]
+        if last_at is None:
+            continue
+        try:
+            if last_at.tzinfo is None:
+                last_at = last_at.replace(tzinfo=timezone.utc)
+            delta = (now - last_at).days
+            out[str(r["target_id"])] = max(0, int(delta))
+        except Exception:
+            continue
+    return out
+
+
+def _sample_sizes_for(db, aids: list[str]) -> dict[str, int]:
+    """Quote-invoice link count per article — drives the cluster
+    confidence chip's ``sampleSize``. Plan §2.9 B22.
+    """
+    if not aids:
+        return {}
+    try:
+        rows = (
+            db.execute(
+                text(
+                    """
+                    SELECT article_id, COUNT(*) AS n
+                      FROM quote_invoice_links
+                     WHERE article_id = ANY(:aids)
+                     GROUP BY article_id
+                    """
+                ),
+                {"aids": list(aids)},
+            )
+            .mappings()
+            .all()
+        )
+    except Exception:
+        return {}
+    return {str(r["article_id"]): int(r["n"] or 0) for r in rows}
 
 
 def _live_rows(db, *, cluster: str | None, hide_locked: bool, limit: int) -> list[dict[str, Any]]:
@@ -170,12 +298,27 @@ def _live_rows(db, *, cluster: str | None, hide_locked: bool, limit: int) -> lis
             "commodity": commodity,
             "clusterConf": conf,
             "clusterTone": _cluster_tone(conf),
+            # Standardised confidence block (plan §2.9 B22) — same shape
+            # decision rows carry (``_active_model_card``-backed). The
+            # composer below fills sampleSize + model after the bulk
+            # queries fire so we don't round-trip per row.
+            "confidence": {
+                "score": conf,
+                "sampleSize": None,
+                "tone": _conf_tone_std(conf),
+                "model": {"id": None, "version": None, "trainedAt": None},
+            },
             "marginDelta": margin_delta,
             "marginTone": margin_tone,
             "status": status,
             "statusLabel": status_label,
             "actionLabel": "Open in Studio" if status != "locked" else "View renewal",
             "action": sku_action(article_id=article, status=status),
+            # Plan §2.9 B20/B21 — defaults are ``None``; populated in
+            # ``build()`` once the bulk lookups complete.
+            "priceBookFloor": None,
+            "priceBookCeiling": None,
+            "lastMoveDays": None,
         })
     return out
 
@@ -190,8 +333,26 @@ async def build(*, cluster: str | None, hide_locked: bool, limit: int = 50) -> l
             # served by /studio.skus[] so one component reads both pages.
             aids = [r["article"] for r in rows]
             recs = recommendation_service.get_sku_recommendations_bulk(db, aids)
+            # Plan §2.9 B20/B21/B22 — bulk-load the new per-row fields.
+            bounds = _price_bounds_for(db, aids)
+            stale = _last_move_days_for(db, aids)
+            samples = _sample_sizes_for(db, aids)
+            model_card = _active_model_card(db)
             for r in rows:
-                r["recommendation"] = recs.get(r["article"])
+                aid = r["article"]
+                r["recommendation"] = recs.get(aid)
+                b = bounds.get(aid)
+                if b is not None:
+                    r["priceBookFloor"] = b["floor"]
+                    r["priceBookCeiling"] = b["ceiling"]
+                if aid in stale:
+                    r["lastMoveDays"] = stale[aid]
+                # Promote confidence to standardised shape — share the
+                # ``_active_model_card`` row decision cards use.
+                sample = samples.get(aid)
+                conf = r["confidence"]
+                conf["sampleSize"] = int(sample) if sample is not None else None
+                conf["model"] = dict(model_card)
         return rows
     except Exception:
         raise ActionCenterBlockError("skuTable", "SKU pricing table unavailable.")

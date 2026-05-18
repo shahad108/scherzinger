@@ -475,3 +475,60 @@ def test_decisions_carry_evidence_confidence_lifecycle_and_links(
             f"{ref!r} lifecycleState {row.get('lifecycleState')!r} not in "
             f"{_LIFECYCLE_ALLOWED}"
         )
+
+
+def test_sku_table_rows_carry_price_bounds_and_stale_metrics(client: TestClient) -> None:
+    """Plan §2.9 B20/B21/B22 — every live SkuTable row carries:
+
+      * ``priceBookFloor`` / ``priceBookCeiling`` from ``price_state``
+        (both may be ``None`` when the SKU has no published bounds yet).
+      * ``lastMoveDays`` — days since the last ``price_set`` event in
+        ``pricing_audit`` (``None`` when the SKU has no audit history).
+      * ``confidence`` shaped exactly like the decision rows'
+        confidence block: ``{score, sampleSize, tone, model}``.
+    """
+    body = client.get(URL).json()
+    blocks = body["meta"]["blocks"]
+    if blocks["skuTable"]["status"] != "live":
+        return
+    rows = body["skuTable"]
+    assert rows, "live skuTable must emit at least one row"
+    for row in rows:
+        article = row.get("article")
+        # B20 — bounds keys present (values may be None).
+        assert "priceBookFloor" in row, f"{article!r} missing priceBookFloor"
+        assert "priceBookCeiling" in row, f"{article!r} missing priceBookCeiling"
+        floor = row["priceBookFloor"]
+        ceil = row["priceBookCeiling"]
+        if floor is not None and ceil is not None:
+            assert floor <= ceil, (
+                f"{article!r} priceBookFloor {floor} > priceBookCeiling {ceil}"
+            )
+        # B21 — stale metric key present; non-negative when populated.
+        assert "lastMoveDays" in row, f"{article!r} missing lastMoveDays"
+        lmd = row["lastMoveDays"]
+        if lmd is not None:
+            assert isinstance(lmd, int), f"{article!r} lastMoveDays not int"
+            assert lmd >= 0, f"{article!r} lastMoveDays negative: {lmd}"
+        # B22 — standardised confidence block.
+        conf = row.get("confidence")
+        assert isinstance(conf, dict), f"{article!r} confidence must be dict"
+        assert {"score", "sampleSize", "tone", "model"}.issubset(conf.keys()), (
+            f"{article!r} confidence keys = {sorted(conf.keys())}"
+        )
+        score = conf.get("score")
+        assert isinstance(score, int) and 0 <= score <= 100, (
+            f"{article!r} confidence.score = {score!r}"
+        )
+        sample = conf.get("sampleSize")
+        assert sample is None or (isinstance(sample, int) and sample >= 0), (
+            f"{article!r} confidence.sampleSize = {sample!r}"
+        )
+        assert conf.get("tone") in _CONF_TONES, (
+            f"{article!r} confidence.tone = {conf.get('tone')!r}"
+        )
+        model = conf.get("model")
+        assert isinstance(model, dict) and _MODEL_KEYS.issubset(model.keys()), (
+            f"{article!r} confidence.model keys = "
+            f"{sorted(model.keys()) if isinstance(model, dict) else model!r}"
+        )

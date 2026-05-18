@@ -91,5 +91,19 @@ describe('Action Center page', () => {
       screen.getByText(/Article 205169 .* margin 70\.1% → 44\.2%/),
     ).toBeInTheDocument();
   });
+
+  it('SKU bulk toolbar is hidden by default and appears after a checkbox click', async () => {
+    render(withProviders(<ActionCenterPage />));
+    await waitFor(() =>
+      expect(screen.getByText(/SKU pricing engine/i)).toBeInTheDocument(),
+    );
+
+    // Toolbar must not exist until at least one row is selected (plan §2.9 F18).
+    expect(screen.queryByTestId('sku-bulk-toolbar')).not.toBeInTheDocument();
+
+    // Click the first SKU row checkbox (mock fixture seeds article 200832-E).
+    fireEvent.click(screen.getByRole('checkbox', { name: /Select 200832-E/ }));
+    expect(screen.getByTestId('sku-bulk-toolbar')).toBeInTheDocument();
+  });
 });
 

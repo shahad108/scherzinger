@@ -313,12 +313,28 @@ export interface PerSkuRecommendation {
   };
 }
 
+export interface SkuConfidence {
+  score: number;
+  sampleSize: number | null;
+  tone: 'high' | 'mid' | 'low';
+  model: {
+    id: string | null;
+    version: string | null;
+    trainedAt: string | null;
+  };
+}
+
 export interface SkuRow {
   article: string;
   description: string;
   commodity: string;
   clusterConf: number;
   clusterTone: 'high' | 'mid' | 'low';
+  /** Plan §2.9 B22 — standardised confidence block (matches decision rows).
+   *  Optional today to avoid breaking the mock payload until it's
+   *  re-seeded; the SkuTable component falls back to clusterConf when
+   *  absent. */
+  confidence?: SkuConfidence;
   marginDelta: string;
   marginTone: Tone;
   status: 'movable' | 'locked' | 'abtest' | 'outlier';
@@ -326,6 +342,16 @@ export interface SkuRow {
   actionLabel: string;
   action?: ActionIntent;
   recommendation?: PerSkuRecommendation | null;
+  /** Plan §2.9 B20 — price-book floor/ceiling from price_state. ``null``
+   *  when the SKU has no published bounds yet. */
+  priceBookFloor?: number | null;
+  priceBookCeiling?: number | null;
+  /** Plan §2.9 B21 — days since last price change in pricing_audit.
+   *  ``null`` when no audit history exists (do NOT treat as 0). */
+  lastMoveDays?: number | null;
+  /** Optional revenue-at-risk used for sorting; falls back to 0 when
+   *  the backend has not attached the metric (e.g. mock fixtures). */
+  revenueAtRisk?: number | null;
 }
 
 export interface LongTailMixSegment {

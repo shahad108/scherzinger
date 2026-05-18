@@ -28,7 +28,11 @@ export type FormDrawerKind =
   // Plan §2.6 F11 — full lineage drawer dispatched from DecisionCards
   // inline evidence panel. ActionDrawerHost may render a default form
   // until the dedicated lineage component ships in Phase B.
-  | 'lineage';
+  | 'lineage'
+  // Plan §2.9 F19 — lightweight SKU summary drawer dispatched from
+  // SkuTable when the article cell is clicked. The host falls back to
+  // its empty state if no dedicated component is registered yet.
+  | 'sku_summary';
 
 export interface ActionDrawerContext {
   recommendationId?: string;
