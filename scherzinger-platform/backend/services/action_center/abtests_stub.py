@@ -4,7 +4,10 @@ Reads every running test, joins the latest result row, and projects into
 the {title, subtitle, status, preMargin, postMargin, lift, liftTone,
 trend, trendTone} shape the frontend tile renders.
 
-Falls back to the bundled seed when the table is empty (fresh DB / dev).
+Returns ``[]`` when no tests exist (composer marks the block ``empty``).
+Raises :class:`ActionCenterBlockError` on DB failure (composer marks
+``degraded``). Never falls back to seeded synthetic tests — plan §4
+iron rule 7.
 """
 from __future__ import annotations
 
@@ -196,18 +199,3 @@ async def build() -> list[dict[str, Any]]:
             return rows
     except Exception:
         raise ActionCenterBlockError("abTests", "A/B tracker unavailable.")
-
-
-def _attach_seed_actions(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Seed rows have a string ``id`` and a ``title`` that doubles as the aid;
-    surface the same ``actions`` shape so the frontend never sees a row
-    without typed intents."""
-    out: list[dict[str, Any]] = []
-    for r in rows:
-        if "actions" in r:
-            out.append(r)
-            continue
-        test_id = str(r.get("id") or r.get("title") or "")
-        aid = str(r.get("title") or test_id)
-        out.append({**r, "actions": ab_actions(test_id=test_id, aid=aid)})
-    return out

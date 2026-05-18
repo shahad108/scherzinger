@@ -7,7 +7,9 @@
       { "label": "records", "value": "1,313" },
       { "label": "SKUs", "value": "1,015" },
       { "label": "commodity groups", "value": "4" }
-    ]
+    ],
+    "workspaceScope": [],
+    "exportContext": []
   },
   "movableHero": {
     "value": "€3.88M",

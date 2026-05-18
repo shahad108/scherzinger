@@ -59,12 +59,21 @@ describe('Action Center button wiring', () => {
     expect(screen.getByRole('button', { name: /Generate report/i })).not.toBeDisabled();
   });
 
-  // Phase 4 — `All Departments` is preview until saved-views ships in
-  // Phase 7; `Export` stays disabled until reports MVP (Phase 6). Both
-  // must emit explicit production wording rather than a generic toast.
-  it('PageHead workspace scope opens the drawer with live context', () => {
+  // Task 2 cleanup (plan §4 / §2.1 F2) — Workspace-scope and Export
+  // drawer items come from ``header.workspaceScope`` / ``header.exportContext``.
+  // The backend ships empty arrays today; the dispatcher renders an
+  // ``emptyLabel`` panel so the user understands the Phase 2 unlock
+  // gating. We no longer fabricate items from breadcrumbLabel.
+  it('PageHead workspace scope consumes header.workspaceScope (empty-state today)', () => {
     const onAction = vi.fn();
-    const header = { greeting: 'Good morning, Frank.', week: 'Week 18', dateRange: '—', stats: [] };
+    const header = {
+      greeting: 'Good morning, Frank.',
+      week: 'Week 18',
+      dateRange: '—',
+      stats: [],
+      workspaceScope: [],
+      exportContext: [],
+    };
     render(
       <PageHead
         header={header}
@@ -81,13 +90,44 @@ describe('Action Center button wiring', () => {
     fireEvent.click(screen.getByRole('button', { name: /Workspace scope/i }));
     const intent = onAction.mock.calls[0][0];
     expect(intent.drawer?.title).toMatch(/workspace scope/i);
-    expect(intent.drawer?.items).toEqual(
-      expect.arrayContaining([expect.objectContaining({ value: expect.stringMatching(/Pricing Analyst · Frank/i) })]),
-    );
+    expect(intent.drawer?.items).toEqual([]);
+    expect(intent.drawer?.emptyLabel).toMatch(/Phase 2/i);
 
     onAction.mockClear();
     fireEvent.click(screen.getByRole('button', { name: /^Export/i }));
     const exportIntent = onAction.mock.calls[0][0];
     expect(exportIntent.disabledReason).toBeTruthy();
+  });
+
+  it('PageHead export drawer is empty pre-Phase-2 even when report is ready', () => {
+    const onAction = vi.fn();
+    const header = {
+      greeting: 'Good morning, Frank.',
+      week: 'Week 18',
+      dateRange: '—',
+      stats: [],
+      workspaceScope: [],
+      exportContext: [],
+    };
+    render(
+      <PageHead
+        header={header}
+        breadcrumbLabel="Pricing Analyst · Frank"
+        greeting="Good morning, Frank."
+        hideLocked={false}
+        onToggleHideLocked={() => {}}
+        showAll={false}
+        onToggleShowAll={() => {}}
+        onAction={onAction}
+        reportReady
+        traceId="ac-abc123"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /^Export/i }));
+    const intent = onAction.mock.calls[0][0];
+    expect(intent.drawer?.title).toMatch(/report export/i);
+    expect(intent.drawer?.items).toEqual([]);
+    expect(intent.drawer?.emptyLabel).toMatch(/Phase 2/i);
   });
 });

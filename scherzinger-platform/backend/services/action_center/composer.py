@@ -46,6 +46,8 @@ _BLOCK_FALLBACKS: dict[str, Any] = {
         "week": "—",
         "dateRange": "Live data unavailable",
         "stats": [],
+        "workspaceScope": [],
+        "exportContext": [],
     },
     "movableHero": {
         "value": "—",

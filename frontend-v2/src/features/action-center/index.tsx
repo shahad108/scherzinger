@@ -20,18 +20,22 @@ import { ActionCenterSkeleton } from './components/ActionCenterSkeleton';
 import { DegradedBlock } from './components/DegradedBlock';
 import { TodaySummaryStrip } from './components/TodaySummaryStrip';
 import { useUiAction } from '@/hooks/useUiAction';
-import type { ActionIntent } from '@/types/uiActions';
 import { useAuthStore } from '@/stores/authStore';
 import type { TrustTile } from '@/types';
 
-// Phase 1 — backend composers attach typed action intents to every block.
-// These local fallbacks only fire when the payload is missing an intent
-// (defensive — should never happen in production).
-const FALLBACK_MOVABLE_HERO: ActionIntent = {
-  route: '/pricing',
-  query: { queue: 'repricing', source: 'action-center' },
-  toast: 'Opening the repricing queue in Pricing Studio.',
-};
+// Task 2 cleanup (docs/ACTION_CENTER_PLAN.md §4): the backend composer
+// attaches a typed ``action`` intent to every block that emits a clickable
+// element. We do NOT carry frontend fallbacks anymore — a missing intent
+// is a backend bug, surfaced in dev via a console warning and a no-op
+// click, so we never silently fabricate a route the user thinks is real.
+function warnMissingAction(scope: string): void {
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[action-center] ${scope} click ignored — backend payload is missing a typed action intent.`,
+    );
+  }
+}
 
 const PERSONA_LABEL: Record<string, string> = {
   frank: 'Pricing Analyst',
@@ -136,7 +140,13 @@ export function ActionCenterPage() {
           )}
           <MovableHero
             hero={data.movableHero}
-            onAction={() => runUiAction(data.movableHero.action ?? FALLBACK_MOVABLE_HERO)}
+            onAction={() => {
+              if (data.movableHero.action) {
+                runUiAction(data.movableHero.action);
+              } else {
+                warnMissingAction('movableHero');
+              }
+            }}
           />
         </>
       )}
@@ -152,13 +162,9 @@ export function ActionCenterPage() {
           onAction={(bucket) => {
             if (bucket.action) {
               runUiAction(bucket.action);
-              return;
+            } else {
+              warnMissingAction(`bucket:${bucket.id}`);
             }
-            runUiAction({
-              route: '/pricing',
-              query: { filter: bucket.id, source: 'action-center' },
-              toast: `Opening ${bucket.title.toLowerCase()} in Pricing Studio.`,
-            });
           }}
         />
       )}
@@ -207,15 +213,13 @@ export function ActionCenterPage() {
           )}
           <LostQuoteCard
             data={data.lostQuote}
-            onOpen={() =>
-              runUiAction(
-                data.lostQuote.action ?? {
-                  route: '/margin',
-                  query: { focus: 'lost_quote', source: 'action-center' },
-                  toast: 'Opening lost-quote margin analysis.',
-                },
-              )
-            }
+            onOpen={() => {
+              if (data.lostQuote.action) {
+                runUiAction(data.lostQuote.action);
+              } else {
+                warnMissingAction('lostQuote');
+              }
+            }}
           />
         </>
       )}
@@ -231,13 +235,9 @@ export function ActionCenterPage() {
           onAction={(row) => {
             if (row.action) {
               runUiAction(row.action);
-              return;
+            } else {
+              warnMissingAction(`skuTable:${row.article}`);
             }
-            runUiAction({
-              route: '/pricing',
-              query: { aid: row.article, source: 'action-center' },
-              toast: `Opening ${row.article} in Pricing Studio.`,
-            });
           }}
         />
       )}

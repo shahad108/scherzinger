@@ -11,7 +11,9 @@ Once a real ``is_movable`` flag (or a contracts table) lands, swap the
 classification CTE without changing the public shape.
 
 The 14-week sparkline aggregates total movable revenue per ISO-week.
-Falls back to seed on empty / failure so dev mode keeps rendering.
+Raises :class:`ActionCenterBlockError` when invoices are empty or the
+SQL fails, so the composer marks the block ``degraded``. Never falls
+back to seeded synthetic numbers — plan §4 iron rule 7.
 """
 from __future__ import annotations
 

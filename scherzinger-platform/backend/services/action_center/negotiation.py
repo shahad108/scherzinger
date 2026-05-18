@@ -1,8 +1,12 @@
 """Negotiation cockpit — commodity moves + discount gap.
 
 Commodity tiles come from ``cost_service.get_cost_risers`` aggregated by
-commodity_group. The discount-gap headline + summary text remain seeded
-until margin_service.get_gap_analysis is wired (P14 follow-up).
+commodity_group. The discount-gap headline is derived live from
+``margin_service.get_catalog_vs_quoted`` (catalog vs quoted margin
+spread); if either component is unavailable the block raises
+:class:`ActionCenterBlockError` and the composer surfaces a degraded
+state. Never falls back to seeded synthetic values — plan §4 iron
+rule 7.
 """
 from __future__ import annotations
 

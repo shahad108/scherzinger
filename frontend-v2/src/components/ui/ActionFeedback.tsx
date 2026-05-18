@@ -96,7 +96,7 @@ export function ActionFeedback() {
                 {drawer.description}
               </RadixDialog.Description>
             )}
-            {drawer.items && (
+            {drawer.items && drawer.items.length > 0 && (
               <div className="mt-6 divide-y divide-[var(--hairline)] rounded-xl border border-[var(--hairline)]">
                 {drawer.items.map((item) => (
                   <div key={item.label} className="grid grid-cols-[130px_minmax(0,1fr)] gap-3 p-3 text-sm">
@@ -106,6 +106,11 @@ export function ActionFeedback() {
                     <div className="font-medium text-[var(--ink-2)]">{item.value}</div>
                   </div>
                 ))}
+              </div>
+            )}
+            {drawer.items && drawer.items.length === 0 && drawer.emptyLabel && (
+              <div className="mt-6 rounded-xl border border-dashed border-[var(--hairline)] p-4 text-sm text-[var(--muted)]">
+                {drawer.emptyLabel}
               </div>
             )}
             <button

@@ -270,6 +270,55 @@ def test_summary_open_actions_zero_is_live_not_locked() -> None:
     assert open_actions["tone"] == "neutral"
 
 
+def test_action_blocks_always_carry_typed_action_intents(client: TestClient) -> None:
+    """Plan §4 / iron rule 7 — backend MUST attach a typed action intent
+    to every clickable block; the frontend no longer carries fallback
+    intents. Whenever a block is ``live``, the corresponding payload
+    field must carry a non-null ``action`` (or per-row action). ``empty``
+    / ``degraded`` blocks may omit the field because the frontend never
+    renders the CTA.
+    """
+    body = client.get(URL).json()
+    blocks = body["meta"]["blocks"]
+
+    if blocks["movableHero"]["status"] == "live":
+        assert body["movableHero"].get("action"), "movableHero missing typed action"
+        assert isinstance(body["movableHero"]["action"], dict)
+
+    if blocks["lostQuote"]["status"] == "live":
+        assert body["lostQuote"].get("action"), "lostQuote missing typed action"
+        assert isinstance(body["lostQuote"]["action"], dict)
+
+    if blocks["skuTable"]["status"] == "live":
+        for row in body["skuTable"]:
+            assert row.get("action") is not None, f"SKU {row.get('article')} missing typed action"
+            assert isinstance(row["action"], dict)
+
+    if blocks["buckets"]["status"] == "live":
+        for bucket in body["buckets"]:
+            assert bucket.get("action") is not None, (
+                f"Bucket {bucket.get('id')} missing typed action"
+            )
+            assert isinstance(bucket["action"], dict)
+
+
+def test_header_exposes_workspace_scope_and_export_context(client: TestClient) -> None:
+    """Plan §4 / §2.1 F2 — the header block carries ``workspaceScope`` and
+    ``exportContext`` drawer-item arrays. Both are empty today and unlock
+    in Phase 2; the frontend reads these directly instead of fabricating
+    items locally.
+    """
+    body = client.get(URL).json()
+    header = body["header"]
+    # Even when the header is degraded the composer's fallback should
+    # surface both keys so the drawer dispatcher doesn't crash on a
+    # missing field.
+    assert "workspaceScope" in header, "header missing workspaceScope"
+    assert "exportContext" in header, "header missing exportContext"
+    assert isinstance(header["workspaceScope"], list)
+    assert isinstance(header["exportContext"], list)
+
+
 def test_action_center_decisions_respect_limit(client: TestClient) -> None:
     """Phase-4 cap was hard-coded to 3. Commit-4 swapped that for the
     ``limit`` query param (default 5, max 200). Default response carries at

@@ -1,7 +1,9 @@
 """Lost-quote differential — Welch t-test on won/lost margin distribution.
 
-Wraps quote_service.get_price_sensitivity. Falls back to the bundled
-seed when no quote data has been loaded yet.
+Wraps ``quote_service.get_price_sensitivity``. Raises
+:class:`ActionCenterBlockError` when the won/lost groups are empty so
+the composer surfaces a degraded state. Never falls back to seeded
+synthetic distributions — plan §4 iron rule 7.
 """
 from __future__ import annotations
 

@@ -13,6 +13,10 @@ interface Props {
   onAction?: (intent: ActionIntent) => void;
   reportReady?: boolean;
   exportDisabledReason?: string;
+  /** Reserved for the Phase 2 export-context drawer (plan §4 / §2.1 F2).
+   *  Today the items list comes straight from ``header.exportContext``;
+   *  this prop stays on the interface so callers don't churn when the
+   *  drawer regains a trace-id row. */
   traceId?: string;
 }
 
@@ -27,7 +31,6 @@ export function PageHead({
   onAction,
   reportReady = false,
   exportDisabledReason,
-  traceId,
 }: Props) {
   return (
     <>
@@ -148,31 +151,34 @@ export function PageHead({
             {
               icon: ChevronDown,
               label: 'Workspace scope',
+              // Items come from ``header.workspaceScope`` (plan §4 / §2.1 F2).
+              // The backend returns an empty array today; that empty drawer
+              // is the honest pre-Phase-2 state — never invent items here.
               action: {
                 drawer: {
                   title: 'Workspace scope',
                   description: 'This Action Center is operating inside the authenticated pricing workspace.',
-                  items: [
-                    { label: 'Scope', value: breadcrumbLabel },
-                    { label: 'Current window', value: `${header.week} · ${header.dateRange}` },
-                    { label: 'Saved filters', value: 'Available through saved views' },
-                  ],
+                  items: header.workspaceScope ?? [],
+                  emptyLabel:
+                    'Workspace scope items will populate once user_view_state is wired in Phase 2.',
                 },
               } satisfies ActionIntent,
             },
             {
               icon: Download,
               label: 'Export',
+              // Items come from ``header.exportContext`` (plan §4 / §2.1 F2).
+              // When the report is not ready the button stays disabled via
+              // ``disabledReason``; when it is ready we open the drawer with
+              // whatever the backend exposed (today: empty array).
               action: reportReady
                 ? ({
                     drawer: {
                       title: 'Report export',
                       description: 'Exports are available through the report workflow on this screen.',
-                      items: [
-                        { label: 'Audit linkage', value: 'Live' },
-                        { label: 'Trace ID', value: traceId ?? 'Unavailable' },
-                        { label: 'Status', value: 'Generate or regenerate the report below before sending it on.' },
-                      ],
+                      items: header.exportContext ?? [],
+                      emptyLabel:
+                        'Export options will populate once the report registry lands in Phase 2.',
                     },
                   } satisfies ActionIntent)
                 : ({

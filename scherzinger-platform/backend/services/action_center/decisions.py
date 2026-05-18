@@ -10,13 +10,17 @@ analyst this week:
   3. **Margin erosion** — articles whose actual_db2_margin has dropped
      more than 5pp YoY (derived from quote_invoice_links).
 
-Each builder returns a candidate dict with the same keys the seed used
+Each builder returns a candidate dict with the canonical card keys
 (`rank`, `severity`, `title`, `why`, `headline`, `tag`, `cluster`,
 `recommendation`, `facts`, `trend`, `primaryCta`, …) so the frontend
 component is unchanged.
 
-Falls back to the seed when no candidates can be generated (fresh DB /
-dev mode); applies the ``cluster`` filter and the ``limit`` cap.
+Applies the ``cluster`` filter and the ``limit`` cap. If every builder
+returns no rows (e.g. fresh DB), the composer classifies the block as
+``status: 'empty'``. If the underlying DB call explodes the composer
+maps the raised :class:`ActionCenterBlockError` to ``status: 'degraded'``.
+This block never falls back to seeded synthetic candidates — plan §4
+iron rule 7.
 """
 from __future__ import annotations
 

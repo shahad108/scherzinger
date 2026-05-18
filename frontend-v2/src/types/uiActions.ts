@@ -58,6 +58,11 @@ export interface ActionDrawerIntent {
   title: string;
   description?: string;
   items?: { label: string; value: string }[];
+  /** Copy to render when ``items`` is empty (e.g. the backend hasn't
+   *  yet populated the drawer's source). The dispatcher shows this in
+   *  place of the empty list so users understand why the panel is
+   *  blank — plan §4 / §2.1 F2. */
+  emptyLabel?: string;
   primaryLabel?: string;
   formKind?: FormDrawerKind;
   context?: ActionDrawerContext;

@@ -2,7 +2,9 @@
 
 Reuses the same movable / locked classification as ``movable_hero``: an
 article is movable if it has a recent cost movement OR is in a running
-A/B test. Falls back to seed when invoices are empty.
+A/B test. Raises :class:`ActionCenterBlockError` when invoices are empty
+or the SQL fails. Never falls back to seeded synthetic buckets —
+plan §4 iron rule 7.
 """
 from __future__ import annotations
 

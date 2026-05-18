@@ -6,8 +6,14 @@ the current ISO week computed from server clock.
 
 Stats are wrapped over ``margin_service.get_margin_summary``: invoice
 record count, distinct SKUs in current quote pipeline, and distinct
-commodity groups. Falls back to the seed when no invoices have been
-loaded.
+commodity groups. Raises :class:`ActionCenterBlockError` when no
+invoices have been loaded; the composer then surfaces a degraded
+header. Never falls back to seeded synthetic stats — plan §4 iron
+rule 7.
+
+Also surfaces ``workspaceScope`` and ``exportContext`` block fields
+(plan §4 / §2.1 F2). Both are empty arrays today and unlock in Phase 2
+when ``user_view_state`` + the report registry land.
 """
 from __future__ import annotations
 
@@ -49,8 +55,9 @@ def _live_stats(db) -> list[dict[str, str]] | None:
     window explicit ("records · last 30d") so it doesn't read as
     "this week".
 
-    Returns None on any failure or if there's no data — caller falls back
-    to the seed.
+    Returns None on any failure or if there's no data — caller raises
+    :class:`ActionCenterBlockError` so the composer marks the header
+    ``degraded``.
     """
     try:
         # Trailing 30 days from MAX(invoices.date). Both the value and the
@@ -107,4 +114,9 @@ async def build(*, user_name: str, week: str | None) -> dict[str, Any]:
         "week": week_label,
         "dateRange": date_range,
         "stats": stats,
+        # Workspace-scope + export-context drawer items. Empty today; the
+        # frontend renders an honest empty-drawer stub. Plan §4 / §2.1 F2.
+        # TODO Phase 2: populate from user_view_state + report registry.
+        "workspaceScope": [],
+        "exportContext": [],
     }

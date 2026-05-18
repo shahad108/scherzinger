@@ -32,11 +32,24 @@ export interface KpiData {
 
 /* Action Center page payload */
 
+export interface ActionCenterDrawerItem {
+  label: string;
+  value: string;
+}
+
 export interface ActionCenterHeader {
   greeting: string;
   week: string;
   dateRange: string;
   stats: { label: string; value: string }[];
+  /** Items the "Workspace scope" toolbar drawer should render. Empty
+   *  array today; backend populates from ``user_view_state`` once the
+   *  Phase 2 unlock lands (plan §4 / §2.1 F2). */
+  workspaceScope?: ActionCenterDrawerItem[];
+  /** Items the "Export" toolbar drawer should render. Empty array
+   *  today; backend populates from the report registry once that
+   *  unlock lands (plan §4 / §2.1 F2). */
+  exportContext?: ActionCenterDrawerItem[];
 }
 
 export interface MovableHero {
