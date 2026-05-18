@@ -435,15 +435,28 @@ def rollback_publish(
     Rules:
       - Receipt must exist.
       - Receipt must be within ``ROLLBACK_WINDOW`` (72h) of published_at.
-      - Receipt must not already be rolled back.
+      - If the receipt is already rolled back, the call is a no-op and
+        returns the previously-rolled-back receipt unchanged. This makes
+        retry-safe rollback ergonomics possible from the UI without
+        risking duplicate ``price_rolled_back`` audit rows.
+
+    Phase A7 fix:
+      - Previously the rollback only re-opened the prior price_book row
+        and stamped the receipt. ``price_state.current_price`` was
+        already mirrored via ``_sync_price_state``, but the audit row
+        used the generic ``rollback`` action which conflated this with
+        proposal-level rollbacks. We now write a dedicated
+        ``price_rolled_back`` audit entry so downstream consumers (the
+        Studio queue margin column, the Quotes screen, the Decision
+        History drawer) can rely on a stable, semantically-meaningful
+        marker that the active price reverted.
     """
     receipt = db_session.get(PublishReceiptRow, receipt_id)
     if receipt is None:
         raise ReceiptNotFoundError(f"receipt {receipt_id} not found")
     if receipt.rolled_back_at is not None:
-        raise ReceiptAlreadyRolledBackError(
-            f"receipt {receipt_id} already rolled back at {receipt.rolled_back_at}"
-        )
+        # Idempotent: no second audit row, no second SSE, same response.
+        return PublishReceipt.model_validate(receipt)
     published_at = _ensure_tz(receipt.published_at)
     if _now() - published_at > ROLLBACK_WINDOW:
         raise RollbackWindowExpiredError(
@@ -457,45 +470,75 @@ def rollback_publish(
         )
 
     now = _now()
+    post_publish_price = new_row.price
     # Close the row we previously opened.
     new_row.valid_to = now
 
+    # Resolve the price we are restoring TO.
+    #
+    #   1) Preferred path: the receipt records the prior row we closed
+    #      when we published — re-open it and use its price.
+    #   2) Fallback: if no prior row was recorded (first-ever publish for
+    #      this aid), fall back to the latest active price_book row that
+    #      remains after this rollback.
     prior: Optional[PriceBookRow] = None
+    restored_price: Optional[Decimal] = None
+    restored_lineage_ref_id: Optional[UUID] = None
     if receipt.old_price_book_row_id is not None:
         prior = db_session.get(PriceBookRow, receipt.old_price_book_row_id)
         if prior is not None:
             # Re-open the prior row.
             prior.valid_to = None
-            # Sync price_state back to the prior price.
-            _sync_price_state(
-                aid=receipt.aid,
-                price=prior.price,
-                actor=actor,
-                lineage_ref_id=prior.lineage_ref_id,
-                db_session=db_session,
-            )
+            restored_price = prior.price
+            restored_lineage_ref_id = prior.lineage_ref_id
+
+    if restored_price is None:
+        # Fallback: any other active row left after we closed new_row.
+        fallback = _current_active_row(aid=receipt.aid, db_session=db_session)
+        if fallback is not None and fallback.id != new_row.id:
+            restored_price = fallback.price
+            restored_lineage_ref_id = fallback.lineage_ref_id
+
+    # Build a lineage_ref tagging this rollback so price_state points at
+    # the right edge in the lineage graph.
+    rollback_lineage = create_lineage(
+        source_kind=LineageSourceKind.MANUAL_OVERRIDE,
+        source_id=f"rollback:{receipt.id}",
+        sql=None,
+        model="rollback_publish",
+        computed_by=actor,
+        session=db_session,
+    )
+
+    # Phase A7: always flip price_state.current_price back to the
+    # restored price (when known). Tag last_set_by with the receipt id so
+    # the audit trail makes the source obvious.
+    if restored_price is not None:
+        _sync_price_state(
+            aid=receipt.aid,
+            price=restored_price,
+            actor=f"rollback:{receipt.id}",
+            lineage_ref_id=rollback_lineage.id,
+            db_session=db_session,
+        )
 
     # Stamp the rollback on the receipt.
     receipt.rolled_back_at = now
     receipt.rollback_reason = reason
     db_session.flush()
 
-    # Audit.
+    # Audit. ``price_rolled_back`` is the canonical action name for the
+    # downstream-visible "active price reverted" event. The generic
+    # ``rollback`` action remains reserved for proposal-level rollbacks.
     record_audit(
         actor=actor,
-        action=PricingAuditAction.ROLLBACK,
+        action="price_rolled_back",
         target_kind=PricingAuditTargetKind.SKU,
         target_id=receipt.aid,
-        before={
-            "price": str(new_row.price),
-            "price_book_row_id": str(new_row.id),
-        },
-        after={
-            "price": str(prior.price) if prior is not None else None,
-            "price_book_row_id": str(prior.id) if prior is not None else None,
-            "receipt_id": str(receipt.id),
-        },
-        reason=reason,
+        before={"price": str(post_publish_price)},
+        after={"price": str(restored_price) if restored_price is not None else None},
+        reason="rollback_within_72h_window",
+        lineage_ref=rollback_lineage.id,
         session=db_session,
     )
 
@@ -506,7 +549,7 @@ def rollback_publish(
         payload={
             "aid": receipt.aid,
             "receipt_id": str(receipt.id),
-            "restored_price": str(prior.price) if prior is not None else None,
+            "restored_price": str(restored_price) if restored_price is not None else None,
             "rolled_back_at": now.isoformat(),
             "reason": reason,
         },

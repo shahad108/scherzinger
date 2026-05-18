@@ -34,6 +34,7 @@ class PricingAuditAction(str, Enum):
     ALERT_TRIGGERED = "alert_triggered"
     PUSH_TO_QUOTING = "push_to_quoting"
     ROLLBACK = "rollback"
+    PRICE_ROLLED_BACK = "price_rolled_back"
     AB_TEST_CREATED = "ab_test_created"
     AB_TEST_PROMOTED = "ab_test_promoted"
     AB_TEST_HELD = "ab_test_held"

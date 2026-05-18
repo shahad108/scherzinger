@@ -244,7 +244,7 @@ def test_rollback_publish_within_window_reopens_prior_row(db) -> None:
     audits = (
         db.query(PricingAuditEntry)
         .filter(PricingAuditEntry.target_id == aid)
-        .filter(PricingAuditEntry.action == "rollback")
+        .filter(PricingAuditEntry.action == "price_rolled_back")
         .all()
     )
     assert len(audits) >= 1
@@ -282,9 +282,15 @@ def test_rollback_publish_outside_window_raises(db) -> None:
         )
 
 
-def test_rollback_twice_raises_already_rolled_back(db) -> None:
+def test_rollback_twice_is_idempotent(db) -> None:
+    """Phase A7: second rollback is a no-op that returns the same receipt.
+
+    Replaces the prior contract (which raised
+    ``ReceiptAlreadyRolledBackError``). Idempotency lets the UI retry a
+    failed rollback without risking duplicate audit rows.
+    """
+    from backend.models.pricing.audit import PricingAuditEntry
     from backend.services.pricing.publish import (
-        ReceiptAlreadyRolledBackError,
         publish_price,
         rollback_publish,
     )
@@ -299,20 +305,37 @@ def test_rollback_twice_raises_already_rolled_back(db) -> None:
         db_session=db,
     )
     db.flush()
-    rollback_publish(
+    first = rollback_publish(
         receipt_id=receipt.id,
         reason="first rollback",
         actor="tester",
         db_session=db,
     )
     db.flush()
-    with pytest.raises(ReceiptAlreadyRolledBackError):
-        rollback_publish(
-            receipt_id=receipt.id,
-            reason="second rollback",
-            actor="tester",
-            db_session=db,
-        )
+    audit_count_after_first = (
+        db.query(PricingAuditEntry)
+        .filter(PricingAuditEntry.target_id == aid)
+        .filter(PricingAuditEntry.action == "price_rolled_back")
+        .count()
+    )
+
+    second = rollback_publish(
+        receipt_id=receipt.id,
+        reason="second rollback",
+        actor="tester",
+        db_session=db,
+    )
+    db.flush()
+    audit_count_after_second = (
+        db.query(PricingAuditEntry)
+        .filter(PricingAuditEntry.target_id == aid)
+        .filter(PricingAuditEntry.action == "price_rolled_back")
+        .count()
+    )
+
+    assert second.id == first.id
+    assert second.rolled_back_at == first.rolled_back_at
+    assert audit_count_after_second == audit_count_after_first
 
 
 def test_publish_price_uses_for_update_lock(db) -> None:
