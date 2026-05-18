@@ -3,13 +3,15 @@ import type {
   CostComponent,
   CostHistoryBlock,
   CostPane,
-  CostOutlookPayload,
+  CostOutlookBlock,
   HistoryRow,
+  WorkbenchBlockMeta,
 } from '@/types/studio';
 import { renderInline } from './renderInline';
 import { parseDecimal, signedPctDelta } from '../lib/decimal';
 import { useAuditFeed, type AuditFeedRow } from '@/data/api/useAuditFeed';
 import { useCostOutlook } from '@/data/api/useCostOutlook';
+import { DataMissingBadge } from '@/components/DataMissingBadge';
 
 interface Props {
   /** Currently selected article — drives the live audit + cost-outlook fetch. */
@@ -22,6 +24,13 @@ interface Props {
    * `points` / `commodities` instead of the legacy hardcoded SVG points.
    */
   costHistory?: CostHistoryBlock | null;
+  /**
+   * Phase C3 — `meta.blocks.cost_history` status from the BFF workbench
+   * payload. When `locked` / `degraded` / `empty` the inline summary
+   * renders a DataMissingBadge + reason instead of fake data. Optional —
+   * older BFFs that don't emit meta degrade silently to the live path.
+   */
+  costHistoryStatus?: WorkbenchBlockMeta | null;
   /**
    * Opens the Cost Trajectory Drawer. Called by the sparkline click and
    * the "View 6mo outlook" pill in the header.
@@ -55,7 +64,7 @@ function buildPolyline(values: number[]): string {
 
 /** Map BFF cost-outlook components → the seed-shaped CostComponent[]. */
 function componentsFromCostOutlook(
-  outlook: CostOutlookPayload,
+  outlook: CostOutlookBlock,
 ): CostComponent[] {
   // The BFF ships `breakdown` as fractional shares of unit cost (sum≈1.0).
   // If they happen to be absolute Euros (sum > 1.5) we re-normalise by the
@@ -152,8 +161,17 @@ export function CostHistory({
   cost,
   history,
   costHistory,
+  costHistoryStatus,
   onOpenCostDrawer,
 }: Props) {
+  // Phase C3 — surface BFF block status (locked/degraded/empty) as a
+  // DataMissingBadge in the inline summary. The deep-dive drawer fetches
+  // /pricing/sku/{aid}/cost-outlook itself, so a locked workbench block
+  // doesn't block the drawer.
+  const blockedStatus =
+    costHistoryStatus && costHistoryStatus.status !== 'live'
+      ? costHistoryStatus
+      : null;
   // ---- Live audit feed (repricing history) -----------------------------
   // We only request the first page (PAGE_SIZE=50 server-side) and
   // pre-filter to `price` actions. The hook is a no-op until aid is set.
@@ -299,7 +317,17 @@ export function CostHistory({
           </span>
         )}
       </h4>
-      {compositionEmpty ? (
+      {blockedStatus ? (
+        <div
+          data-testid="cost-history-block-status"
+          data-status={blockedStatus.status}
+          style={{ marginTop: 4 }}
+        >
+          <DataMissingBadge
+            reason={blockedStatus.reason ?? blockedStatus.status}
+          />
+        </div>
+      ) : compositionEmpty ? (
         <p className="cluster-note" style={{ marginTop: 4 }}>
           <i style={{ fontStyle: 'normal', color: 'var(--ink-2)', fontWeight: 600 }}>
             Cost composition not yet available for this SKU.

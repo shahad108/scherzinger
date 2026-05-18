@@ -11,13 +11,25 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/client';
-import type { CostOutlookPayload } from '@/types/studio';
+import type { CostOutlookBlock } from '@/types/studio';
 
-export const costOutlookKey = (aid: string, horizonMonths: number) =>
-  ['cost-outlook', aid, horizonMonths] as const;
+export const costOutlookKey = (
+  aid: string | null | undefined,
+  horizonMonths: number,
+) => ['cost-outlook', aid ?? '', horizonMonths] as const;
 
+/**
+ * Phase C3 — typed wrapper around
+ *   GET /api/v1/pricing/sku/{aid}/cost-outlook?horizon_months=N
+ *
+ * Lazy: stays disabled while `aid` is null/empty so the workbench can mount
+ * before a SKU is selected. 60-second `staleTime` keeps slider-drag from
+ * thundering the BFF. The BFF returns 404 when no CostState exists for the
+ * SKU; TanStack surfaces that as `isError` and consumers render a
+ * DataMissingBadge rather than crashing.
+ */
 export function useCostOutlook(
-  aid: string,
+  aid: string | null | undefined,
   horizonMonths = 6,
   options: { enabled?: boolean } = {},
 ) {
@@ -26,10 +38,10 @@ export function useCostOutlook(
     queryKey: costOutlookKey(aid, horizonMonths),
     enabled,
     queryFn: () =>
-      apiFetch<CostOutlookPayload>(
-        `/pricing/sku/${encodeURIComponent(aid)}/cost-outlook`,
+      apiFetch<CostOutlookBlock>(
+        `/pricing/sku/${encodeURIComponent(aid as string)}/cost-outlook`,
         { params: { horizon_months: horizonMonths } },
       ),
-    staleTime: 30_000,
+    staleTime: 60_000,
   });
 }

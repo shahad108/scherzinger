@@ -821,6 +821,7 @@ export default function PricingStudioPage() {
                 cost={wb.cost}
                 history={wb.history}
                 costHistory={wb.cost_history ?? null}
+                costHistoryStatus={wb.meta?.blocks?.cost_history ?? null}
                 onOpenCostDrawer={() => setCostDrawerOpen(true)}
               />
             </div>

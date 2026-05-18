@@ -31,7 +31,7 @@ import { Drawer } from '@/components/ui/Drawer';
 import { DataMissingBadge } from '@/components/DataMissingBadge';
 import { LineageButton } from '@/components/LineageButton';
 import { useCostOutlook } from '@/data/api/useCostOutlook';
-import type { CostHistoryBlock, CostOutlookPayload } from '@/types/studio';
+import type { CostHistoryBlock, CostOutlookBlock } from '@/types/studio';
 import { parseDecimal } from '../lib/decimal';
 import { fmt } from '@/lib/format';
 import { AlertSetupDrawer } from './AlertSetupDrawer';
@@ -106,7 +106,7 @@ export function CostTrajectoryDrawer({
 
 // --- Section: Today --------------------------------------------------------
 
-function TodaySection({ payload }: { payload: CostOutlookPayload }) {
+function TodaySection({ payload }: { payload: CostOutlookBlock }) {
   const today = parseDecimal(payload.today.unit_cost);
   return (
     <section className="ws-cost-section" data-testid="cost-drawer-today">
@@ -131,7 +131,7 @@ function ForecastSection({
   payload,
   history,
 }: {
-  payload: CostOutlookPayload;
+  payload: CostOutlookBlock;
   history: CostHistoryBlock | null;
 }) {
   const chartData = useMemo<ChartPoint[]>(() => {
@@ -248,7 +248,7 @@ function ForecastSection({
 
 // --- Section: Components ---------------------------------------------------
 
-function ComponentsSection({ payload }: { payload: CostOutlookPayload }) {
+function ComponentsSection({ payload }: { payload: CostOutlookBlock }) {
   return (
     <section className="ws-cost-section" data-testid="cost-drawer-components">
       <h5>Components</h5>
@@ -291,7 +291,7 @@ function ComponentsSection({ payload }: { payload: CostOutlookPayload }) {
 
 // --- Section: Floor cross --------------------------------------------------
 
-function FloorCrossSection({ payload }: { payload: CostOutlookPayload }) {
+function FloorCrossSection({ payload }: { payload: CostOutlookBlock }) {
   if (!payload.floor_crosses_at) return null;
   // Coarse month count from horizon_months — the BFF already returns the
   // first crossing within the horizon, so this gives the user a "how far

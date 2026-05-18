@@ -234,6 +234,31 @@ export interface WorkbenchData {
   // when no running test). Populated by the BFF
   // (`services/pricing/ab_test.get_active_ab_test_summary`).
   active_ab_test?: ActiveAbTestSummary | null;
+  // Pricing Studio v3 / Phase A — per-block status meta. Backend attaches
+  // ``meta.blocks.<block_id> = {status, reason?, lineage_ref_id?}`` so the
+  // frontend can render live/empty/locked/degraded states without
+  // re-deriving from the absence of payload fields.
+  meta?: WorkbenchMeta;
+}
+
+/**
+ * Pricing Studio v3 / Phase A — per-block status carried on the workbench
+ * response. The backend's ``_attach_phaseN_signals`` family writes one
+ * entry per block (recommendation, wtp, fanout, comparable, memo, …) and
+ * the FE reads these to decide live vs degraded vs locked vs empty UI.
+ */
+export type WorkbenchBlockStatus = 'live' | 'empty' | 'degraded' | 'locked';
+
+export interface WorkbenchBlockMeta {
+  status: WorkbenchBlockStatus;
+  reason?: string | null;
+  lineage_ref_id?: string | null;
+  /** ISO-8601 UTC timestamp of the most recent computation, when known. */
+  computed_at?: string | null;
+}
+
+export interface WorkbenchMeta {
+  blocks: Partial<Record<string, WorkbenchBlockMeta>>;
 }
 
 // ---- Pricing Studio v3 / Phase 8 wire-shape blocks --------------------------
@@ -569,10 +594,19 @@ export interface TriggerContextBlock {
 }
 
 // ---- Cost Outlook drawer payload (GET /pricing/sku/{aid}/cost-outlook) -----
+//
+// Mirrors the BFF response in `backend/services/pricing/cost_outlook.py::build_cost_outlook`.
+// All monetary fields are Decimal-as-string (Pydantic `mode="json"` quantised at
+// 4dp). `monthly_yoy_pct` is a plain number (already a percentage unit, e.g.
+// -4.76 means -4.76%/yr). `floor_crosses_at` is the first "YYYY-MM" month in
+// which the projected p50 unit-cost equals the current list price minus the
+// 10% safety margin — `null` when never inside the horizon.
 
 export interface CostOutlookToday {
+  /** Decimal-as-string EUR per unit (4dp). */
   unit_cost: string;
   breakdown: {
+    /** Decimal-as-string EUR per unit (fractional shares of unit_cost). */
     material: string;
     labor: string;
     outsourcing: string;
@@ -582,6 +616,7 @@ export interface CostOutlookToday {
 
 export interface CostOutlookForecastPoint {
   month_offset: number;
+  /** Decimal-as-string EUR per unit (4dp). */
   p20_unit_cost: string;
   p50_unit_cost: string;
   p80_unit_cost: string;
@@ -589,27 +624,36 @@ export interface CostOutlookForecastPoint {
 
 export interface CostOutlookComponent {
   name: string;
+  /** Decimal-as-string EUR per unit (4dp). */
   today_value: string;
   forecast_value: string;
+  /** Decimal-as-string percent (e.g. "-4.76" = -4.76%). */
   change_pct: string;
   commodity_label: string;
 }
 
 export interface CostOutlookCommodityTrend {
   commodity: string;
+  /** Plain number — already a percentage unit (e.g. -4.76 = -4.76%/yr). */
   monthly_yoy_pct: number;
 }
 
-export interface CostOutlookPayload {
+export interface CostOutlookBlock {
   aid: string;
   horizon_months: number;
   today: CostOutlookToday;
   forecast: CostOutlookForecastPoint[];
   components: CostOutlookComponent[];
+  /** "YYYY-MM" first crossing month or null. */
   floor_crosses_at: string | null;
   commodity_trend: CostOutlookCommodityTrend[];
   lineage_ref?: LineageRefBlock | null;
 }
+
+/** @deprecated Phase C3 renamed `CostOutlookPayload` → `CostOutlookBlock` to
+ *  align with the rest of the typed-block vocabulary. Kept as an alias so
+ *  in-flight test fixtures keep compiling — remove once all references move. */
+export type CostOutlookPayload = CostOutlookBlock;
 
 export interface StudioShell {
   header: StudioHeader;
