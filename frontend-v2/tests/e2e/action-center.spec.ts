@@ -405,7 +405,10 @@ test.describe('Action Center — ?queue= deep link', () => {
       window.history.pushState({}, '', '/notifications');
       window.dispatchEvent(new PopStateEvent('popstate'));
     });
-    await page.waitForTimeout(200);
+    // Wait for the action-center route to actually unmount (greeting gone)
+    // before re-navigating, so React Router treats the next pushState as a
+    // fresh mount that re-reads the new ?queue= query string.
+    await expect(page.getByTestId('ac-greeting')).toHaveCount(0, { timeout: 5_000 });
     await page.evaluate(() => {
       window.history.pushState({}, '', '/action-center?queue=churn');
       window.dispatchEvent(new PopStateEvent('popstate'));

@@ -654,7 +654,7 @@ export function DecisionCards({
                           items: [
                             { label: 'Rank', value: d.rank },
                             { label: 'Recommendation', value: d.recommendation ?? d.cta },
-                            { label: 'Confidence', value: d.confLabel ?? 'High' },
+                            { label: 'Confidence', value: d.confLabel ?? '—' },
                           ],
                         },
                         toast: 'Decision details opened',
@@ -724,7 +724,7 @@ export function DecisionCards({
                     Time
                   </div>
                   <div className="inline-flex items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-[12.5px] font-semibold text-[var(--ink-2)]">
-                    <span>{d.timeMinutes ?? 10}</span>
+                    <span>{d.timeMinutes ?? '—'}</span>
                     <span className="text-[var(--muted)]">min</span>
                   </div>
                 </div>
@@ -732,7 +732,7 @@ export function DecisionCards({
                   <div className="mb-1.5 text-[10.5px] font-bold uppercase tracking-wider text-[var(--muted)]">
                     Confidence
                   </div>
-                  <SelectPill>{d.confLabel ?? 'High'}</SelectPill>
+                  <SelectPill>{d.confLabel ?? '—'}</SelectPill>
                 </div>
               </div>
 
