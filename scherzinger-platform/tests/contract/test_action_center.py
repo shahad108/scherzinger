@@ -58,8 +58,9 @@ def test_action_center_meta_exposes_trace_and_block_statuses(client: TestClient)
         "abTests",
         "summary",
     }
+    # Plan §0 iron rule 6 — block status enum is fixed.
     assert all(
-        block["status"] in {"live", "empty", "degraded"}
+        block["status"] in {"live", "empty", "degraded", "locked"}
         for block in meta["blocks"].values()
     )
 
@@ -156,6 +157,7 @@ def test_summary_block_shape(client: TestClient) -> None:
         "live",
         "empty",
         "degraded",
+        "locked",
     }
 
 
@@ -205,6 +207,12 @@ def test_summary_block_empty_status_when_all_tiles_null(monkeypatch) -> None:
     the strip as ``empty`` (not ``live``). Drives the frontend's empty-
     state copy. Verified directly off ``_resolve_summary`` so the
     classifier logic doesn't depend on real DB state.
+
+    We simulate the worst case: every upstream block is unavailable.
+    ``decisions_status="degraded"`` forces ``open_actions`` and
+    ``recoverable_margin`` to lock (rather than render ``"0"`` for a
+    legitimately clear queue), the blocked-quotes SQL is stubbed to
+    ``None``, and ``movable_hero`` / ``trust`` are empty.
     """
     import asyncio
 
@@ -216,18 +224,50 @@ def test_summary_block_empty_status_when_all_tiles_null(monkeypatch) -> None:
     monkeypatch.setattr(summary_block, "_blocked_quotes_count", lambda: None)
 
     payload, meta = asyncio.run(
-        _resolve_summary(decisions=[], movable_hero={}, trust=[])
+        _resolve_summary(
+            decisions=[],
+            movable_hero={},
+            trust=[],
+            decisions_status="degraded",
+        )
     )
     # Composer always returns 5 tiles regardless of status so the React
     # layout never shifts.
     assert len(payload.get("tiles") or []) == 5
     assert meta["status"] == "empty"
-    # And the open_actions tile in particular must emit None (not "0") so
-    # the empty-status guard fires — Fix 4 regression check.
+    # When the decisions upstream is degraded, open_actions must lock —
+    # value=None + locked=True — distinguishing "data unavailable" from
+    # "queue cleared" (the latter would emit value="0", locked=False).
     open_actions = next(
         t for t in payload["tiles"] if t["id"] == "open_actions"
     )
     assert open_actions["value"] is None
+    assert open_actions["locked"] is True
+
+
+def test_summary_open_actions_zero_is_live_not_locked() -> None:
+    """Plan §0 iron rule — ``locked`` means data source not yet connected.
+    A cleared decisions queue is a legitimate live signal: emit ``"0"``
+    with a neutral tone, NOT a lock chip.
+    """
+    import asyncio
+
+    from backend.services.action_center.composer import _resolve_summary
+
+    payload, meta = asyncio.run(
+        _resolve_summary(
+            decisions=[],
+            movable_hero={},
+            trust=[],
+            decisions_status="empty",
+        )
+    )
+    open_actions = next(
+        t for t in payload["tiles"] if t["id"] == "open_actions"
+    )
+    assert open_actions["value"] == "0"
+    assert open_actions["locked"] is False
+    assert open_actions["tone"] == "neutral"
 
 
 def test_action_center_decisions_respect_limit(client: TestClient) -> None:

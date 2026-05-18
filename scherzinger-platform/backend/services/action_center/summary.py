@@ -130,24 +130,40 @@ def _movable_revenue_tile(
 
 
 def _open_actions_tile(
-    decisions: list[dict[str, Any]],
+    decisions: list[dict[str, Any]] | None,
     actions: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
-    count = len(decisions or [])
-    # When there are no open decisions the tile must emit ``None`` so the
-    # composer's empty-status guard (``all(t.value in (None, '—'))``) can
-    # actually classify the strip as ``empty``. The frontend renders ``—``
-    # for null values, so the visible UI is unchanged.
+    # ``locked`` is reserved for "data source not yet connected" (plan §0).
+    # Distinguish two cases:
+    #   * ``decisions is None``     → upstream block failed.  Lock the tile,
+    #                                 emit ``value=None`` so the frontend
+    #                                 renders the amber ``—`` chip.
+    #   * ``len(decisions) == 0``   → queue legitimately clear.  This is a
+    #                                 live signal — emit ``value="0"`` with
+    #                                 a neutral tone, NOT locked.
+    if decisions is None:
+        return {
+            "id": "open_actions",
+            "label": "Open actions",
+            "value": None,
+            "delta": None,
+            "deltaDirection": "flat",
+            "tone": "neutral",
+            "sourceBlockId": "decisions",
+            "action": actions["open_actions"],
+            "locked": True,
+        }
+    count = len(decisions)
     return {
         "id": "open_actions",
         "label": "Open actions",
-        "value": str(count) if count > 0 else None,
+        "value": str(count),
         "delta": None,
         "deltaDirection": "flat",
-        "tone": "neutral" if count == 0 else "warning",
+        "tone": "warning" if count > 0 else "neutral",
         "sourceBlockId": "decisions",
         "action": actions["open_actions"],
-        "locked": count == 0,
+        "locked": False,
     }
 
 
@@ -210,7 +226,7 @@ def _model_trust_tile(
 
 async def build(
     *,
-    decisions: list[dict[str, Any]],
+    decisions: list[dict[str, Any]] | None,
     movable_hero: dict[str, Any],
     trust: list[dict[str, Any]],
 ) -> dict[str, Any]:
@@ -219,6 +235,11 @@ async def build(
     Pulls already-resolved block outputs from the composer's first
     asyncio.gather — no SQL of its own except the blocked-quotes count
     which has no upstream block.
+
+    ``decisions=None`` signals the upstream decisions block failed; tiles
+    that derive from it (``open_actions``, ``recoverable_margin``) will
+    render as locked. ``decisions=[]`` is a legitimate live state (queue
+    cleared) and renders ``"0"`` / ``—`` without a lock.
     """
     # Build the trust drawer intent off the headline tile so clicking the
     # Model-trust tile reuses TrustDrawer (same surface as the strip).
@@ -231,7 +252,7 @@ async def build(
 
     tiles = [
         _movable_revenue_tile(movable_hero or {}, actions),
-        _open_actions_tile(decisions or [], actions),
+        _open_actions_tile(decisions, actions),
         _recoverable_margin_tile(decisions or [], actions),
         _blocked_quotes_tile(actions),
         _model_trust_tile(trust or [], actions),

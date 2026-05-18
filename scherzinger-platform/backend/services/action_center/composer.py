@@ -193,15 +193,27 @@ async def _resolve_summary(
     decisions: Any,
     movable_hero: Any,
     trust: Any,
+    decisions_status: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, str | None]]:
     """Run the summary builder against the upstream blocks and classify
     its status: ``degraded`` on exception, ``empty`` if every tile value
     is None, ``live`` otherwise. Always returns 5 tiles in the canonical
     id order so the frontend layout never shifts.
+
+    When the upstream decisions block is ``degraded`` we forward ``None``
+    (not the empty fallback) to the summary builder so its decision-derived
+    tiles lock — distinguishing "data source unavailable" from "queue
+    legitimately empty".
     """
+    if decisions_status == "degraded":
+        forwarded_decisions: list[dict[str, Any]] | None = None
+    elif isinstance(decisions, list):
+        forwarded_decisions = decisions
+    else:
+        forwarded_decisions = []
     try:
         payload = await summary_block.build(
-            decisions=decisions if isinstance(decisions, list) else [],
+            decisions=forwarded_decisions,
             movable_hero=movable_hero if isinstance(movable_hero, dict) else {},
             trust=trust if isinstance(trust, list) else [],
         )
@@ -328,6 +340,7 @@ async def build_action_center(
         decisions=decisions,
         movable_hero=movable_hero,
         trust=trust,
+        decisions_status=decisions_meta.get("status"),
     )
 
     meta_blocks: dict[str, Any] = {
