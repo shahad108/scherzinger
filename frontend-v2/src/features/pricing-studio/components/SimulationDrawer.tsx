@@ -60,7 +60,7 @@ export function SimulationDrawer({
       open={open}
       onOpenChange={onOpenChange}
       side="right"
-      width={520}
+      width={560}
       title={`Simulate ${variantPrice} · ${aid}`}
     >
       {open && (

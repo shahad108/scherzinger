@@ -60,7 +60,7 @@ export function ApprovalInboxBell({ onBrief }: ApprovalInboxBellProps) {
         )}
       </button>
 
-      <Drawer open={open} onOpenChange={setOpen} width={420} title="Approval inbox">
+      <Drawer open={open} onOpenChange={setOpen} width={560} title="Approval inbox">
         <div className="flex h-full flex-col overflow-hidden p-4" data-testid="approval-inbox-drawer">
           <header className="mb-3 border-b border-[var(--hairline)] pb-2">
             <h2 className="font-display text-[15px] font-bold tracking-tight text-[var(--ink)]">

@@ -146,7 +146,7 @@ export function BatchApprovalDrawer({
     <Drawer
       open={open}
       onOpenChange={onOpenChange}
-      width={480}
+      width={560}
       title="Batch approval"
     >
       <div

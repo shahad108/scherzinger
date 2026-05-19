@@ -233,7 +233,8 @@ export function WinProbCurve({
             data-testid="win-prob-curve-locked"
             className="absolute inset-0 grid place-items-center rounded-[var(--r-md)]"
             style={{
-              background: 'rgba(255, 255, 255, 0.72)',
+              background:
+                'color-mix(in oklab, var(--surface) 72%, transparent)',
               border: '1px dashed var(--hairline)',
             }}
           >

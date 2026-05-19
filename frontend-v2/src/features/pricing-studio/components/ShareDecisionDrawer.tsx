@@ -106,7 +106,7 @@ export function ShareDecisionDrawer({
     <Drawer
       open={open}
       onOpenChange={onOpenChange}
-      width={420}
+      width={560}
       title="Share decision"
     >
       <div

@@ -75,7 +75,7 @@ export function AuditDrawer({ open, onOpenChange, aid, onScrollToProposalPanel }
       open={open}
       onOpenChange={onOpenChange}
       side="right"
-      width={520}
+      width={560}
       title={`Audit · ${aid}`}
     >
       {open && (

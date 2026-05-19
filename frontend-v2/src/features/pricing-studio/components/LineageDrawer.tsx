@@ -61,7 +61,7 @@ export function LineageDrawer({ aid }: Props) {
         if (!o) closeLineage();
       }}
       side="right"
-      width={480}
+      width={560}
       title="Data lineage"
     >
       {open && (

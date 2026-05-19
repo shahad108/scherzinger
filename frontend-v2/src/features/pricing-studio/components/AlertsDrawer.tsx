@@ -100,7 +100,7 @@ export function AlertsDrawer({ open, onOpenChange }: AlertsDrawerProps) {
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} width={480} title="Alerts">
+    <Drawer open={open} onOpenChange={onOpenChange} width={560} title="Alerts">
       <div
         className="flex h-full flex-col overflow-hidden p-4"
         data-testid="alerts-drawer"

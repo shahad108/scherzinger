@@ -62,7 +62,7 @@ export function CustomerDrillInDrawer({ open, onOpenChange, customer, aid, propo
     <Drawer
       open={open}
       onOpenChange={onOpenChange}
-      width={480}
+      width={560}
       title={customer ? `${customer.name} drill-in` : 'Customer drill-in'}
     >
       <div className="flex h-full flex-col" data-testid="customer-drill-in-drawer">

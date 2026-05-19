@@ -8,7 +8,8 @@ function Bar({ w, h = 10 }: { w: string; h?: number }) {
         width: w,
         height: h,
         borderRadius: 6,
-        background: 'linear-gradient(90deg, #eef0f3, #f6f7f9, #eef0f3)',
+        background:
+          'linear-gradient(90deg, var(--surface-sunken), var(--surface-soft), var(--surface-sunken))',
         backgroundSize: '200% 100%',
         animation: 'pz-shimmer 1.4s linear infinite',
       }}

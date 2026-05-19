@@ -63,7 +63,7 @@ export function CostTrajectoryDrawer({
     <Drawer
       open={open}
       onOpenChange={onOpenChange}
-      width={480}
+      width={560}
       title={`Cost outlook — ${aid}`}
     >
       <div className="ws-cost-drawer" data-testid="cost-trajectory-drawer">

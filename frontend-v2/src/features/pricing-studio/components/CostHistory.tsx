@@ -379,21 +379,21 @@ export function CostHistory({
           >
             <polyline
               fill="none"
-              stroke="#5a7da3"
+              stroke="var(--rose)"
               strokeWidth="2"
               points={materialPoints}
             />
             <polyline
               fill="none"
-              stroke="#101418"
+              stroke="var(--ink)"
               strokeWidth="2"
               strokeDasharray="3 3"
               points={quotedPoints}
             />
-            <text x="4" y="36" fontSize="8" fill="#4a5360">
+            <text x="4" y="36" fontSize="8" fill="var(--ink-3)">
               {cost.trajectory.yearStart}
             </text>
-            <text x="220" y="36" fontSize="8" fill="#4a5360">
+            <text x="220" y="36" fontSize="8" fill="var(--ink-3)">
               {cost.trajectory.yearEnd}
             </text>
           </svg>

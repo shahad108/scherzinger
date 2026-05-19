@@ -173,7 +173,7 @@ export function AlertSetupDrawer({
   }, [advanced, buildSpec, customJson, mutation, onOpenChange, scopeMode]);
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} width={420} title="New alert">
+    <Drawer open={open} onOpenChange={onOpenChange} width={560} title="New alert">
       <div
         className="flex h-full flex-col overflow-hidden p-5"
         data-testid="alert-setup-drawer"

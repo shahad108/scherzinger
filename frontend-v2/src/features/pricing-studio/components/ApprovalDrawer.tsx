@@ -110,7 +110,7 @@ export function ApprovalDrawer({
     <Drawer
       open={open}
       onOpenChange={onOpenChange}
-      width={520}
+      width={560}
       title="Approval review"
     >
       <div

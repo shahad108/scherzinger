@@ -228,7 +228,7 @@ export function PublishConfirmationDrawer({
     <Drawer
       open={open}
       onOpenChange={onOpenChange}
-      width={480}
+      width={560}
       title="Publish confirmation"
     >
       <div

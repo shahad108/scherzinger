@@ -60,7 +60,7 @@ export function CompareDrawer({
       open={open}
       onOpenChange={onOpenChange}
       side="right"
-      width={640}
+      width={560}
       title={`Compare options · ${aid}`}
     >
       {open && (
