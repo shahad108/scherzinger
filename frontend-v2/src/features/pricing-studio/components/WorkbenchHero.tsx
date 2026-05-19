@@ -58,7 +58,7 @@ export function WorkbenchHero({ hero, onOpenAudit, auditBadge }: Props) {
               type="button"
               data-testid="workbench-hero-history-button"
               onClick={onOpenAudit}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--hairline)] bg-white px-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--muted)] hover:border-[var(--rose-border)] hover:bg-[var(--rose-bg)] hover:text-[var(--rose-deep)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rose)] focus-visible:ring-offset-1"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--hairline)] bg-white px-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--ink-3)] hover:border-[var(--rose-border)] hover:bg-[var(--rose-bg)] hover:text-[var(--rose-deep)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rose)] focus-visible:ring-offset-1"
               aria-label="Open audit history"
             >
               <History size={12} aria-hidden="true" />

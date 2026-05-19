@@ -51,7 +51,8 @@ const CONFIDENCE_TONE: Record<ConfidenceLevel, { label: string; bg: string; fg: 
   low: {
     label: 'Low',
     bg: 'var(--amber-bg)',
-    fg: 'var(--amber)',
+    // Phase K5 a11y: --amber-deep meets ≥4.5:1 vs --amber-bg.
+    fg: 'var(--amber-deep)',
     border: 'var(--amber-border)',
   },
   med: {
@@ -63,7 +64,8 @@ const CONFIDENCE_TONE: Record<ConfidenceLevel, { label: string; bg: string; fg: 
   high: {
     label: 'High',
     bg: 'var(--green-bg)',
-    fg: 'var(--green)',
+    // Phase K5 a11y: --green-deep meets ≥4.5:1 vs --green-bg.
+    fg: 'var(--green-deep)',
     border: 'var(--green-border)',
   },
 };
@@ -107,7 +109,7 @@ export function RecommendationHero({
         className="mb-3 rounded-[var(--r-xl)] border border-[var(--hairline)] bg-white p-6 shadow-[var(--shadow-card)]"
       >
         <div className="flex items-center gap-3">
-          <h3 id={`rec-hero-${aid}`} className="font-display text-[14px] font-bold uppercase tracking-[0.06em] text-[var(--muted)]">
+          <h3 id={`rec-hero-${aid}`} className="font-display text-[14px] font-bold uppercase tracking-[0.06em] text-[var(--ink-3)]">
             Recommendation
           </h3>
           <DataMissingBadge reason="No recommendation" tooltip="Recommender did not return a recommendation for this SKU." />
@@ -177,7 +179,8 @@ export function RecommendationHero({
         <div className="flex flex-wrap items-center gap-2">
           <h3
             id={`rec-hero-${aid}`}
-            className="font-display text-[11.5px] font-bold uppercase tracking-[0.08em] text-[var(--muted)]"
+            /* Phase K5 a11y: --muted fails 4.5:1; --ink-3 passes. */
+            className="font-display text-[11.5px] font-bold uppercase tracking-[0.08em] text-[var(--ink-3)]"
           >
             Recommendation
           </h3>
@@ -343,7 +346,7 @@ export function RecommendationHero({
 
         {/* Right: rationale memo (markdown -> simple paragraphs) */}
         <aside className="rounded-[var(--r-md)] border border-[var(--hairline)] bg-[var(--surface-soft)] p-4">
-          <h4 className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--muted)]">
+          <h4 className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--ink-3)]">
             Rationale
           </h4>
           <RationaleSimple md={recommendation.rationale_md} />

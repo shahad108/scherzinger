@@ -146,7 +146,7 @@ export function DriverWaterfall({ drivers, emphasiseFloor = false, className }: 
           type="button"
           onClick={() => setExpanded((v) => !v)}
           data-testid="driver-waterfall-expander"
-          className="mt-2 inline-flex items-center gap-1 rounded-full border border-[var(--hairline)] bg-white px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--muted)] hover:border-[var(--rose-border)] hover:bg-[var(--rose-bg)] hover:text-[var(--rose-deep)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rose)] focus-visible:ring-offset-1"
+          className="mt-2 inline-flex items-center gap-1 rounded-full border border-[var(--hairline)] bg-white px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-[0.05em] text-[var(--ink-3)] hover:border-[var(--rose-border)] hover:bg-[var(--rose-bg)] hover:text-[var(--rose-deep)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rose)] focus-visible:ring-offset-1"
         >
           {expanded ? 'Show fewer' : `Show ${hiddenCount} more (+${hiddenCount})`}
         </button>

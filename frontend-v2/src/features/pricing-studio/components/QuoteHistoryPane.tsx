@@ -433,7 +433,12 @@ function QuoteTable({
   aid: string;
 }) {
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div
+      style={{ overflowX: 'auto' }}
+      role="region"
+      aria-label="Quote history table"
+      tabIndex={0}
+    >
       <table
         data-testid="quote-history-table"
         style={{

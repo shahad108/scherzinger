@@ -50,8 +50,11 @@ export function Drawer({
                 exit={{ x: side === 'right' ? '100%' : '-100%' }}
                 transition={{ type: 'spring', stiffness: 320, damping: 32 }}
               >
-                <RadixDialog.Close className="absolute right-4 top-4 rounded-md p-1.5 text-gray-500 hover:bg-gray-100">
-                  <X size={16} />
+                <RadixDialog.Close
+                  className="absolute right-4 top-4 rounded-md p-1.5 text-gray-500 hover:bg-gray-100"
+                  aria-label="Close"
+                >
+                  <X size={16} aria-hidden="true" />
                 </RadixDialog.Close>
                 <RadixDialog.Title className="sr-only">{title}</RadixDialog.Title>
                 {children}

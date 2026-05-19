@@ -73,7 +73,7 @@ export function LanguageToggle({ className }: Props) {
               'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.04em] transition-colors',
               isActive
                 ? 'bg-[var(--rose-bg)] text-[var(--rose-deep)]'
-                : 'text-[var(--muted)] hover:bg-[var(--surface-soft)]',
+                : 'text-[var(--ink-3)] hover:bg-[var(--surface-soft)]',
               setLang.isPending && 'cursor-progress opacity-70',
             )}
           >
@@ -81,7 +81,9 @@ export function LanguageToggle({ className }: Props) {
             {opt.beta && (
               <span
                 data-testid={`language-toggle-${opt.value}-beta`}
-                className="rounded-full bg-[var(--amber-bg)] px-1 py-[1px] text-[8.5px] font-bold uppercase tracking-wider text-[var(--amber)]"
+                /* Phase K5 a11y: 8.5px text needs ≥4.5:1 against --amber-bg.
+                   --amber-deep (token) gives ~7:1 on the amber-bg surface. */
+                className="rounded-full bg-[var(--amber-bg)] px-1 py-[1px] text-[8.5px] font-bold uppercase tracking-wider text-[var(--amber-deep)]"
                 aria-label="Beta — partial coverage"
                 title="German coverage is partial in v3 — briefing + PDF honour the lang param, most UI copy is still English."
               >

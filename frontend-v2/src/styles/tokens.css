@@ -18,7 +18,9 @@
     --ink: #101418;
     --ink-2: #1f2530;
     --ink-3: #4a5360;
-    --muted: #7d8693;
+    /* Phase K5 a11y: was #7d8693 (4.05:1 vs #fff). Deepened to meet
+       WCAG AA 4.5:1 for normal-size body text. Matches Tailwind slate-500. */
+    --muted: #64748b;
     --muted-2: #aab2bd;
     --text-primary: var(--ink);
     --text-muted: var(--muted);
@@ -35,10 +37,15 @@
     --green: #2f7d5b;
     --green-bg: #e3efe6;
     --green-border: #b9d4c3;
+    /* Deeper green for small/dense text on --green-bg (Phase K5 a11y). */
+    --green-deep: #1f5a40;
 
     --amber: #a5701f;
     --amber-bg: #f5ecd9;
     --amber-border: #e0caa3;
+    /* Deeper amber for small text on amber-bg (Phase K5 a11y).
+       ≥4.5:1 contrast vs --amber-bg (#f5ecd9). */
+    --amber-deep: #6f4a14;
 
     --red: #9a3232;
     --red-bg: #f1dcdc;

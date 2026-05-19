@@ -34,10 +34,11 @@ export function LineageButton({ lineageRef, subjectTitle, label, className }: Pr
       onClick={() => openLineage(lineageRef, { subjectTitle: subjectTitle ?? label ?? null })}
       className={cn(
         'inline-flex items-center gap-1 rounded-full px-2 py-[2px] text-[10.5px] font-semibold uppercase tracking-[0.04em]',
-        'border border-[var(--hairline)] bg-white text-[var(--muted)]',
+        /* Phase K5 a11y: --ink-3 passes 4.5:1 on white. */
+        'border border-[var(--hairline)] bg-white text-[var(--ink-3)]',
         'transition-colors hover:text-[var(--rose-deep)] hover:border-[var(--rose-border)] hover:bg-[var(--rose-bg)]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rose)] focus-visible:ring-offset-1',
-        disabled && 'cursor-not-allowed opacity-40 hover:bg-white hover:text-[var(--muted)] hover:border-[var(--hairline)]',
+        disabled && 'cursor-not-allowed opacity-40 hover:bg-white hover:text-[var(--ink-3)] hover:border-[var(--hairline)]',
         className,
       )}
     >

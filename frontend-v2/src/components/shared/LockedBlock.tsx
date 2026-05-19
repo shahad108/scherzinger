@@ -52,10 +52,11 @@ export function LockedBlock({
         Locked — data source not yet connected.
       </div>
       {hint && (
-        <div style={{ marginTop: 4, color: 'var(--muted)' }}>{hint}</div>
+        /* Phase K5 a11y: --ink-3 passes 4.5:1 on --surface-sunken. */
+        <div style={{ marginTop: 4, color: 'var(--ink-3)' }}>{hint}</div>
       )}
       {traceId && (
-        <div style={{ marginTop: 8, fontSize: 11.5, color: 'var(--muted)' }}>
+        <div style={{ marginTop: 8, fontSize: 11.5, color: 'var(--ink-3)' }}>
           Trace ID: <code>{traceId}</code>
         </div>
       )}

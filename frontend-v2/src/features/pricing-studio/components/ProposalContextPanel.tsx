@@ -116,9 +116,9 @@ export function ProposalContextPanel({ articleId, recommendationId }: Props) {
                   <span className="text-[var(--rose-deep)]">
                     €{(p.proposed_price ?? 0).toFixed(2)}
                   </span>
-                  <span className="ml-2 text-[11.5px] text-[var(--muted)]">Δ {delta}</span>
+                  <span className="ml-2 text-[11.5px] text-[var(--ink-3)]">Δ {delta}</span>
                 </div>
-                <div className="mt-0.5 truncate text-[11px] text-[var(--muted)]">
+                <div className="mt-0.5 truncate text-[11px] text-[var(--ink-3)]">
                   Created {p.created_at ? new Date(p.created_at).toLocaleString() : '—'}
                   {p.approval_required ? ' · MD approval required' : ''}
                 </div>

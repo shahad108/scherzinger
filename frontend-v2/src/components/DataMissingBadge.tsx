@@ -31,7 +31,8 @@ export function DataMissingBadge({
       data-testid="data-missing-badge"
       className={cn(
         'inline-flex items-center gap-1 rounded-full border px-2 py-[1px] text-[10.5px] font-semibold leading-4 tracking-[0.01em] uppercase',
-        'border-[var(--amber-border)] bg-[var(--amber-bg)] text-[var(--amber)]',
+        /* Phase K5 a11y: --amber-deep meets ≥4.5:1 vs --amber-bg. */
+        'border-[var(--amber-border)] bg-[var(--amber-bg)] text-[var(--amber-deep)]',
         className,
       )}
       {...rest}

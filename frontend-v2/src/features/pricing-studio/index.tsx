@@ -984,7 +984,8 @@ export default function PricingStudioPage() {
                   fontWeight: 700,
                   letterSpacing: '0.08em',
                   textTransform: 'uppercase',
-                  color: 'var(--muted)',
+                  /* Phase K5 a11y: --ink-3 passes 4.5:1 on white. */
+                  color: 'var(--ink-3)',
                 }}
               >
                 Coming soon

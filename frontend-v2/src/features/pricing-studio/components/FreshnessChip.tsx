@@ -51,7 +51,7 @@ export function freshnessTone(iso: string | null | undefined, now: Date = new Da
       level: 'unknown',
       dot: 'bg-[var(--muted)]',
       bg: 'bg-[var(--surface-soft)]',
-      fg: 'text-[var(--muted)]',
+      fg: 'text-[var(--ink-3)]',
       tooltip: TOOLTIPS.unknown,
     };
   }
@@ -61,7 +61,7 @@ export function freshnessTone(iso: string | null | undefined, now: Date = new Da
       level: 'unknown',
       dot: 'bg-[var(--muted)]',
       bg: 'bg-[var(--surface-soft)]',
-      fg: 'text-[var(--muted)]',
+      fg: 'text-[var(--ink-3)]',
       tooltip: TOOLTIPS.unknown,
     };
   }
@@ -71,7 +71,8 @@ export function freshnessTone(iso: string | null | undefined, now: Date = new Da
       level: 'fresh',
       dot: 'bg-emerald-500',
       bg: 'bg-emerald-50',
-      fg: 'text-emerald-700',
+      // Phase K5: emerald-800 meets ≥4.5:1 on emerald-50 (small chip text).
+      fg: 'text-emerald-800',
       tooltip: TOOLTIPS.fresh,
     };
   }
@@ -80,7 +81,8 @@ export function freshnessTone(iso: string | null | undefined, now: Date = new Da
       level: 'aging',
       dot: 'bg-amber-500',
       bg: 'bg-amber-50',
-      fg: 'text-amber-800',
+      // Phase K5: amber-900 meets ≥4.5:1 on amber-50.
+      fg: 'text-amber-900',
       tooltip: TOOLTIPS.aging,
     };
   }
@@ -88,7 +90,8 @@ export function freshnessTone(iso: string | null | undefined, now: Date = new Da
     level: 'stale',
     dot: 'bg-rose-500',
     bg: 'bg-rose-50',
-    fg: 'text-rose-700',
+    // Phase K5: rose-800 meets ≥4.5:1 on rose-50.
+    fg: 'text-rose-800',
     tooltip: TOOLTIPS.stale,
   };
 }

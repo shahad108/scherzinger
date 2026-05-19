@@ -211,7 +211,7 @@ function ABTestSetupPane({
       <div className="mb-3 flex items-center justify-between">
         <div>
           <h5 className="text-sm font-semibold text-gray-900">A/B vs hold</h5>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-600">
             Slice eligible customers; promote the winner.
           </p>
         </div>
@@ -257,7 +257,7 @@ function ABTestSetupPane({
         <button
           type="button"
           onClick={() => setEligibilityOpen((v) => !v)}
-          className="text-rose-600 underline-offset-2 hover:underline"
+          className="text-rose-700 underline-offset-2 hover:underline"
           aria-expanded={eligibilityOpen}
         >
           {eligibilityOpen ? 'Close eligibility' : 'Open eligibility'}
@@ -327,7 +327,7 @@ function ABTestSetupPane({
             <button
               type="button"
               onClick={() => setAdvanced((v) => !v)}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-600 hover:text-gray-700"
             >
               {advanced ? 'Use simple editor' : 'Advanced…'}
             </button>
@@ -346,7 +346,7 @@ function ABTestSetupPane({
         </div>
       )}
 
-      <div className="mt-3 text-[11px] text-gray-500">
+      <div className="mt-3 text-[11px] text-gray-600">
         <span className="font-medium text-gray-600">Decision criterion: </span>
         variant DB2 ≥ control DB2 + {DEFAULT_CRITERION.delta_pp}pp (one-sided, p&lt;
         {DEFAULT_CRITERION.alpha})
@@ -362,7 +362,7 @@ function ABTestSetupPane({
           {create.isPending ? 'Setting up…' : 'Set up A/B test'}
         </Button>
         {create.isError && (
-          <span className="text-[11px] text-rose-600">
+          <span className="text-[11px] text-rose-700">
             Could not create test. Check eligibility.
           </span>
         )}
@@ -401,7 +401,7 @@ function ABTestActivePane({ activeTest }: ActivePaneProps) {
       <div className="mb-3 flex items-center justify-between">
         <div>
           <h5 className="text-sm font-semibold text-gray-900">A/B vs hold · in flight</h5>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-600">
             Variant €{Number(activeTest.variant_price).toFixed(2)} vs control €
             {Number(activeTest.control_price).toFixed(2)}
           </p>
@@ -474,7 +474,7 @@ function ABTestActivePane({ activeTest }: ActivePaneProps) {
             Hold
           </Button>
           {!decisionReady && (
-            <span className="text-[11px] text-gray-500">
+            <span className="text-[11px] text-gray-600">
               Waiting for {Math.max(0, target - Math.min(controlN, variantN))} more
               quotes per arm.
             </span>
@@ -506,7 +506,7 @@ function ArmRow({ label, n, target, pct, tone, margin, revenue }: ArmRowProps) {
     <div>
       <div className="mb-1 flex items-center justify-between text-[11px]">
         <span className="font-medium text-gray-700">{label}</span>
-        <span className="tabular-nums text-gray-500">
+        <span className="tabular-nums text-gray-600">
           {n}/{target} quotes
           {margin !== null && <> · margin {(margin * 100).toFixed(1)}%</>}
           {revenue !== 0 && <> · €{Math.round(revenue).toLocaleString()}</>}

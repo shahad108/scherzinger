@@ -23,8 +23,11 @@ export function DialogContent({
         {...props}
       >
         {children}
-        <RadixDialog.Close className="absolute right-4 top-4 rounded-md p-1 text-gray-500 hover:bg-gray-100">
-          <X size={16} />
+        <RadixDialog.Close
+          className="absolute right-4 top-4 rounded-md p-1 text-gray-500 hover:bg-gray-100"
+          aria-label="Close"
+        >
+          <X size={16} aria-hidden="true" />
         </RadixDialog.Close>
       </RadixDialog.Content>
     </RadixDialog.Portal>

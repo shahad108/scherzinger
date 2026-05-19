@@ -8,7 +8,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-rose-500 text-white hover:bg-rose-600 active:bg-rose-700 shadow-[var(--shadow-1)]',
+        // Phase K5 a11y: rose-700 meets ≥4.5:1 vs white text.
+        primary: 'bg-rose-700 text-white hover:bg-rose-800 active:bg-rose-900 shadow-[var(--shadow-1)]',
         secondary: 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 active:bg-gray-100',
         ghost: 'bg-transparent text-gray-700 hover:bg-gray-100',
         danger: 'bg-red-600 text-white hover:bg-red-700',

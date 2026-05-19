@@ -22,7 +22,7 @@ export function TopBar() {
 
   return (
     <header className="pz-topbar" aria-label="Top utility bar">
-      <div className="pz-logo" aria-label="Pryzm">
+      <div className="pz-logo" role="img" aria-label="Pryzm">
         <svg
           viewBox="0 0 24 24"
           width={18}

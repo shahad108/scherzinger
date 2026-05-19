@@ -71,7 +71,8 @@ const ROSE_PILL =
 const NEUTRAL_PILL =
   'inline-flex items-center justify-center gap-1.5 rounded-md border border-[var(--hairline)] bg-white px-3 py-2 text-[11.5px] font-semibold text-[var(--ink-2)] hover:bg-[var(--surface-soft)] disabled:opacity-60';
 const AMBER_PILL =
-  'inline-flex items-center justify-center gap-1.5 rounded-md border border-[var(--amber-border)] bg-[var(--amber-bg)] px-3 py-2 text-[11.5px] font-semibold text-[var(--amber)] hover:bg-[color-mix(in_oklab,var(--amber-bg)_70%,white)] disabled:opacity-60';
+  /* Phase K5 a11y: --amber-deep meets ≥4.5:1 vs --amber-bg. */
+  'inline-flex items-center justify-center gap-1.5 rounded-md border border-[var(--amber-border)] bg-[var(--amber-bg)] px-3 py-2 text-[11.5px] font-semibold text-[var(--amber-deep)] hover:bg-[color-mix(in_oklab,var(--amber-bg)_70%,white)] disabled:opacity-60';
 
 function formatPriceLabel(price: string | null | undefined): string {
   if (!price) return '—';
@@ -236,7 +237,7 @@ export function PublishConfirmationDrawer({
         className="flex h-full flex-col overflow-y-auto p-5"
       >
         <header className="mb-3 border-b border-[var(--hairline)] pb-3">
-          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--ink-3)]">
             Push to quoting
           </p>
           <h2 className="font-display text-[17px] font-bold tracking-tight text-[var(--ink)]">
@@ -344,7 +345,7 @@ function ComposeState(props: ComposeProps) {
         data-testid="publish-drawer-effective"
       >
         <label className="block">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink-3)]">
             Effective at (UTC)
           </span>
           <input
@@ -354,7 +355,7 @@ function ComposeState(props: ComposeProps) {
             data-testid="publish-drawer-effective-input"
             className="mt-1 w-full rounded-md border border-[var(--hairline)] bg-white p-2 text-[12.5px] tabular-nums text-[var(--ink)] outline-none focus:border-[var(--rose-border)]"
           />
-          <p className="mt-1 text-[10.5px] text-[var(--muted)]">
+          <p className="mt-1 text-[10.5px] text-[var(--ink-3)]">
             Defaults to tomorrow 00:00 UTC. Future dates schedule the publish.
           </p>
         </label>
@@ -365,23 +366,23 @@ function ComposeState(props: ComposeProps) {
         className="mb-3 rounded-lg border border-[var(--hairline)] p-3"
         data-testid="publish-drawer-rows"
       >
-        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink-3)]">
           Price book change
         </h3>
         <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-[12px]">
-          <dt className="text-[var(--muted)]">Old row</dt>
+          <dt className="text-[var(--ink-3)]">Old row</dt>
           <dd className="tabular-nums text-[var(--ink-2)]">
             {currentLabel}{' '}
-            <span className="text-[var(--muted)]">({currentRowValidRange})</span>
+            <span className="text-[var(--ink-3)]">({currentRowValidRange})</span>
           </dd>
-          <dt className="text-[var(--muted)]">New row</dt>
+          <dt className="text-[var(--ink-3)]">New row</dt>
           <dd className="tabular-nums font-semibold text-[var(--rose-deep)]">
             {proposedLabel}{' '}
-            <span className="font-normal text-[var(--muted)]">
+            <span className="font-normal text-[var(--ink-3)]">
               ({effectiveAt ? effectiveAt.slice(0, 10) : '—'} → ∞)
             </span>
           </dd>
-          <dt className="text-[var(--muted)]">SKU</dt>
+          <dt className="text-[var(--ink-3)]">SKU</dt>
           <dd className="text-[var(--ink-2)]">{aid}</dd>
         </dl>
       </section>
@@ -391,7 +392,7 @@ function ComposeState(props: ComposeProps) {
         className="mb-3 rounded-lg border border-[var(--hairline)] p-3"
         data-testid="publish-drawer-notify"
       >
-        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink-3)]">
           Will notify
         </h3>
         <div className="mt-2 flex flex-col gap-1.5 text-[12px] text-[var(--ink-2)]">
@@ -402,7 +403,7 @@ function ComposeState(props: ComposeProps) {
               onChange={(e) => onChangeNotify({ ...notify, sales: e.target.checked })}
               data-testid="publish-drawer-notify-sales"
             />
-            <MessageSquare size={12} className="text-[var(--muted)]" />
+            <MessageSquare size={12} className="text-[var(--ink-3)]" />
             Heiko (sales lead) — Slack
           </label>
           <label className="inline-flex items-center gap-2">
@@ -412,7 +413,7 @@ function ComposeState(props: ComposeProps) {
               onChange={(e) => onChangeNotify({ ...notify, customers: e.target.checked })}
               data-testid="publish-drawer-notify-customers"
             />
-            <Mail size={12} className="text-[var(--muted)]" />
+            <Mail size={12} className="text-[var(--ink-3)]" />
             Tier-A customers — email
           </label>
           <label className="inline-flex items-center gap-2">
@@ -422,7 +423,7 @@ function ComposeState(props: ComposeProps) {
               onChange={(e) => onChangeNotify({ ...notify, escalate: e.target.checked })}
               data-testid="publish-drawer-notify-escalate"
             />
-            <Megaphone size={12} className="text-[var(--muted)]" />
+            <Megaphone size={12} className="text-[var(--ink-3)]" />
             Internal escalation
           </label>
         </div>
@@ -430,7 +431,8 @@ function ComposeState(props: ComposeProps) {
 
       {/* Warning */}
       <section
-        className="mb-3 rounded-lg border border-[var(--amber-border)] bg-[var(--amber-bg)] p-3 text-[11.5px] text-[var(--amber)]"
+        /* Phase K5 a11y: --amber-deep meets ≥4.5:1 vs --amber-bg. */
+        className="mb-3 rounded-lg border border-[var(--amber-border)] bg-[var(--amber-bg)] p-3 text-[11.5px] text-[var(--amber-deep)]"
         data-testid="publish-drawer-warning"
       >
         <p className="inline-flex items-start gap-1.5">
@@ -585,11 +587,11 @@ function PublishedState(props: PublishedProps) {
               {sent.length} notification{sent.length === 1 ? '' : 's'} dispatched
             </li>
           )}
-          <li className="font-mono text-[10.5px] text-[var(--muted)]">
+          <li className="font-mono text-[10.5px] text-[var(--ink-3)]">
             Receipt id: pub_{receiptShort}…
           </li>
           {rolledBack && receipt.rollback_reason && (
-            <li className="text-[var(--muted)]">
+            <li className="text-[var(--ink-3)]">
               Rollback reason: {receipt.rollback_reason}
             </li>
           )}
@@ -601,11 +603,11 @@ function PublishedState(props: PublishedProps) {
         className="mb-3 rounded-lg border border-[var(--hairline)] p-3"
         data-testid="publish-drawer-fanout"
       >
-        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink-3)]">
           Notifications dispatched
         </h3>
         {receipt.notifications_dispatched.length === 0 ? (
-          <p className="mt-1 text-[12px] text-[var(--muted)]">
+          <p className="mt-1 text-[12px] text-[var(--ink-3)]">
             No notifications configured.
           </p>
         ) : (
@@ -733,22 +735,24 @@ function NotificationRow({ n }: { n: NotificationDispatched }) {
     >
       <Icon
         size={12}
-        className={failed ? 'mt-0.5 text-[var(--amber)]' : 'mt-0.5 text-[var(--muted)]'}
+        className={failed ? 'mt-0.5 text-[var(--amber)]' : 'mt-0.5 text-[var(--ink-3)]'}
       />
       <span className="flex-1">
         <span className="font-semibold text-[var(--ink)]">{n.channel}</span>{' '}
-        <span className="text-[var(--muted)]">→ {n.recipient}</span>
+        <span className="text-[var(--ink-3)]">→ {n.recipient}</span>
       </span>
       {failed ? (
         <span
-          className="inline-flex items-center gap-1 rounded-md border border-[var(--amber-border)] bg-[var(--amber-bg)] px-1.5 py-0.5 text-[10.5px] font-semibold text-[var(--amber)]"
+          /* Phase K5 a11y: --amber-deep meets ≥4.5:1 vs --amber-bg. */
+          className="inline-flex items-center gap-1 rounded-md border border-[var(--amber-border)] bg-[var(--amber-bg)] px-1.5 py-0.5 text-[10.5px] font-semibold text-[var(--amber-deep)]"
           title={n.error ?? 'Notification failed'}
         >
-          <XCircle size={10} /> {n.status}
+          <XCircle size={10} aria-hidden="true" /> {n.status}
         </span>
       ) : (
-        <span className="inline-flex items-center gap-1 rounded-md border border-[var(--green-border)] bg-[var(--green-bg)] px-1.5 py-0.5 text-[10.5px] font-semibold text-[var(--green)]">
-          <CheckCircle2 size={10} /> sent
+        /* Phase K5 a11y: --green-deep meets ≥4.5:1 vs --green-bg. */
+        <span className="inline-flex items-center gap-1 rounded-md border border-[var(--green-border)] bg-[var(--green-bg)] px-1.5 py-0.5 text-[10.5px] font-semibold text-[var(--green-deep)]">
+          <CheckCircle2 size={10} aria-hidden="true" /> sent
         </span>
       )}
     </li>

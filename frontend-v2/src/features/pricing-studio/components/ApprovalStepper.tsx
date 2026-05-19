@@ -539,9 +539,10 @@ function DefaultChain({ activeStage }: DefaultChainProps) {
               <span
                 className="grid h-7 w-7 place-items-center rounded-full border"
                 style={{ borderColor, background, color: dotColor }}
+                role="img"
                 aria-label={`${stage.label}: ${isActive ? 'current' : isDone ? 'done' : 'upcoming'}`}
               >
-                <Icon size={13} />
+                <Icon size={13} aria-hidden="true" />
               </span>
               <span
                 className={`text-[10.5px] ${isActive ? 'font-bold' : 'font-semibold'}`}

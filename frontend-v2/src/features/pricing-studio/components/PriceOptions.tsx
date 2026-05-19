@@ -124,8 +124,14 @@ export function PriceOptions({
         </span>
       </div>
       <div className={`ws-options${compact ? ' ws-options--compact' : ''}`}>
+        {/* Phase K5 a11y: SimulateLink (a real <button>) must NOT be
+            nested inside the option <button>. Each option pairs an
+            outer <button> with an optional sibling SimulateLink. The
+            wrapper div carries the .ws-opt visual treatment via a
+            class on the button, while the simulate link sits below. */}
         <button
           type="button"
+          aria-pressed={active === 'hold'}
           className={`ws-opt hold${active === 'hold' ? ' active' : ''}`}
           onClick={() => setActive('hold')}
         >
@@ -148,15 +154,16 @@ export function PriceOptions({
             compact={compact}
             label="Hold"
           />
-          {onSimulateOption && (
-            <SimulateLink
-              onClick={() => onSimulateOption(parsePriceLabel(options.hold.price))}
-            />
-          )}
         </button>
+        {onSimulateOption && (
+          <SimulateLink
+            onClick={() => onSimulateOption(parsePriceLabel(options.hold.price))}
+          />
+        )}
 
         <button
           type="button"
+          aria-pressed={active === 'floor'}
           className={`ws-opt${active === 'floor' ? ' active' : ''}`}
           onClick={() => setActive('floor')}
         >
@@ -179,15 +186,16 @@ export function PriceOptions({
             compact={compact}
             label="Cost-floor"
           />
-          {onSimulateOption && (
-            <SimulateLink
-              onClick={() => onSimulateOption(parsePriceLabel(options.floor.price))}
-            />
-          )}
         </button>
+        {onSimulateOption && (
+          <SimulateLink
+            onClick={() => onSimulateOption(parsePriceLabel(options.floor.price))}
+          />
+        )}
 
         <button
           type="button"
+          aria-pressed={active === 'market'}
           className={`ws-opt${active === 'market' ? ' active' : ''}`}
           onClick={() => setActive('market')}
         >
@@ -210,37 +218,36 @@ export function PriceOptions({
             compact={compact}
             label="Market anchor"
           />
-          {onSimulateOption && (
-            <SimulateLink
-              onClick={() => onSimulateOption(parsePriceLabel(options.market.price))}
-            />
-          )}
         </button>
+        {onSimulateOption && (
+          <SimulateLink
+            onClick={() => onSimulateOption(parsePriceLabel(options.market.price))}
+          />
+        )}
 
+        {/* Phase K5 a11y: the Custom card holds a real <input>, so it
+            cannot itself be an interactive element (would be nested-
+            interactive). Activation flows from focus / change on the
+            input. SimulateLink sits as a sibling below. */}
         <div
-          role="button"
-          tabIndex={0}
           className={`ws-opt custom${active === 'custom' ? ' active' : ''}`}
-          onClick={() => setActive('custom')}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') setActive('custom');
-          }}
         >
           <span className="ws-opt-lab">Custom</span>
-          <span className="ws-custom-input">
+          <label className="ws-custom-input">
             <span>€</span>
             <input
               type="number"
               step="0.01"
+              aria-label="Custom price"
               placeholder={options.customPlaceholder}
               value={customPrice}
+              onFocus={() => setActive('custom')}
               onChange={(e) => {
                 setCustomPrice(e.target.value);
                 setActive('custom');
               }}
-              onClick={(e) => e.stopPropagation()}
             />
-          </span>
+          </label>
           <span className="ws-opt-delta">{customDelta}</span>
           <span className="ws-opt-impact">{customImpact}</span>
           <span className="ws-opt-risk">{customRisk}</span>
@@ -249,10 +256,10 @@ export function PriceOptions({
             compact={compact}
             label="Custom"
           />
-          {onSimulateOption && customPrice && (
-            <SimulateLink onClick={() => onSimulateOption(customPrice)} />
-          )}
         </div>
+        {onSimulateOption && customPrice && (
+          <SimulateLink onClick={() => onSimulateOption(customPrice)} />
+        )}
       </div>
 
       {aid && (
@@ -289,7 +296,8 @@ function SimulateLink({ onClick }: SimulateLinkProps) {
         e.stopPropagation();
         onClick();
       }}
-      className="ws-opt-sim-link mt-1 text-[10px] uppercase tracking-wide text-rose-600 hover:underline"
+      /* Phase K5 a11y: rose-700 meets ≥4.5:1 vs white. */
+      className="ws-opt-sim-link mt-1 text-[10px] uppercase tracking-wide text-rose-700 hover:underline"
       data-testid="simulate-option"
     >
       Simulate this option
