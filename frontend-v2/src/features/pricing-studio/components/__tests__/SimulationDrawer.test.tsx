@@ -142,6 +142,25 @@ describe('SimulationDrawer', () => {
     await waitFor(() => expect(onProposalCreated).toHaveBeenCalledWith('prop-1'));
   });
 
+  it('renders the fan chart container after a successful simulate (Phase D parity)', async () => {
+    wrap(
+      <SimulationDrawer
+        open
+        onOpenChange={() => {}}
+        aid="200832-E"
+        variantPrice="127.00"
+        controlPrice="118.00"
+      />,
+    );
+    // Container mount confirms the polished chart block is reached. Recharts
+    // rendering of SVG paths requires layout (jsdom returns 0×0), so we
+    // assert on the wrapper + heading instead of stroke attributes.
+    expect(await screen.findByTestId('sim-fan-chart')).toBeInTheDocument();
+    expect(
+      screen.getByText(/12-month revenue fan-band/i),
+    ).toBeInTheDocument();
+  });
+
   it('wires "Run as A/B" to onRunAsAbTest with the variant + control prices', async () => {
     const onRunAsAbTest = vi.fn();
     wrap(

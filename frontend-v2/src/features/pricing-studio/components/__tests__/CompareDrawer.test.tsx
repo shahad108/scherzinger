@@ -1,7 +1,7 @@
 // Pricing Studio v3 / Phase 8 — CompareDrawer tests.
 
-import { render, screen, within } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type {
   CustomerFanoutBlock,
   OptionMarginBlock,
@@ -9,6 +9,28 @@ import type {
   WinProbCurveBlock,
 } from '@/types/studio';
 import { CompareDrawer } from '../CompareDrawer';
+
+// Phase H — mocks for "Set as proposal" CTA.
+const createProposalMutate = vi.fn();
+const proposalMutationState = { isPending: false };
+vi.mock('@/data/api/useProposals', () => ({
+  useCreateProposal: () => ({
+    mutate: createProposalMutate,
+    isPending: proposalMutationState.isPending,
+    isError: false,
+  }),
+}));
+
+const runUiActionMock = vi.fn();
+vi.mock('@/hooks/useUiAction', () => ({
+  useUiAction: () => runUiActionMock,
+}));
+
+beforeEach(() => {
+  createProposalMutate.mockReset();
+  runUiActionMock.mockReset();
+  proposalMutationState.isPending = false;
+});
 
 const options: PriceOptionsBundle = {
   hold: {
@@ -161,6 +183,165 @@ describe('CompareDrawer', () => {
     // Hold DB2 = 14%, Recommended DB2 = 18%.
     expect(screen.getByText('14.0%')).toBeInTheDocument();
     expect(screen.getByText('18.0%')).toBeInTheDocument();
+  });
+
+  it('renders "Set as proposal" CTA on each option column', () => {
+    render(
+      <CompareDrawer
+        open
+        onOpenChange={() => {}}
+        aid="200832-E"
+        options={options}
+        optionMargins={optionMargins}
+        winProbCurve={winProbCurve}
+        customerFanout={fanout}
+        currentPriceLabel="€118"
+        customPrice="130.00"
+      />,
+    );
+    expect(
+      screen.getByTestId('compare-set-as-proposal-hold'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId('compare-set-as-proposal-recommended'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId('compare-set-as-proposal-custom'),
+    ).toBeInTheDocument();
+  });
+
+  it('disables "Set as proposal" when option price equals hold (no-op)', () => {
+    render(
+      <CompareDrawer
+        open
+        onOpenChange={() => {}}
+        aid="200832-E"
+        options={options}
+        optionMargins={optionMargins}
+        winProbCurve={winProbCurve}
+        customerFanout={fanout}
+        currentPriceLabel="€118"
+        customPrice="130.00"
+      />,
+    );
+    // Hold matches current price (€118) → no-op proposal → disabled.
+    expect(screen.getByTestId('compare-set-as-proposal-hold')).toBeDisabled();
+    // Recommended (€127) and Custom (€130) differ → enabled.
+    expect(
+      screen.getByTestId('compare-set-as-proposal-recommended'),
+    ).toBeEnabled();
+    expect(screen.getByTestId('compare-set-as-proposal-custom')).toBeEnabled();
+  });
+
+  it('disables "Set as proposal" when option price is null', () => {
+    // Omit customPrice → Custom column has no parseable price.
+    render(
+      <CompareDrawer
+        open
+        onOpenChange={() => {}}
+        aid="200832-E"
+        options={options}
+        optionMargins={optionMargins}
+        winProbCurve={winProbCurve}
+        customerFanout={fanout}
+        currentPriceLabel="€118"
+      />,
+    );
+    expect(screen.getByTestId('compare-set-as-proposal-custom')).toBeDisabled();
+  });
+
+  it('click triggers useCreateProposal with the expected body', () => {
+    render(
+      <CompareDrawer
+        open
+        onOpenChange={() => {}}
+        aid="200832-E"
+        options={options}
+        optionMargins={optionMargins}
+        winProbCurve={winProbCurve}
+        customerFanout={fanout}
+        currentPriceLabel="€118"
+        customPrice="130.00"
+        recommendationId="rec-abc"
+      />,
+    );
+    fireEvent.click(screen.getByTestId('compare-set-as-proposal-recommended'));
+    expect(createProposalMutate).toHaveBeenCalledTimes(1);
+    const [body] = createProposalMutate.mock.calls[0];
+    expect(body).toMatchObject({
+      article_id: '200832-E',
+      proposed_price: '127.00',
+      current_price: '118.00',
+      recommendation_id: 'rec-abc',
+      payload: {
+        source: 'compare_drawer',
+        option_label: 'floor',
+        note: null,
+      },
+    });
+  });
+
+  it('closes the drawer + toasts on successful create', async () => {
+    const onOpenChange = vi.fn();
+    createProposalMutate.mockImplementation(
+      (
+        _body: unknown,
+        opts: { onSuccess?: () => void; onError?: (e: Error) => void },
+      ) => {
+        opts.onSuccess?.();
+      },
+    );
+    render(
+      <CompareDrawer
+        open
+        onOpenChange={onOpenChange}
+        aid="200832-E"
+        options={options}
+        optionMargins={optionMargins}
+        winProbCurve={winProbCurve}
+        customerFanout={fanout}
+        currentPriceLabel="€118"
+        customPrice="130.00"
+      />,
+    );
+    fireEvent.click(screen.getByTestId('compare-set-as-proposal-recommended'));
+    await waitFor(() => {
+      expect(runUiActionMock).toHaveBeenCalledWith({
+        toast: 'Draft proposal created',
+      });
+    });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('renders inline error on mutation failure', async () => {
+    createProposalMutate.mockImplementation(
+      (
+        _body: unknown,
+        opts: { onSuccess?: () => void; onError?: (e: Error) => void },
+      ) => {
+        opts.onError?.(new Error('Backend rejected the proposal'));
+      },
+    );
+    render(
+      <CompareDrawer
+        open
+        onOpenChange={() => {}}
+        aid="200832-E"
+        options={options}
+        optionMargins={optionMargins}
+        winProbCurve={winProbCurve}
+        customerFanout={fanout}
+        currentPriceLabel="€118"
+        customPrice="130.00"
+      />,
+    );
+    fireEvent.click(screen.getByTestId('compare-set-as-proposal-recommended'));
+    const errNode = await screen.findByTestId(
+      'compare-set-as-proposal-recommended-error',
+    );
+    expect(errNode).toHaveTextContent(/Backend rejected/i);
+    // No toast on failure.
+    expect(runUiActionMock).not.toHaveBeenCalled();
   });
 
   it('renders routing row as TODO placeholder dashes', () => {

@@ -14,10 +14,12 @@
 //                             per-option route summary; renders "—" until
 //                             v3.1 ships that field.
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Drawer } from '@/components/ui/Drawer';
 import { fmt } from '@/lib/format';
 import { parseDecimal, pctFromFraction } from '@/features/pricing-studio/lib/decimal';
+import { useCreateProposal } from '@/data/api/useProposals';
+import { useUiAction } from '@/hooks/useUiAction';
 import type {
   OptionMarginBlock,
   PriceOptionsBundle,
@@ -37,6 +39,8 @@ export interface CompareDrawerProps {
   currentPriceLabel: string;
   /** Optional custom-row override (the user's typed price). */
   customPrice?: string | null;
+  /** Recommendation id to attribute the draft proposal to (Phase H). */
+  recommendationId?: string | null;
 }
 
 export function CompareDrawer({
@@ -49,6 +53,7 @@ export function CompareDrawer({
   customerFanout,
   currentPriceLabel,
   customPrice,
+  recommendationId,
 }: CompareDrawerProps) {
   return (
     <Drawer
@@ -67,13 +72,17 @@ export function CompareDrawer({
           customerFanout={customerFanout}
           currentPriceLabel={currentPriceLabel}
           customPrice={customPrice}
+          recommendationId={recommendationId ?? null}
+          onClose={() => onOpenChange(false)}
         />
       )}
     </Drawer>
   );
 }
 
-interface BodyProps extends Omit<CompareDrawerProps, 'open' | 'onOpenChange'> {}
+interface BodyProps extends Omit<CompareDrawerProps, 'open' | 'onOpenChange'> {
+  onClose: () => void;
+}
 
 interface ColumnSpec {
   key: 'hold' | 'recommended' | 'custom';
@@ -125,10 +134,55 @@ function CompareDrawerBody({
   customerFanout,
   currentPriceLabel,
   customPrice,
+  recommendationId,
+  onClose,
 }: BodyProps) {
   const holdPriceN = priceLabelToNumber(currentPriceLabel || options.hold.price);
   const recPriceN = priceLabelToNumber(options.floor.price);
   const customPriceN = parseDecimal(customPrice ?? '');
+
+  const createProposal = useCreateProposal();
+  const runUiAction = useUiAction();
+  const [pendingKey, setPendingKey] = useState<ColumnSpec['key'] | null>(null);
+  const [errorByKey, setErrorByKey] = useState<Record<string, string | null>>({});
+
+  function handleSetAsProposal(c: ColumnSpec) {
+    if (!Number.isFinite(c.priceValue)) return;
+    if (!Number.isFinite(holdPriceN)) return;
+    // No-op proposals make no sense.
+    if (c.priceValue === holdPriceN) return;
+    const proposed = c.priceValue.toFixed(2);
+    const current = holdPriceN.toFixed(2);
+    setPendingKey(c.key);
+    setErrorByKey((m) => ({ ...m, [c.key]: null }));
+    createProposal.mutate(
+      {
+        article_id: aid,
+        proposed_price: proposed,
+        current_price: current,
+        recommendation_id: recommendationId ?? null,
+        payload: {
+          source: 'compare_drawer',
+          option_label: c.optionMarginId,
+          note: null,
+        },
+      },
+      {
+        onSuccess: () => {
+          setPendingKey(null);
+          runUiAction({ toast: 'Draft proposal created' });
+          onClose();
+        },
+        onError: (err) => {
+          setPendingKey(null);
+          setErrorByKey((m) => ({
+            ...m,
+            [c.key]: (err as Error).message || 'Could not create proposal.',
+          }));
+        },
+      },
+    );
+  }
 
   const columns: ColumnSpec[] = useMemo(
     () => [
@@ -305,6 +359,49 @@ function CompareDrawerBody({
                   —
                 </td>
               ))}
+            </tr>
+
+            {/* Phase H — "Set as proposal" inline CTA per column. */}
+            <tr
+              className="border-t border-gray-100"
+              data-testid="compare-set-as-proposal-row"
+            >
+              <td className="py-2 text-xs font-medium text-gray-500">Action</td>
+              {columns.map((c) => {
+                const disabled =
+                  !Number.isFinite(c.priceValue) ||
+                  !Number.isFinite(holdPriceN) ||
+                  c.priceValue === holdPriceN ||
+                  pendingKey !== null;
+                const isPending = pendingKey === c.key;
+                const err = errorByKey[c.key] ?? null;
+                return (
+                  <td key={c.key} className="py-2 align-top">
+                    <button
+                      type="button"
+                      data-testid={`compare-set-as-proposal-${c.key}`}
+                      onClick={() => handleSetAsProposal(c)}
+                      disabled={disabled}
+                      className="inline-flex items-center gap-1 rounded-md border border-[var(--hairline,#e5e7eb)] bg-white px-2.5 py-1 text-[11px] font-medium text-[var(--ink-2,#374151)] transition-colors hover:border-[var(--rose-deep,#be123c)] hover:text-[var(--rose-deep,#be123c)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-[var(--hairline,#e5e7eb)] disabled:hover:text-[var(--ink-2,#374151)]"
+                    >
+                      {isPending ? 'Setting…' : 'Set as proposal'}
+                      {!isPending && (
+                        <span aria-hidden="true" className="text-[10px] leading-none">
+                          ›
+                        </span>
+                      )}
+                    </button>
+                    {err && (
+                      <div
+                        data-testid={`compare-set-as-proposal-${c.key}-error`}
+                        className="mt-1 text-[10px] text-rose-700"
+                      >
+                        {err}
+                      </div>
+                    )}
+                  </td>
+                );
+              })}
             </tr>
           </tbody>
         </table>

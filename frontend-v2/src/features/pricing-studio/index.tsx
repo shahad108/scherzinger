@@ -1043,6 +1043,7 @@ export default function PricingStudioPage() {
           winProbCurve={wb?.win_prob_curve}
           customerFanout={wb?.customer_fanout ?? null}
           currentPriceLabel={heroView.currentPrice}
+          recommendationId={params.get('recommendation') ?? null}
         />
       </section>
     </LineageDrawerProvider>

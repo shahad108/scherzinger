@@ -135,6 +135,16 @@ function SimulationDrawerBody({
 
   const fanData = useMemo(() => data?.fan_band_chart_data ?? [], [data]);
 
+  // Phase D parity — keep only first / last / current-tick on the x-axis so
+  // the 12-month series doesn't crowd labels at the bottom of the chart.
+  const tickMonths = useMemo(() => {
+    if (fanData.length === 0) return new Set<number>();
+    const first = fanData[0].month;
+    const last = fanData[fanData.length - 1].month;
+    const mid = fanData[Math.floor(fanData.length / 2)].month;
+    return new Set<number>([first, mid, last]);
+  }, [fanData]);
+
   async function handleSetAsProposal() {
     if (!Number.isFinite(variantDecimal)) return;
     try {
@@ -190,26 +200,29 @@ function SimulationDrawerBody({
               <p className="mb-2 text-[11px] text-gray-500">
                 Cumulative revenue delta vs hold across low / mid / high scenarios.
               </p>
-              <div className="h-56">
+              <div className="h-56" data-testid="sim-fan-chart">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={fanData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="simRange" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
-                        <stop offset="100%" stopColor="#10b981" stopOpacity={0.05} />
+                        <stop offset="0%" stopColor="var(--rose-deep, #be123c)" stopOpacity={0.18} />
+                        <stop offset="100%" stopColor="var(--rose-deep, #be123c)" stopOpacity={0.04} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid stroke="#f3f4f6" strokeDasharray="3 3" />
+                    <CartesianGrid stroke="var(--hairline, #f3f4f6)" vertical={false} />
                     <XAxis
                       dataKey="month"
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      tick={{ fontSize: 10, fill: 'var(--muted, #6b7280)' }}
                       tickLine={false}
-                      axisLine={{ stroke: '#e5e7eb' }}
+                      axisLine={{ stroke: 'var(--hairline, #e5e7eb)' }}
+                      tickFormatter={(v: number) => (tickMonths.has(v) ? `M${v}` : '')}
                     />
                     <YAxis
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      tick={{ fontSize: 10, fill: 'var(--muted, #6b7280)' }}
                       tickLine={false}
-                      axisLine={{ stroke: '#e5e7eb' }}
+                      axisLine={{ stroke: 'var(--hairline, #e5e7eb)' }}
+                      interval="preserveStartEnd"
+                      tickCount={3}
                       tickFormatter={(v: number) =>
                         Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}k` : String(v)
                       }
@@ -219,34 +232,42 @@ function SimulationDrawerBody({
                       labelFormatter={(m) => `Month ${m}`}
                       contentStyle={{ fontSize: 12 }}
                     />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Legend
+                      wrapperStyle={{ fontSize: 11, paddingTop: 0 }}
+                      verticalAlign="top"
+                      align="right"
+                      height={18}
+                    />
                     <Area
                       type="monotone"
                       dataKey="high"
                       name="High"
-                      stroke="#10b981"
+                      stroke="var(--rose-deep, #be123c)"
                       fill="url(#simRange)"
-                      strokeWidth={1}
+                      strokeWidth={1.75}
                       dot={false}
+                      isAnimationActive={false}
                     />
                     <Area
                       type="monotone"
                       dataKey="mid"
                       name="Mid"
-                      stroke="#f43f5e"
+                      stroke="var(--rose-deep, #be123c)"
                       fill="transparent"
-                      strokeWidth={2}
+                      strokeWidth={1.75}
                       dot={false}
+                      isAnimationActive={false}
                     />
                     <Area
                       type="monotone"
                       dataKey="low"
                       name="Low"
-                      stroke="#f59e0b"
+                      stroke="var(--rose-deep, #be123c)"
                       fill="transparent"
                       strokeDasharray="4 3"
-                      strokeWidth={1.2}
+                      strokeWidth={1.75}
                       dot={false}
+                      isAnimationActive={false}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
