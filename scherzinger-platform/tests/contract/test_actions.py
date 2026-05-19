@@ -140,6 +140,55 @@ def test_share_decision_rejects_bad_recipient(client: TestClient) -> None:
     assert "recipient" in res.text.lower()
 
 
+def test_share_decision_rolls_back_when_notify_raises(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """If notify() raises anywhere in the fan-out loop, the whole
+    _share_decision call must rollback and return 500 — never leave a
+    partially-flushed transaction.
+
+    Iron rule §1 regression guard. We seed a till user so notify is actually
+    invoked (the existing tests document that the test DB doesn't seed till/
+    heiko by default), then monkeypatch notify to raise unconditionally.
+    """
+    from backend.api.v1 import actions as actions_mod
+    from backend.database import SessionLocal
+    from backend.models.auth import User
+
+    # Seed a till user so the fan-out loop actually invokes notify().
+    with SessionLocal() as db:
+        existing = (
+            db.query(User).filter(User.ui_persona_default == "till").first()
+        )
+        if existing is None:
+            db.add(
+                User(
+                    email="till-rollback@example.test",
+                    name="Till Rollback Test",
+                    ui_persona_default="till",
+                    disabled=False,
+                )
+            )
+            db.commit()
+
+    def fake_notify(db, *, user_id, **kwargs):
+        raise RuntimeError("simulated notify failure")
+
+    monkeypatch.setattr(actions_mod.shell_service, "notify", fake_notify)
+
+    res = client.post(
+        "/api/v1/actions/share_decision",
+        headers=_csrf_headers(client, idempotency="share-rollback-1"),
+        json={
+            "target_id": "rec-rollback-test",
+            "recipient": "till",
+            "headline": "Rollback regression",
+        },
+    )
+    assert res.status_code == 500
+    assert "share_decision" in res.text.lower()
+
+
 def test_share_decision_both_fans_out_atomically(client: TestClient) -> None:
     """Phase F: recipient='both' fans out into one notification per persona
     inside a single transaction. Single audit row, single sender note, but

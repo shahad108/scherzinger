@@ -15,12 +15,15 @@ The list of kinds follows MIGRATION_PLAN §18 P12.T2.
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Body, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from backend.auth.security import AuthContext, require_auth
 from backend.database import get_db
@@ -200,40 +203,57 @@ def _share_decision(
 
     sender_name = getattr(ctx, "name", None) or "Frank"
     fanout_results: list[dict[str, Any]] = []
-    for r in fanout_recipients:
-        recipient_user = (
-            db.query(User)
-            .filter(User.ui_persona_default == r, User.disabled.is_(False))
-            .order_by(User.created_at.asc())
-            .first()
-        )
-
-        notification_id: str | None = None
-        if recipient_user is not None:
-            notif = shell_service.notify(
-                db,
-                user_id=recipient_user.id,
-                tone="info",
-                title=f"{sender_name} shared: {headline[:120]}",
-                sub=(
-                    note_text
-                    if note_text
-                    else f"Audit-trail receipt attached · audit_hash {audit_hash[:12]}…"
-                ),
-                link=link,
-                # Suffix audit_hash with recipient so fan-out doesn't collide
-                # on the (kind, external_id) idempotency key.
-                external_id=f"share:{audit_hash[:16]}:{r}",
+    try:
+        for r in fanout_recipients:
+            recipient_user = (
+                db.query(User)
+                .filter(User.ui_persona_default == r, User.disabled.is_(False))
+                .order_by(User.created_at.asc())
+                .first()
             )
-            notification_id = str(notif.id)
 
-        fanout_results.append(
-            {
-                "recipient": r,
-                "recipient_user_id": str(recipient_user.id) if recipient_user is not None else None,
-                "recipient_resolved": recipient_user is not None,
-                "notification_id": notification_id,
-            }
+            notification_id: str | None = None
+            if recipient_user is not None:
+                notif = shell_service.notify(
+                    db,
+                    user_id=recipient_user.id,
+                    tone="info",
+                    title=f"{sender_name} shared: {headline[:120]}",
+                    sub=(
+                        note_text
+                        if note_text
+                        else f"Audit-trail receipt attached · audit_hash {audit_hash[:12]}…"
+                    ),
+                    link=link,
+                    # Suffix audit_hash with recipient so fan-out doesn't collide
+                    # on the (kind, external_id) idempotency key.
+                    external_id=f"share:{audit_hash[:16]}:{r}",
+                )
+                notification_id = str(notif.id)
+
+            fanout_results.append(
+                {
+                    "recipient": r,
+                    "recipient_user_id": str(recipient_user.id) if recipient_user is not None else None,
+                    "recipient_resolved": recipient_user is not None,
+                    "notification_id": notification_id,
+                }
+            )
+    except Exception:
+        # Iron rule §1: never poison the session silently. A mid-loop failure
+        # (e.g. notify() flush raises) would otherwise leave a partially-
+        # flushed transaction that FastAPI's get_db wrapper rolls back, but
+        # without any audit trail of why. Rollback explicitly + log here, and
+        # surface a 500 so the caller can retry.
+        logger.exception(
+            "share_decision fan-out failed mid-loop recipient=%s fanout=%s",
+            recipient,
+            fanout_recipients,
+        )
+        db.rollback()
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "share_decision fan-out failed",
         )
 
     # Sender-owned note as Frank's record of what was sent (one note per call,

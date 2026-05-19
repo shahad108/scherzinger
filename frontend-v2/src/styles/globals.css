@@ -2501,20 +2501,35 @@
     font-weight: 600;
   }
 
-  /* Decision footer — Phase F (F1) sticky to viewport bottom */
+  /* Decision footer — Phase F (F1) pinned to viewport bottom.
+     Originally tried `position: sticky`, but the studio layout puts the
+     scrollable ancestor on <main>, which doesn't actually scroll on this
+     page (its content fits exactly) — sticky therefore drifted with the
+     window scroll. `position: fixed` pins to the viewport reliably; the
+     studio main column has matching bottom padding so content isn't
+     occluded by the footer. */
   body.pryzm-2026 #screen-studio .ws-decision {
-    position: sticky;
+    position: fixed;
     bottom: 0;
+    left: 0;
+    right: 0;
     z-index: 20;
     background: var(--surface);
-    border: 1px solid var(--border);
     border-top: 1px solid var(--hairline);
-    border-radius: var(--r-md);
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04), var(--shadow-card);
-    padding: 18px 20px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
+    padding: 14px 24px;
     display: flex;
     flex-direction: column;
     gap: 14px;
+    /* Faux border radius removed — fixed-to-edge footer reads cleaner with
+       a flat top edge against the page. */
+    border-radius: 0;
+  }
+  /* Reserve space at the bottom of the studio main column so the fixed
+     footer doesn't occlude the last block of content. The footer hosts up
+     to two rows of buttons + the controls row → ~180px is a safe minimum. */
+  body.pryzm-2026 #screen-studio main.pz-main {
+    padding-bottom: 200px;
   }
   body.pryzm-2026 #screen-studio .ws-decision-summary {
     font-size: 13px;

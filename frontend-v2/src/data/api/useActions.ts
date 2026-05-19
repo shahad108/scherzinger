@@ -217,9 +217,11 @@ export const usePartialAccept = () =>
 // `snooze_recommendation` kind expects `target_id` + optional `payload.until`.
 export const useSnoozeDecision = () =>
   useActionMutation('snooze_recommendation', [qk.actionCenter(), qk.studio()]);
-// Phase F (F4) — share a Pricing-Studio decision with Till or Heiko. The
-// backend's _share_decision helper expects `target_id` + `payload.recipient`
-// in {till, heiko}; "both" is fanned out client-side as two requests.
+// Phase F (F4) — share a Pricing-Studio decision with Till or Heiko (or
+// both). The backend's _share_decision helper accepts `recipient` in
+// {till, heiko, both}; when "both" is passed the server fans out into one
+// notification per persona inside a single transaction (see backend commit
+// 91ca502), so the FE makes exactly ONE mutation per click.
 export const useShareDecision = () =>
   useActionMutation('share_decision', [qk.actionCenter(), qk.studio()]);
 
