@@ -3,6 +3,7 @@ import { CheckCircle2, Clock, FileText, ShieldCheck, AlertCircle } from 'lucide-
 import { useProposals, useSubmitProposal } from '@/data/api/useProposals';
 import type { ProposalRow } from '@/data/api/useRecommendation';
 import { ApprovalStepper } from './ApprovalStepper';
+import { PendingApprovalBanner } from './PendingApprovalBanner';
 
 const STATUS_TONE: Record<ProposalRow['status'], { bg: string; fg: string; label: string; icon: React.ComponentType<{ size?: number }> }> = {
   draft: { bg: 'var(--surface-soft)', fg: 'var(--ink-2)', label: 'Draft', icon: FileText },
@@ -54,6 +55,24 @@ export function ProposalContextPanel({ articleId, recommendationId }: Props) {
           </p>
         </div>
       </div>
+      {/* Phase G2 — Pending-approval banners ride above the stepper(s) so
+          the next-actor + recall escape hatch is the first thing Frank
+          sees when a proposal is mid-flight. One banner per pending row;
+          in practice ProposalContextPanel almost always lists a single
+          proposal per recommendation. */}
+      {items
+        .filter((p) => p.status === 'pending_approval')
+        .map((p) => (
+          <PendingApprovalBanner
+            key={`banner-${p.id}`}
+            proposal={{
+              id: p.id,
+              status: p.status,
+              created_at: p.created_at,
+              updated_at: p.updated_at,
+            }}
+          />
+        ))}
       {items.map((p) =>
         p.status === 'draft' ||
         p.status === 'pending_approval' ||

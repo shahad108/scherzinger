@@ -177,35 +177,12 @@ describe('ApprovalStepper', () => {
     ).toBeInTheDocument();
   });
 
-  it('Recall button is only visible when proposal is draft AND user is the creator', () => {
+  it('Phase G G2 — never renders its own Recall button (banner owns recall)', () => {
+    // Recall is no longer the stepper's responsibility — the
+    // pending-approval banner in ProposalContextPanel owns it. Confirm
+    // the stepper never renders one, regardless of status, creator, or
+    // whether an approval instance exists.
     mockInstance = { data: makeInstance(), isLoading: false };
-    // Not the creator → no recall.
-    useAuthStore.setState({
-      user: {
-        id: 'someone-else',
-        email: 'other@example.com',
-        name: 'Other',
-        ui_persona: 'frank',
-        roles: [],
-        permissions: [],
-        features: [],
-      },
-      isLoading: false,
-    });
-    const { rerender } = wrap(
-      <ApprovalStepper
-        proposal={{
-          id: 'proposal-1',
-          status: 'draft',
-          article_id: 'AID-1',
-          payload: {},
-          created_by: 'user-1',
-        }}
-      />,
-    );
-    expect(screen.queryByTestId('approval-recall-button')).not.toBeInTheDocument();
-
-    // Now sign in as the creator → recall appears.
     useAuthStore.setState({
       user: {
         id: 'user-1',
@@ -218,6 +195,19 @@ describe('ApprovalStepper', () => {
       },
       isLoading: false,
     });
+    const { rerender, unmount } = wrap(
+      <ApprovalStepper
+        proposal={{
+          id: 'proposal-1',
+          status: 'pending_approval',
+          article_id: 'AID-1',
+          payload: {},
+          created_by: 'user-1',
+        }}
+      />,
+    );
+    expect(screen.queryByTestId('approval-recall-button')).not.toBeInTheDocument();
+
     rerender(
       <QueryClientProvider
         client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
@@ -235,44 +225,11 @@ describe('ApprovalStepper', () => {
         </LineageDrawerProvider>
       </QueryClientProvider>,
     );
-    expect(screen.getByTestId('approval-recall-button')).toBeInTheDocument();
-
-    // And NOT visible once the status leaves draft, even for the creator.
-    rerender(
-      <QueryClientProvider
-        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
-      >
-        <LineageDrawerProvider>
-          <ApprovalStepper
-            proposal={{
-              id: 'proposal-1',
-              status: 'pending_approval',
-              article_id: 'AID-1',
-              payload: {},
-              created_by: 'user-1',
-            }}
-          />
-        </LineageDrawerProvider>
-      </QueryClientProvider>,
-    );
     expect(screen.queryByTestId('approval-recall-button')).not.toBeInTheDocument();
-  });
+    unmount();
 
-  it('renders a draft placeholder + Recall button when instance is null and proposal is draft (creator)', () => {
-    // No approval instance exists yet (draft never submitted).
+    // Draft + no instance → still no recall button in the stepper.
     mockInstance = { data: null, isLoading: false };
-    useAuthStore.setState({
-      user: {
-        id: 'user-1',
-        email: 'creator@example.com',
-        name: 'Creator',
-        ui_persona: 'frank',
-        roles: [],
-        permissions: [],
-        features: [],
-      },
-      isLoading: false,
-    });
     wrap(
       <ApprovalStepper
         proposal={{
@@ -284,9 +241,73 @@ describe('ApprovalStepper', () => {
         }}
       />,
     );
-    expect(screen.getByTestId('approval-stepper')).toBeInTheDocument();
+    expect(screen.queryByTestId('approval-recall-button')).not.toBeInTheDocument();
+  });
+
+  it('Phase G G1 — draft proposal with no instance renders the full 5-node default chain', () => {
+    mockInstance = { data: null, isLoading: false };
+    wrap(
+      <ApprovalStepper
+        proposal={{
+          id: 'proposal-1',
+          status: 'draft',
+          article_id: 'AID-1',
+          payload: {},
+          created_by: 'user-1',
+        }}
+      />,
+    );
     expect(screen.getByTestId('approval-stepper-draft-empty')).toBeInTheDocument();
-    expect(screen.getByTestId('approval-recall-button')).toBeInTheDocument();
+    expect(screen.getByTestId('approval-stepper-default-chain')).toBeInTheDocument();
+    // All five default stages must be visible so Frank can see the path
+    // ahead. Pre-publish → "Draft" is current.
+    for (const key of ['draft', 'submitted', 'till', 'approved', 'live']) {
+      expect(screen.getByTestId(`approval-default-bubble-${key}`)).toBeInTheDocument();
+    }
+    const current = screen.getByTestId('approval-default-bubble-draft');
+    expect(current.getAttribute('aria-current')).toBe('step');
+  });
+
+  it('Phase G G1 — the currently-pending step has aria-current="step"', () => {
+    mockInstance = { data: makeInstance(), isLoading: false };
+    wrap(
+      <ApprovalStepper
+        proposal={{
+          id: 'proposal-1',
+          status: 'pending_approval',
+          article_id: 'AID-1',
+          payload: {},
+          created_by: 'user-1',
+        }}
+      />,
+    );
+    const current = screen.getByTestId('approval-bubble-manuel');
+    expect(current.getAttribute('aria-current')).toBe('step');
+    // Already-approved Frank node and not-yet-reached MD node are NOT
+    // current.
+    expect(screen.getByTestId('approval-bubble-frank').getAttribute('aria-current')).toBeNull();
+    expect(screen.getByTestId('approval-bubble-md').getAttribute('aria-current')).toBeNull();
+  });
+
+  it('Phase G G1 — renders the decision history list with actor + relative time + comment', () => {
+    mockInstance = { data: makeInstance(), isLoading: false };
+    wrap(
+      <ApprovalStepper
+        proposal={{
+          id: 'proposal-1',
+          status: 'pending_approval',
+          article_id: 'AID-1',
+          payload: {},
+          created_by: 'user-1',
+        }}
+      />,
+    );
+    const history = screen.getByTestId('approval-stepper-history');
+    expect(history).toBeInTheDocument();
+    // Action row "a-1" exists with actor=frank and a comment.
+    const row = screen.getByTestId('approval-history-row-a-1');
+    expect(row.textContent).toMatch(/frank/i);
+    expect(row.textContent).toMatch(/Looks good to me/);
   });
 
   it('shows a Reconnect button when the collab channel is fully disconnected', () => {

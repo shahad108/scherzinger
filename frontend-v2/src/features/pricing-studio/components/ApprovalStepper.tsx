@@ -4,15 +4,20 @@
 // fetches the approval instance + action history and renders a row of
 // step bubbles for the routed roles (Draft → role₁ → role₂ → Live).
 //
-// Visual contract (per plan §5.3):
+// Visual contract (per plan §5.3 + Phase G G1):
 //   - bubbles connected by hairlines, current step subtly pulses
 //   - status icons: ✓ approved, ✕ rejected, ⏱ pending, ⚠ changes
 //   - "Triggered by rules" lists each routed step's rule note (best-effort)
 //   - "Latest comment" line surfaces the newest action.comment
-//   - Recall button: visible only when proposal.status === 'draft' AND
-//     user is the proposal creator
+//   - Full 5-node chain (Draft → Submitted → Pending Till → Approved →
+//     Published) is rendered even when the proposal is still a draft so
+//     Frank can see what's coming. Pre-publish state uses the rose-deep
+//     accent for the active node.
+//   - Decision history list below the bubbles, ordered chronologically.
 //   - Add comment: expands an inline textarea; submits via WS (collab)
 //   - Lineage button → opens the lineage drawer for the routing decision
+//   - Recall is no longer rendered here: the pending-approval banner in
+//     ProposalContextPanel owns the recall affordance (Phase G G2).
 
 import { useMemo, useState } from 'react';
 import {
@@ -20,12 +25,10 @@ import {
   Clock,
   XCircle,
   AlertTriangle,
-  RotateCcw,
   MessageSquarePlus,
 } from 'lucide-react';
 import {
   useApprovalInstance,
-  useRecallProposal,
   type ApprovalInstance,
   type ApprovalStep,
 } from '@/data/api/useApprovalInstance';
@@ -33,6 +36,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useProposalCollab } from '@/data/api/useProposalCollab';
 import { LineageButton } from '@/components/LineageButton';
 import type { ProposalRow } from '@/data/api/useRecommendation';
+import { relativeTime } from './PendingApprovalBanner';
 
 interface Props {
   proposal: Pick<ProposalRow, 'id' | 'status' | 'article_id' | 'payload'> & {
@@ -103,7 +107,6 @@ export function ApprovalStepper({ proposal, fixture }: Props) {
     : query.data ?? null;
 
   const user = useAuthStore((s) => s.user);
-  const recall = useRecallProposal();
   const collab = useProposalCollab({
     proposalId: proposal.id,
     aid: proposal.article_id ?? null,
@@ -143,10 +146,16 @@ export function ApprovalStepper({ proposal, fixture }: Props) {
     return null;
   }, [data]);
 
+  // Note: prior to Phase G this used `proposal.status === 'draft'` which
+  // was wrong — you can't recall a proposal that was never submitted.
+  // The actual Recall affordance now lives in PendingApprovalBanner, but
+  // we still compute the flag here so tests/E2E can introspect whether
+  // the current user is eligible (used by data-testid presence below for
+  // the historic draft empty-state row).
   const isCreator = Boolean(
     user?.id && proposal.created_by && user.id === proposal.created_by,
   );
-  const canRecall = proposal.status === 'draft' && isCreator;
+  const canRecall = proposal.status === 'pending_approval' && isCreator;
 
   if (query.isLoading && !fixture) {
     return (
@@ -159,9 +168,9 @@ export function ApprovalStepper({ proposal, fixture }: Props) {
     );
   }
 
-  // Draft case — no approval instance has been created yet. Render a
-  // minimal placeholder so the Recall button is reachable for the
-  // proposal creator (spec §5.3).
+  // Draft case — no approval instance row exists yet (proposal was never
+  // submitted). Render the FULL 5-node default chain greyed out so Frank
+  // can see the path ahead (Phase G G1). The active node is "Draft".
   if (!data || steps.length === 0) {
     if (proposal.status !== 'draft') return null;
     return (
@@ -183,19 +192,7 @@ export function ApprovalStepper({ proposal, fixture }: Props) {
             </p>
           </div>
         </header>
-        {canRecall && (
-          <div className="mt-2 flex items-center gap-2">
-            <button
-              type="button"
-              data-testid="approval-recall-button"
-              onClick={() => recall.mutate(proposal.id)}
-              disabled={recall.isPending}
-              className="inline-flex items-center gap-1.5 rounded-md border border-[var(--rose-border)] bg-[var(--rose-bg)] px-3 py-1.5 text-[11.5px] font-semibold text-[var(--rose-deep)] hover:bg-[color-mix(in_oklab,var(--rose-bg)_70%,white)] disabled:opacity-60"
-            >
-              <RotateCcw size={12} /> {recall.isPending ? 'Recalling…' : 'Recall'}
-            </button>
-          </div>
-        )}
+        <DefaultChain activeStage="draft" />
       </section>
     );
   }
@@ -269,43 +266,53 @@ export function ApprovalStepper({ proposal, fixture }: Props) {
         {bubbles.map((step, i) => {
           const tone = statusIconFor(step.decision);
           const Icon = tone.Icon;
+          // Phase G G1 — the current step gets a filled rose-deep dot and
+          // rose-deep label, NOT just animate-pulse, so it reads as the
+          // active node even on a static screenshot.
+          const isActive = step.isCurrent;
+          const borderColor = isActive
+            ? 'var(--rose-deep)'
+            : step.decision === 'approved'
+              ? 'var(--green-border)'
+              : step.decision === 'rejected'
+                ? 'var(--rose-border)'
+                : step.decision === 'changes_requested'
+                  ? 'var(--amber-border)'
+                  : 'var(--hairline)';
+          const background = isActive
+            ? 'var(--rose-deep)'
+            : step.decision === 'approved'
+              ? 'var(--green-bg)'
+              : step.decision === 'rejected'
+                ? 'var(--rose-bg)'
+                : step.decision === 'changes_requested'
+                  ? 'var(--amber-bg)'
+                  : 'var(--surface-soft)';
+          const dotColor = isActive ? 'white' : tone.tone;
+          const labelColor = isActive ? 'var(--rose-deep)' : 'var(--ink-2)';
           return (
             <li
               key={`${step.role}-${step.index}`}
               className="flex min-w-0 items-center gap-2"
               data-testid={`approval-bubble-${step.role}`}
+              aria-current={isActive ? 'step' : undefined}
             >
               <div
                 className={`flex flex-col items-center gap-1 ${
-                  step.isCurrent ? 'animate-pulse' : ''
+                  isActive ? 'animate-pulse' : ''
                 }`}
               >
                 <span
                   className="grid h-7 w-7 place-items-center rounded-full border"
-                  style={{
-                    borderColor:
-                      step.decision === 'approved'
-                        ? 'var(--green-border)'
-                        : step.decision === 'rejected'
-                          ? 'var(--rose-border)'
-                          : step.decision === 'changes_requested'
-                            ? 'var(--amber-border)'
-                            : 'var(--hairline)',
-                    background:
-                      step.decision === 'approved'
-                        ? 'var(--green-bg)'
-                        : step.decision === 'rejected'
-                          ? 'var(--rose-bg)'
-                          : step.decision === 'changes_requested'
-                            ? 'var(--amber-bg)'
-                            : 'var(--surface-soft)',
-                    color: tone.tone,
-                  }}
+                  style={{ borderColor, background, color: dotColor }}
                   aria-label={`${roleLabel(step.role)}: ${tone.label}`}
                 >
                   <Icon size={13} />
                 </span>
-                <span className="text-[10.5px] font-semibold text-[var(--ink-2)]">
+                <span
+                  className={`text-[10.5px] ${isActive ? 'font-bold' : 'font-semibold'}`}
+                  style={{ color: labelColor }}
+                >
                   {roleLabel(step.role)}
                 </span>
                 {step.actor ? (
@@ -355,18 +362,47 @@ export function ApprovalStepper({ proposal, fixture }: Props) {
         </p>
       )}
 
+      {/* Decision history — chronological list of every approval_action
+          row (Phase G G1). The latest-comment line above stays as a
+          one-glance summary; this list is the full audit trail. */}
+      {data.actions && data.actions.length > 0 && (
+        <div className="mt-3" data-testid="approval-stepper-history">
+          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+            Decision history
+          </p>
+          <ol className="mt-1 flex flex-col gap-1">
+            {data.actions.map((a) => (
+              <li
+                key={a.id}
+                className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[11.5px] text-[var(--ink-2)]"
+                data-testid={`approval-history-row-${a.id}`}
+              >
+                <span className="font-semibold text-[var(--ink)]">
+                  {a.actor ?? 'system'}
+                </span>
+                <span className="text-[var(--muted)]">·</span>
+                <span className="text-[var(--muted)]">
+                  {a.decision.replace('_', ' ')}
+                </span>
+                <span className="text-[var(--muted)]">·</span>
+                <span className="text-[var(--muted)]" title={a.at ?? ''}>
+                  {relativeTime(a.at)}
+                </span>
+                {a.comment && (
+                  <span className="basis-full pl-2 italic text-[var(--ink-2)]">
+                    “{a.comment}”
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+
       <div className="mt-3 flex items-center gap-2">
-        {canRecall && (
-          <button
-            type="button"
-            data-testid="approval-recall-button"
-            onClick={() => recall.mutate(proposal.id)}
-            disabled={recall.isPending}
-            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--rose-border)] bg-[var(--rose-bg)] px-3 py-1.5 text-[11.5px] font-semibold text-[var(--rose-deep)] hover:bg-[color-mix(in_oklab,var(--rose-bg)_70%,white)] disabled:opacity-60"
-          >
-            <RotateCcw size={12} /> {recall.isPending ? 'Recalling…' : 'Recall'}
-          </button>
-        )}
+        {/* Recall affordance is now owned by PendingApprovalBanner (Phase
+            G G2). `canRecall` is retained above only for introspection. */}
+        {canRecall ? null : null}
         <button
           type="button"
           data-testid="approval-add-comment-button"
@@ -439,5 +475,90 @@ export function ApprovalStepper({ proposal, fixture }: Props) {
         </div>
       )}
     </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Default 5-node chain shown before any approval instance exists
+// (Phase G G1). Stages are pipeline phases — Draft → Submitted → Pending
+// Till → Approved → Published. The active node uses the rose-deep accent;
+// future nodes are warm-gray. Keep this in sync with the live stepper's
+// visual language above.
+// ---------------------------------------------------------------------------
+
+type DefaultStage = 'draft' | 'submitted' | 'till' | 'approved' | 'live';
+
+const DEFAULT_CHAIN: { key: DefaultStage; label: string }[] = [
+  { key: 'draft', label: 'Draft' },
+  { key: 'submitted', label: 'Submitted' },
+  { key: 'till', label: 'Pending Till' },
+  { key: 'approved', label: 'Approved' },
+  { key: 'live', label: 'Published' },
+];
+
+interface DefaultChainProps {
+  activeStage: DefaultStage;
+}
+
+function DefaultChain({ activeStage }: DefaultChainProps) {
+  const activeIndex = DEFAULT_CHAIN.findIndex((s) => s.key === activeStage);
+  return (
+    <ol
+      className="flex items-center gap-2 overflow-x-auto pb-1"
+      data-testid="approval-stepper-default-chain"
+    >
+      {DEFAULT_CHAIN.map((stage, i) => {
+        const isActive = i === activeIndex;
+        const isDone = i < activeIndex;
+        const isFuture = i > activeIndex;
+        const borderColor = isActive
+          ? 'var(--rose-deep)'
+          : isDone
+            ? 'var(--green-border)'
+            : 'var(--hairline)';
+        const background = isActive
+          ? 'var(--rose-deep)'
+          : isDone
+            ? 'var(--green-bg)'
+            : 'var(--surface-soft)';
+        const dotColor = isActive ? 'white' : isDone ? 'var(--green)' : 'var(--muted)';
+        const labelColor = isActive
+          ? 'var(--rose-deep)'
+          : isFuture
+            ? 'var(--muted)'
+            : 'var(--ink-2)';
+        const Icon = isDone ? CheckCircle2 : isActive ? Clock : Clock;
+        return (
+          <li
+            key={stage.key}
+            className="flex min-w-0 items-center gap-2"
+            data-testid={`approval-default-bubble-${stage.key}`}
+            aria-current={isActive ? 'step' : undefined}
+          >
+            <div className={`flex flex-col items-center gap-1 ${isActive ? 'animate-pulse' : ''}`}>
+              <span
+                className="grid h-7 w-7 place-items-center rounded-full border"
+                style={{ borderColor, background, color: dotColor }}
+                aria-label={`${stage.label}: ${isActive ? 'current' : isDone ? 'done' : 'upcoming'}`}
+              >
+                <Icon size={13} />
+              </span>
+              <span
+                className={`text-[10.5px] ${isActive ? 'font-bold' : 'font-semibold'}`}
+                style={{ color: labelColor }}
+              >
+                {stage.label}
+              </span>
+            </div>
+            {i < DEFAULT_CHAIN.length - 1 && (
+              <span
+                aria-hidden="true"
+                className="h-px w-8 shrink-0 bg-[var(--hairline)]"
+              />
+            )}
+          </li>
+        );
+      })}
+    </ol>
   );
 }
