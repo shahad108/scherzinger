@@ -35,7 +35,7 @@ from decimal import Decimal
 from typing import Any, Iterable, Literal, Optional
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from backend.models import AbTest, AbTestAssignment
@@ -304,6 +304,172 @@ def assign_arm(customer_id: str, test_id: UUID | str, *, variant_pct: int = 50) 
 
 
 # ---------------------------------------------------------------------------
+# Phase J1 — idempotent cohort assignment helper
+# ---------------------------------------------------------------------------
+
+
+def assign_cohorts(
+    *,
+    test_id: UUID | str,
+    aid: str,
+    eligible: Iterable[CustomerFacts],
+    variant_pct: int,
+    control_price: Decimal,
+    variant_price: Decimal,
+    db_session: Session,
+    lineage_ref: str | None = None,
+) -> int:
+    """Idempotently persist ``ab_test_assignments`` for ``eligible`` customers.
+
+    Behaviour:
+      - Hashes (``test_id``, ``customer_id``) into variant/control using
+        ``assign_arm`` with the provided ``variant_pct`` (the test's
+        ``slice_pct``). Re-runs produce the exact same cohort split.
+      - SELECT-before-INSERT on ``(test_id, customer_key)`` so a re-run
+        never duplicates rows (no DB-level unique constraint exists
+        today).
+      - 0 eligible customers → 0 rows, logs a warning, returns 0
+        (does NOT raise — callers decide whether to raise upstream).
+      - On any exception, ``db.rollback()`` + ``logger.exception()`` +
+        re-raise so the caller's transaction state is correct.
+
+    Returns the number of rows actually inserted on this call (0 on a
+    full no-op re-run).
+    """
+    if isinstance(test_id, str):
+        try:
+            test_uuid = UUID(test_id)
+        except ValueError as exc:
+            raise ValueError(f"assign_cohorts: invalid test_id {test_id!r}") from exc
+    else:
+        test_uuid = test_id
+
+    eligible_list = list(eligible)
+    if not eligible_list:
+        logger.warning(
+            "ab_test.assign_cohorts: empty eligibility — 0 rows written "
+            "(test_id=%s aid=%s)",
+            test_uuid,
+            aid,
+        )
+        return 0
+
+    if variant_pct < 0:
+        variant_pct = 0
+    if variant_pct > 100:
+        variant_pct = 100
+
+    control_price = _to_decimal(control_price)
+    variant_price = _to_decimal(variant_price)
+
+    try:
+        # Dedup against existing rows. customer_key is the join key.
+        existing_keys = set(
+            db_session.execute(
+                select(AbTestAssignment.customer_key).where(
+                    AbTestAssignment.test_id == test_uuid
+                )
+            ).scalars()
+        )
+
+        inserted = 0
+        for cust in eligible_list:
+            if cust.customer_id in existing_keys:
+                continue
+            arm = assign_arm(cust.customer_id, test_uuid, variant_pct=variant_pct)
+            assigned_price = variant_price if arm == "variant" else control_price
+            payload = {
+                "tier": cust.tier,
+                "family": cust.family,
+                "ltm_revenue": cust.ltm_revenue,
+            }
+            if lineage_ref is not None:
+                payload["lineage_ref"] = lineage_ref
+            db_session.add(
+                AbTestAssignment(
+                    test_id=test_uuid,
+                    article_id=aid,
+                    customer_key=cust.customer_id,
+                    quote_key=None,
+                    arm=arm,
+                    assigned_price=assigned_price,
+                    payload=payload,
+                )
+            )
+            inserted += 1
+
+        db_session.flush()
+        return inserted
+    except Exception:
+        logger.exception(
+            "ab_test.assign_cohorts failed test_id=%s aid=%s", test_uuid, aid
+        )
+        try:
+            db_session.rollback()
+        except Exception:  # pragma: no cover - defensive
+            logger.exception(
+                "ab_test.assign_cohorts rollback failed test_id=%s", test_uuid
+            )
+        raise
+
+
+def _resolve_eligibility_pool(
+    *,
+    aid: str,
+    eligibility: dict | None,
+    db_session: Session,
+) -> list[CustomerFacts]:
+    """Phase J1 — resolve the candidate customer pool from ``eligibility_json``.
+
+    Supported shapes:
+      - ``{"customer_ids": ["C1", "C2", ...]}`` → exact list.
+      - ``{"commodity_group": "X"}`` / ``{"commodity_group": "X",
+        "min_quote_count": 5}`` → customers in the last 12 months for
+        this aid whose quote count meets the threshold (commodity_group
+        is informational; we filter the candidate set via the
+        article_id-scoped pool).
+      - empty / None → fall back to ``_load_eligible_pool`` (active
+        customers on this aid in the last 12 months).
+
+    Always returns a list (possibly empty). Never raises on DB issues —
+    logs and returns ``[]`` so the caller can decide the response shape.
+    """
+    if eligibility and isinstance(eligibility, dict):
+        cust_ids = eligibility.get("customer_ids")
+        if isinstance(cust_ids, list) and cust_ids:
+            return [
+                CustomerFacts(customer_id=str(cid)) for cid in cust_ids if cid
+            ]
+        min_q = eligibility.get("min_quote_count")
+        if isinstance(min_q, int) and min_q > 0:
+            try:
+                with db_session.begin_nested():
+                    rows = db_session.execute(
+                        text(
+                            """
+                            SELECT customer_id, COUNT(*) AS n
+                            FROM quotes
+                            WHERE article_id = :aid
+                              AND quote_date >= (CURRENT_DATE - INTERVAL '12 months')
+                            GROUP BY customer_id
+                            HAVING COUNT(*) >= :n
+                            """
+                        ),
+                        {"aid": aid, "n": min_q},
+                    ).fetchall()
+                return [CustomerFacts(customer_id=str(r[0])) for r in rows if r[0]]
+            except Exception:
+                logger.exception(
+                    "ab_test._resolve_eligibility_pool min_quote_count failed aid=%s",
+                    aid,
+                )
+                return []
+
+    # Fallback: invoice-driven pool for this aid over the last 12 months.
+    return _load_eligible_pool(aid=aid, db_session=db_session)
+
+
+# ---------------------------------------------------------------------------
 # AbResult wire shape
 # ---------------------------------------------------------------------------
 
@@ -415,6 +581,7 @@ def create_ab_test(
     duration_days: int | None = 14,
     success_metric: str | None = "db2_margin",
     hypothesis: str | None = None,
+    slice_pct: int | Decimal | float = 50,
 ) -> AbTest:
     """Create + persist a new A/B price test.
 
@@ -466,9 +633,19 @@ def create_ab_test(
             f"create_ab_test: actor must be a UUID-shaped user id (got {actor!r})"
         ) from exc
 
+    try:
+        slice_pct_dec = _to_decimal(slice_pct)
+    except Exception:
+        slice_pct_dec = Decimal("50.00")
+    if slice_pct_dec < 0:
+        slice_pct_dec = Decimal("0")
+    if slice_pct_dec > 100:
+        slice_pct_dec = Decimal("100")
+    variant_pct_int = int(slice_pct_dec)
+
     test = AbTest(
         aid=aid,
-        slice_pct=Decimal("50.00"),  # default 50/50 split — variant_pct hook later.
+        slice_pct=slice_pct_dec,
         start_date=now,
         end_date=None,
         control_price=control_price,
@@ -499,31 +676,23 @@ def create_ab_test(
 
     # 5. Hash-split + persist assignments. Cap at 3 × target_sample
     # so a 10k-customer pool doesn't write 10k rows when target is 30
-    # but still over-provisions for the deterministic ~50/50 split
-    # (a 2× cap can leave one arm short of target on small samples).
+    # but still over-provisions for the deterministic split (a 2× cap
+    # can leave one arm short of target on small samples).
     cap = max(target_sample * 3, target_sample)
     chosen = eligible[: min(len(eligible), cap)]
-    assignments_rows: list[AbTestAssignment] = []
-    for cust in chosen:
-        arm = assign_arm(cust.customer_id, test.id, variant_pct=50)
-        assigned_price = variant_price if arm == "variant" else control_price
-        row = AbTestAssignment(
-            test_id=test.id,
-            article_id=aid,
-            customer_key=cust.customer_id,
-            quote_key=None,
-            arm=arm,
-            assigned_price=assigned_price,
-            payload={
-                "tier": cust.tier,
-                "family": cust.family,
-                "ltm_revenue": cust.ltm_revenue,
-                "lineage_ref": str(lineage.id),
-            },
-        )
-        db_session.add(row)
-        assignments_rows.append(row)
-    db_session.flush()
+    inserted = assign_cohorts(
+        test_id=test.id,
+        aid=aid,
+        eligible=chosen,
+        variant_pct=variant_pct_int,
+        control_price=control_price,
+        variant_price=variant_price,
+        db_session=db_session,
+        lineage_ref=str(lineage.id),
+    )
+    # ``assignments_rows`` below was a debug-friendly view; the audit
+    # block needs the count, so keep it as an int proxy.
+    assignments_rows = [None] * inserted  # type: ignore[var-annotated]
 
     # 6. Audit.
     record_audit(

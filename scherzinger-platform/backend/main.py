@@ -239,6 +239,86 @@ def _stop_scheduled_publish_runner() -> None:
 
 
 @app.on_event("startup")
+def _start_pricing_alerts_cron() -> None:
+    """Phase J2 — hourly APScheduler sweep over ``pricing_alerts``.
+
+    Evaluates every enabled alert via ``alerts_runner.run_for_alert``.
+    Skipped under pytest so the suite never races with a background
+    thread.
+    """
+    import logging
+    import os
+
+    log = logging.getLogger(__name__)
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        log.info("pricing_alerts_cron: skipped (pytest)")
+        return
+    if os.getenv("PRYZM_DISABLE_SCHEDULER", "").lower() in {"1", "true", "yes"}:
+        log.info("pricing_alerts_cron: skipped (PRYZM_DISABLE_SCHEDULER)")
+        return
+    try:
+        from backend.services.pricing.alerts_cron import start_scheduler
+
+        start_scheduler()
+    except Exception:
+        log.exception("pricing_alerts_cron failed to start")
+
+
+@app.on_event("shutdown")
+def _stop_pricing_alerts_cron() -> None:
+    """Phase J2 — gracefully stop the alerts cron on app shutdown."""
+    import logging
+
+    log = logging.getLogger(__name__)
+    try:
+        from backend.services.pricing.alerts_cron import stop_scheduler
+
+        stop_scheduler()
+    except Exception:
+        log.exception("pricing_alerts_cron failed to stop")
+
+
+@app.on_event("startup")
+def _start_lineage_gc() -> None:
+    """Phase J3 — nightly 03:00 UTC lineage_refs GC.
+
+    Deletes orphaned ``lineage_refs`` older than 365 days that no longer
+    appear in any FK column. Skipped under pytest so the suite never
+    races with a background thread.
+    """
+    import logging
+    import os
+
+    log = logging.getLogger(__name__)
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        log.info("lineage_gc: skipped (pytest)")
+        return
+    if os.getenv("PRYZM_DISABLE_SCHEDULER", "").lower() in {"1", "true", "yes"}:
+        log.info("lineage_gc: skipped (PRYZM_DISABLE_SCHEDULER)")
+        return
+    try:
+        from backend.services.pricing.lineage import start_scheduler
+
+        start_scheduler()
+    except Exception:
+        log.exception("lineage_gc failed to start")
+
+
+@app.on_event("shutdown")
+def _stop_lineage_gc() -> None:
+    """Phase J3 — gracefully stop the lineage GC on app shutdown."""
+    import logging
+
+    log = logging.getLogger(__name__)
+    try:
+        from backend.services.pricing.lineage import stop_scheduler
+
+        stop_scheduler()
+    except Exception:
+        log.exception("lineage_gc failed to stop")
+
+
+@app.on_event("startup")
 def _prime_approval_rules_cache_on_startup() -> None:
     """Phase A8 — warm the rules cache + start the file-watcher.
 

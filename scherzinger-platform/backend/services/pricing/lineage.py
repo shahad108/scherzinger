@@ -215,3 +215,215 @@ def list_lineage_for_aid(db: Session, *, aid: str) -> dict[str, Any]:
                 "lineage.list_lineage_for_aid: rollback failed aid=%s", aid
             )
         return {"status": "degraded", "reason": "Lineage query failed", "rows": []}
+
+
+# ---------------------------------------------------------------------------
+# Phase J3 — lineage_refs garbage collection
+#
+# Lineage rows accumulate fast (one row per recommendation/wtp/cost
+# outlook/etc.). Once the FK references they back have been deleted or
+# rotated out, the lineage_refs row is dead weight. The nightly GC
+# deletes rows older than ``older_than_days`` that no longer appear in
+# any FK column pointing at ``lineage_refs.id``.
+#
+# FK tables enumerated by grep ``lineage_ref_id`` in backend/models/.
+# Update ``_LINEAGE_FK_TABLES`` when a new pricing table grows a
+# ``lineage_ref_id`` column.
+# ---------------------------------------------------------------------------
+
+
+_LINEAGE_FK_TABLES: list[tuple[str, str]] = [
+    ("pricing_audit", "lineage_ref_id"),
+    ("price_state", "lineage_ref_id"),
+    ("price_book", "lineage_ref_id"),
+    ("cost_state", "lineage_ref_id"),
+    ("customer_on_sku", "lineage_ref_id"),
+    ("customer_on_sku_snapshot", "lineage_ref_id"),
+    ("pricing_batches", "lineage_ref_id"),
+]
+
+
+_GC_CHUNK_SIZE = 1000
+
+# Per-process cache of FK tables that actually exist in the live schema.
+# Some models declare ``lineage_ref_id`` but the column was never migrated
+# (e.g. ``pricing_batches`` in the current dev DB). We probe once and skip
+# missing columns so the GC works on any schema state.
+_LIVE_FK_TABLES_CACHE: list[tuple[str, str]] | None = None
+
+
+def _live_fk_tables(db: Session) -> list[tuple[str, str]]:
+    """Filter ``_LINEAGE_FK_TABLES`` down to columns present in the live DB."""
+    global _LIVE_FK_TABLES_CACHE
+    if _LIVE_FK_TABLES_CACHE is not None:
+        return _LIVE_FK_TABLES_CACHE
+
+    from sqlalchemy import text as _text
+
+    live: list[tuple[str, str]] = []
+    for tbl, col in _LINEAGE_FK_TABLES:
+        try:
+            exists = db.execute(
+                _text(
+                    """
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_name = :tbl
+                      AND column_name = :col
+                    LIMIT 1
+                    """
+                ),
+                {"tbl": tbl, "col": col},
+            ).scalar()
+            if exists:
+                live.append((tbl, col))
+            else:
+                logger.warning(
+                    "lineage GC: skipping %s.%s — column not present in live DB",
+                    tbl,
+                    col,
+                )
+        except Exception:
+            logger.exception(
+                "lineage GC: failed to probe %s.%s — skipping", tbl, col
+            )
+            try:
+                db.rollback()
+            except Exception:  # pragma: no cover
+                logger.exception("lineage GC: rollback after probe failure")
+    _LIVE_FK_TABLES_CACHE = live
+    return live
+
+
+def gc_lineage_refs(db: Session, *, older_than_days: int = 365) -> int:
+    """Delete orphaned ``lineage_refs`` older than ``older_than_days``.
+
+    A row is "orphaned" when no FK column in ``_LINEAGE_FK_TABLES``
+    references it. Rows newer than the cutoff are always preserved (a
+    fresh signal may not yet have a downstream consumer).
+
+    Deletes in chunks of ``_GC_CHUNK_SIZE`` so a single long transaction
+    doesn't block the line. Returns the total count of rows deleted on
+    this call.
+    """
+    from sqlalchemy import text as _text
+
+    if older_than_days < 0:
+        older_than_days = 0
+
+    # Build the "is referenced anywhere?" predicate. Each table that
+    # carries lineage_ref_id contributes one NOT EXISTS clause. We only
+    # include columns that actually exist in the live DB so a half-
+    # migrated schema doesn't crash the GC.
+    live_tables = _live_fk_tables(db)
+    not_exists_clauses = [
+        f"NOT EXISTS (SELECT 1 FROM {tbl} WHERE {tbl}.{col} = lineage_refs.id)"
+        for tbl, col in live_tables
+    ]
+    where_orphan = " AND ".join(not_exists_clauses) if not_exists_clauses else "TRUE"
+
+    total_deleted = 0
+    try:
+        while True:
+            sql = _text(
+                f"""
+                DELETE FROM lineage_refs
+                WHERE id IN (
+                    SELECT id FROM lineage_refs
+                    WHERE computed_at < (NOW() - (:days || ' days')::interval)
+                      AND {where_orphan}
+                    LIMIT :chunk
+                )
+                """
+            )
+            result = db.execute(
+                sql, {"days": str(older_than_days), "chunk": _GC_CHUNK_SIZE}
+            )
+            rowcount = result.rowcount or 0
+            db.commit()
+            total_deleted += rowcount
+            if rowcount < _GC_CHUNK_SIZE:
+                break
+        return total_deleted
+    except Exception:
+        logger.exception(
+            "lineage.gc_lineage_refs failed older_than_days=%s", older_than_days
+        )
+        try:
+            db.rollback()
+        except Exception:  # pragma: no cover - defensive
+            logger.exception("lineage.gc_lineage_refs rollback failed")
+        return total_deleted
+
+
+# ---------------------------------------------------------------------------
+# APScheduler integration — nightly 03:00 UTC
+# ---------------------------------------------------------------------------
+
+
+_GC_SCHEDULER = None  # type: ignore[var-annotated]
+GC_JOB_ID = "lineage_gc"
+
+
+def _gc_job() -> None:
+    """Job APScheduler invokes nightly. Opens a session and runs GC."""
+    from backend.database import SessionLocal
+
+    session = SessionLocal()
+    try:
+        deleted = gc_lineage_refs(session)
+        if deleted:
+            logger.info("lineage_gc deleted %d orphaned row(s)", deleted)
+    except Exception:  # pragma: no cover - defensive
+        logger.exception("lineage_gc nightly tick crashed")
+    finally:
+        try:
+            session.close()
+        except Exception:  # pragma: no cover
+            logger.exception("lineage_gc session close failed")
+
+
+def start_scheduler():
+    """Boot a ``BackgroundScheduler`` with the nightly GC job attached.
+
+    Skipped under ``PYTEST_CURRENT_TEST``. Idempotent. Returns the
+    scheduler so the shutdown hook can stop it cleanly.
+    """
+    global _GC_SCHEDULER
+    if _GC_SCHEDULER is not None:
+        return _GC_SCHEDULER
+
+    import os as _os
+
+    if _os.getenv("PYTEST_CURRENT_TEST"):
+        return None
+
+    from apscheduler.schedulers.background import BackgroundScheduler
+    from apscheduler.triggers.cron import CronTrigger
+
+    scheduler = BackgroundScheduler(timezone="UTC")
+    scheduler.add_job(
+        _gc_job,
+        trigger=CronTrigger(hour=3, minute=0),
+        id=GC_JOB_ID,
+        coalesce=True,
+        max_instances=1,
+        replace_existing=True,
+    )
+    scheduler.start()
+    _GC_SCHEDULER = scheduler
+    logger.info("lineage_gc started (cron=03:00 UTC daily)")
+    return scheduler
+
+
+def stop_scheduler():
+    """Gracefully stop the lineage GC scheduler if running."""
+    global _GC_SCHEDULER
+    if _GC_SCHEDULER is None:
+        return
+    try:
+        _GC_SCHEDULER.shutdown(wait=False)
+    except Exception:  # pragma: no cover - defensive
+        logger.exception("lineage_gc shutdown failed")
+    finally:
+        _GC_SCHEDULER = None
