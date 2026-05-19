@@ -19,7 +19,11 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/client';
-import type { LineageRefBlock, WtpBlock } from '@/types/studio';
+import type {
+  LineageRefBlock,
+  PricingLineageBlock,
+  WtpBlock,
+} from '@/types/studio';
 
 export interface LineageSourceRow {
   id: string;
@@ -247,4 +251,31 @@ export function usePricingLineage(
       isLoading: false,
     };
   }, [ref, query.isLoading, query.data]);
+}
+
+// ---- Phase E6 — SKU-summary lineage list ------------------------------------
+//
+// Separate hook backing the Lineage *pane* in EvidenceTabs (as opposed to the
+// per-block drawer above). Wraps GET /api/v1/pricing/sku/{aid}/lineage which
+// returns `{status, rows}` keyed by lineage record id. Lazy while `aid` is
+// null/empty so the workbench can mount before a SKU is selected. 60-second
+// staleTime mirrors the rest of the Phase E hooks.
+
+export const pricingLineageListKey = (aid: string | null | undefined) =>
+  ['pricing-lineage-list', aid ?? ''] as const;
+
+export function usePricingLineageList(
+  aid: string | null | undefined,
+  options: { enabled?: boolean } = {},
+) {
+  const enabled = options.enabled !== false && Boolean(aid);
+  return useQuery({
+    queryKey: pricingLineageListKey(aid),
+    enabled,
+    queryFn: () =>
+      apiFetch<PricingLineageBlock>(
+        `/pricing/sku/${encodeURIComponent(aid as string)}/lineage`,
+      ),
+    staleTime: 60_000,
+  });
 }
