@@ -1,9 +1,13 @@
-// Pricing Studio v3 / Phase 7 — DecisionFooter tests.
+// Pricing Studio v3 / Phase F — DecisionFooter tests.
 //
-// Asserts the post-Phase-7 footer contract:
-//   - "Push to quoting" is enabled and opens the publish drawer.
-//   - "Branded PDF" calls window.open with the proposal PDF URL.
-//   - The Push button is disabled when no price option is active.
+// Asserts:
+//   - Phase 7: Push-to-quoting opens the publish drawer; disabled w/o option.
+//   - Phase 10: Branded PDF popover persists persona+lang into proposalPdfUrl.
+//   - Phase F (F2): Accept fires useAcceptDecision.
+//   - Phase F (F3): Reject + Snooze flip the lifecycle chip but DO NOT hide
+//                   the decision row.
+//   - Phase F (F4): Share opens the ShareDecisionDrawer.
+//   - Phase F (F6): A/B Slice opens the inline ABTestCard wrapped in a drawer.
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -13,6 +17,38 @@ import type { ReactNode } from 'react';
 import { DecisionFooter } from '../DecisionFooter';
 import type { ActiveOptionView } from '../PriceOptions';
 import type { DecisionData } from '@/types/studio';
+
+// Capture mutation calls so we can assert per-button wiring.
+const acceptMutate = vi.fn();
+const declineMutate = vi.fn();
+const snoozeMutate = vi.fn();
+
+vi.mock('@/data/api/useActions', async (orig) => {
+  const real = await orig<typeof import('@/data/api/useActions')>();
+  return {
+    ...real,
+    useAcceptDecision: () => ({
+      mutate: acceptMutate,
+      mutateAsync: acceptMutate,
+      isPending: false,
+    }),
+    useDeclineDecision: () => ({
+      mutate: declineMutate,
+      mutateAsync: declineMutate,
+      isPending: false,
+    }),
+    useSnoozeDecision: () => ({
+      mutate: snoozeMutate,
+      mutateAsync: snoozeMutate,
+      isPending: false,
+    }),
+    useShareDecision: () => ({
+      mutate: vi.fn(),
+      mutateAsync: vi.fn().mockResolvedValue({}),
+      isPending: false,
+    }),
+  };
+});
 
 // Stub the publish drawer so we can assert it gets rendered without pulling
 // the full hook tree in here.
@@ -25,8 +61,40 @@ vi.mock('../PublishConfirmationDrawer', () => ({
     ) : null,
 }));
 
-// usePublishPrice's proposalPdfUrl is the only thing DecisionFooter actually
-// imports from the hook module; let the real implementation through.
+// Stub ShareDecisionDrawer so we just need to assert it opens.
+vi.mock('../ShareDecisionDrawer', () => ({
+  ShareDecisionDrawer: ({
+    open,
+    articleId,
+  }: {
+    open: boolean;
+    articleId: string;
+  }) =>
+    open ? (
+      <div data-testid="mock-share-drawer" data-aid={articleId}>
+        share drawer mock
+      </div>
+    ) : null,
+}));
+
+// Stub ABTestCard so the AB drawer can be asserted without pulling in
+// useCreateAbTest et al.
+vi.mock('../ABTestCard', () => ({
+  ABTestCard: (props: {
+    aid: string;
+    defaultControlPrice: string;
+    defaultVariantPrice: string;
+  }) => (
+    <div
+      data-testid="mock-abtestcard"
+      data-aid={props.aid}
+      data-control={props.defaultControlPrice}
+      data-variant={props.defaultVariantPrice}
+    >
+      ab card mock
+    </div>
+  ),
+}));
 
 const data: DecisionData = {
   summary: {
@@ -47,7 +115,7 @@ const data: DecisionData = {
 };
 
 const activeOption: ActiveOptionView = {
-  key: 'recommended',
+  id: 'market',
   label: 'Recommended',
   price: '€127.00',
 };
@@ -61,15 +129,37 @@ function wrap(ui: ReactNode) {
   );
 }
 
-describe('DecisionFooter — Phase 7 footer', () => {
+describe('DecisionFooter — Phase 7 + Phase F', () => {
   const originalOpen = window.open;
 
   beforeEach(() => {
+    acceptMutate.mockReset();
+    declineMutate.mockReset();
+    snoozeMutate.mockReset();
     window.open = vi.fn();
   });
 
   afterEach(() => {
     window.open = originalOpen;
+  });
+
+  it('renders all 7 primary footer buttons', () => {
+    wrap(
+      <DecisionFooter
+        data={data}
+        activeOption={activeOption}
+        currentPriceLabel="€118.00"
+        proposalId="p-1"
+        onScrollToApproval={() => {}}
+      />,
+    );
+    expect(screen.getByTestId('decision-footer-accept')).toBeInTheDocument();
+    expect(screen.getByTestId('decision-footer-reject')).toBeInTheDocument();
+    expect(screen.getByTestId('decision-footer-snooze')).toBeInTheDocument();
+    expect(screen.getByTestId('decision-footer-share')).toBeInTheDocument();
+    expect(screen.getByTestId('decision-footer-ab-slice')).toBeInTheDocument();
+    expect(screen.getByTestId('decision-footer-push')).toBeInTheDocument();
+    expect(screen.getByTestId('decision-footer-pdf')).toBeInTheDocument();
   });
 
   it('renders Push to quoting enabled when an active option exists', () => {
@@ -81,8 +171,7 @@ describe('DecisionFooter — Phase 7 footer', () => {
         proposalId="p-1"
       />,
     );
-    const push = screen.getByTestId('decision-footer-push');
-    expect(push).toBeEnabled();
+    expect(screen.getByTestId('decision-footer-push')).toBeEnabled();
   });
 
   it('opens the PublishConfirmationDrawer on Push click', () => {
@@ -101,6 +190,102 @@ describe('DecisionFooter — Phase 7 footer', () => {
     expect(dr).toHaveAttribute('data-aid', 'AID-1');
   });
 
+  it('Accept fires useAcceptDecision and shows the Accepted chip', () => {
+    wrap(
+      <DecisionFooter
+        data={data}
+        activeOption={activeOption}
+        currentPriceLabel="€118.00"
+        proposalId="p-1"
+      />,
+    );
+    fireEvent.click(screen.getByTestId('decision-footer-accept'));
+    expect(acceptMutate).toHaveBeenCalledTimes(1);
+    const body = acceptMutate.mock.calls[0][0];
+    expect(body).toMatchObject({
+      target_type: 'recommendation',
+      target_id: 'AID-1',
+      article_id: 'AID-1',
+    });
+    expect(screen.getByTestId('decision-footer-lifecycle-chip')).toHaveTextContent(
+      /accepted/i,
+    );
+    // Iron rule §A: row stays visible.
+    expect(screen.getByTestId('decision-footer-accept')).toBeInTheDocument();
+  });
+
+  it('Reject fires useDeclineDecision and keeps the row visible', () => {
+    wrap(
+      <DecisionFooter
+        data={data}
+        activeOption={activeOption}
+        currentPriceLabel="€118.00"
+        proposalId="p-1"
+      />,
+    );
+    fireEvent.click(screen.getByTestId('decision-footer-reject'));
+    expect(declineMutate).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('decision-footer-lifecycle-chip')).toHaveTextContent(
+      /rejected/i,
+    );
+    expect(screen.getByTestId('decision-footer-reject')).toBeInTheDocument();
+  });
+
+  it('Snooze opens the popover; picking a preset fires useSnoozeDecision', () => {
+    wrap(
+      <DecisionFooter
+        data={data}
+        activeOption={activeOption}
+        currentPriceLabel="€118.00"
+        proposalId="p-1"
+      />,
+    );
+    fireEvent.click(screen.getByTestId('decision-footer-snooze'));
+    expect(screen.getByTestId('decision-footer-snooze-popover')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('decision-footer-snooze-1w'));
+    expect(snoozeMutate).toHaveBeenCalledTimes(1);
+    const body = snoozeMutate.mock.calls[0][0];
+    expect(body.target_id).toBe('AID-1');
+    expect(body.until).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(screen.getByTestId('decision-footer-lifecycle-chip')).toHaveTextContent(
+      /snoozed/i,
+    );
+    expect(screen.getByTestId('decision-footer-snooze')).toBeInTheDocument();
+  });
+
+  it('Share opens the ShareDecisionDrawer', () => {
+    wrap(
+      <DecisionFooter
+        data={data}
+        activeOption={activeOption}
+        currentPriceLabel="€118.00"
+        proposalId="p-1"
+      />,
+    );
+    expect(screen.queryByTestId('mock-share-drawer')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('decision-footer-share'));
+    const dr = screen.getByTestId('mock-share-drawer');
+    expect(dr).toBeInTheDocument();
+    expect(dr).toHaveAttribute('data-aid', 'AID-1');
+  });
+
+  it('A/B Slice opens ABTestCard with control + variant prefilled', () => {
+    wrap(
+      <DecisionFooter
+        data={data}
+        activeOption={activeOption}
+        currentPriceLabel="€118.00"
+        proposalId="p-1"
+      />,
+    );
+    fireEvent.click(screen.getByTestId('decision-footer-ab-slice'));
+    expect(screen.getByTestId('decision-footer-ab-drawer')).toBeInTheDocument();
+    const card = screen.getByTestId('mock-abtestcard');
+    expect(card).toHaveAttribute('data-aid', 'AID-1');
+    expect(card).toHaveAttribute('data-control', '118.00');
+    expect(card).toHaveAttribute('data-variant', '127.00');
+  });
+
   it('Branded PDF opens a persona+lang popover and submits with the chosen values', () => {
     wrap(
       <DecisionFooter
@@ -110,12 +295,10 @@ describe('DecisionFooter — Phase 7 footer', () => {
         proposalId="p-1"
       />,
     );
-    // First click opens the popover, no window.open yet.
     fireEvent.click(screen.getByTestId('decision-footer-pdf'));
     expect(window.open).not.toHaveBeenCalled();
     const popover = screen.getByTestId('decision-footer-pdf-popover');
     expect(popover).toBeInTheDocument();
-    // Switch persona to Till + lang to DE, then submit.
     fireEvent.click(
       screen.getByTestId('decision-footer-pdf-persona-till').querySelector('input')!,
     );
@@ -124,27 +307,12 @@ describe('DecisionFooter — Phase 7 footer', () => {
     );
     fireEvent.click(screen.getByTestId('decision-footer-pdf-submit'));
     expect(window.open).toHaveBeenCalledWith(
-      expect.stringMatching(/\/pricing\/proposals\/p-1\/pdf\?.*persona=till.*lang=de|\/pricing\/proposals\/p-1\/pdf\?.*lang=de.*persona=till/),
+      expect.stringMatching(
+        /\/pricing\/proposals\/p-1\/pdf\?.*persona=till.*lang=de|\/pricing\/proposals\/p-1\/pdf\?.*lang=de.*persona=till/,
+      ),
       '_blank',
       'noopener,noreferrer',
     );
-  });
-
-  it('disables Push when no active option is selected', () => {
-    wrap(
-      <DecisionFooter
-        data={data}
-        activeOption={null}
-        currentPriceLabel="€118.00"
-        proposalId="p-1"
-      />,
-    );
-    // With no activeOption, parsePrice falls back to data.summary.proposedPrice
-    // ("€127.00") which IS parseable — so push remains enabled. The disable
-    // case is exercised when `data.summary.proposedPrice` is unparseable.
-    // We assert the enabled path here and use a separate test for the
-    // unparseable fallback.
-    expect(screen.getByTestId('decision-footer-push')).toBeEnabled();
   });
 
   it('disables Push when no parseable proposed price is available', () => {

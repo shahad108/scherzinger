@@ -208,11 +208,20 @@ function useActionMutation(
 // ---------- per-kind wrappers ----------
 
 export const useAcceptDecision = () =>
-  useActionMutation('accept_recommendation', qk.actionCenter());
+  useActionMutation('accept_recommendation', [qk.actionCenter(), qk.studio()]);
 export const useDeclineDecision = () =>
-  useActionMutation('decline_recommendation', qk.actionCenter());
+  useActionMutation('decline_recommendation', [qk.actionCenter(), qk.studio()]);
 export const usePartialAccept = () =>
   useActionMutation('partial_accept', qk.actionCenter());
+// Phase F (F3) — snooze a recommendation. The backend's
+// `snooze_recommendation` kind expects `target_id` + optional `payload.until`.
+export const useSnoozeDecision = () =>
+  useActionMutation('snooze_recommendation', [qk.actionCenter(), qk.studio()]);
+// Phase F (F4) — share a Pricing-Studio decision with Till or Heiko. The
+// backend's _share_decision helper expects `target_id` + `payload.recipient`
+// in {till, heiko}; "both" is fanned out client-side as two requests.
+export const useShareDecision = () =>
+  useActionMutation('share_decision', [qk.actionCenter(), qk.studio()]);
 
 export const useStartAbTest = () =>
   useActionMutation('start_ab_test', [qk.actionCenter(), qk.studio()]);

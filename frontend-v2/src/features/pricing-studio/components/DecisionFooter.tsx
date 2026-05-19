@@ -9,6 +9,14 @@ import { proposalPdfUrl } from '@/data/api/usePublishPrice';
 import { useUserLanguage } from '@/data/api/useUserLanguage';
 import type { UserLanguage } from '@/data/api/useUserLanguage';
 import { PublishConfirmationDrawer } from './PublishConfirmationDrawer';
+import { ShareDecisionDrawer } from './ShareDecisionDrawer';
+import { ABTestCard } from './ABTestCard';
+import { Drawer } from '@/components/ui/Drawer';
+import {
+  useAcceptDecision,
+  useDeclineDecision,
+  useSnoozeDecision,
+} from '@/data/api/useActions';
 
 type PdfPersona = 'frank' | 'till' | 'manuel';
 
@@ -22,6 +30,33 @@ const PDF_LANG_OPTIONS: { value: UserLanguage; label: string }[] = [
   { value: 'en', label: 'English' },
   { value: 'de', label: 'Deutsch' },
 ];
+
+// Phase F (F3) — snooze quick-pick presets. We compute the ISO date on the
+// frontend; backend treats payload.until opaquely.
+type SnoozePreset = '1d' | '1w' | 'next_review';
+const SNOOZE_OPTIONS: { value: SnoozePreset; label: string }[] = [
+  { value: '1d', label: 'Snooze 1 day' },
+  { value: '1w', label: 'Snooze 1 week' },
+  { value: 'next_review', label: 'Snooze until next review' },
+];
+
+function snoozeUntilISO(preset: SnoozePreset): string {
+  const now = new Date();
+  if (preset === '1d') {
+    now.setUTCDate(now.getUTCDate() + 1);
+  } else if (preset === '1w') {
+    now.setUTCDate(now.getUTCDate() + 7);
+  } else {
+    // Next-review heuristic: snooze 14 days, the typical weekly-queue cadence.
+    now.setUTCDate(now.getUTCDate() + 14);
+  }
+  return now.toISOString();
+}
+
+// Lifecycle chip state — kept local to the footer so the optimistic update
+// doesn't depend on a refetch. Iron rule §A: the row stays visible after
+// Accept/Reject; only the badge changes.
+type LifecycleState = 'idle' | 'accepted' | 'rejected' | 'snoozed';
 
 interface Props {
   data: DecisionData;
@@ -42,6 +77,13 @@ function parsePrice(s: string | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+// Strip "€127.00" → "127.00" so the AB drawer's defaultControlPrice receives
+// a plain decimal string the way ABTestCard expects.
+function priceToDecimal(label: string | null | undefined): string {
+  if (!label) return '';
+  return String(label).replace(/[^\d,.\-]/g, '').replace(',', '.');
+}
+
 export function DecisionFooter({
   data,
   activeOption,
@@ -54,7 +96,14 @@ export function DecisionFooter({
   const [notify, setNotify] = useState(data.notifyDefaults);
   const [error, setError] = useState<string | null>(null);
   const [publishOpen, setPublishOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [snoozeOpen, setSnoozeOpen] = useState(false);
+  const [abDrawerOpen, setAbDrawerOpen] = useState(false);
+  const [lifecycle, setLifecycle] = useState<LifecycleState>('idle');
   const createProposal = useCreateProposal();
+  const acceptMutation = useAcceptDecision();
+  const declineMutation = useDeclineDecision();
+  const snoozeMutation = useSnoozeDecision();
   const runUiAction = useUiAction();
   // Phase 10 — Branded PDF popover state (persona + language).
   const { lang: userLang } = useUserLanguage();
@@ -62,6 +111,7 @@ export function DecisionFooter({
   const [pdfPersona, setPdfPersona] = useState<PdfPersona>('frank');
   const [pdfLang, setPdfLang] = useState<UserLanguage>(userLang);
   const pdfPopoverRef = useRef<HTMLDivElement | null>(null);
+  const snoozePopoverRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     setPdfLang(userLang);
   }, [userLang]);
@@ -73,6 +123,14 @@ export function DecisionFooter({
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [pdfOpen]);
+  useEffect(() => {
+    if (!snoozeOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!snoozePopoverRef.current?.contains(e.target as Node)) setSnoozeOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [snoozeOpen]);
 
   const proposed = activeOption ? activeOption.price : data.summary.proposedPrice;
   const recommendationId = params.get('recommendation') ?? null;
@@ -90,7 +148,6 @@ export function DecisionFooter({
   // BFF's PublishIn accepts a Decimal, never a JS float).
   const proposedPriceDecimal = useMemo(() => {
     if (proposedPriceNum == null) return null;
-    // Active option label looks like "€5.10" or "5,10" — normalise.
     const cleaned = String(proposed).replace(/[^\d,.\-]/g, '').replace(',', '.');
     return cleaned.length > 0 ? cleaned : null;
   }, [proposed, proposedPriceNum]);
@@ -129,8 +186,125 @@ export function DecisionFooter({
     });
   }
 
+  // Phase F (F2) — Accept. Optimistic chip → "Accepted"; row stays visible.
+  function handleAccept() {
+    setError(null);
+    const previous = lifecycle;
+    setLifecycle('accepted');
+    const recId = recommendationId ?? articleId;
+    acceptMutation.mutate(
+      {
+        target_type: 'recommendation',
+        target_id: recId,
+        recommendation_id: recId,
+        article_id: articleId,
+        after: { headline: `Accepted ${articleId} @ ${proposed}` },
+      },
+      {
+        onSuccess: () =>
+          runUiAction({ toast: `Accepted ${articleId}.` }),
+        onError: (err) => {
+          setLifecycle(previous);
+          setError(`Could not accept: ${(err as Error).message}`);
+        },
+      },
+    );
+  }
+
+  // Phase F (F3) — Reject. Row stays visible; chip → "Rejected".
+  function handleReject() {
+    setError(null);
+    const previous = lifecycle;
+    setLifecycle('rejected');
+    const recId = recommendationId ?? articleId;
+    declineMutation.mutate(
+      {
+        target_type: 'recommendation',
+        target_id: recId,
+        recommendation_id: recId,
+        article_id: articleId,
+        reason: null,
+        payload: { reason: null },
+        after: { headline: `Rejected ${articleId}` },
+      },
+      {
+        onSuccess: () => runUiAction({ toast: `Rejected ${articleId}.` }),
+        onError: (err) => {
+          setLifecycle(previous);
+          setError(`Could not reject: ${(err as Error).message}`);
+        },
+      },
+    );
+  }
+
+  // Phase F (F3) — Snooze with preset → ISO until-date.
+  function handleSnooze(preset: SnoozePreset) {
+    setSnoozeOpen(false);
+    setError(null);
+    const previous = lifecycle;
+    setLifecycle('snoozed');
+    const recId = recommendationId ?? articleId;
+    const until = snoozeUntilISO(preset);
+    snoozeMutation.mutate(
+      {
+        target_type: 'recommendation',
+        target_id: recId,
+        recommendation_id: recId,
+        article_id: articleId,
+        until,
+        payload: { until, preset },
+        after: { headline: `Snoozed ${articleId} until ${until.slice(0, 10)}` },
+      },
+      {
+        onSuccess: () =>
+          runUiAction({
+            toast: `Snoozed ${articleId} until ${until.slice(0, 10)}.`,
+          }),
+        onError: (err) => {
+          setLifecycle(previous);
+          setError(`Could not snooze: ${(err as Error).message}`);
+        },
+      },
+    );
+  }
+
+  const accepting = acceptMutation.isPending;
+  const rejecting = declineMutation.isPending;
+  const snoozing = snoozeMutation.isPending;
+  const anyLifecycleInflight = accepting || rejecting || snoozing;
+
+  const abControlPrice = priceToDecimal(currentPriceLabel) || '0';
+  const abVariantPrice = priceToDecimal(proposed) || abControlPrice;
+
   return (
     <div className="ws-decision">
+      {lifecycle !== 'idle' && (
+        <div
+          data-testid="decision-footer-lifecycle-chip"
+          className="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide"
+          style={{
+            background:
+              lifecycle === 'accepted'
+                ? 'color-mix(in oklab, var(--emerald, #10b981) 14%, white)'
+                : lifecycle === 'rejected'
+                  ? 'color-mix(in oklab, var(--rose, #f43f5e) 14%, white)'
+                  : 'color-mix(in oklab, var(--amber, #f59e0b) 14%, white)',
+            color:
+              lifecycle === 'accepted'
+                ? 'var(--emerald-deep, #047857)'
+                : lifecycle === 'rejected'
+                  ? 'var(--rose-deep, #be123c)'
+                  : 'var(--amber-deep, #b45309)',
+            border: '1px solid var(--hairline)',
+          }}
+        >
+          {lifecycle === 'accepted'
+            ? 'Accepted'
+            : lifecycle === 'rejected'
+              ? 'Rejected'
+              : 'Snoozed'}
+        </div>
+      )}
       <div className="ws-decision-summary">
         You're proposing <b>{proposed}</b> on Article <b>{articleId}</b> · projected margin{' '}
         <b>{data.summary.margin}</b> · projected recovery <b>{data.summary.recovery}</b> ·{' '}
@@ -187,14 +361,129 @@ export function DecisionFooter({
         </label>
       </div>
       <div className="ws-decision-buttons">
+        {/* Phase F (F2) — Accept */}
         <button
           type="button"
           className="btn primary"
+          data-testid="decision-footer-accept"
+          onClick={handleAccept}
+          disabled={anyLifecycleInflight}
+          title="Mark this recommendation as accepted."
+        >
+          ✓ {accepting ? 'Accepting…' : 'Accept'}
+        </button>
+        {/* Phase F (F3) — Reject */}
+        <button
+          type="button"
+          className="btn"
+          data-testid="decision-footer-reject"
+          onClick={handleReject}
+          disabled={anyLifecycleInflight}
+          style={{
+            background:
+              'color-mix(in oklab, var(--rose, #f43f5e) 8%, white)',
+            borderColor: 'var(--rose, #f43f5e)',
+            color: 'var(--rose-deep, #be123c)',
+          }}
+          title="Reject this recommendation. The row stays visible."
+        >
+          ✕ {rejecting ? 'Rejecting…' : 'Reject'}
+        </button>
+        {/* Phase F (F3) — Snooze popover */}
+        <div ref={snoozePopoverRef} style={{ position: 'relative' }}>
+          <button
+            type="button"
+            className="btn"
+            data-testid="decision-footer-snooze"
+            aria-expanded={snoozeOpen}
+            aria-haspopup="menu"
+            onClick={() => setSnoozeOpen((v) => !v)}
+            disabled={anyLifecycleInflight}
+            title="Snooze this recommendation."
+          >
+            ⏳ {snoozing ? 'Snoozing…' : 'Snooze'}
+          </button>
+          {snoozeOpen && (
+            <div
+              role="menu"
+              data-testid="decision-footer-snooze-popover"
+              style={{
+                position: 'absolute',
+                bottom: 'calc(100% + 6px)',
+                left: 0,
+                zIndex: 30,
+                minWidth: 220,
+                background: 'var(--surface, #fff)',
+                border: '1px solid var(--hairline)',
+                borderRadius: 10,
+                boxShadow: 'var(--shadow-pop, 0 10px 32px rgba(0,0,0,0.16))',
+                padding: 6,
+                fontSize: 12.5,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+              }}
+            >
+              {SNOOZE_OPTIONS.map((opt) => (
+                <button
+                  type="button"
+                  key={opt.value}
+                  role="menuitem"
+                  data-testid={`decision-footer-snooze-${opt.value}`}
+                  onClick={() => handleSnooze(opt.value)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    textAlign: 'left',
+                    padding: '7px 10px',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    color: 'var(--ink-2)',
+                  }}
+                  onMouseEnter={(e) =>
+                    ((e.currentTarget as HTMLElement).style.background =
+                      'var(--surface-soft, #f7f9fb)')
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.currentTarget as HTMLElement).style.background = 'transparent')
+                  }
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {/* Phase F (F4) — Share */}
+        <button
+          type="button"
+          className="btn"
+          data-testid="decision-footer-share"
+          onClick={() => setShareOpen(true)}
+          title="Share this decision with Till or Heiko."
+        >
+          ↗ Share
+        </button>
+        {/* Phase F (F6) — A/B Slice */}
+        <button
+          type="button"
+          className="btn"
+          data-testid="decision-footer-ab-slice"
+          onClick={() => setAbDrawerOpen(true)}
+          title="Open the A/B slice setup pre-filled with the current and proposed prices."
+        >
+          🧪 A/B Slice
+        </button>
+        {/* F5 — Save as proposal */}
+        <button
+          type="button"
+          className="btn"
           onClick={() => handleSave(false, 'Saved as draft proposal')}
           disabled={createProposal.isPending}
         >
           📌 {createProposal.isPending ? 'Saving…' : 'Save as proposal'}
         </button>
+        {/* F5 — Add to weekly queue */}
         <button
           type="button"
           className="btn"
@@ -203,6 +492,7 @@ export function DecisionFooter({
         >
           🗂 {createProposal.isPending && notify.escalate ? 'Queuing…' : 'Add to weekly queue'}
         </button>
+        {/* F7 — Push to quoting (opens the PublishConfirmationDrawer) */}
         <button
           type="button"
           className="btn dark"
@@ -224,6 +514,7 @@ export function DecisionFooter({
         >
           ⚡ Push to quoting
         </button>
+        {/* F5 — View approval stepper */}
         {onScrollToApproval && (
           <button
             type="button"
@@ -235,6 +526,7 @@ export function DecisionFooter({
             ↗ View approval stepper
           </button>
         )}
+        {/* F8 — Branded PDF popover */}
         <div ref={pdfPopoverRef} style={{ position: 'relative' }}>
           <button
             type="button"
@@ -368,6 +660,52 @@ export function DecisionFooter({
         }}
         onViewAudit={onScrollToApproval}
       />
+
+      <ShareDecisionDrawer
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        articleId={articleId}
+        recommendationId={recommendationId}
+        headline={`${articleId} → ${proposed}`}
+      />
+
+      {/* Phase F (F6) — A/B Slice drawer wraps the existing inline ABTestCard
+          so the same setup pane the user gets inside PriceOptions is available
+          straight from the footer with the current + proposed prices pre-filled. */}
+      <Drawer
+        open={abDrawerOpen}
+        onOpenChange={setAbDrawerOpen}
+        width={520}
+        title="A/B slice setup"
+      >
+        <div
+          className="flex h-full flex-col"
+          data-testid="decision-footer-ab-drawer"
+        >
+          <header
+            className="px-6 pb-4 pt-6"
+            style={{ borderBottom: '1px solid var(--hairline)' }}
+          >
+            <h3 className="text-[15px] font-semibold text-[var(--ink)]">
+              A/B slice — {articleId}
+            </h3>
+            <p className="mt-1 text-[12px] text-[var(--ink-3)]">
+              Slice eligible customers between {currentPriceLabel ?? '—'} (control)
+              and {proposed} (variant). Promote the winner after the criterion
+              is met.
+            </p>
+          </header>
+          <div className="flex-1 overflow-y-auto px-6 py-5">
+            <ABTestCard
+              aid={articleId}
+              defaultControlPrice={abControlPrice}
+              defaultVariantPrice={abVariantPrice}
+              activeTest={null}
+              onCreated={() => setAbDrawerOpen(false)}
+            />
+          </div>
+        </div>
+      </Drawer>
     </div>
   );
 }

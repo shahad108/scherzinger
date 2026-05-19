@@ -2501,12 +2501,16 @@
     font-weight: 600;
   }
 
-  /* Decision footer */
+  /* Decision footer — Phase F (F1) sticky to viewport bottom */
   body.pryzm-2026 #screen-studio .ws-decision {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
     background: var(--surface);
     border: 1px solid var(--border);
+    border-top: 1px solid var(--hairline);
     border-radius: var(--r-md);
-    box-shadow: var(--shadow-card);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04), var(--shadow-card);
     padding: 18px 20px;
     display: flex;
     flex-direction: column;
