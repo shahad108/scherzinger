@@ -7,6 +7,7 @@ import { MessageStrip } from '@/components/fiori/MessageStrip';
 import type { DecisionCard, DecisionFact, DecisionTrend } from '@/types';
 import type { ActionIntent } from '@/types/uiActions';
 import { EmptyBlock } from './EmptyBlock';
+import { RecommendationMetaChips } from '@/components/shared/RecommendationMetaChips';
 
 type ActState = 'acc' | 'nim' | 'par' | 'rej' | 'ab' | null;
 
@@ -45,19 +46,6 @@ function MiniSpark({ trend }: { trend: DecisionTrend }) {
         <circle cx={Number(last[0])} cy={Number(last[1])} r="2.2" fill={stroke} />
       </svg>
     </div>
-  );
-}
-
-function ChipCluster({ c }: { c: NonNullable<DecisionCard['cluster']> }) {
-  const dot = c.confidence >= 80 ? 'var(--green)' : c.confidence >= 60 ? 'var(--amber)' : 'var(--red)';
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 whitespace-nowrap text-[11.5px] font-medium text-[var(--ink-2)]"
-      style={{ background: 'var(--surface-sunken)', borderRadius: 7, padding: '5px 9px' }}
-    >
-      <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: dot }} />
-      Cluster {c.label} · {c.confidence}% (n={c.n})
-    </span>
   );
 }
 
@@ -690,8 +678,15 @@ export function DecisionCards({
                   </span>
                 </div>
               </div>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {d.cluster && <ChipCluster c={d.cluster} />}
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <RecommendationMetaChips
+                  cluster={d.cluster?.label}
+                  clusterConfidence={d.cluster?.confidence ?? d.confidence?.score}
+                  sampleSize={d.cluster?.n ?? d.confidence?.sampleSize ?? null}
+                  modelId={d.confidence?.model?.id ?? null}
+                  modelVersion={d.confidence?.model?.version ?? null}
+                  trainedAt={d.confidence?.model?.trainedAt ?? null}
+                />
                 {d.contract && <ChipContract kind={d.contract} />}
                 {d.tag && (
                   <span

@@ -1,5 +1,9 @@
 // Pricing Studio v3 / Phase 1 — Recommendation Hero card.
 //
+// Phase D1+D2 — chip strip now uses the shared RecommendationMetaChips so the
+// hero matches Action Center decision cards 1:1. Phase D2 adds a "Why this
+// price?" expander that toggles the BFF-provided rationale_md inline.
+//
 // Replaces PriceOptions as the top of the workbench column. Reads four
 // typed BFF blocks (recommendation, wtp, win_prob_curve, competitor_ref);
 // each may be undefined → render <DataMissingBadge>.
@@ -9,7 +13,9 @@
 // neutral tones for low/med/high. Generous padding (p-6) and grid-aligned
 // band labels so dots never collide with their captions.
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { RecommendationMetaChips } from '@/components/shared/RecommendationMetaChips';
 import type {
   RecommendationBlock,
   WtpBlock,
@@ -130,6 +136,15 @@ export function RecommendationHero({
   const isFreshKnown = typeof lastTickAt === 'number';
   const freshSec = isFreshKnown ? Math.max(0, Math.round(Date.now() / 1000 - lastTickAt!)) : null;
 
+  // D2 — inline "Why this price?" expander state. Hidden when rationale_md is
+  // empty so we never expose an empty disclosure.
+  const [whyOpen, setWhyOpen] = useState(false);
+  const rationaleParagraphs = useMemo(() => {
+    const md = recommendation?.rationale_md ?? '';
+    return md.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  }, [recommendation]);
+  const hasRationale = rationaleParagraphs.length > 0;
+
   const onOpenRecLineage = () =>
     openLineage(recommendation.lineage_ref ?? null, {
       subjectTitle: `Why ${recPrice} for ${aid}?`,
@@ -212,6 +227,37 @@ export function RecommendationHero({
             Today <span className="font-semibold text-[var(--ink-3)]">{currentPriceLabel}</span>
           </div>
 
+          {hasRationale && (
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => setWhyOpen((v) => !v)}
+                aria-expanded={whyOpen}
+                aria-controls={`why-price-panel-${aid}`}
+                data-testid="why-this-price-expander"
+                className="inline-flex items-center gap-1 rounded-md text-[12px] font-semibold text-[var(--rose-deep)] transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rose)] focus-visible:ring-offset-1"
+              >
+                <span>Why this price?</span>
+                <ChevronDown
+                  size={12}
+                  aria-hidden="true"
+                  className={`transition-transform duration-150 ${whyOpen ? 'rotate-180' : 'rotate-0'}`}
+                />
+              </button>
+              {whyOpen && (
+                <div
+                  id={`why-price-panel-${aid}`}
+                  data-testid="why-this-price-panel"
+                  className="mt-2 space-y-2 rounded-[var(--r-md)] border border-[var(--hairline)] bg-[var(--surface-soft)] px-3 py-2 text-[12.5px] leading-[1.55] text-[var(--ink-2)]"
+                >
+                  {rationaleParagraphs.map((p, i) => (
+                    <p key={i} dangerouslySetInnerHTML={{ __html: renderInlineMd(p) }} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="mt-4 flex flex-wrap items-center gap-2 text-[11.5px]">
             <span
               className="inline-flex items-center gap-1 rounded-full border px-2 py-[2px] text-[10.5px] font-bold uppercase tracking-[0.05em]"
@@ -220,14 +266,17 @@ export function RecommendationHero({
             >
               Confidence: {conf.label}
             </span>
-            {wtp ? (
-              <span className="text-[11.5px] text-[var(--muted)]">
-                n={wtp.n_deals} won deals · {wtp.window_days}d
-                {wtp.anchored_from_cluster && ' · cluster anchored'}
-              </span>
-            ) : (
-              <DataMissingBadge reason="No WTP sample" icon={false} />
-            )}
+            <RecommendationMetaChips
+              clusterConfidence={
+                Number.isFinite(parseDecimal(recommendation.confidence))
+                  ? parseDecimal(recommendation.confidence) * 100
+                  : undefined
+              }
+              sampleSize={wtp?.n_deals ?? null}
+              modelVersion={recommendation.lineage_ref?.model ?? null}
+              trainedAt={recommendation.lineage_ref?.computed_at ?? null}
+            />
+            {!wtp && <DataMissingBadge reason="No WTP sample" icon={false} />}
           </div>
 
           {/* Band strip */}
