@@ -212,7 +212,7 @@ async function resolveDefaultAid(page: Page): Promise<string> {
 // ---- Tests -----------------------------------------------------------------
 
 test.describe('Pricing Studio — Decision Footer (Phase F)', () => {
-  test('1. footer is sticky-positioned and survives scroll', async ({
+  test('1. footer is pinned to viewport bottom and survives scroll', async ({
     page,
   }) => {
     await installFooterMocks(page);
@@ -222,11 +222,13 @@ test.describe('Pricing Studio — Decision Footer (Phase F)', () => {
     const footer = page.locator('.ws-decision');
     await expect(footer).toBeAttached();
 
-    // F1 contract: computed `position: sticky` + `bottom: 0px` on the
-    // .ws-decision wrapper. This is the CSS guarantee the F1 commit
-    // shipped. (Visual viewport-pinning is governed by the shell's
-    // overall scroll container — that's a layout concern outside of
-    // DecisionFooter's own contract.)
+    // F1 contract (revised in F-review commit 61db693): computed
+    // `position: fixed` + `bottom: 0px` on the .ws-decision wrapper.
+    // The original F1 ship tried `position: sticky` but the studio's
+    // <main> scroll container doesn't actually scroll on this page (its
+    // content fits exactly), so sticky degraded to static. F-review
+    // switched to `position: fixed` with matching `padding-bottom: 200px`
+    // on main.pz-main so the fixed footer doesn't occlude content.
     const computed = await page.evaluate(() => {
       const el = document.querySelector('.ws-decision') as HTMLElement | null;
       if (!el) return null;
@@ -238,7 +240,7 @@ test.describe('Pricing Studio — Decision Footer (Phase F)', () => {
       };
     });
     expect(computed).not.toBeNull();
-    expect(computed!.position).toBe('sticky');
+    expect(computed!.position).toBe('fixed');
     expect(computed!.bottomCss).toBe('0px');
     // z-index is 20 — below modal drawers (40+) but above body content.
     expect(parseInt(computed!.zIndex, 10)).toBeGreaterThanOrEqual(20);
