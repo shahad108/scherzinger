@@ -630,19 +630,44 @@ export default function PricingStudioPage() {
   if (isLoading || !data || !heroView) {
     return <StudioSkeleton />;
   }
+  // Phase C regression fix — when the user lands on (or navigates to) a
+  // non-default aid via deep-link, the per-aid workbench is fetched
+  // lazily via `useStudioWorkbench`. While that fetch is in flight we
+  // must NOT fall through to `data.workbench` (the shell's default-aid
+  // payload), because consumers below assume `wb` is shaped for the
+  // currently-selected aid. Render the skeleton until the per-aid
+  // workbench arrives.
+  const needsLazyWorkbench =
+    Boolean(effectiveAid) &&
+    effectiveAid !== data.defaultAid &&
+    !selectedSku?.workbench;
+  if (needsLazyWorkbench && wbQuery.isLoading && !wbQuery.data) {
+    return <StudioSkeleton />;
+  }
 
   const showComparable = selectedSku?.isNew ?? false;
   // Pricing Studio v3 / Phase 13 (p13) — prefer the per-aid workbench
   // fetched by `useStudioWorkbench` so recommendation/wtp/fanout/etc.
   // reflect the selected SKU. Falls back to the SKU row's bundled
   // workbench (legacy mock mode) and finally to the shell seed.
-  const wb = wbQuery.data ?? selectedSku?.workbench ?? data.workbench;
-  const fanPrice = activeOption?.price ?? wb.fanout.fanPrice;
+  //
+  // Phase C regression fix — accept the per-aid response only if it
+  // carries the required `options` block; otherwise prefer the bundled
+  // SKU workbench (or the shell seed) so downstream consumers always
+  // see a fully-shaped workbench. This guards against partial/empty
+  // BFF payloads tripping the React error boundary.
+  const lazyWb = wbQuery.data;
+  const lazyWbReady = Boolean(lazyWb && (lazyWb as { options?: unknown }).options);
+  const wb = (lazyWbReady ? lazyWb : null) ?? selectedSku?.workbench ?? data.workbench;
+  // Phase C — non-default SKUs may not carry the legacy `fanout`/`options`
+  // blocks if the BFF returned them as empty/locked. Read defensively so
+  // the page renders the locked/empty UI instead of crashing.
+  const fanPrice = activeOption?.price ?? wb?.fanout?.fanPrice ?? null;
 
   // The fanout block we render: default workbench block when no price
   // option is selected; re-scored block otherwise. Both share the same
   // wire shape — `CustomerFanoutBlock`.
-  const fanoutBlock = rescored.data ?? wb.customer_fanout ?? null;
+  const fanoutBlock = rescored.data ?? wb?.customer_fanout ?? null;
 
   // Phase 1 — derive a numeric current price for Δ calculations. The
   // existing heroView.currentPrice is a pre-formatted string ("€118.00").
@@ -735,7 +760,7 @@ export default function PricingStudioPage() {
                 session; clicking the body opens the Cost Trajectory
                 Drawer; the inline link routes to the originating screen. */}
             <TriggerBanner
-              trigger={wb.trigger_context ?? null}
+              trigger={wb?.trigger_context ?? null}
               onOpenCostDrawer={() => setCostDrawerOpen(true)}
             />
 
@@ -744,10 +769,10 @@ export default function PricingStudioPage() {
                 demoted to a compact alternatives row below. */}
             <RecommendationHero
               aid={effectiveAid}
-              recommendation={wb.recommendation}
-              wtp={wb.wtp}
-              winProbCurve={wb.win_prob_curve}
-              competitorRef={wb.competitor_ref}
+              recommendation={wb?.recommendation}
+              wtp={wb?.wtp}
+              winProbCurve={wb?.win_prob_curve}
+              competitorRef={wb?.competitor_ref}
               currentPriceLabel={heroView.currentPrice}
               currentPriceValue={currentPriceValue}
               lastTickAt={live.lastTickAt}
@@ -756,9 +781,9 @@ export default function PricingStudioPage() {
 
             <RecommendationKpiTiles
               aid={effectiveAid}
-              recommendation={wb.recommendation}
-              winProbCurve={wb.win_prob_curve}
-              wtp={wb.wtp}
+              recommendation={wb?.recommendation}
+              winProbCurve={wb?.win_prob_curve}
+              wtp={wb?.wtp}
               currentPriceLabel={heroView.currentPrice}
               currentPriceValue={currentPriceValue}
               currentMarginLabel={heroView.currentMargin}
@@ -767,35 +792,35 @@ export default function PricingStudioPage() {
 
             <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               <WinProbCurve
-                curve={wb.win_prob_curve}
-                recommendedPrice={wb.recommendation?.recommended_price}
+                curve={wb?.win_prob_curve}
+                recommendedPrice={wb?.recommendation?.recommended_price}
               />
               <DriverWaterfall
-                drivers={wb.recommendation?.drivers}
+                drivers={wb?.recommendation?.drivers}
                 emphasiseFloor={deepLinkSource === 'margin'}
               />
             </div>
 
             <WtpBandStrip
-              wtp={wb.wtp}
-              recommendedPrice={wb.recommendation?.recommended_price}
-              floor={wb.recommendation?.band.min}
+              wtp={wb?.wtp}
+              recommendedPrice={wb?.recommendation?.recommended_price}
+              floor={wb?.recommendation?.band?.min}
               className="mt-3"
             />
 
             <PriceOptions
-              options={wb.options}
-              optionsSub={wb.optionsSub}
+              options={wb?.options}
+              optionsSub={wb?.optionsSub}
               onActiveChange={setActiveOption}
               compact
-              optionMargins={wb.option_margins}
+              optionMargins={wb?.option_margins}
               aid={effectiveAid}
-              activeAbTest={wb.active_ab_test ?? null}
+              activeAbTest={wb?.active_ab_test ?? null}
               abTestControlPrice={
-                abPrefill?.control ?? wb.options.hold.price
+                abPrefill?.control ?? wb?.options?.hold?.price ?? null
               }
               abTestVariantPrice={
-                abPrefill?.variant ?? wb.options.floor.price
+                abPrefill?.variant ?? wb?.options?.floor?.price ?? null
               }
               onSimulateOption={(price) => {
                 setSimulationDrawerOpen(true, price);
@@ -810,19 +835,19 @@ export default function PricingStudioPage() {
 
             <div className="ws-body">
               <CustomerFanout
-                data={wb.fanout}
+                data={wb?.fanout}
                 fanPrice={fanPrice}
                 block={fanoutBlock}
                 proposedPriceDecimal={proposedPriceDecimal}
                 aid={effectiveAid}
-                blockMeta={wb.meta?.blocks?.customer_fanout ?? null}
+                blockMeta={wb?.meta?.blocks?.customer_fanout ?? null}
               />
               <CostHistory
                 aid={effectiveAid}
-                cost={wb.cost}
-                history={wb.history}
-                costHistory={wb.cost_history ?? null}
-                costHistoryStatus={wb.meta?.blocks?.cost_history ?? null}
+                cost={wb?.cost}
+                history={wb?.history}
+                costHistory={wb?.cost_history ?? null}
+                costHistoryStatus={wb?.meta?.blocks?.cost_history ?? null}
                 onOpenCostDrawer={() => setCostDrawerOpen(true)}
               />
             </div>
@@ -834,7 +859,7 @@ export default function PricingStudioPage() {
             {showComparable && (
               <ComparablePanelGate
                 data={data.comparable}
-                meta={wb.meta?.blocks?.comparable ?? null}
+                meta={wb?.meta?.blocks?.comparable ?? null}
               />
             )}
 
@@ -844,7 +869,7 @@ export default function PricingStudioPage() {
             />
 
             <DecisionFooter
-              data={wb.decision}
+              data={wb?.decision}
               activeOption={activeOption}
               currentPriceLabel={heroView.currentPrice}
               proposalId={latestProposalId}
@@ -858,8 +883,8 @@ export default function PricingStudioPage() {
 
             <RationaleMemo
               aid={effectiveAid}
-              data={wb.memo}
-              blockMeta={wb.meta?.blocks?.memo ?? null}
+              data={wb?.memo}
+              blockMeta={wb?.meta?.blocks?.memo ?? null}
             />
           </div>
           )}
@@ -898,7 +923,7 @@ export default function PricingStudioPage() {
           onOpenChange={setCostDrawerOpen}
           aid={effectiveAid}
           cluster={selectedSku?.cluster ?? null}
-          history={wb.cost_history ?? null}
+          history={wb?.cost_history ?? null}
           horizonMonths={6}
         />
         {/* Phase 8 — Simulation Drawer. Opened by "Simulate this option"
@@ -939,10 +964,10 @@ export default function PricingStudioPage() {
           open={compareDrawerOpen}
           onOpenChange={setCompareDrawerOpen}
           aid={effectiveAid}
-          options={wb.options}
-          optionMargins={wb.option_margins}
-          winProbCurve={wb.win_prob_curve}
-          customerFanout={wb.customer_fanout ?? null}
+          options={wb?.options}
+          optionMargins={wb?.option_margins}
+          winProbCurve={wb?.win_prob_curve}
+          customerFanout={wb?.customer_fanout ?? null}
           currentPriceLabel={heroView.currentPrice}
         />
       </section>

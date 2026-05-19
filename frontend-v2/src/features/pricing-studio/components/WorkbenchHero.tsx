@@ -24,20 +24,32 @@ interface Props {
 
 export function WorkbenchHero({ hero, onOpenAudit, auditBadge }: Props) {
   const showBadge = typeof auditBadge === 'number' && auditBadge > 0;
+  // Phase C regression fix — every field on `hero` is rendered defensively
+  // so a partially-populated workbench (e.g. a still-loading per-aid fetch
+  // or a sparse BFF response) cannot trip the React error boundary.
+  const chips = hero?.chips ?? [];
+  const eyebrow = hero?.eyebrow ?? '';
+  const title = hero?.title ?? '';
+  const sub = hero?.sub ?? '';
+  const meta = hero?.meta ?? '';
+  const currentPrice = hero?.currentPrice ?? '—';
+  const currentMargin = hero?.currentMargin ?? '—';
+  const currentMarginTone = hero?.currentMarginTone ?? 'good';
+  const targetText = hero?.targetText ?? '';
   return (
     <div className="ws-hero">
       <div>
-        <div className="ws-hero-eyebrow">{hero.eyebrow}</div>
-        <h3>{hero.title}</h3>
-        <div className="ws-hero-sub">{renderInline(hero.sub)}</div>
+        <div className="ws-hero-eyebrow">{eyebrow}</div>
+        <h3>{title}</h3>
+        <div className="ws-hero-sub">{renderInline(sub)}</div>
         <div className="ws-hero-chips">
-          {hero.chips.map((c, i) => (
+          {chips.map((c, i) => (
             <span key={i} className={c.variant ?? ''}>
               {c.label}
             </span>
           ))}
         </div>
-        <div className="ws-hero-meta">{renderInline(hero.meta)}</div>
+        <div className="ws-hero-meta">{renderInline(meta)}</div>
       </div>
       <div className="ws-hero-num">
         {onOpenAudit && (
@@ -62,9 +74,9 @@ export function WorkbenchHero({ hero, onOpenAudit, auditBadge }: Props) {
             </button>
           </div>
         )}
-        <div className="ws-cur">{hero.currentPrice}</div>
-        <div className={`ws-marg-now ${hero.currentMarginTone}`}>{hero.currentMargin}</div>
-        <div className="ws-target">{hero.targetText}</div>
+        <div className="ws-cur">{currentPrice}</div>
+        <div className={`ws-marg-now ${currentMarginTone}`}>{currentMargin}</div>
+        <div className="ws-target">{targetText}</div>
       </div>
     </div>
   );

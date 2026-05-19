@@ -10,16 +10,22 @@ import type { SkuListEntry, StudioShell } from '@/types/studio';
  * client-side workbench from a hard-coded seed-customer table; the
  * BFF is the single source of truth.
  */
+// Phase C regression fix — `SCHED-*` and `EPA-*` aids are reserved for
+// contract-test fixtures and may leak into the shell from the test seed.
+// They are not real articles, so we exclude them from the picker before
+// any consumer (SkuPicker, keyboard nav, batch) sees them.
+const TEST_POLLUTION_AID = /^(SCHED|EPA)-/;
+
 function enrichSkus(data: StudioShell): StudioShell {
-  return {
-    ...data,
-    skus: data.skus.map((sku): SkuListEntry => {
+  const skus = data.skus
+    .filter((sku) => !TEST_POLLUTION_AID.test(sku.aid))
+    .map((sku): SkuListEntry => {
       if (sku.aid === data.defaultAid) {
         return { ...sku, workbench: data.workbench };
       }
       return sku;
-    }),
-  };
+    });
+  return { ...data, skus };
 }
 
 /**
