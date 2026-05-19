@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   ActiveAbTestSummary,
   OptionMarginBlock,
@@ -6,6 +6,10 @@ import type {
 } from '@/types/studio';
 import { OptionMarginMicroWaterfall } from './OptionMarginMicroWaterfall';
 import { ABTestCard } from './ABTestCard';
+import {
+  useEngineV2ScoreAtPrice,
+  type ScoreAtPriceResponse,
+} from '@/data/api/useEngineV2';
 
 export type ActiveOpt = 'hold' | 'floor' | 'market' | 'custom' | 'abtest';
 
@@ -84,6 +88,38 @@ export function PriceOptions({
   // "You're proposing …" banner before the user has picked anything.
   const [hasInteracted, setHasInteracted] = useState(false);
 
+  // v1.4 wiring: as the user types a custom price, debounce-call
+  // `/pricing/v2/score_at_price` and replace the previously-hardcoded
+  // placeholder strings with the real engine numbers. Failures keep
+  // the placeholder text — no error popup for an exploratory input.
+  const [customPreview, setCustomPreview] = useState<ScoreAtPriceResponse | null>(null);
+  const scoreAtPrice = useEngineV2ScoreAtPrice();
+  const debounceRef = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (debounceRef.current) {
+      window.clearTimeout(debounceRef.current);
+      debounceRef.current = undefined;
+    }
+    const v = Number(customPrice);
+    if (!customPrice || !aid || !Number.isFinite(v) || v <= 0) {
+      setCustomPreview(null);
+      return;
+    }
+    debounceRef.current = window.setTimeout(() => {
+      scoreAtPrice.mutate(
+        { aid, candidate_price: v.toFixed(2) },
+        {
+          onSuccess: (res) => setCustomPreview(res),
+          onError: () => setCustomPreview(null),
+        },
+      );
+    }, 350);
+    return () => {
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customPrice, aid]);
+
   // Guard every nested-field access so a non-live `options` block can't
   // crash the page. When the bundle is missing required fields we render
   // an empty-state card below.
@@ -151,17 +187,26 @@ export function PriceOptions({
     );
   }
 
-  // Empty-state strings are intentionally terse so the Custom card stays
-  // visually balanced with the other three cards. We avoid the stray "·
-  // —" pattern that read as broken/missing data in production audits.
+  // v1.4: when the engine returns a preview, surface real numbers
+  // (uplift %, expected contribution €, churn risk pp) instead of
+  // the placeholder copy. Pending state shows the typed price with
+  // an ellipsis so the user knows a call is in flight.
   const customDelta = customPrice
-    ? `+€${customPrice.padEnd(1)} · custom`
+    ? customPreview
+      ? `${customPreview.delta_pct >= 0 ? '+' : '−'}${Math.abs(customPreview.delta_pct).toFixed(1)}% vs current`
+      : `€${customPrice} · custom`
     : 'Type a target price';
   const customImpact = customPrice
-    ? '€recovery · per-unit'
+    ? customPreview
+      ? `${customPreview.score_eur_calibrated >= 0 ? '+' : '−'}€${Math.abs(Math.round(customPreview.score_eur_calibrated)).toLocaleString()} expected/yr`
+      : scoreAtPrice.isPending
+      ? 'Simulating…'
+      : 'Annual contribution modelled on commit'
     : 'Annual recovery modelled on commit';
   const customRisk = customPrice
-    ? 'churn risk · per-unit modelled'
+    ? customPreview
+      ? `${(customPreview.p_churn_mean * 100).toFixed(1)}% churn risk`
+      : 'Churn risk modelled on commit'
     : 'Churn risk modelled on commit';
 
   return (

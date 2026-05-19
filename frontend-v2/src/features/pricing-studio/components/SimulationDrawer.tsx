@@ -26,6 +26,7 @@ import { Drawer } from '@/components/ui/Drawer';
 import { Button } from '@/components/ui/Button';
 import { fmt } from '@/lib/format';
 import { useSimulation, type SimulationResponse } from '@/data/api/useSimulation';
+import { useEngineV2ScoreAtPrice, type ScoreAtPriceResponse } from '@/data/api/useEngineV2';
 import { useCreateProposal } from '@/data/api/useProposals';
 import { parseDecimal } from '@/features/pricing-studio/lib/decimal';
 
@@ -103,8 +104,10 @@ function SimulationDrawerBody({
   onRunAsAbTest,
 }: BodyProps) {
   const simulate = useSimulation();
+  const v2Score = useEngineV2ScoreAtPrice();
   const createProposal = useCreateProposal();
   const [data, setData] = useState<SimulationResponse | null>(null);
+  const [v2Data, setV2Data] = useState<ScoreAtPriceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const variantDecimal = parseDecimal(variantPrice);
@@ -128,6 +131,16 @@ function SimulationDrawerBody({
       {
         onSuccess: (res) => setData(res),
         onError: (err) => setError(err.message),
+      },
+    );
+    // Fire engine v2 in parallel — independent endpoint, runs the
+    // validated v1.4 math. Failures are non-fatal (legacy simulator
+    // still renders) and surface as a small "engine unavailable" badge.
+    v2Score.mutate(
+      { aid, candidate_price: variantDecimal.toFixed(2) },
+      {
+        onSuccess: (res) => setV2Data(res),
+        onError: () => setV2Data(null),
       },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -189,6 +202,9 @@ function SimulationDrawerBody({
           <div className="rounded-md border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
             {error}
           </div>
+        )}
+        {v2Data && !v2Data.error && (
+          <EngineV2Banner data={v2Data} />
         )}
         {data && (
           <>
@@ -351,6 +367,55 @@ function ScenariosTable({ data }: ScenariosTableProps) {
         </tr>
       </tfoot>
     </table>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Engine v1.4 banner — shows the calibrated expected-contribution score
+// alongside the legacy scenario table. Driven by /pricing/v2/score_at_price.
+// ---------------------------------------------------------------------------
+interface EngineV2BannerProps {
+  data: ScoreAtPriceResponse;
+}
+function EngineV2Banner({ data }: EngineV2BannerProps) {
+  const upSign = data.score_eur_calibrated >= 0 ? '+' : '−';
+  const upliftSign = data.uplift_pct_vs_current >= 0 ? '+' : '−';
+  const tone = data.score_eur_calibrated >= 0 ? 'text-emerald-700' : 'text-rose-700';
+  return (
+    <div
+      data-testid="sim-engine-v2"
+      className="mb-3 rounded-md border border-rose-100 bg-rose-50/40 p-3"
+    >
+      <div className="flex items-baseline justify-between">
+        <p className="text-[11px] uppercase tracking-wide text-rose-700">
+          Engine {data.engine_version} · calibrated
+        </p>
+        <p className="text-[10px] text-gray-500">
+          k={data.conformal_scalar.toFixed(3)}
+        </p>
+      </div>
+      <div className="mt-1 grid grid-cols-3 gap-2 text-xs tabular-nums">
+        <div>
+          <p className="text-[10px] uppercase text-gray-500">Expected contribution</p>
+          <p className={`text-sm font-semibold ${tone}`}>
+            {upSign}€{fmt.eur(Math.abs(data.score_eur_calibrated))}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase text-gray-500">vs current</p>
+          <p className="text-sm font-semibold">
+            {upliftSign}
+            {Math.abs(data.uplift_pct_vs_current).toFixed(1)}%
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase text-gray-500">Retention</p>
+          <p className="text-sm font-semibold">
+            {(data.p_retain_mean * 100).toFixed(1)}%
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 

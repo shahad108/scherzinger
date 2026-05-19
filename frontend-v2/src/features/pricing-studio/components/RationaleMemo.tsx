@@ -398,6 +398,16 @@ function RecoveryVsLossCallout({
   const recommendsAnyway = net > 0 && summary.at_risk_count > 0;
   const recPriceNum = parseDecimal(recommendedPrice);
   const recPriceLabel = Number.isFinite(recPriceNum) ? fmt.eurPrecise(recPriceNum) : '—';
+
+  // v1.4 fix: previously the sentence hardcoded "expected recovery X exceeds
+  // expected loss Y" regardless of whether net was positive — the memo lied
+  // when recovery < loss. Gate wording on the sign of net so the UI tells
+  // the truth and surfaces a warning when the engine's recommendation has
+  // negative expected contribution.
+  const isWarning = net <= 0 && summary.at_risk_count > 0;
+  const headlineColor = isWarning ? 'var(--rose-deep)' : 'var(--ink)';
+  const comparator = net > 0 ? 'exceeds' : 'is below';
+  const comparatorTone = net > 0 ? 'var(--green-deep)' : 'var(--rose-deep)';
   return (
     <div
       data-testid="rationale-recovery-callout"
@@ -405,30 +415,38 @@ function RecoveryVsLossCallout({
         marginTop: 8,
         padding: '10px 12px',
         borderRadius: 10,
-        background: recommendsAnyway
+        background: isWarning
+          ? 'color-mix(in oklab, var(--rose-bg) 80%, white)'
+          : recommendsAnyway
           ? 'color-mix(in oklab, var(--rose-bg) 60%, white)'
           : 'var(--surface-soft)',
-        border: '1px solid var(--hairline)',
+        border: isWarning ? '1px solid var(--rose-deep)' : '1px solid var(--hairline)',
         fontSize: 12.5,
         lineHeight: 1.5,
         color: 'var(--ink-2)',
       }}
     >
-      <span style={{ fontWeight: 700, color: 'var(--ink)' }}>
-        Recommending {recPriceLabel}
+      <span style={{ fontWeight: 700, color: headlineColor }}>
+        {isWarning ? 'Review required at ' : 'Recommending '}
+        {recPriceLabel}
       </span>{' '}
-      even with{' '}
+      {isWarning ? 'because ' : 'even with '}
       <b style={{ color: 'var(--rose-deep)' }}>{summary.at_risk_count}</b>{' '}
       customer{summary.at_risk_count === 1 ? '' : 's'} at elevated churn risk:
       expected recovery{' '}
-      <b style={{ color: 'var(--green-deep)' }}>{fmt.eur(recovery)}/yr</b> exceeds
-      expected loss{' '}
+      <b style={{ color: 'var(--green-deep)' }}>{fmt.eur(recovery)}/yr</b>{' '}
+      <b style={{ color: comparatorTone }}>{comparator}</b> expected loss{' '}
       <b style={{ color: 'var(--rose-deep)' }}>{fmt.eur(loss)}/yr</b> · net{' '}
       <b style={{ color: net >= 0 ? 'var(--green-deep)' : 'var(--rose-deep)' }}>
         {net >= 0 ? '+' : ''}
         {fmt.eur(net)}/yr
       </b>
       .
+      {isWarning && (
+        <div style={{ marginTop: 4, fontSize: 11, color: 'var(--rose-deep)' }}>
+          Loss exceeds recovery — escalate before submitting for approval.
+        </div>
+      )}
     </div>
   );
 }
