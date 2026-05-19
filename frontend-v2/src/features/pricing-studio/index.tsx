@@ -14,6 +14,12 @@ import { PriceOptions, type ActiveOptionView } from './components/PriceOptions';
 import { CustomerFanout } from './components/CustomerFanout';
 import { CostHistory } from './components/CostHistory';
 import { ComparablePanel } from './components/ComparablePanel';
+// Pricing Studio v3 / Phase E3 — typed Quotes evidence pane.
+import { QuoteHistoryPane } from './components/QuoteHistoryPane';
+import { useQuoteHistory } from '@/data/api/useQuoteHistory';
+// Pricing Studio v3 / Phase E6 — Lineage evidence pane.
+import { LineagePane } from './components/LineagePane';
+import { usePricingLineageList } from '@/data/api/usePricingLineage';
 // Pricing Studio v3 / Phase E — evidence tabs host (Cost · Quotes ·
 // Customers · Comparable · Lineage).
 import {
@@ -238,6 +244,12 @@ export default function PricingStudioPage() {
   // currently selected aid and we prefer its data over the static seed
   // returned by `useStudio`.
   const wbQuery = useStudioWorkbench(effectiveAid || null);
+  // Pricing Studio v3 / Phase E3 — quote history for the Quotes evidence
+  // pane. Lazy: stays disabled until a SKU is selected.
+  const quoteHistory = useQuoteHistory(effectiveAid || null);
+  // Pricing Studio v3 / Phase E6 — SKU lineage summary for the Lineage
+  // evidence pane. Lazy: stays disabled until a SKU is selected.
+  const lineageList = usePricingLineageList(effectiveAid || null);
   // Phase 7 — derive a proposal id for DecisionFooter's Push-to-quoting +
   // Branded PDF buttons. We pick the most recently updated non-rejected
   // proposal for the open SKU, scoped to the deep-link recommendation when
@@ -860,12 +872,22 @@ export default function PricingStudioPage() {
                 const comparableStatus: EvidenceTabStatus = !showComparable
                   ? 'locked'
                   : blocks.comparable?.status ?? 'empty';
+                // Pricing Studio v3 / Phase E3 — the BFF returns
+                // `status="live" | "empty" | "degraded"` on the quote
+                // history block; mirror that into the tab status so the
+                // tab disables itself when there's nothing to show.
+                const quotesStatus: EvidenceTabStatus =
+                  quoteHistory.data?.status ?? 'empty';
+                // Pricing Studio v3 / Phase E6 — lineage summary block
+                // mirrors the same {status: live|empty|degraded} contract.
+                const lineageStatus: EvidenceTabStatus =
+                  lineageList.data?.status ?? 'empty';
                 return {
                   cost: costStatus,
-                  quotes: 'empty', // E3 — populated in follow-up.
+                  quotes: quotesStatus,
                   customers: customersStatus,
                   comparable: comparableStatus,
-                  lineage: 'empty', // E6 — populated in follow-up.
+                  lineage: lineageStatus,
                 } satisfies Record<EvidenceTabKey, EvidenceTabStatus>;
               })()}
               panes={{
@@ -880,7 +902,12 @@ export default function PricingStudioPage() {
                   />
                 ),
                 quotes: (
-                  <EvidencePanePlaceholder copy="Quote history coming in next pass" />
+                  <QuoteHistoryPane
+                    aid={effectiveAid}
+                    data={quoteHistory.data}
+                    isLoading={quoteHistory.isLoading}
+                    error={quoteHistory.error}
+                  />
                 ),
                 customers: (
                   <CustomerFanout
@@ -901,7 +928,11 @@ export default function PricingStudioPage() {
                   <EvidencePanePlaceholder copy="Comparable cluster only shown for new SKUs." />
                 ),
                 lineage: (
-                  <EvidencePanePlaceholder copy="Lineage view coming in next pass" />
+                  <LineagePane
+                    data={lineageList.data}
+                    isLoading={lineageList.isLoading}
+                    error={lineageList.error}
+                  />
                 ),
               }}
             />

@@ -655,6 +655,49 @@ export interface CostOutlookBlock {
  *  in-flight test fixtures keep compiling — remove once all references move. */
 export type CostOutlookPayload = CostOutlookBlock;
 
+// Pricing Studio v3 / Phase E3 — Quote history wire-shape.
+//
+// Returned by GET /api/v1/pricing/sku/{aid}/quote-history. Each row pairs a
+// recent quote with its linked invoice (when one exists) so the UI can show
+// quoted-vs-realised DB2 margin for the won quotes that actually landed.
+
+export interface QuoteHistoryRow {
+  quote_id: string;
+  position: number;
+  /** ISO date "YYYY-MM-DD" (or null if the quote has no date). */
+  date: string | null;
+  customer_id: string;
+  is_won: boolean;
+  status: string;
+  quantity: number | null;
+  /** Decimal-as-string, 2dp. */
+  revenue: string | null;
+  /** Decimal-as-string, 4dp. */
+  quoted_db2_margin: string | null;
+  /** Decimal-as-string, 4dp. Only present when won + linked to invoice. */
+  actual_db2_margin: string | null;
+  /** Decimal-as-string, 4dp. Only present when won + linked to invoice. */
+  margin_gap: string | null;
+  rejection_code: string | null;
+  currency: string | null;
+}
+
+export interface QuoteHistorySummary {
+  n_total: number;
+  n_won: number;
+  n_lost: number;
+  /** Decimal-as-string, 4dp (e.g. "0.6700"). null when n_total = 0. */
+  win_rate: string | null;
+}
+
+export interface QuoteHistoryBlock {
+  status: 'live' | 'empty' | 'degraded';
+  reason: string | null;
+  rows: QuoteHistoryRow[];
+  summary: QuoteHistorySummary;
+  lineage_ref_id: string | null;
+}
+
 export interface StudioShell {
   header: StudioHeader;
   filters: FilterDef[];
@@ -672,4 +715,41 @@ export interface StudioShell {
    * <FreshnessChip /> in PageHead.
    */
   dataThrough?: string | null;
+}
+
+// Pricing Studio v3 / Phase E6 — Lineage summary list wire-shape.
+//
+// Returned by GET /api/v1/pricing/sku/{aid}/lineage. Each row points at one
+// upstream signal that contributed to a decision for this SKU. The drawer
+// (per-block drill-in) still goes through GET /api/v1/lineage/{ref_id}; this
+// list is the *summary* view that fans out into individual drawer opens.
+
+export type PricingLineageKind =
+  | 'recommendation'
+  | 'wtp'
+  | 'curve'
+  | 'fanout'
+  | 'cost_outlook'
+  | 'quote_history'
+  | 'option_margin'
+  | 'trigger'
+  | 'unknown';
+
+export interface PricingLineageRow {
+  /** uuid; matches the `lineage_ref_id` the drawer fetches by. */
+  id: string;
+  kind: PricingLineageKind;
+  /** Raw BFF enum string (e.g. `recommendation`, `wtp_band`, ...). */
+  source_kind: string;
+  model: string | null;
+  model_version: string | null;
+  /** ISO datetime. */
+  computed_at: string;
+  sql_preview: string | null;
+  row_count: number | null;
+}
+
+export interface PricingLineageBlock {
+  status: 'live' | 'empty' | 'degraded';
+  rows: PricingLineageRow[];
 }
