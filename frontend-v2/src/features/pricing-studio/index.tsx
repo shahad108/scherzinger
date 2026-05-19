@@ -14,6 +14,14 @@ import { PriceOptions, type ActiveOptionView } from './components/PriceOptions';
 import { CustomerFanout } from './components/CustomerFanout';
 import { CostHistory } from './components/CostHistory';
 import { ComparablePanel } from './components/ComparablePanel';
+// Pricing Studio v3 / Phase E — evidence tabs host (Cost · Quotes ·
+// Customers · Comparable · Lineage).
+import {
+  EvidenceTabs,
+  EvidencePanePlaceholder,
+  type EvidenceTabKey,
+  type EvidenceTabStatus,
+} from './components/EvidenceTabs';
 import { DecisionFooter } from './components/DecisionFooter';
 import { RationaleMemo } from './components/RationaleMemo';
 import { CrossLinks } from './components/CrossLinks';
@@ -836,35 +844,67 @@ export default function PricingStudioPage() {
               }}
             />
 
-            <div className="ws-body">
-              <CustomerFanout
-                data={wb?.fanout}
-                fanPrice={fanPrice}
-                block={fanoutBlock}
-                proposedPriceDecimal={proposedPriceDecimal}
-                aid={effectiveAid}
-                blockMeta={wb?.meta?.blocks?.customer_fanout ?? null}
-              />
-              <CostHistory
-                aid={effectiveAid}
-                cost={wb?.cost}
-                history={wb?.history}
-                costHistory={wb?.cost_history ?? null}
-                costHistoryStatus={wb?.meta?.blocks?.cost_history ?? null}
-                onOpenCostDrawer={() => setCostDrawerOpen(true)}
-              />
-            </div>
-
-            {/* Phase C5 — only render the comparable panel when (a) the SKU
-                is actually new, (b) we have comparable payload, and (c) the
-                BFF marks the block live. New SKUs with a locked/degraded
-                block get a locked overlay; non-new SKUs hide entirely. */}
-            {showComparable && (
-              <ComparablePanelGate
-                data={data.comparable}
-                meta={wb?.meta?.blocks?.comparable ?? null}
-              />
-            )}
+            {/* Pricing Studio v3 / Phase E — Evidence tabs host.
+                Consolidates the right-column evidence panels (Cost ·
+                Quotes · Customers · Comparable · Lineage) into a single
+                tabbed surface so the recommendation hero stays on top.
+                Quotes + Lineage are placeholders this pass — content
+                arrives in follow-up E3 + E6 commits. */}
+            <EvidenceTabs
+              tabStatus={(() => {
+                const blocks = wb?.meta?.blocks ?? {};
+                const costStatus: EvidenceTabStatus =
+                  blocks.cost_history?.status ?? 'empty';
+                const customersStatus: EvidenceTabStatus =
+                  blocks.customer_fanout?.status ?? 'empty';
+                const comparableStatus: EvidenceTabStatus = !showComparable
+                  ? 'locked'
+                  : blocks.comparable?.status ?? 'empty';
+                return {
+                  cost: costStatus,
+                  quotes: 'empty', // E3 — populated in follow-up.
+                  customers: customersStatus,
+                  comparable: comparableStatus,
+                  lineage: 'empty', // E6 — populated in follow-up.
+                } satisfies Record<EvidenceTabKey, EvidenceTabStatus>;
+              })()}
+              panes={{
+                cost: (
+                  <CostHistory
+                    aid={effectiveAid}
+                    cost={wb?.cost}
+                    history={wb?.history}
+                    costHistory={wb?.cost_history ?? null}
+                    costHistoryStatus={wb?.meta?.blocks?.cost_history ?? null}
+                    onOpenCostDrawer={() => setCostDrawerOpen(true)}
+                  />
+                ),
+                quotes: (
+                  <EvidencePanePlaceholder copy="Quote history coming in next pass" />
+                ),
+                customers: (
+                  <CustomerFanout
+                    data={wb?.fanout}
+                    fanPrice={fanPrice}
+                    block={fanoutBlock}
+                    proposedPriceDecimal={proposedPriceDecimal}
+                    aid={effectiveAid}
+                    blockMeta={wb?.meta?.blocks?.customer_fanout ?? null}
+                  />
+                ),
+                comparable: showComparable ? (
+                  <ComparablePanelGate
+                    data={data.comparable}
+                    meta={wb?.meta?.blocks?.comparable ?? null}
+                  />
+                ) : (
+                  <EvidencePanePlaceholder copy="Comparable cluster only shown for new SKUs." />
+                ),
+                lineage: (
+                  <EvidencePanePlaceholder copy="Lineage view coming in next pass" />
+                ),
+              }}
+            />
 
             <ProposalContextPanel
               articleId={effectiveAid}
