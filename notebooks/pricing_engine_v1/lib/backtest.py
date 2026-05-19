@@ -45,14 +45,21 @@ class BacktestRow:
 def realised_score(
     invoices_eval: pd.DataFrame, article_id: str, unit_cost_train: float
 ) -> tuple[float, float]:
-    """(realised €contribution in eval window, weighted average price actually charged)."""
+    """(realised €contribution in eval window, weighted average price actually charged).
+
+    v1.4 Fix #2: prefer the invoice-recorded db2_total (real per-line margin,
+    using the actual unit cost at the time of invoicing) over the
+    recomputed `revenue - train_cost * qty`. Stale train-period costs were
+    biasing the realised baseline.
+    """
     inv = invoices_eval.loc[invoices_eval["article_id"] == article_id]
     qty = float(inv["quantity"].sum())
     if qty <= 0:
         return 0.0, 0.0
     rev = float(inv["revenue"].sum())
     avg_price = rev / qty
-    realised = rev - unit_cost_train * qty
+    db2_sum = float(inv["db2_total"].sum()) if "db2_total" in inv.columns else 0.0
+    realised = db2_sum if db2_sum != 0 else (rev - unit_cost_train * qty)
     return realised, avg_price
 
 
@@ -72,7 +79,11 @@ def run_one(
         return None
 
     wp = win_prob.fit(bundle_train.quotes, article_id, global_win_rate)
-    churn_table = churn_response.build_table(bundle_train.churn)
+    churn_table = churn_response.build_table(
+        bundle_train.churn,
+        invoices=bundle_train.invoices,
+        as_of=bundle_train.invoices["date"].max(),
+    )
 
     customer_share_dict = scorer._customer_share(
         bundle_train.invoices, article_id, bundle_train.invoices["date"].max()

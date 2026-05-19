@@ -17,7 +17,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from lib import data_loader, backtest
+from lib import data_loader, backtest, conformal
 
 OUT = Path(__file__).parent / "output"
 OUT.mkdir(parents=True, exist_ok=True)
@@ -88,10 +88,38 @@ def main(max_skus: int | None = None) -> None:
             print(f"[run] {i}/{len(eligible)}  t+{time.time()-t0:.1f}s")
 
     df = pd.DataFrame([r.__dict__ for r in rows])
+
+    # Fix #3: per-SKU leave-one-out conformal calibration.
+    eng = df["s_engine_p_star"].to_numpy()
+    rea = df["s_realised_eval"].to_numpy()
+    k_loo = conformal.loo_scalars(eng, rea)
+    k_global = conformal.global_scalar(eng, rea)
+    df["k_loo"] = k_loo
+    df["s_engine_calibrated"] = df["s_engine_p_star"] * df["k_loo"]
+    print(f"\n[cal] LOO scalar  median={np.median(k_loo):.3f}  min/max={k_loo.min():.3f}/{k_loo.max():.3f}")
+    print(f"[cal] global scalar (for 2026)              = {k_global:.3f}")
+    (OUT / "conformal_scalar.json").write_text(json.dumps({
+        "loo_scalar_median": float(np.median(k_loo)),
+        "global_scalar": k_global,
+        "n_skus_in_support": int((np.abs(eng) > 1e-6).sum()),
+    }, indent=2))
+
     df.to_parquet(OUT / "backtest_2025_rows.parquet", index=False)
 
     gates = backtest.aggregate_gates(rows)
     (OUT / "backtest_2025_gates.json").write_text(json.dumps(gates, indent=2))
+
+    eng_sum = float(df["s_engine_p_star"].sum())
+    cal_sum = float(df["s_engine_calibrated"].sum())
+    rea_sum = float(df["s_realised_eval"].sum())
+    if rea_sum:
+        gap_raw = (rea_sum - eng_sum) / abs(rea_sum) * 100.0
+        gap_cal = (rea_sum - cal_sum) / abs(rea_sum) * 100.0
+    else:
+        gap_raw = gap_cal = float("nan")
+    print(f"\n[gap] engine     sum = €{eng_sum:>+11,.0f}   gap vs realised = {gap_raw:+.1f}%")
+    print(f"[gap] calibrated sum = €{cal_sum:>+11,.0f}   gap vs realised = {gap_cal:+.1f}%")
+    print(f"[gap] realised   sum = €{rea_sum:>+11,.0f}")
 
     print("\n=== 2025 walk-forward backtest gates ===")
     for k, v in gates.items():

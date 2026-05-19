@@ -5,6 +5,7 @@ No eval window — this is the forward run, not a backtest. Outputs:
 """
 from __future__ import annotations
 
+import json
 import sys
 import time
 from pathlib import Path
@@ -28,6 +29,14 @@ OUT = Path(__file__).parent / "output"
 OUT.mkdir(parents=True, exist_ok=True)
 
 AS_OF = pd.Timestamp("2025-12-31")
+
+# Fix #3: apply the global scalar fitted on the 2025 backtest to the
+# forward run so the portfolio number aligns with realised expectations.
+try:
+    _cal = json.loads((OUT / "conformal_scalar.json").read_text())
+    GLOBAL_SCALAR = float(_cal.get("global_scalar", 1.0))
+except FileNotFoundError:
+    GLOBAL_SCALAR = 1.0
 
 
 def main(max_skus: int | None = None) -> None:
@@ -55,7 +64,11 @@ def main(max_skus: int | None = None) -> None:
             if sku_inputs.current_price <= 0:
                 continue
             wp = win_prob.fit(bundle.quotes, aid, global_win_rate)
-            churn_table = churn_response.build_table(bundle.churn)
+            churn_table = churn_response.build_table(
+                bundle.churn,
+                invoices=bundle.invoices,
+                as_of=AS_OF,
+            )
             share = scorer._customer_share(bundle.invoices, aid, AS_OF)
             if not share:
                 continue
@@ -78,6 +91,7 @@ def main(max_skus: int | None = None) -> None:
                     / max(sku_inputs.current_price, 1e-9)
                     * 100.0,
                     "score_eur": rec.s_star,
+                    "score_eur_calibrated": rec.s_star * GLOBAL_SCALAR,
                     "breakeven_price": rec.p_breakeven,
                     "mc_ci_low": mc.ci_low,
                     "mc_ci_high": mc.ci_high,
@@ -111,6 +125,7 @@ def main(max_skus: int | None = None) -> None:
         print(f"  constraint active       {df['constraint_active'].notna().sum()}")
         print(f"  win-prob locked         {df['wp_locked'].sum()}")
         print(f"  total expected score €  {df['score_eur'].sum():,.0f}")
+        print(f"  total expected (cal.) €  {df['score_eur_calibrated'].sum():,.0f}   (k={GLOBAL_SCALAR:.3f})")
     print(f"\n[done] t={time.time()-t0:.1f}s")
 
 

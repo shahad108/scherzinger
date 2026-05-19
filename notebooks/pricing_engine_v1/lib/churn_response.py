@@ -31,15 +31,65 @@ class ChurnTable:
         )
 
 
-def build_table(churn_df: pd.DataFrame) -> ChurnTable:
+def build_table(
+    churn_df: pd.DataFrame,
+    invoices: pd.DataFrame | None = None,
+    as_of: pd.Timestamp | None = None,
+    empirical_window_days: int = 730,
+    shrink_weight: float = 0.15,
+) -> ChurnTable:
+    """Customer-level 12-month baseline churn α(c).
+
+    v1.4 Fix #1: empirical-Bayes calibration. The raw `churn_predictions.csv`
+    file holds a model forecast that historically over-predicted 12-mo
+    churn versus what was actually observed. We compute the realised
+    historical 1-year customer-churn rate from the invoice book and
+    shrink every customer's predicted α toward it.
+
+        alpha_cal = (1-w) * alpha_pred + w * empirical_book_churn
+
+    A weight of `shrink_weight=0.7` is a moderate prior. Setting it to 0
+    recovers the v1.3 behaviour.
+    """
     df = churn_df.copy()
     df["customer_id"] = df["customer_id"].astype(str)
-    # Prefer p_churn_4q (already at 12mo horizon) when present.
     if "p_churn_4q" in df.columns:
-        alpha_12 = df["p_churn_4q"].fillna(1 - (1 - df["p_churn_1q"].fillna(0)) ** 4)
+        alpha_pred = df["p_churn_4q"].fillna(1 - (1 - df["p_churn_1q"].fillna(0)) ** 4)
     else:
-        alpha_12 = 1 - (1 - df["p_churn_1q"].fillna(0)) ** 4
-    out = pd.DataFrame({"customer_id": df["customer_id"], "alpha_12": alpha_12.clip(0, 1)})
+        alpha_pred = 1 - (1 - df["p_churn_1q"].fillna(0)) ** 4
+    alpha_pred = alpha_pred.clip(0, 1)
+
+    empirical_rate = 0.0
+    if invoices is not None and as_of is not None:
+        inv = invoices.copy()
+        inv["date"] = pd.to_datetime(inv["date"])
+        inv["customer_id"] = inv["customer_id"].astype(str)
+        prior_start = as_of - pd.Timedelta(days=empirical_window_days)
+        mid = as_of - pd.Timedelta(days=365)
+        prior = inv.loc[(inv["date"] >= prior_start) & (inv["date"] <= mid)]
+        # Restrict the empirical churn measure to *recurring* customers in the
+        # prior window — at least 2 invoices AND positive revenue. One-time
+        # buyers from 24 months ago are not "churned recurring customers",
+        # they're acquisition tail. Including them inflates the empirical
+        # churn rate to >50% on this portfolio (observed 2024-12 cut).
+        prior_grouped = prior.groupby("customer_id").agg(
+            n_inv=("invoice_id", "count"), rev=("revenue", "sum")
+        )
+        recurring = set(
+            prior_grouped.loc[
+                (prior_grouped["n_inv"] >= 2) & (prior_grouped["rev"] > 0)
+            ].index
+        )
+        last_year_book = set(
+            inv.loc[(inv["date"] > mid) & (inv["date"] <= as_of), "customer_id"]
+        )
+        if recurring:
+            churned = recurring - last_year_book
+            empirical_rate = float(len(churned) / len(recurring))
+
+    alpha_cal = (1 - shrink_weight) * alpha_pred + shrink_weight * empirical_rate
+    alpha_cal = alpha_cal.clip(0, 1)
+    out = pd.DataFrame({"customer_id": df["customer_id"], "alpha_12": alpha_cal})
     return ChurnTable(by_customer=out.set_index("customer_id"))
 
 
