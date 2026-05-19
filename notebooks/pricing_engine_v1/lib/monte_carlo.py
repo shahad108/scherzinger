@@ -82,7 +82,7 @@ def run(
         )
         monthly_vol = (customer_shares * vol_base_samples[d]) / 12.0
         ltv_loss = np.array(
-            [discounted_contribution(mv, base_contribution_cur) for mv in monthly_vol]
+            [discounted_contribution(mv, base_contribution_cur, horizon_months=12) for mv in monthly_vol]
         )
         loss = churn * ltv_loss
         scores[d] = float(margin_retained.sum() - loss.sum())

@@ -68,7 +68,7 @@ def _score_at_price(
     base_contribution = max(0.0, sku.current_price - sku.unit_cost)
     monthly_vol = (customer_share * sku.expected_volume_12mo) / 12.0
     ltv_loss = np.array(
-        [discounted_contribution(mv, base_contribution) for mv in monthly_vol]
+        [discounted_contribution(mv, base_contribution, horizon_months=12) for mv in monthly_vol]
     )
     loss = churn * ltv_loss
     return float(margin_retained.sum() - loss.sum())
