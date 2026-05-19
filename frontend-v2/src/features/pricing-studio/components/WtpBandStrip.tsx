@@ -8,7 +8,7 @@
 // language: rose-deep for the recommended dot, muted neutrals for p10/p50/p90.
 
 import { useMemo } from 'react';
-import type { WtpBlock } from '@/types/studio';
+import type { WtpBlock, WorkbenchBlockMeta } from '@/types/studio';
 import { DataMissingBadge } from '@/components/DataMissingBadge';
 import { LineageButton } from '@/components/LineageButton';
 import { parseDecimal } from '../lib/decimal';
@@ -22,6 +22,8 @@ interface Props {
   floor?: string | number | null;
   /** Optional CTA-row override (defaults to a LineageButton). */
   rightSlot?: React.ReactNode;
+  /** Block status from `meta.blocks.wtp`. `empty` → flat placeholder strip. */
+  blockStatus?: WorkbenchBlockMeta | null;
   className?: string;
 }
 
@@ -42,6 +44,7 @@ export function WtpBandStrip({
   recommendedPrice,
   floor,
   rightSlot,
+  blockStatus,
   className,
 }: Props) {
   const { markers, range, degenerate } = useMemo(() => {
@@ -94,6 +97,25 @@ export function WtpBandStrip({
     return { markers: points, range: r, degenerate: false };
   }, [wtp, recommendedPrice, floor]);
 
+  // Phase D5 — when the BFF marks the wtp block as empty, render a flat
+  // placeholder strip ("not yet computed for this SKU") in place of a real
+  // band. This keeps vertical rhythm consistent with the rest of the page
+  // and avoids ambiguity between "no data" and "no signal yet".
+  if (blockStatus?.status === 'empty') {
+    return (
+      <div
+        className={`rounded-[var(--r-md)] border border-dashed border-[var(--hairline)] bg-[var(--surface-soft)] px-3 py-3 text-[12px] text-[var(--muted)] ${className ?? ''}`}
+        data-testid="wtp-band-strip-empty"
+        style={{ minHeight: STRIP_HEIGHT - 16 }}
+      >
+        <h5 className="font-display text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--muted)]">
+          Willingness-to-pay band
+        </h5>
+        <div className="mt-1.5">WTP band — not yet computed for this SKU</div>
+      </div>
+    );
+  }
+
   if (!wtp) {
     return (
       <div
@@ -104,6 +126,21 @@ export function WtpBandStrip({
       </div>
     );
   }
+
+  // Phase D5 — tooltip text on band hover summarises the three percentiles.
+  // `<title>` is the only zero-JS tooltip mechanism the rest of this file
+  // already relies on (see Dot below), so we reuse the same pattern.
+  const p10Marker = markers.find((m) => m.key === 'p10');
+  const p50Marker = markers.find((m) => m.key === 'p50');
+  const p90Marker = markers.find((m) => m.key === 'p90');
+  const recMarker = markers.find((m) => m.key === 'rec');
+  const bandTooltip = [
+    p10Marker ? `P10: ${fmt.eurPrecise(p10Marker.value)}` : null,
+    p50Marker ? `P50: ${fmt.eurPrecise(p50Marker.value)}` : null,
+    p90Marker ? `P90: ${fmt.eurPrecise(p90Marker.value)}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <div
@@ -141,20 +178,40 @@ export function WtpBandStrip({
           <DataMissingBadge reason="Single point" tooltip="WTP p10 / p50 / p90 collapsed to a single value — too few samples to spread." />
         </div>
       ) : (
-        <div className="relative" style={{ height: STRIP_HEIGHT - 24 }}>
+        <div
+          className="relative"
+          style={{ height: STRIP_HEIGHT - 24 }}
+          title={bandTooltip || undefined}
+          data-testid="wtp-band-strip-track"
+        >
           {/* Track */}
           <div className="absolute left-2 right-2 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[var(--surface-sunken)]" />
           {/* Inter-percentile shaded zone (p10..p90) — soft rose to evoke "deal zone" */}
-          {markers.find((m) => m.key === 'p10') && markers.find((m) => m.key === 'p90') && (
+          {p10Marker && p90Marker && (
             <div
               className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full"
               style={{
-                left: `calc(0.5rem + (100% - 1rem) * ${markers.find((m) => m.key === 'p10')!.pos})`,
-                width: `calc((100% - 1rem) * ${
-                  markers.find((m) => m.key === 'p90')!.pos -
-                  markers.find((m) => m.key === 'p10')!.pos
-                })`,
+                left: `calc(0.5rem + (100% - 1rem) * ${p10Marker.pos})`,
+                width: `calc((100% - 1rem) * ${p90Marker.pos - p10Marker.pos})`,
                 background: 'var(--rose-tint)',
+              }}
+            />
+          )}
+          {/* Phase D5 — explicit vertical pin marking the recommended price
+              inside the P10–P90 band. The dot below stays for emphasis; the
+              line makes the rec-price intersection unambiguous at small sizes. */}
+          {recMarker && (
+            <div
+              data-testid="wtp-rec-pin"
+              aria-hidden="true"
+              className="absolute"
+              style={{
+                left: `calc(0.5rem + (100% - 1rem) * ${recMarker.pos})`,
+                top: '10%',
+                bottom: '10%',
+                width: 0,
+                borderLeft: '2px solid var(--rose-deep)',
+                transform: 'translateX(-1px)',
               }}
             />
           )}

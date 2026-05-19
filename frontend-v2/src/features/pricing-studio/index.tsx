@@ -794,6 +794,8 @@ export default function PricingStudioPage() {
               <WinProbCurve
                 curve={wb?.win_prob_curve}
                 recommendedPrice={wb?.recommendation?.recommended_price}
+                nDeals={wb?.win_prob_curve?.n_deals ?? null}
+                blockStatus={wb?.meta?.blocks?.win_prob_curve ?? null}
               />
               <DriverWaterfall
                 drivers={wb?.recommendation?.drivers}
@@ -805,6 +807,7 @@ export default function PricingStudioPage() {
               wtp={wb?.wtp}
               recommendedPrice={wb?.recommendation?.recommended_price}
               floor={wb?.recommendation?.band?.min}
+              blockStatus={wb?.meta?.blocks?.wtp ?? null}
               className="mt-3"
             />
 

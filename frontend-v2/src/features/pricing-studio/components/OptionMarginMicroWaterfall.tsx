@@ -17,7 +17,14 @@ import { parseDecimal } from '../lib/decimal';
 import { fmt } from '@/lib/format';
 
 interface Props {
+  /** Single resolved option-margin block (legacy API). */
   optionMargin?: OptionMarginBlock | null;
+  /** Phase D6 — optional array; the component picks the row matching
+   *  `activeOptionId` (or the first when null). Takes precedence over
+   *  `optionMargin` when both are supplied. */
+  optionMargins?: OptionMarginBlock[];
+  /** Active variant identifier driven by the hero variant selector. */
+  activeOptionId?: string | null;
   /** Compact stripe rendering — used inside compact PriceOptions row. */
   compact?: boolean;
   /** Optional accessible heading for screen readers (e.g. the option label). */
@@ -30,8 +37,34 @@ interface Row {
   value: number;
 }
 
-export function OptionMarginMicroWaterfall({ optionMargin, compact = false, label }: Props) {
-  if (!optionMargin) {
+export function OptionMarginMicroWaterfall({
+  optionMargin,
+  optionMargins,
+  activeOptionId,
+  compact = false,
+  label,
+}: Props) {
+  // Phase D6 — variant sync: if the parent passes an `optionMargins` array,
+  // resolve the active option via `activeOptionId`. Fallback: first item.
+  let resolved: OptionMarginBlock | null = optionMargin ?? null;
+  if (optionMargins && optionMargins.length > 0) {
+    const match =
+      (activeOptionId && optionMargins.find((m) => m.option_id === activeOptionId)) || null;
+    resolved = match ?? optionMargins[0] ?? null;
+  }
+
+  // When the caller is wiring the variant selector (array form) but the
+  // active variant has no corresponding option_margin row, surface a
+  // dedicated placeholder rather than the generic "cost data unavailable".
+  if (!resolved && optionMargins) {
+    return (
+      <div className="ws-pocket ws-pocket--missing" data-testid="option-margin-missing">
+        <DataMissingBadge reason="Margin breakdown unavailable for this variant" />
+      </div>
+    );
+  }
+
+  if (!resolved) {
     return (
       <div className="ws-pocket ws-pocket--missing" data-testid="option-margin-missing">
         <DataMissingBadge reason="cost data unavailable" />
@@ -39,11 +72,13 @@ export function OptionMarginMicroWaterfall({ optionMargin, compact = false, labe
     );
   }
 
-  const list = parseDecimal(optionMargin.list);
-  const quoted = parseDecimal(optionMargin.quoted);
-  const booked = parseDecimal(optionMargin.booked);
-  const invoiced = parseDecimal(optionMargin.invoiced);
-  const db2 = parseDecimal(optionMargin.db2);
+  const activeOptionMargin: OptionMarginBlock = resolved;
+
+  const list = parseDecimal(activeOptionMargin.list);
+  const quoted = parseDecimal(activeOptionMargin.quoted);
+  const booked = parseDecimal(activeOptionMargin.booked);
+  const invoiced = parseDecimal(activeOptionMargin.invoiced);
+  const db2 = parseDecimal(activeOptionMargin.db2);
 
   // If list isn't a positive number we can't draw the waterfall (every
   // bar width is `value / list`). Surface the missing badge instead.
@@ -108,9 +143,9 @@ export function OptionMarginMicroWaterfall({ optionMargin, compact = false, labe
         ) : (
           <span className="ws-pocket-label">pocket —</span>
         )}
-        {optionMargin.lineage_ref && (
+        {activeOptionMargin.lineage_ref && (
           <LineageButton
-            lineageRef={optionMargin.lineage_ref}
+            lineageRef={activeOptionMargin.lineage_ref}
             subjectTitle="Option pocket waterfall"
             label="lineage"
           />

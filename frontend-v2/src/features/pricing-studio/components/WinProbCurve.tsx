@@ -17,7 +17,7 @@ import {
   CartesianGrid,
   ReferenceDot,
 } from 'recharts';
-import type { WinProbCurveBlock } from '@/types/studio';
+import type { WinProbCurveBlock, WorkbenchBlockMeta } from '@/types/studio';
 import { DataMissingBadge } from '@/components/DataMissingBadge';
 import { LineageButton } from '@/components/LineageButton';
 import { parseDecimal } from '../lib/decimal';
@@ -26,8 +26,14 @@ import { fmt } from '@/lib/format';
 interface Props {
   curve?: WinProbCurveBlock | null;
   recommendedPrice?: string | number | null;
+  /** Deal count for the cluster — drives the low-data lock when < 12. */
+  nDeals?: number | null;
+  /** Block status from `meta.blocks.win_prob_curve`. Non-`live` → lock. */
+  blockStatus?: WorkbenchBlockMeta | null;
   className?: string;
 }
+
+const MIN_DEALS_FOR_LIVE = 12;
 
 interface CurveRow {
   price: number;
@@ -38,7 +44,13 @@ interface CurveRow {
   band?: [number, number];
 }
 
-export function WinProbCurve({ curve, recommendedPrice, className }: Props) {
+export function WinProbCurve({
+  curve,
+  recommendedPrice,
+  nDeals,
+  blockStatus,
+  className,
+}: Props) {
   const { rows, hasCi, recPoint } = useMemo(() => {
     if (!curve || curve.points.length === 0) {
       return { rows: [] as CurveRow[], hasCi: false, recPoint: null as CurveRow | null };
@@ -84,6 +96,26 @@ export function WinProbCurve({ curve, recommendedPrice, className }: Props) {
     return { rows: rs, hasCi: anyCi, recPoint: rec };
   }, [curve, recommendedPrice]);
 
+  // Phase D4 — locked overlay when sample is too small OR the BFF flags the
+  // block as non-live (empty / degraded / locked). The chart still renders
+  // beneath the overlay (faded) so Frank can see the shape that would be
+  // there once enough deals close.
+  const effectiveNDeals = typeof nDeals === 'number' ? nDeals : curve?.n_deals ?? 0;
+  const statusKind = blockStatus?.status ?? 'live';
+  const isLocked = statusKind !== 'live' || effectiveNDeals < MIN_DEALS_FOR_LIVE;
+
+  // Phase D4 — keep only first / last / recommended-price x-ticks. Recharts
+  // calls `tickFormatter` per tick; returning the empty string suppresses the
+  // label while keeping the tick mark itself (which we hide via stroke).
+  const tickPrices = useMemo(() => {
+    if (rows.length === 0) return new Set<number>();
+    const first = rows[0].price;
+    const last = rows[rows.length - 1].price;
+    const keep = new Set<number>([first, last]);
+    if (recPoint) keep.add(recPoint.price);
+    return keep;
+  }, [rows, recPoint]);
+
   if (!curve || rows.length === 0) {
     return (
       <div
@@ -125,70 +157,94 @@ export function WinProbCurve({ curve, recommendedPrice, className }: Props) {
           subjectTitle="Win-probability curve"
         />
       </div>
-      <div className="h-[160px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={rows} margin={{ top: 6, right: 12, left: 0, bottom: 0 }}>
-            <CartesianGrid stroke="var(--hairline)" vertical={false} />
-            <XAxis
-              dataKey="price"
-              type="number"
-              domain={['dataMin', 'dataMax']}
-              stroke="var(--muted)"
-              tick={{ fontSize: 10 }}
-              tickFormatter={(v: number) => fmt.eur(v)}
-            />
-            <YAxis
-              dataKey="winProb"
-              domain={[0, 1]}
-              stroke="var(--muted)"
-              tick={{ fontSize: 10 }}
-              tickFormatter={(v: number) => `${Math.round(v * 100)}%`}
-            />
-            <Tooltip
-              cursor={{ stroke: 'var(--rose-soft)', strokeDasharray: '3 3' }}
-              // Recharts 3.x typed the formatter against the union ValueType.
-              // Coerce at the boundary so we keep the strong types inside
-              // our callback without disabling tsc on the whole file.
-              formatter={((value: unknown, key: unknown) => {
-                const num = typeof value === 'number' ? value : Number(value);
-                if (key === 'winProb' && Number.isFinite(num)) {
-                  return [`${(num * 100).toFixed(1)}%`, 'P(win)'];
-                }
-                if (key === 'band') return [null, null];
-                return [String(value ?? ''), String(key ?? '')];
-              }) as never}
-              labelFormatter={(label) => fmt.eurPrecise(label as number)}
-            />
-            {hasCi && (
-              <Area
+      <div className="relative h-[160px]">
+        <div
+          aria-hidden={isLocked ? 'true' : undefined}
+          style={{ opacity: isLocked ? 0.35 : 1, height: '100%' }}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={rows} margin={{ top: 6, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid stroke="var(--hairline)" vertical={false} />
+              <XAxis
+                dataKey="price"
+                type="number"
+                domain={['dataMin', 'dataMax']}
+                stroke="var(--muted)"
+                tick={{ fontSize: 10 }}
+                tickFormatter={(v: number) => (tickPrices.has(v) ? fmt.eur(v) : '')}
+              />
+              <YAxis
+                dataKey="winProb"
+                domain={[0, 1]}
+                stroke="var(--muted)"
+                tick={{ fontSize: 10 }}
+                interval="preserveStartEnd"
+                tickCount={3}
+                tickFormatter={(v: number) => `${Math.round(v * 100)}%`}
+              />
+              <Tooltip
+                cursor={{ stroke: 'var(--rose-soft)', strokeDasharray: '3 3' }}
+                // Recharts 3.x typed the formatter against the union ValueType.
+                // Coerce at the boundary so we keep the strong types inside
+                // our callback without disabling tsc on the whole file.
+                formatter={((value: unknown, key: unknown) => {
+                  const num = typeof value === 'number' ? value : Number(value);
+                  if (key === 'winProb' && Number.isFinite(num)) {
+                    return [`${(num * 100).toFixed(1)}%`, 'P(win)'];
+                  }
+                  if (key === 'band') return [null, null];
+                  return [String(value ?? ''), String(key ?? '')];
+                }) as never}
+                labelFormatter={(label) => fmt.eurPrecise(label as number)}
+              />
+              {hasCi && (
+                <Area
+                  type="monotone"
+                  dataKey="band"
+                  stroke="none"
+                  fill="var(--rose-tint)"
+                  fillOpacity={0.18}
+                  isAnimationActive={false}
+                />
+              )}
+              <Line
                 type="monotone"
-                dataKey="band"
-                stroke="none"
-                fill="var(--rose-tint)"
-                fillOpacity={0.7}
+                dataKey="winProb"
+                stroke="var(--rose-deep)"
+                strokeWidth={1.75}
+                dot={false}
                 isAnimationActive={false}
               />
-            )}
-            <Line
-              type="monotone"
-              dataKey="winProb"
-              stroke="var(--rose-deep)"
-              strokeWidth={2}
-              dot={false}
-              isAnimationActive={false}
-            />
-            {recPoint && (
-              <ReferenceDot
-                x={recPoint.price}
-                y={recPoint.winProb}
-                r={5}
-                fill="var(--rose-deep)"
-                stroke="white"
-                strokeWidth={2}
-              />
-            )}
-          </ComposedChart>
-        </ResponsiveContainer>
+              {recPoint && (
+                <ReferenceDot
+                  x={recPoint.price}
+                  y={recPoint.winProb}
+                  r={5}
+                  fill="var(--rose-deep)"
+                  stroke="white"
+                  strokeWidth={2}
+                />
+              )}
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+        {isLocked && (
+          <div
+            data-testid="win-prob-curve-locked"
+            className="absolute inset-0 grid place-items-center rounded-[var(--r-md)]"
+            style={{
+              background: 'rgba(255, 255, 255, 0.72)',
+              border: '1px dashed var(--hairline)',
+            }}
+          >
+            <div
+              className="rounded-full bg-white/90 px-3 py-1.5 text-center text-[11px] font-semibold text-[var(--ink-2)] shadow-sm"
+              style={{ border: '1px solid var(--hairline)' }}
+            >
+              Locked — needs ≥12 quote outcomes for this cluster
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
