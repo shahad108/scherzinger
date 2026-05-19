@@ -21,6 +21,7 @@ Phase A2 + A3 + A4 (Pricing Studio plan §5):
 from __future__ import annotations
 
 import logging
+import os
 from decimal import Decimal
 from typing import Any, Optional
 
@@ -1303,6 +1304,34 @@ async def build_workbench(
         "comparable": _empty("Use /screens/studio/comparable/{aid}"),
     }
     workbench["meta"] = {"blocks": meta_blocks}
+
+    # ------------------------------------------------------------------
+    # Pricing Engine v1.4 — W3 promotion behind a feature flag.
+    # ------------------------------------------------------------------
+    # When PRYZM_ENGINE_V2=on the workbench payload carries an additional
+    # `engine_v2` block with the validated v1.4 engine output (whitepaper
+    # §11 — calibrated against 2025 realised at -4.73% gap). The legacy
+    # `recommendation` block continues to render so the existing UI keeps
+    # working; the frontend can switch its source whenever it's ready.
+    if os.environ.get("PRYZM_ENGINE_V2", "off").lower() in ("on", "true", "1"):
+        try:
+            from backend.services.pricing.engine_v2 import score_sku as _v2_score
+            v2_pack = _v2_score(aid)
+            workbench["engine_v2"] = v2_pack
+            # Surface the engine version + conformal scalar in the meta
+            # lineage so downstream audit captures which engine produced
+            # the recommendation that was acted on.
+            workbench["meta"]["engine_v2"] = {
+                "engine_version": v2_pack.get("engine_version"),
+                "conformal_scalar": v2_pack.get("conformal_scalar"),
+                "p_star": v2_pack.get("p_star"),
+                "score_eur_calibrated": v2_pack.get("score_eur_calibrated"),
+                "mc_p_positive": v2_pack.get("mc_p_positive"),
+            }
+        except Exception as exc:  # noqa: BLE001 — never fail the BFF for a v2 lookup
+            logger.exception("studio:workbench:engine_v2 aid=%s", aid)
+            workbench["engine_v2"] = {"error": f"{type(exc).__name__}: {exc!s}"}
+
     return workbench
 
 
