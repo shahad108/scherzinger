@@ -36,7 +36,7 @@ def test_list_lineage_returns_empty_when_no_refs(session: Session) -> None:
     """A fresh, never-seen aid must return status=empty with no rows."""
     aid = _unique_aid("LIN-EMPTY")
     result = lineage_svc.list_lineage_for_aid(session, aid=aid)
-    assert result == {"status": "empty", "rows": []}
+    assert result == {"status": "empty", "reason": "No lineage records for SKU", "rows": []}
 
 
 def test_list_lineage_returns_rows_filtered_by_aid(session: Session) -> None:
@@ -104,5 +104,5 @@ def test_list_lineage_handles_db_error() -> None:
 
     result = lineage_svc.list_lineage_for_aid(fake_db, aid="ANY-AID")
 
-    assert result == {"status": "degraded", "rows": []}
+    assert result == {"status": "degraded", "reason": "Lineage query failed", "rows": []}
     fake_db.rollback.assert_called_once()

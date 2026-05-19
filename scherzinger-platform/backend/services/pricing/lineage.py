@@ -204,8 +204,8 @@ def list_lineage_for_aid(db: Session, *, aid: str) -> dict[str, Any]:
             )
 
         if not out_rows:
-            return {"status": "empty", "rows": []}
-        return {"status": "live", "rows": out_rows}
+            return {"status": "empty", "reason": "No lineage records for SKU", "rows": []}
+        return {"status": "live", "reason": None, "rows": out_rows}
     except Exception:
         logger.exception("lineage.list_lineage_for_aid failed aid=%s", aid)
         try:
@@ -214,4 +214,4 @@ def list_lineage_for_aid(db: Session, *, aid: str) -> dict[str, Any]:
             logger.exception(
                 "lineage.list_lineage_for_aid: rollback failed aid=%s", aid
             )
-        return {"status": "degraded", "rows": []}
+        return {"status": "degraded", "reason": "Lineage query failed", "rows": []}

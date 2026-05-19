@@ -305,7 +305,7 @@ export function LineagePane({ data, isLoading, error }: LineagePaneProps) {
     });
   };
 
-  if (isLoading) {
+  if (isLoading && !data) {
     return (
       <div data-testid="lineage-pane-loading" className="flex flex-col gap-1">
         <ShimmerRow />

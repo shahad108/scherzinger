@@ -751,5 +751,6 @@ export interface PricingLineageRow {
 
 export interface PricingLineageBlock {
   status: 'live' | 'empty' | 'degraded';
+  reason?: string | null;
   rows: PricingLineageRow[];
 }

@@ -193,3 +193,40 @@ def test_quote_history_includes_actual_margin_for_won_with_link(
     assert row["actual_db2_margin"].startswith("0.27")
     assert row["margin_gap"] is not None
     assert row["margin_gap"].startswith("-0.03")
+
+
+def test_quote_history_won_without_link_returns_null_actual_margin(
+    session: Session,
+) -> None:
+    """A won quote with NO matching ``quote_invoice_links`` row must still be
+    returned, with ``actual_db2_margin`` and ``margin_gap`` both ``None``.
+
+    Regression guard against future refactors of the LEFT JOIN that might
+    silently drop won quotes lacking realised-margin data.
+    """
+    aid = _unique_aid("QH-NOLINK")
+    quote_id = f"Q-{aid}-W"
+
+    session.add(
+        _make_quote(
+            aid=aid,
+            quote_id=quote_id,
+            position=1,
+            is_won=True,
+            status_str="Won",
+            db2_margin=0.30,
+            revenue=200.0,
+        )
+    )
+    session.flush()
+
+    result = qh.get_quote_history(session, aid=aid, limit=50)
+
+    assert result["status"] == "live"
+    assert len(result["rows"]) == 1
+    row = result["rows"][0]
+    assert row["is_won"] is True
+    assert row["actual_db2_margin"] is None
+    assert row["margin_gap"] is None
+    # Quoted margin should still flow through from the quote itself.
+    assert row["quoted_db2_margin"] is not None
