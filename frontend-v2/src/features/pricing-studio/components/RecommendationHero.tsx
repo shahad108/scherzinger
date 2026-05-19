@@ -16,6 +16,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { RecommendationMetaChips } from '@/components/shared/RecommendationMetaChips';
+import { PilotBadge, PILOT_TOOLTIPS } from '@/components/shared/PilotBadge';
 import type {
   RecommendationBlock,
   WtpBlock,
@@ -135,6 +136,15 @@ export function RecommendationHero({
 
   const isFreshKnown = typeof lastTickAt === 'number';
   const freshSec = isFreshKnown ? Math.max(0, Math.round(Date.now() / 1000 - lastTickAt!)) : null;
+
+  // Phase I2 — "Pilot heuristic" flag for movable revenue. The
+  // recommendation payload does not (yet) carry an explicit
+  // `meta.movable_revenue_source` flag, so we infer the heuristic case
+  // from the lineage ref: a trained model leaves a `model` name on the
+  // lineage_ref; the cost-delta × historical-win-rate heuristic does
+  // not. Once the backend lands an explicit source flag (roadmap §8.3),
+  // swap this check for that flag.
+  const movableRevenueIsHeuristic = !recommendation.lineage_ref?.model;
 
   // D2 — inline "Why this price?" expander state. Hidden when rationale_md is
   // empty so we never expose an empty disclosure.
@@ -276,6 +286,12 @@ export function RecommendationHero({
               modelVersion={recommendation.lineage_ref?.model ?? null}
               trainedAt={recommendation.lineage_ref?.computed_at ?? null}
             />
+            {movableRevenueIsHeuristic && (
+              <PilotBadge
+                tooltip={PILOT_TOOLTIPS.movableRevenue}
+                testId="movable-revenue-pilot-badge"
+              />
+            )}
             {!wtp && <DataMissingBadge reason="No WTP sample" icon={false} />}
           </div>
 

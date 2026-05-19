@@ -1,10 +1,13 @@
 import { Lock } from 'lucide-react';
 
 /**
- * Plan §7 — block with ``status === 'locked'`` means a data source is not
- * yet connected (typically Phase 2 / Phase 10 / Phase 11 unlocks). The card
- * communicates that this is wiring, not a runtime failure (which would be
- * the amber DegradedBlock).
+ * Shared locked-state card. Used by Action Center (Plan §7) and Pricing
+ * Studio (Plan §4 / Phase I) to communicate that a data source / feature
+ * is not yet connected. Distinct from the amber DegradedBlock — locked
+ * means "wiring not done yet", not "runtime failure".
+ *
+ * Roadmap §8 unlock-requirement copy should flow into the `hint` prop so
+ * the product's ambition stays visible even when data is missing.
  */
 export function LockedBlock({
   title,

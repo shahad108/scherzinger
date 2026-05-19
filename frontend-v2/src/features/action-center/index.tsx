@@ -19,7 +19,7 @@ import { AuditTrail } from './components/AuditTrail';
 import { ReportCard } from './components/ReportCard';
 import { ActionCenterSkeleton } from './components/ActionCenterSkeleton';
 import { DegradedBlock } from './components/DegradedBlock';
-import { LockedBlock } from './components/LockedBlock';
+import { LockedBlock } from '@/components/shared/LockedBlock';
 import { TodaySummaryStrip } from './components/TodaySummaryStrip';
 import { useUiAction } from '@/hooks/useUiAction';
 import { useAuthStore } from '@/stores/authStore';

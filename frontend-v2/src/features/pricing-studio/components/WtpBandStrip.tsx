@@ -11,6 +11,7 @@ import { useMemo } from 'react';
 import type { WtpBlock, WorkbenchBlockMeta } from '@/types/studio';
 import { DataMissingBadge } from '@/components/DataMissingBadge';
 import { LineageButton } from '@/components/LineageButton';
+import { PilotBadge, PILOT_TOOLTIPS } from '@/components/shared/PilotBadge';
 import { parseDecimal } from '../lib/decimal';
 import { fmt } from '@/lib/format';
 
@@ -162,6 +163,17 @@ export function WtpBandStrip({
             >
               cluster anchor
             </span>
+          )}
+          {/* Phase I2 — Pilot heuristic badge. The BFF does not yet emit
+              an explicit `wtp.source` flag, so we infer cluster-fallback
+              from the existing `anchored_from_cluster` boolean OR a
+              sample-size <30 (per roadmap §8.3 unlock requirement). When
+              the backend lands an explicit source flag, swap this check. */}
+          {(wtp.anchored_from_cluster || wtp.n_deals < 30) && (
+            <PilotBadge
+              tooltip={PILOT_TOOLTIPS.wtpClusterFallback}
+              testId="wtp-pilot-badge"
+            />
           )}
         </div>
         {rightSlot ?? (

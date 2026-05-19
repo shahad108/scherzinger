@@ -72,6 +72,11 @@ import { ActiveFiltersStrip } from './components/ActiveFiltersStrip';
 import { KeyboardCheatSheet } from './components/KeyboardCheatSheet';
 import { SavedViewsMenu } from './components/SavedViewsMenu';
 import { useStudioKeyboardShortcuts } from './hooks/useStudioKeyboardShortcuts';
+// Pricing Studio v3 / Phase I — locked future-feature blocks (Plan §4 /
+// roadmap §8). Surfaces the product's ambition (competitor signal, ERP
+// push, contract status, per-customer WTP) even when the data is not yet
+// connected.
+import { LockedBlock } from '@/components/shared/LockedBlock';
 
 export default function PricingStudioPage() {
   const [params, setParams] = useSearchParams();
@@ -960,6 +965,47 @@ export default function PricingStudioPage() {
               data={wb?.memo}
               blockMeta={wb?.meta?.blocks?.memo ?? null}
             />
+
+            {/* Pricing Studio v3 / Phase I1 — Coming soon: locked future-
+                feature blocks per Plan §4 / roadmap §8. Each card shows
+                a dashed-border lock card + the unlock-requirement copy
+                so the product's ambition is visible even when the data
+                isn't there. */}
+            <section
+              aria-labelledby={`studio-coming-soon-${effectiveAid}`}
+              data-testid="studio-coming-soon"
+              style={{ marginTop: 16 }}
+            >
+              <h3
+                id={`studio-coming-soon-${effectiveAid}`}
+                style={{
+                  margin: '0 0 8px',
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
+                }}
+              >
+                Coming soon
+              </h3>
+              <LockedBlock
+                title="Competitor price signal"
+                hint="Unlocks when we wire the competitor scrape feed (Roadmap §8.2 — Pilot)"
+              />
+              <LockedBlock
+                title="ERP price push"
+                hint="Unlocks once SAP-PI write-back is contracted (Roadmap §8.4 — Locked)"
+              />
+              <LockedBlock
+                title="Contract & rebate status"
+                hint="Unlocks when contracts module is ingested (Roadmap §8.6 — Locked)"
+              />
+              <LockedBlock
+                title="Per-customer willingness-to-pay"
+                hint="Unlocks with ≥30 won quotes per (customer, cluster) — currently aggregated at cluster level only (Roadmap §8.3 — Pilot)"
+              />
+            </section>
           </div>
           )}
         </div>
