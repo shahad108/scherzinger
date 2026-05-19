@@ -16,8 +16,14 @@ export interface ActiveOptionView {
 }
 
 interface Props {
-  options: PriceOptionsBundle;
-  optionsSub: string;
+  /**
+   * The price-options bundle from the workbench. Can be `undefined` while
+   * the workbench query is loading or when the BFF reports a non-live
+   * status for the `options` block — the component renders an empty-state
+   * card in that case rather than crashing on missing nested fields.
+   */
+  options: PriceOptionsBundle | undefined;
+  optionsSub: string | undefined;
   onActiveChange?: (view: ActiveOptionView) => void;
   /**
    * Pricing Studio v3 / Phase 1 — render in the demoted, compact row state
@@ -72,8 +78,17 @@ export function PriceOptions({
   const [active, setActive] = useState<ActiveOpt>('floor');
   const [customPrice, setCustomPrice] = useState('');
 
+  // Guard every nested-field access so a non-live `options` block can't
+  // crash the page. When the bundle is missing required fields we render
+  // an empty-state card below.
+  const hasOptions =
+    !!options &&
+    !!options.hold &&
+    !!options.floor &&
+    !!options.market;
+
   useEffect(() => {
-    if (!onActiveChange) return;
+    if (!onActiveChange || !hasOptions || !options) return;
     if (active === 'hold') {
       onActiveChange({ id: 'hold', price: options.hold.price, label: 'hold' });
     } else if (active === 'floor') {
@@ -86,7 +101,43 @@ export function PriceOptions({
       const price = customPrice ? `€${customPrice}` : '€—';
       onActiveChange({ id: 'custom', price, label: 'custom' });
     }
-  }, [active, customPrice, options, onActiveChange]);
+  }, [active, customPrice, options, hasOptions, onActiveChange]);
+
+  if (!hasOptions || !options) {
+    return (
+      <div
+        className="ws-options-empty"
+        role="note"
+        data-testid="price-options-empty"
+        style={{
+          margin: '14px 0',
+          padding: '14px 16px',
+          borderRadius: 12,
+          background: 'var(--surface-sunken)',
+          border: '1px dashed var(--hairline)',
+          color: 'var(--ink-2)',
+          fontSize: 12.5,
+          lineHeight: 1.45,
+        }}
+      >
+        <div
+          style={{
+            fontWeight: 700,
+            color: 'var(--ink)',
+            fontSize: 12,
+            marginBottom: 4,
+          }}
+        >
+          Price options unavailable
+        </div>
+        <div>
+          {optionsSub
+            ? optionsSub
+            : 'Workbench hasn’t resolved an option set for this SKU yet — try refreshing or selecting another SKU.'}
+        </div>
+      </div>
+    );
+  }
 
   const customDelta = customPrice
     ? `+€${customPrice.padEnd(1)} · custom`
