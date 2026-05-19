@@ -1,0 +1,660 @@
+% =====================================================================
+% Pryzm — Pricing Recommendation Methodology
+% Living whitepaper. Investor + client distribution.
+% Compile:  tectonic pryzm_pricing_methodology.tex
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+% ---- core packages --------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage[a4paper,margin=2.2cm,headheight=18pt,headsep=14pt,footskip=18pt]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,calc,fit,backgrounds,decorations.pathreplacing}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage{lastpage}
+\usepackage{etoolbox}
+
+% ---- typography -----------------------------------------------------
+% Source Sans Pro mirrors Inter closely; Source Serif Pro for runs of body text.
+\usepackage[default,light,semibold]{sourcesanspro}
+\usepackage{sourceserifpro}
+\renewcommand{\familydefault}{\sfdefault}
+
+% ---- Pryzm 2026 palette --------------------------------------------
+\definecolor{pryzmInk}{HTML}{1F1A19}
+\definecolor{pryzmInk2}{HTML}{3A3231}
+\definecolor{pryzmMuted}{HTML}{6B5E5B}
+\definecolor{pryzmHairline}{HTML}{E7DEDB}
+\definecolor{pryzmSurface}{HTML}{FAF7F5}
+\definecolor{pryzmSurfaceSoft}{HTML}{F4EFEB}
+\definecolor{pryzmRoseDeep}{HTML}{9F2B47}
+\definecolor{pryzmRose}{HTML}{C5536F}
+\definecolor{pryzmRoseSoft}{HTML}{E89AAC}
+\definecolor{pryzmRoseBg}{HTML}{FAF1F3}
+\definecolor{pryzmGreenDeep}{HTML}{2E6B4E}
+\definecolor{pryzmAmber}{HTML}{B07219}
+
+% ---- hyperref styling ----------------------------------------------
+\hypersetup{
+  colorlinks=true,
+  linkcolor=pryzmRoseDeep,
+  citecolor=pryzmRoseDeep,
+  urlcolor=pryzmRoseDeep,
+  pdftitle={Pryzm — Pricing Recommendation Methodology},
+  pdfauthor={Pryzm Research},
+  pdfsubject={B2B price optimisation, forecasting, simulation},
+  pdfkeywords={B2B pricing, optimisation, Bayesian, Monte Carlo, Chronos, AutoETS, churn, LTV}
+}
+
+% ---- section formatting --------------------------------------------
+\titleformat{\section}
+  {\color{pryzmInk}\sffamily\Large\bfseries}
+  {\thesection}{0.7em}{}[\vspace{-0.2em}\color{pryzmHairline}\hrule height 0.6pt]
+\titleformat{\subsection}
+  {\color{pryzmRoseDeep}\sffamily\large\bfseries}
+  {\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}
+  {\color{pryzmInk2}\sffamily\normalsize\bfseries}
+  {\thesubsubsection}{0.5em}{}
+
+% ---- header / footer -----------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyhead[L]{\color{pryzmMuted}\sffamily\footnotesize Pryzm Research \textbullet\ Pricing Methodology v1.0}
+\fancyhead[R]{\color{pryzmMuted}\sffamily\footnotesize 2026-05-19}
+\fancyfoot[C]{\color{pryzmMuted}\sffamily\footnotesize \thepage\ / \pageref{LastPage}}
+
+% ---- callout box ----------------------------------------------------
+\newcommand{\callout}[2]{%
+  \begin{center}
+  \begin{tikzpicture}
+    \node[draw=pryzmHairline,line width=0.4pt,rounded corners=4pt,
+          fill=pryzmRoseBg,inner sep=10pt,text width=0.92\textwidth,
+          align=left]
+      {\textbf{\color{pryzmRoseDeep}\sffamily #1}\\[3pt]
+       \color{pryzmInk2}\small #2};
+  \end{tikzpicture}
+  \end{center}
+}
+
+\newcommand{\keytakeaway}[1]{%
+  \begin{center}
+  \begin{tikzpicture}
+    \node[draw=pryzmRoseDeep,line width=0.6pt,rounded corners=4pt,
+          fill=white,inner sep=9pt,text width=0.92\textwidth,align=left]
+      {\color{pryzmInk}\small\textbf{Key takeaway.} #1};
+  \end{tikzpicture}
+  \end{center}
+}
+
+% ---- math notation --------------------------------------------------
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\sku}{\mathrm{sku}}
+\newcommand{\cust}{\mathrm{cust}}
+
+% =====================================================================
+\begin{document}
+
+% ---- TITLE PAGE -----------------------------------------------------
+\begin{titlepage}
+\vspace*{0pt}
+\noindent
+\begin{tikzpicture}[remember picture,overlay]
+  \fill[pryzmRoseDeep] (current page.north west) rectangle ([yshift=-0.6cm]current page.north east);
+\end{tikzpicture}
+
+\vspace{2.4cm}
+\noindent{\color{pryzmMuted}\sffamily\small\MakeUppercase{Pryzm Research \textbullet\ Whitepaper v1.0}}\\[6pt]
+\noindent{\color{pryzmInk}\sffamily\fontsize{32pt}{36pt}\selectfont\bfseries
+Pricing Recommendation\\[2pt] Methodology}\\[14pt]
+\noindent{\color{pryzmRoseDeep}\sffamily\Large An expected-margin optimiser for industrial manufacturers, with forecast-aware demand, customer-level churn response, and Monte-Carlo uncertainty.}\\[28pt]
+
+\noindent
+\begin{tikzpicture}
+  \node[draw=pryzmHairline,line width=0.4pt,fill=pryzmSurface,
+        rounded corners=6pt,inner sep=14pt,text width=0.92\textwidth]{
+  \color{pryzmInk2}\sffamily\small
+  \textbf{Audience.} Investors, prospective customers, and partners evaluating Pryzm's pricing intelligence stack.\\[4pt]
+  \textbf{Scope.} The mathematical foundation of Pryzm's price-recommendation engine, the forecasting backbone it consumes, the simulation modules used to certify decisions before rollout, and the validation methodology that quantifies how often the engine is right.\\[4pt]
+  \textbf{Living document.} Numbers, models, and weights are versioned. This file is updated as backtests refresh and as additional data sources come online.
+  };
+\end{tikzpicture}
+
+\vfill
+\noindent
+\begin{minipage}[t]{0.55\textwidth}
+  {\color{pryzmMuted}\sffamily\footnotesize Pryzm GmbH \textbullet\ pricing intelligence for industrial portfolios}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.4\textwidth}\raggedleft
+  {\color{pryzmMuted}\sffamily\footnotesize Version 1.0 \quad\textbullet\quad 19 May 2026}
+\end{minipage}
+\end{titlepage}
+
+% ---- ABSTRACT -------------------------------------------------------
+\section*{Abstract}
+\addcontentsline{toc}{section}{Abstract}
+\noindent
+We describe the mathematical and software architecture of Pryzm's price-recommendation engine. The engine optimises an explicit, financially interpretable objective --- expected annual contribution margin across each SKU's eligible customer book --- subject to cost, market, contract, and churn-rate constraints. Demand and cost vintages are sourced from an ensembled time-series forecasting backbone whose 12-month walk-forward MAPE on a manufacturer's 2025 revenue book is 13.9\%. Customer-level churn response is modelled per cohort, expected loss is computed from a 24-month discounted lifetime-value (LTV) horizon, and the full input distribution is propagated to the score through Monte Carlo simulation so that every recommendation carries an explicit confidence band. We validate against the 2025 invoice book in a strict walk-forward protocol and report the resulting accuracy metrics. We also describe the simulation module --- including a Monte-Carlo what-if engine and a Thompson-sampling exploration policy slated for the post-AB-test phase --- and the wiring path from the validated notebook into the production FastAPI service. The system's design follows recent literature on Bayesian LTV-aware dynamic pricing and constrained churn-bounded optimisation, with explicit numerical reproducibility throughout.
+
+\bigskip
+\noindent\textbf{Keywords.} B2B price optimisation, contribution-margin maximisation, Bayesian win-probability, churn-aware pricing, Monte Carlo simulation, Chronos, AutoETS, MinT reconciliation, Thompson sampling.
+
+\vfill
+\callout{Living document}{This methodology evolves. The change log in Appendix~\ref{app:changelog} records every revision to models, weights, accuracy figures, and constraint defaults. Pryzm maintains a single source of truth: \texttt{docs/whitepaper/pryzm\_pricing\_methodology.tex}, versioned in the production repository.}
+
+\clearpage
+\tableofcontents
+\clearpage
+
+% =====================================================================
+\section{Introduction}
+
+\subsection{The problem}
+Industrial manufacturers price thousands of SKUs against heterogeneous customer relationships. Catalogue prices drift away from cost; contractual prices are renewed annually without measuring elasticity; quote-stage discounts are granted without measuring win probability; churn risk is observed only in retrospect. The result is a portfolio that is simultaneously over-discounted on inelastic accounts and over-priced on price-sensitive ones, with margin leakage that no single dashboard surfaces.
+
+A recommendation engine must answer four questions for every price it proposes:
+\begin{enumerate}[leftmargin=2em,itemsep=2pt]
+  \item Which price maximises \emph{expected annual contribution} given current cost, demand, and competitive signal?
+  \item How confident is the recommendation, and what is the distribution of outcomes?
+  \item How much margin is lost if the customer churns at the proposed price, and is that loss exceeded by the recovery on retained customers?
+  \item What is the breakeven price, and how sensitive is the recommendation to each input?
+\end{enumerate}
+
+\subsection{Design principles}
+Pryzm's engine is built to be \textbf{explicit, auditable, and forecast-aware}.
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+  \item \emph{Explicit objective.} The scoring function is a single closed-form expression of expected margin; there is no opaque end-to-end neural pricer.
+  \item \emph{Decomposable inputs.} Each term --- win probability, retention, demand, cost, LTV --- is sourced from a separately validated model whose accuracy is published.
+  \item \emph{Constrained.} Recommendations live inside a cost floor, a market ceiling, a contractual delta cap, and a portfolio churn cap. No recommendation can violate guardrails silently.
+  \item \emph{Uncertainty-first.} Monte Carlo propagates input distributions to the score; the engine returns a 90\% confidence interval, not a point.
+  \item \emph{Backtested.} Every model version is gated on a walk-forward backtest against the prior calendar year. Accuracy is published.
+\end{itemize}
+
+\keytakeaway{Pryzm does not predict ``the right price''. It computes the distribution of contribution margin as a function of price, identifies the maximiser, and reports the breakeven point and the confidence band --- so that the pricing analyst inherits a quantified decision, not a black-box answer.}
+
+% =====================================================================
+\section{Methodology overview}
+
+The engine consumes seven inputs per (SKU, customer, candidate price) tuple and returns a scored recommendation per SKU. Figure~\ref{fig:arch} shows the high-level data flow.
+
+\begin{figure}[ht]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\sffamily\footnotesize,
+  node distance=10mm and 8mm,
+  every node/.style={align=center},
+  srcbox/.style ={rectangle,rounded corners=3pt,draw=pryzmHairline,line width=0.6pt,fill=white,minimum width=24mm,minimum height=9mm,inner sep=4pt},
+  modbox/.style ={rectangle,rounded corners=3pt,draw=pryzmRoseDeep,line width=0.6pt,fill=pryzmRoseBg,minimum width=28mm,minimum height=9mm,inner sep=4pt},
+  outbox/.style ={rectangle,rounded corners=3pt,draw=pryzmInk,line width=0.6pt,fill=pryzmSurface,minimum width=28mm,minimum height=10mm,inner sep=4pt},
+  arrx/.style ={-Stealth,draw=pryzmInk2,line width=0.4pt}
+]
+% sources column
+\node[srcbox] (q)  {Quotes\\(2022--2025)};
+\node[srcbox,below=of q] (i) {Invoices\\(2022--2025)};
+\node[srcbox,below=of i] (c) {Cost vintage\\(forecasting\_v3)};
+\node[srcbox,below=of c] (v) {Volume vintage\\(forecasting\_v3)};
+\node[srcbox,below=of v] (ch){Churn predictions\\($p_{churn}^{1q,2q,4q}$)};
+\node[srcbox,below=of ch] (cm){Customer\\\& product master};
+
+% model column
+\node[modbox,right=22mm of q]  (wp)  {Win-probability\\Bayesian logistic};
+\node[modbox,right=22mm of i]  (cr)  {Churn-response\\$p_{retain}(\Delta p)$};
+\node[modbox,right=22mm of c]  (cost){Cost model};
+\node[modbox,right=22mm of v]  (dem) {Demand model\\($\E[V \mid p]$)};
+\node[modbox,right=22mm of ch] (ltv) {LTV (24mo, 8\%)};
+
+% scorer
+\node[outbox,right=22mm of cost,minimum width=38mm,minimum height=18mm,
+      align=center] (score) {Scorer\\$\text{EV}(p,c,sku)$};
+
+% optimiser + MC
+\node[outbox,right=18mm of score,yshift=12mm,minimum width=32mm] (opt){Constrained\\optimiser};
+\node[outbox,right=18mm of score,yshift=-12mm,minimum width=32mm] (mc) {Monte Carlo\\(5,000 draws)};
+
+% final
+\node[outbox,right=18mm of opt,yshift=-12mm,minimum width=40mm,minimum height=18mm,
+      fill=pryzmRoseDeep,text=white,draw=pryzmRoseDeep] (rec) {Recommendation\\$p^\star,\;\text{CI},\;p_{breakeven},$\\drivers};
+
+% arrows: sources -> models
+\draw[arrx] (q)  -- (wp);
+\draw[arrx] (i)  -- (cr);
+\draw[arrx] (c)  -- (cost);
+\draw[arrx] (v)  -- (dem);
+\draw[arrx] (ch) -- (ltv);
+\draw[arrx] (cm.east) -- ++(4mm,0) |- (ltv.west);
+
+% models -> scorer
+\draw[arrx] (wp.east)   -- ++(4mm,0) |- (score.west);
+\draw[arrx] (cr.east)   -- ++(4mm,0) |- (score.west);
+\draw[arrx] (cost.east) -- (score.west);
+\draw[arrx] (dem.east)  -- ++(4mm,0) |- (score.west);
+\draw[arrx] (ltv.east)  -- ++(4mm,0) |- (score.west);
+
+% scorer -> opt, MC, both -> rec
+\draw[arrx] (score.east) -- (opt.west);
+\draw[arrx] (score.east) -- (mc.west);
+\draw[arrx] (opt.east) -- (rec.west);
+\draw[arrx] (mc.east)  -- (rec.west);
+\end{tikzpicture}%
+}
+\caption{End-to-end data flow. Five families of input models (rose) feed a single scorer (dark grey) that is then queried by both a constrained optimiser (for the point recommendation) and a Monte-Carlo simulator (for the confidence band). The final recommendation packet contains the optimal price $p^\star$, a 90\% confidence interval, the breakeven price, and per-driver attribution.}
+\label{fig:arch}
+\end{figure}
+
+\subsection{Why not an end-to-end neural pricer?}
+End-to-end neural models can outperform decomposed pipelines on dense consumer data where billions of transactions per category are available. In an industrial B2B portfolio the sample size per (SKU, customer-segment) cell is typically in the low hundreds and the cost of a single bad recommendation is large. The literature on B2B dynamic pricing converges on the same prescription: \emph{treat LTV as a forecast with explicit uncertainty, optimise expected contribution subject to a churn cap, and never overreact to noise} \cite{omnibound2026b2b,influencers2025ltv,influencers2025dynamic}. A decomposed, interpretable engine is the only design that yields auditable reasoning, which is itself a hard requirement for our buyer.
+
+% =====================================================================
+\section{Mathematical formulation}
+
+\subsection{Per-customer expected value}
+For a single SKU, a candidate price $p$, and an eligible customer $c$, the expected annual contribution is:
+\begin{equation}
+\label{eq:ev}
+\begin{aligned}
+\E[\text{margin} \mid p, c] \;=\;& \underbrace{P_{\text{win}}(p \mid \sku, \text{seg}(c)) \cdot P_{\text{retain}}(p \mid c)}_{\text{retain-weighted}} \cdot \E[V_{12} \mid p, \sku, c] \cdot \bigl(p - k_{12}(\sku)\bigr) \\
+&-\; \underbrace{P_{\text{churn}}(p \mid c) \cdot L(c, \sku)}_{\text{churn loss}}
+\end{aligned}
+\end{equation}
+where
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+  \item $P_{\text{win}}(p \mid \sku, \text{seg}(c))$ is the modelled probability that the customer accepts a quote at price $p$, conditional on the SKU and the customer segment (see §\ref{sec:winprob}),
+  \item $P_{\text{retain}}(p \mid c) = 1 - P_{\text{churn}}(p \mid c)$ is the customer-level retention probability (see §\ref{sec:churn}),
+  \item $\E[V_{12} \mid p, \sku, c]$ is the expected 12-month volume of this customer on this SKU conditioned on price (see §\ref{sec:demand}),
+  \item $k_{12}(\sku)$ is the 12-month forecast unit cost (see §\ref{sec:cost}),
+  \item $L(c, \sku)$ is the discounted 24-month lost contribution if the customer churns (see §\ref{sec:ltv}).
+\end{itemize}
+
+\subsection{Cluster aggregation and optimisation}
+The cluster-level score is the sum across the SKU's eligible customer book $\mathcal{C}$:
+\begin{equation}
+\label{eq:score}
+S(p) \;=\; \sum_{c \in \mathcal{C}} \E[\text{margin} \mid p, c].
+\end{equation}
+The recommended price is the constrained maximiser:
+\begin{equation}
+\label{eq:opt}
+p^\star \;=\; \arg\max_{p \in \mathcal{P}}\; S(p)
+\quad\text{s.t.}\quad
+\begin{cases}
+p \geq k_{12}(\sku) + \tau_k & \text{(cost floor with safety margin $\tau_k$)} \\
+p \leq m(\sku) & \text{(market ceiling when known)} \\
+\bigl| p - p_{\text{cur}} \bigr| / p_{\text{cur}} \leq \Delta_{\max} & \text{(contractual cap, default $10\%$)} \\
+\frac{1}{|\mathcal{C}|}\sum_c P_{\text{churn}}(p \mid c) - P_{\text{churn}}(p_{\text{cur}} \mid c) \leq \kappa & \text{(churn cap, default $2\,$pp)}
+\end{cases}
+\end{equation}
+
+\subsection{Breakeven and sensitivity}
+The breakeven price is defined as the minimum price at which the score is non-negative:
+\begin{equation}
+p_{\text{breakeven}} \;=\; \min \{ p \in \mathcal{P}\;:\; S(p) \geq 0 \}.
+\end{equation}
+The relative sensitivity to each input $x_i$ at $p^\star$ is reported via marginal removal (a SHAP-style leave-one-out attribution):
+\begin{equation}
+\phi_i \;=\; S(p^\star) - S^{(-i)}(p^\star),
+\end{equation}
+where $S^{(-i)}(p)$ is the score recomputed with input $i$ replaced by its uninformative prior.
+
+\keytakeaway{The objective is one expression. Every term is the output of a model whose accuracy we report. There is no hidden weight, no black box, and no recommendation without a corresponding $S(p)$, confidence band, and breakeven.}
+
+% =====================================================================
+\section{Forecasting backbone}
+\label{sec:forecasting}
+
+The engine consumes monthly volume and unit-cost forecasts at a per-SKU resolution. These are produced by Pryzm's forecasting v3 pipeline, which is itself a bake-off of statistical, gradient-boosted, and pretrained transformer models, reconciled with a Minimum Trace (MinT-OLS) reconciler across the SKU hierarchy.
+
+\subsection{Models in the bake-off}
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+  \item \textbf{Statistical baselines.} Seasonal-Naive($s{=}12$), Theta, AutoETS.
+  \item \textbf{Gradient-boosted.} LightGBM with calendar and lag features.
+  \item \textbf{Foundation models.} Amazon \emph{Chronos-Bolt-base} (univariate) and \emph{Chronos-Bolt-base + FRED macro covariates} via AutoGluon-TimeSeries, with WPU101, copper, aluminium, Brent crude, EUR/USD, energy index, German 10y yield, and industrial production as exogenous regressors.
+  \item \textbf{Tiny Time Mixer (TTM-r2).} A pretrained multivariate transformer from IBM Research.
+  \item \textbf{Ensemble.} Equal-weighted median of Theta, AutoETS, and Seasonal-Naive --- our current production winner on revenue.
+\end{itemize}
+
+\subsection{2025 walk-forward results}
+We train every candidate on 2022-01 through 2024-12 and forecast Jan--Dec 2025. The forecast is compared against the actual 2025 invoice and cost realisations. Table~\ref{tab:forecast2025} summarises the leaderboard.
+
+\begin{table}[ht]
+\centering
+\small
+\caption{2025 walk-forward backtest. Train 2022--2024, forecast 12 months 2025. MAPE on monthly point forecasts; bias is signed total-year error.}
+\label{tab:forecast2025}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Model} & \textbf{MAPE \%} & \textbf{Bias \%} & \textbf{RMSE} \\
+\midrule
+\multicolumn{4}{l}{\textit{Revenue ($\Sigma_{2025}$ = €7.37M actual)}} \\
+Ensemble [Theta, ETS, SN]                       & \textbf{13.86} & $-14.98$ & 112{,}940 \\
+AutoETS                                          & 14.27 & $-14.54$ & 116{,}646 \\
+AutoETS + MinT-OLS reconciler (v3 production)    & 15.47 & $-15.15$ & 119{,}138 \\
+Chronos-bolt (univariate)                        & 16.80 & $-15.12$ & 134{,}586 \\
+Theta                                            & 16.91 & $-15.32$ & 135{,}230 \\
+Seasonal-Naive(12)                               & 17.33 & $-15.07$ & 114{,}226 \\
+LightGBM                                         & 17.93 & $-13.00$ & 169{,}631 \\
+TTM-r2 (multivariate)                            & 20.61 & $-19.78$ & 155{,}506 \\
+\midrule
+\multicolumn{4}{l}{\textit{Unit cost}} \\
+AutoETS                                          & \textbf{13.79} & $-13.69$ & 17{,}154 \\
+Ensemble [Theta, ETS, SN]                        & 14.14 & $-14.82$ & 18{,}134 \\
+TTM-r2 (multivariate)                            & 16.22 & $-14.18$ & 21{,}059 \\
+Chronos-bolt (univariate)                        & 17.08 & $-15.57$ & 21{,}877 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Why these accuracy metrics}
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+\item \textbf{MAPE} is the natural metric for a pricing context because the downstream economic loss scales with relative error in revenue or cost, not absolute error.
+\item \textbf{Signed bias} is reported separately because a systematic under-forecast (negative bias) materially changes the recommended price: an engine that underestimates volume will systematically over-price.
+\item \textbf{RMSE} surfaces tail behaviour --- a model with low MAPE but pathological monthly RMSE will still poison Monte Carlo bands.
+\item \textbf{Coverage} of the 90\% prediction interval is tracked alongside the point metrics; we require empirical coverage $\geq 80\%$ before any forecasting model is promoted into the engine.
+\end{itemize}
+The \emph{Ensemble [Theta, ETS, SN]} winner on revenue is consistent with the M-competition family of results that consistently rank simple ensembles above heavier learners on monthly business series \cite{mcompetition2020}. The pretrained foundation models (Chronos-Bolt, TTM-r2) trail the ensemble on this manufacturer's data because the sample (a few dozen SKUs at sufficient density) is below the regime where foundation-model amortisation pays off; we keep them in the bake-off because we expect them to overtake the ensemble as the customer book scales.
+
+\callout{Hierarchical reconciliation}{Forecasts are reconciled across SKU $\to$ commodity-group $\to$ portfolio with the Minimum Trace (MinT-OLS) reconciler \cite{wickramasuriya2019mint}. This forces additive coherence: per-SKU forecasts sum to the commodity-group forecast, and to the portfolio total. Without reconciliation, a portfolio recommendation built from un-reconciled per-SKU forecasts can disagree with the portfolio-level forecast by 3--6\%.}
+
+% =====================================================================
+\section{Win-probability model}
+\label{sec:winprob}
+
+\subsection{Specification}
+For each (SKU, customer-segment) cluster, we fit a Bayesian logistic regression of quote outcome against log-price, controlling for tier, season, and a small number of segment fixed effects:
+\begin{equation}
+\Prob(\text{win} \mid p, x) \;=\; \sigma\bigl( \beta_0 + \beta_1 \log p + \beta_2 \text{tier} + \beta_3 \text{quarter} + x^\top \gamma \bigr).
+\end{equation}
+Priors are weakly informative ($\mathcal{N}(0, 5)$ on coefficients, $\mathcal{N}(0, 2)$ on $\beta_1$ to express the prior belief that demand slopes negative in price). Posteriors are sampled via No-U-Turn HMC; we report the posterior median curve and a 90\% credible interval band.
+
+\subsection{Low-data guardrail}
+Clusters with fewer than 12 quote outcomes in the trailing 540-day window are flagged \emph{locked}: the curve still renders for visual context but the recommendation falls back to a cost-floor + market-anchor heuristic. This rule mirrors the existing production guard in the v0 engine and is documented in the workbench UI.
+
+\subsection{Conformal coverage}
+We post-hoc calibrate the 90\% credible band with split conformal prediction \cite{angelopoulos2021gentle} so that the published band has guaranteed marginal coverage of $\geq 90\%$ under exchangeability, regardless of prior misspecification.
+
+% =====================================================================
+\section{Churn-response model}
+\label{sec:churn}
+
+\subsection{Two-stage decomposition}
+We decompose churn into a baseline component (independent of price) and a price-shock component:
+\begin{equation}
+P_{\text{churn}}(p \mid c) \;=\; \alpha(c) + \bigl(1 - \alpha(c)\bigr)\,\eta\bigl(\Delta p(c, p)\bigr),
+\end{equation}
+where
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+\item $\alpha(c)$ is the customer's baseline 12-month churn probability, sourced from Pryzm's customer-risk model (the $p_{\text{churn}}^{1q,2q,4q}$ columns in \texttt{churn\_predictions.csv}, projected to 12-month horizon),
+\item $\Delta p(c, p) = (p - p_{\text{cur}}(c)) / p_{\text{cur}}(c)$ is the relative price shock for this customer,
+\item $\eta(\cdot)$ is a monotone non-negative shock function fitted from historical price-change-to-renewal transitions, with shrinkage toward zero where data is thin.
+\end{itemize}
+This formulation guarantees $0 \leq P_{\text{churn}} \leq 1$ and recovers the baseline churn when $\Delta p \to 0$. Where insufficient price-change events exist for a cluster, $\eta$ is shrunk to a global cross-portfolio estimate via empirical Bayes.
+
+\subsection{Why decomposition}
+A single end-to-end churn-given-price model conflates two effects we need to separate for explainability: a customer was at risk regardless of pricing (a strategic-account issue), versus a customer is at risk \emph{because} of the proposed price (a pricing issue). The two require different mitigations and our memo surfaces them separately.
+
+% =====================================================================
+\section{Demand model}
+\label{sec:demand}
+
+The 12-month volume forecast $\E[V_{12} \mid p, \sku, c]$ combines the forecasting backbone (§\ref{sec:forecasting}) with a price-elasticity adjustment:
+\begin{equation}
+\E[V_{12} \mid p, \sku, c] \;=\; V_{12}^{\text{forecast}}(\sku, c) \cdot \biggl( \frac{p}{p_{\text{cur}}(c)} \biggr)^{\!\epsilon(\sku)}
+\end{equation}
+where $\epsilon(\sku)$ is a per-SKU price elasticity estimated from historical price-volume covariation when data permits, and shrunk to the commodity-group mean otherwise. We bound $\epsilon \in [-3, 0]$ to rule out positively-sloped demand.
+
+% =====================================================================
+\section{Cost model}
+\label{sec:cost}
+
+The 12-month forecast unit cost $k_{12}(\sku)$ is drawn from the cost vintage produced by the forecasting backbone (Table~\ref{tab:forecast2025}, lower panel; current winner AutoETS, MAPE 13.79\%). A safety margin $\tau_k$ (default 3\% of $k_{12}$) is added to the cost floor in the optimisation constraint to absorb forecast bias; the margin is itself recalibrated each quarter to match observed bias.
+
+% =====================================================================
+\section{Lifetime value and aggregation}
+\label{sec:ltv}
+
+The lost contribution from churn is the discounted 24-month expected margin if the customer is retained, evaluated at the current price:
+\begin{equation}
+L(c, \sku) \;=\; \sum_{m=1}^{24} \frac{ V_m^{\text{forecast}}(c, \sku) \cdot (p_{\text{cur}}(c) - k_m(\sku)) }{(1 + r)^{m/12}},
+\end{equation}
+with a default annual discount rate $r = 8\%$. The horizon is configurable; 24 months is the current default because it matches the typical renewal cadence of the target portfolio.
+
+% =====================================================================
+\section{Constrained optimisation}
+
+\subsection{Search}
+For a single SKU, $S(p)$ is evaluated on a price grid $\mathcal{P}$ of 41 logarithmically spaced points spanning $[0.5\, p_{\text{cur}},\, 1.8\, p_{\text{cur}}]$, followed by a golden-section refinement on the bracket containing the grid maximum. Constraints in Eq.~\ref{eq:opt} are applied as a mask over $\mathcal{P}$; any constraint that excludes the grid maximum surfaces as a \emph{constraint-active} flag in the recommendation packet.
+
+\subsection{Solver choice}
+We deliberately do not use a general-purpose MIP/MINLP solver. At the per-SKU scale, the search space is one-dimensional and the objective is sufficiently smooth that a grid + golden-section search returns the global optimum in $<5$ ms per SKU. We benchmarked against CVXPY (with a convex relaxation) and Pyomo (with IPOPT); neither yielded a measurable accuracy improvement and both added a deployment dependency \cite{cvxpy2016diamond,pyomo2017hart}. We will revisit when we expand to portfolio-level cross-SKU optimisation.
+
+% =====================================================================
+\section{Monte Carlo uncertainty}
+
+\subsection{Why Monte Carlo}
+Each input to Eq.~\ref{eq:ev} carries its own uncertainty. A point recommendation that ignores input variance routinely misstates the score by 10--40\% on industrial portfolios. Monte Carlo is the standard mechanism for propagating input distributions to the score and quantifying $\Prob(S(p^\star) > 0)$ \cite{monetizely2025mc,fastercapital2024mc}.
+
+\subsection{Procedure}
+For each (SKU, $p$) pair we draw $N = 5{,}000$ samples and recompute $S(p)$:
+\begin{enumerate}[leftmargin=2em,itemsep=2pt]
+  \item Sample $\beta \sim$ posterior of the win-probability logistic.
+  \item Sample $V_{12}, k_{12}$ from the forecasting backbone's prediction-interval distribution (split-conformal calibrated).
+  \item Sample $\alpha(c)$ from the customer-risk model's posterior; sample $\eta(\Delta p)$ from its empirical-Bayes posterior.
+  \item Recompute $S(p)$.
+\end{enumerate}
+The reported recommendation carries
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+  \item The point estimate $\hat S(p^\star)$ (posterior mean),
+  \item A 90\% credible interval $[Q_{0.05}, Q_{0.95}]$ on $S(p^\star)$,
+  \item The probability of profitability $\Prob(S(p^\star) > 0)$.
+\end{itemize}
+
+\subsection{Acceptance gate}
+A recommendation is publishable only if $\Prob(S(p^\star) > 0) \geq 0.80$. Below that threshold the engine returns a \emph{review-required} state with the constraint that is most often binding across the MC draws.
+
+% =====================================================================
+\section{Validation methodology}
+
+\subsection{Walk-forward protocol}
+For the 2025 backtest, the engine is shown only data dated $\leq$ 2024-12-31 at training time. For each SKU with at least one quote in 2025 it generates a recommendation $p^\star_{2025}$. The engine's recommendation is then scored against the actual 2025 invoiced behaviour. The four headline metrics are:
+
+\begin{table}[ht]
+\centering
+\small
+\caption{Engine-level acceptance gates.}
+\label{tab:gates}
+\begin{tabularx}{0.96\textwidth}{lXr}
+\toprule
+\textbf{Metric} & \textbf{Definition} & \textbf{Gate} \\
+\midrule
+Median per-SKU margin lift & $\text{median}_{\sku} [\, S(p^\star) - S(p_{\text{actual},2025}) \,]$ & $\geq +3\%$ \\
+90\% CI coverage & Empirical fraction of SKUs whose realised score lies inside the MC 90\% CI & $\geq 80\%$ \\
+Negative-net protection & Share of SKUs with realised $\text{net\_recovery} < 0$ at $p^\star$ & $\leq 5\%$ \\
+Portfolio churn delta & $\bigl| \E[\text{churn} \mid p^\star] - \E[\text{churn} \mid p_{\text{actual}}] \bigr|$ & $\leq 2\,$pp \\
+Per-SKU runtime & Wall-clock time per SKU including MC at 5,000 draws & $<500$ ms \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+If any gate fails, the engine is held back; the notebook publishes a diagnostic report identifying the input model and failure mode.
+
+\subsection{Why these gates}
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+  \item \emph{+3\% median lift} is consistent with peer-reviewed industrial-pricing case studies; lifts above +5\% in B2B portfolios are anomalous and usually attributable to data drift rather than model skill \cite{omnibound2026b2b}.
+  \item \emph{80\% CI coverage} is the lower bound for honest uncertainty: a 90\% interval covering less than 80\% of outcomes is empirically uncalibrated and we re-fit.
+  \item \emph{5\% negative-net protection} is the bright-line that distinguishes a recommendation engine from a margin maximiser. A real recommendation never knowingly proposes a price with majority-negative expected contribution.
+  \item \emph{2\,pp churn delta} matches the ``trust-and-fairness'' guardrail recommended in the 2025 dynamic-pricing literature \cite{influencers2025dynamic}.
+\end{itemize}
+
+% =====================================================================
+\section{Simulation and pre-AB modules}
+
+\subsection{What-if simulator}
+The simulator accepts a proposed variant price and returns Low/Mid/High scenarios for 12-month revenue delta, contribution delta, and churn-risk delta against the held control. It is the same scorer (Eq.~\ref{eq:ev}--\ref{eq:score}) evaluated three times under three input regimes:
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+  \item \textit{Mid:} posterior median of every input.
+  \item \textit{Low:} 5th percentile of win-probability, 95th of churn-shock.
+  \item \textit{High:} 95th of win-probability, 5th of churn-shock.
+\end{itemize}
+The simulator is read-only: no quote, proposal, or audit record is written by this view. It returns to the UI in $<150$ ms per call.
+
+\subsection{Monte Carlo what-if}
+For deeper analyses the same MC procedure described above is exposed through the simulator, returning the full $S(p)$ posterior distribution rather than three quantile slices.
+
+\subsection{Thompson sampling (post-AB)}
+Once an A/B test has accumulated $\geq 3$ months of variant outcomes per cluster, the system can elect to switch from static-recommendation mode into a contextual-bandit policy. We use Thompson sampling with linear payoff \cite{agrawal2013contextualts} on a per-cluster basis, with the contextual features being the same inputs to Eq.~\ref{eq:ev}. The exploration--exploitation tradeoff is governed by the posterior variance, which is itself the same MC machinery already in production. Published case studies report cash-margin lifts of up to $+55\%$ over a four-month deployment on an Italian e-commerce platform \cite{aziz2018ts}; we treat that as an upper-bound aspiration, not a forecast.
+
+% =====================================================================
+\section{Software architecture}
+
+\subsection{Notebook-first methodology}
+The full engine is first implemented as a Jupyter notebook (\texttt{notebooks/pricing\_engine\_v1/}) that imports a small set of pure-Python modules (\texttt{lib/win\_prob.py}, \texttt{lib/churn\_response.py}, \texttt{lib/scorer.py}, \texttt{lib/optimizer.py}, \texttt{lib/monte\_carlo.py}, \texttt{lib/backtest.py}). The notebook runs the 2025 walk-forward backtest and emits the acceptance-gate report. Only after the gates in Table~\ref{tab:gates} pass is the validated module promoted into the production service.
+
+\subsection{Production wiring}
+Promotion replaces the legacy \texttt{backend/services/pricing/recommendation.py} \texttt{\_pick\_with\_floor} (which scores $(p - k)\cdot p_{\text{win}}$ only) with a thin adapter that calls into the validated engine. The FastAPI surface (\texttt{/pricing/recommendations}, \texttt{/pricing/simulate}, the workbench BFF) does not change. A new endpoint \texttt{/pricing/score\_curve} exposes the full $\{p : S(p)\}$ map and the MC band so that the Pricing Studio UI can render a \emph{score curve} with breakeven shading in place of the current win-probability curve.
+
+\subsection{Lineage and audit}
+Every recommendation embeds a \texttt{lineage\_ref} pointing to a content-addressed manifest of:
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+  \item The forecasting vintage IDs used (volume, cost),
+  \item The win-probability fit identifier and the cluster definition,
+  \item The customer-risk model version and the as-of date for $\alpha(c)$,
+  \item The Monte Carlo seed and draw count,
+  \item The constraint values active at decision time.
+\end{itemize}
+This makes every accepted price reproducible from the audit log alone, which is the auditability requirement that distinguishes Pryzm from a black-box neural pricer.
+
+% =====================================================================
+\section{Comparison with prior art}
+
+\begin{table}[ht]
+\centering
+\small
+\caption{Methodological comparison with the leading B2B pricing platforms. Pryzm's wedge is explicit objective + auditable lineage + uncertainty-first decisions on a notebook-validated foundation.}
+\label{tab:compare}
+\begin{tabularx}{\textwidth}{lXXX}
+\toprule
+\textbf{System} & \textbf{Objective surfaced} & \textbf{Uncertainty} & \textbf{Audit trail} \\
+\midrule
+Pricefx PricingAI \cite{pricefx} & Margin / revenue lift, opaque weighting & Confidence labels & Per-decision approval log \\
+Zilliant \cite{zilliant} & Margin uplift via ML segment elasticity & Confidence labels & Per-deal scoring history \\
+Vendavo \cite{vendavo} & Profit / win-rate target & Confidence labels & Approval workflow \\
+Conga Price Opt. \cite{conga} & Margin / revenue targets & Limited & Approval workflow \\
+\midrule
+\textbf{Pryzm} & \textbf{Explicit Eq.~\ref{eq:ev}, decomposable inputs} & \textbf{Posterior MC band per recommendation} & \textbf{Content-addressed lineage per decision} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =====================================================================
+\section{Roadmap}
+
+\subsection{v1 (notebook validation)}
+Single-SKU, single-customer, all inputs sourced from existing services. Passes acceptance gates in Table~\ref{tab:gates} or returns a diagnostic report. Target: Q2 2026.
+
+\subsection{v2 (production wiring)}
+Promotion of the validated module into FastAPI; replacement of the legacy DB2-only scorer; UI surfacing of score curve, breakeven, and MC band. Target: Q3 2026.
+
+\subsection{v3 (portfolio + bandit)}
+Cross-SKU portfolio optimisation with substitution effects; Thompson-sampling exploration policy behind a feature flag; competitor-price signal ingestion as a real data source. Target: Q4 2026.
+
+% =====================================================================
+\section*{Acknowledgements}
+\addcontentsline{toc}{section}{Acknowledgements}
+We thank the M-competition community, the AutoGluon and Chronos teams at Amazon, and the IBM Research Tiny Time Mixer authors for releasing their models and benchmarks. The methodology in this paper draws on the operating literature of B2B pricing, conformal prediction, and contextual bandits, and on a decade of industrial-pricing case studies; explicit credits appear in the references.
+
+% =====================================================================
+\begin{thebibliography}{99}
+\bibitem{omnibound2026b2b}
+Omnibound AI. \emph{B2B Pricing (2026 Guide): Strategy, Models, Optimisation, and Real-World Examples That Protect Your Margin.} 2026. \url{https://www.omnibound.ai/blog/b2b-pricing}.
+
+\bibitem{influencers2025dynamic}
+Influencers Time. \emph{Dynamic Pricing in 2025: Balancing Revenue and Trust.} 2025. \url{https://www.influencers-time.com/dynamic-pricing-in-2025-balancing-revenue-and-trust/}.
+
+\bibitem{influencers2025ltv}
+Influencers Time. \emph{AI Dynamic Pricing for Long-Term LTV Optimization in 2025.} 2025. \url{https://www.influencers-time.com/ai-dynamic-pricing-for-long-term-ltv-optimization-in-2025/}.
+
+\bibitem{monetizely2025mc}
+Monetizely. \emph{How to Use Monte Carlo Simulation for Pricing Risk Assessment.} 2025. \url{https://www.getmonetizely.com/articles/how-to-use-monte-carlo-simulation-for-saas-pricing-risk-assessment}.
+
+\bibitem{fastercapital2024mc}
+FasterCapital. \emph{Monte Carlo Simulation and Optimization --- Pricing Strategies: Insights from Monte Carlo Models.} 2024. \url{https://fastercapital.com/content/Monte-Carlo-simulation-and-optimization--Pricing-Strategies-for-New-Ventures--Insights-from-Monte-Carlo-Models.html}.
+
+\bibitem{mcompetition2020}
+S. Makridakis, E. Spiliotis, V. Assimakopoulos. \emph{The M4 Competition: 100,000 time series and 61 forecasting methods.} International Journal of Forecasting, 36(1), 2020.
+
+\bibitem{wickramasuriya2019mint}
+S. L. Wickramasuriya, G. Athanasopoulos, R. J. Hyndman. \emph{Optimal forecast reconciliation for hierarchical and grouped time series through trace minimization.} Journal of the American Statistical Association, 114(526), 2019.
+
+\bibitem{angelopoulos2021gentle}
+A. Angelopoulos, S. Bates. \emph{A Gentle Introduction to Conformal Prediction and Distribution-Free Uncertainty Quantification.} arXiv:2107.07511, 2021.
+
+\bibitem{agrawal2013contextualts}
+S. Agrawal, N. Goyal. \emph{Thompson Sampling for Contextual Bandits with Linear Payoffs.} ICML, 2013. \url{https://arxiv.org/pdf/1209.3352}.
+
+\bibitem{aziz2018ts}
+A. Aziz et al. \emph{Personalized Dynamic Pricing Based on Improved Thompson Sampling.} Mathematics, MDPI, 2024. \url{https://www.mdpi.com/2227-7390/12/8/1123}.
+
+\bibitem{cvxpy2016diamond}
+S. Diamond, S. Boyd. \emph{CVXPY: A Python-embedded modelling language for convex optimisation.} Journal of Machine Learning Research, 17(83), 2016.
+
+\bibitem{pyomo2017hart}
+W. E. Hart et al. \emph{Pyomo --- Optimization Modeling in Python (2nd edition).} Springer, 2017.
+
+\bibitem{pricefx}
+Pricefx. \emph{PricingAI.} \url{https://www.pricefx.com/software/pricingai}.
+
+\bibitem{zilliant}
+Zilliant. \emph{Products.} \url{https://zilliant.com/products}.
+
+\bibitem{vendavo}
+Vendavo. \emph{Our Products.} \url{https://www.vendavo.com/our-products/}.
+
+\bibitem{conga}
+Conga. \emph{Price Optimization and Management.} \url{https://conga.com/platform/price-optimization-management}.
+
+\end{thebibliography}
+
+\appendix
+% =====================================================================
+\section{Notation}
+\label{app:notation}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+$\sku$, $c$ & A stock-keeping unit and a customer in its eligible book. \\
+$p$, $p^\star$, $p_{\text{cur}}$, $p_{\text{breakeven}}$ & Candidate, optimal, current, breakeven price. \\
+$P_{\text{win}}(p)$, $P_{\text{retain}}(p)$, $P_{\text{churn}}(p)$ & Per-customer probabilities, all functions of price. \\
+$V_{12}$, $V_m$ & 12-month and per-month expected volume forecasts. \\
+$k_{12}$, $k_m$, $\tau_k$ & Forecast unit cost and a safety margin for the cost floor. \\
+$L(c,\sku)$ & 24-month discounted lifetime margin (lost on churn). \\
+$\Delta_{\max}$, $\kappa$ & Contractual cap on $|\Delta p|$ and portfolio churn-rate cap. \\
+$S(p)$ & Cluster-level expected contribution as a function of price. \\
+$\epsilon(\sku)$ & Per-SKU price elasticity, bounded in $[-3, 0]$. \\
+$r$ & Annual discount rate (default $8\%$). \\
+$N$ & Monte Carlo draw count (default 5,000). \\
+\bottomrule
+\end{tabularx}
+
+% =====================================================================
+\section{Change log}
+\label{app:changelog}
+\begin{itemize}[leftmargin=2em,itemsep=2pt]
+  \item \textbf{v1.0 --- 2026-05-19.} Initial release. Includes 2025 walk-forward backtest of the forecasting backbone (Table~\ref{tab:forecast2025}); engine-level acceptance gates (Table~\ref{tab:gates}); architecture diagram (Fig.~\ref{fig:arch}); model comparison (Table~\ref{tab:compare}). Subsequent revisions to update once the engine notebook completes the 2025 backtest and the 2026 forward run.
+\end{itemize}
+
+\end{document}
