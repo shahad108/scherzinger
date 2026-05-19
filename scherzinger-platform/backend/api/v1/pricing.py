@@ -18,6 +18,8 @@ from backend.services import workflow_service
 from backend.services.action_center.composer import (
     invalidate_cache as invalidate_action_center_cache,
 )
+from backend.services.pricing import lineage as lineage_service
+from backend.services.pricing import quote_history as quote_history_service
 
 router = APIRouter(prefix="/pricing", tags=["pricing"])
 
@@ -438,6 +440,32 @@ def get_sku_cost_outlook(
                 "message": f"no cost state recorded for {aid}",
             },
         ) from exc
+
+
+# ---------------------------------------------------------------------------
+# Phase E (Pricing Studio v3) — Quote history + lineage-by-aid endpoints.
+# ---------------------------------------------------------------------------
+
+
+@router.get("/sku/{aid}/quote-history")
+def get_sku_quote_history(
+    aid: str,
+    limit: int = 50,
+    ctx: AuthContext = Depends(require_auth),  # noqa: ARG001 (auth gate)
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Recent quotes for the SKU joined with realised invoice margins."""
+    return quote_history_service.get_quote_history(db, aid=aid, limit=limit)
+
+
+@router.get("/sku/{aid}/lineage")
+def get_sku_lineage(
+    aid: str,
+    ctx: AuthContext = Depends(require_auth),  # noqa: ARG001 (auth gate)
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """List lineage rows whose source_id encodes this SKU."""
+    return lineage_service.list_lineage_for_aid(db, aid=aid)
 
 
 # ---------------------------------------------------------------------------

@@ -7,13 +7,17 @@ values) so we never leak PII into the audit/lineage trail.
 """
 from __future__ import annotations
 
+import logging
 import re
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from backend.models.pricing.lineage import LineageRefRow, LineageSourceKind
+
+logger = logging.getLogger(__name__)
 
 
 # Conservative regex: strips every PostgreSQL-flavoured literal/comment
@@ -85,3 +89,129 @@ def create_lineage(
 def get_lineage(lineage_id: UUID, *, session: Session) -> Optional[LineageRefRow]:
     """Fetch by primary key. Returns None when missing."""
     return session.get(LineageRefRow, lineage_id)
+
+
+# ---------------------------------------------------------------------------
+# Phase E (E6) — list-by-aid endpoint.
+#
+# The lineage table doesn't have a dedicated lookup_payload column today —
+# every pricing signal encodes the SKU id ("aid") inside ``source_id`` via
+# patterns like::
+#
+#   rec:{aid}                                 → recommendation
+#   wtp:{aid}:{tier}                          → wtp
+#   cost_outlook:{aid}:{horizon_months}       → cost_outlook
+#   option_margin:{aid}:{option_id}:{price}   → option_margin
+#   quote_history:{aid}:{limit}               → quote_history
+#   batch_preview:{batch_id}:{aid}            → fanout (batch preview)
+#   trigger:{source}:{reason}:aid:{aid}       → trigger context
+#
+# We therefore filter via a small set of LIKE patterns. This keeps the
+# helper resilient to future signal kinds — just extend ``_AID_PATTERNS``
+# and ``_KIND_FROM_SOURCE_ID`` when a new shape lands.
+# ---------------------------------------------------------------------------
+
+
+# Map source_id prefixes → UI-friendly ``kind`` labels.
+# Each entry is (prefix, kind). First match wins.
+_KIND_FROM_SOURCE_ID: list[tuple[str, str]] = [
+    ("rec:", "recommendation"),
+    ("wtp:", "wtp"),
+    ("curve:", "curve"),
+    ("fanout:", "fanout"),
+    ("batch_preview:", "fanout"),
+    ("cost_outlook:", "cost_outlook"),
+    ("quote_history:", "quote_history"),
+    ("option_margin:", "option_margin"),
+    ("trigger:", "trigger"),
+]
+
+
+def _kind_from_source_id(source_id: Optional[str]) -> Optional[str]:
+    """Map a ``source_id`` to a UI-friendly ``kind`` label."""
+    if not source_id:
+        return None
+    for prefix, kind in _KIND_FROM_SOURCE_ID:
+        if source_id.startswith(prefix):
+            return kind
+    return None
+
+
+def _aid_patterns(aid: str) -> list[str]:
+    """Build LIKE patterns that match every source_id shape known to encode aid.
+
+    All shapes either start with ``<prefix>:{aid}`` or contain
+    ``:aid:{aid}`` (trigger context) or ``:{aid}`` at the tail (batch
+    preview puts batch_id first). Matching ``:%:{aid}`` covers the latter.
+    """
+    escaped = aid.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return [
+        f"%:{escaped}",          # ends with :{aid} (e.g. batch_preview:<id>:{aid})
+        f"%:{escaped}:%",        # has :{aid}: somewhere
+        f"{escaped}:%",          # legacy / future: aid as first segment
+        f"%:aid:{escaped}",      # trigger context tail
+        f"%:aid:{escaped}:%",    # trigger context middle (defensive)
+    ]
+
+
+def list_lineage_for_aid(db: Session, *, aid: str) -> dict[str, Any]:
+    """List lineage rows whose source_id encodes ``aid``.
+
+    Returns the wire shape documented in plan §5 row E6::
+
+        {
+            "status": "live" | "empty" | "degraded",
+            "rows": [
+                {
+                    "id": str,           # uuid as string
+                    "kind": str | None,  # ui-friendly category
+                    "source_kind": str,  # raw enum/string
+                    "model": str | None,
+                    "model_version": str | None,
+                    "computed_at": str,  # ISO-8601
+                    "sql_preview": str | None,
+                    "row_count": int | None,
+                }, ...
+            ]
+        }
+
+    Caps the result at 50 rows ordered by ``computed_at DESC``.
+    """
+    try:
+        patterns = _aid_patterns(aid)
+        like_clauses = [LineageRefRow.source_id.like(p, escape="\\") for p in patterns]
+        rows = (
+            db.query(LineageRefRow)
+            .filter(or_(*like_clauses))
+            .order_by(LineageRefRow.computed_at.desc())
+            .limit(50)
+            .all()
+        )
+
+        out_rows: list[dict[str, Any]] = []
+        for row in rows:
+            out_rows.append(
+                {
+                    "id": str(row.id),
+                    "kind": _kind_from_source_id(row.source_id),
+                    "source_kind": row.source_kind,
+                    "model": row.model,
+                    "model_version": row.model,  # no separate version column today
+                    "computed_at": row.computed_at.isoformat() if row.computed_at else None,
+                    "sql_preview": row.sql,
+                    "row_count": None,
+                }
+            )
+
+        if not out_rows:
+            return {"status": "empty", "rows": []}
+        return {"status": "live", "rows": out_rows}
+    except Exception:
+        logger.exception("lineage.list_lineage_for_aid failed aid=%s", aid)
+        try:
+            db.rollback()
+        except Exception:
+            logger.exception(
+                "lineage.list_lineage_for_aid: rollback failed aid=%s", aid
+            )
+        return {"status": "degraded", "rows": []}
