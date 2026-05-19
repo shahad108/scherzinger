@@ -848,10 +848,22 @@ export default function PricingStudioPage() {
 
             {/* Phase 1 — Recommendation hero card replaces the top-of-page
                 price options. Reads typed BFF blocks; PriceOptions is
-                demoted to a compact alternatives row below. */}
+                demoted to a compact alternatives row below.
+                Phase W3: when the BFF returns an `engine_v2` packet
+                (PRYZM_ENGINE_V2=on), prefer its p_star over the legacy
+                recommended_price so the hero displays the calibrated
+                engine output instead of the v0 (price-cost)*win_prob
+                recommendation which systematically over-prices. */}
             <RecommendationHero
               aid={effectiveAid}
-              recommendation={wb?.recommendation}
+              recommendation={
+                wb?.engine_v2?.p_star && wb?.recommendation
+                  ? {
+                      ...wb.recommendation,
+                      recommended_price: wb.engine_v2.p_star.toFixed(2),
+                    }
+                  : wb?.recommendation
+              }
               wtp={wb?.wtp}
               winProbCurve={wb?.win_prob_curve}
               competitorRef={wb?.competitor_ref}

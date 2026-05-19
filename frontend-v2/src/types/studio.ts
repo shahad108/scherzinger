@@ -254,6 +254,26 @@ export interface WorkbenchData {
   // frontend can render live/empty/locked/degraded states without
   // re-deriving from the absence of payload fields.
   meta?: WorkbenchMeta;
+  // Pricing Studio v3 / Phase W3 — v1.4 engine packet. Only present when
+  // backend is started with PRYZM_ENGINE_V2=on. When present the UI
+  // prefers `engine_v2.p_star` over the legacy `recommendation.recommended_price`.
+  engine_v2?: {
+    engine_version?: string;
+    article_id?: string;
+    current_price?: number;
+    p_star?: number;
+    delta_pct?: number;
+    score_eur?: number;
+    score_eur_calibrated?: number;
+    breakeven_price?: number | null;
+    mc_ci_low?: number;
+    mc_ci_high?: number;
+    mc_p_positive?: number;
+    drivers?: { win_prob?: number; cost?: number; churn?: number };
+    constraint_active?: string | null;
+    conformal_scalar?: number;
+    error?: string;
+  };
 }
 
 /**

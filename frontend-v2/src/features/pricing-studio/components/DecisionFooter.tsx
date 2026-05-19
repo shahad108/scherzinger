@@ -135,16 +135,32 @@ export function DecisionFooter({
     const onDown = (e: MouseEvent) => {
       if (!pdfPopoverRef.current?.contains(e.target as Node)) setPdfOpen(false);
     };
+    // v1.4 a11y fix: Escape closes the popover so users without a mouse
+    // (or who can't find the click-outside target zone) always have an exit.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPdfOpen(false);
+    };
     document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
   }, [pdfOpen]);
   useEffect(() => {
     if (!snoozeOpen) return;
     const onDown = (e: MouseEvent) => {
       if (!snoozePopoverRef.current?.contains(e.target as Node)) setSnoozeOpen(false);
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSnoozeOpen(false);
+    };
     document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
   }, [snoozeOpen]);
 
   // Defensive reads — when `data` is undefined (workbench loading / non-live
@@ -609,8 +625,19 @@ export function DecisionFooter({
                 fontSize: 12,
               }}
             >
-              <div style={{ fontWeight: 700, fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
-                Persona
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <div style={{ fontWeight: 700, fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Persona
+                </div>
+                <button
+                  type="button"
+                  aria-label="Close branded PDF picker"
+                  data-testid="decision-footer-pdf-close"
+                  onClick={() => setPdfOpen(false)}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 2, fontSize: 14, lineHeight: 1 }}
+                >
+                  ✕
+                </button>
               </div>
               <div role="radiogroup" aria-label="Persona" style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
                 {PDF_PERSONA_OPTIONS.map((opt) => (

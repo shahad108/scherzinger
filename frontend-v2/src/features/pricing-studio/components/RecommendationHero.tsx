@@ -211,14 +211,16 @@ export function RecommendationHero({
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onOpenRecLineage}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rose-border)] bg-[var(--rose-bg)] px-3 py-1 text-[11.5px] font-semibold text-[var(--rose-deep)] transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rose)] focus-visible:ring-offset-1"
-          data-testid="why-this-price"
-        >
-          Why this price?
-        </button>
+        {/*
+          v1.4 coherence: the top-right "Why this price?" rose pill was a
+          duplicate of the inline expander below the price (lines 257-273
+          in RecommendationHero). Two CTAs to the same thing was the bug
+          flagged in the 2026-05-19 Playwright pass; we keep the inline
+          expander (richer behaviour — opens the rationale paragraphs
+          right next to the price) and drop the redundant top-right pill.
+          Lineage is still reachable via the price button itself (the
+          big rose price is clickable and opens lineage).
+        */}
       </header>
 
       {/* The right-side rationale aside was removed in the 2026-05-19
