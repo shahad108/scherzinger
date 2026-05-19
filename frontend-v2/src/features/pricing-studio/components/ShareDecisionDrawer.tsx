@@ -2,10 +2,10 @@
 //
 // Right-rail drawer opened from DecisionFooter's "Share" button. Lets Frank
 // fan a Pricing-Studio decision out to Till (CFO) or Heiko (Sales KAM) — or
-// both. The backend's `share_decision` action accepts a single recipient
-// from {till, heiko} (see scherzinger-platform/backend/api/v1/actions.py
-// `_SHAREABLE_PERSONAS`); "Both" is implemented client-side as two
-// sequential mutations so a single click still posts two notifications.
+// both. The backend's `share_decision` action accepts `till`, `heiko`, or
+// `both`; when `both` is passed the backend transactionally writes one
+// notification per persona (single audit row, single sender note). The
+// frontend therefore makes exactly one mutation per click.
 //
 // Design language: Pryzm 2026 — rounded-2xl, hairline borders, warm-gray
 // surface, rose primary. Mirrors PublishConfirmationDrawer in look + feel.
@@ -74,27 +74,25 @@ export function ShareDecisionDrawer({
   async function handleSubmit() {
     if (!recipient) return;
     setError(null);
-    const recipients: Array<'till' | 'heiko'> =
-      recipient === 'both' ? ['till', 'heiko'] : [recipient];
     try {
-      for (const r of recipients) {
-        await share.mutateAsync({
-          target_id: targetId,
-          aid: articleId,
-          recommendation_id: recommendationId ?? undefined,
-          payload: {
-            recipient: r,
-            note: noteText.length ? noteText : null,
-            target_id: targetId,
-          },
-          // Top-level mirror so the backend's body.get('recipient') /
-          // body.get('note') reach _share_decision regardless of whether
-          // payload-unwrap is enabled.
-          recipient: r,
+      // Backend now natively fans "both" into one notification per persona
+      // inside a single transaction — no client-side loop needed.
+      await share.mutateAsync({
+        target_id: targetId,
+        aid: articleId,
+        recommendation_id: recommendationId ?? undefined,
+        payload: {
+          recipient,
           note: noteText.length ? noteText : null,
-          headline: headline ?? `Decision ${articleId}`,
-        });
-      }
+          target_id: targetId,
+        },
+        // Top-level mirror so the backend's body.get('recipient') /
+        // body.get('note') reach _share_decision regardless of whether
+        // payload-unwrap is enabled.
+        recipient,
+        note: noteText.length ? noteText : null,
+        headline: headline ?? `Decision ${articleId}`,
+      });
       runUiAction({
         toast: `Shared with ${FRIENDLY_LABEL[recipient]}.`,
       });

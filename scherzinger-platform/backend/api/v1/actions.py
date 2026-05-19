@@ -69,6 +69,10 @@ ACTION_KINDS = {
 
 _PERSONA_FRIENDLY = {"till": "Till (MD)", "heiko": "Heiko (Sales)", "frank": "Frank (Pricing)"}
 _SHAREABLE_PERSONAS = {"till", "heiko"}
+# "both" is a pseudo-recipient that fans out atomically into one notification
+# per persona in _SHAREABLE_PERSONAS. Kept separate so the validator below can
+# accept it without polluting the per-recipient User-lookup path.
+_SHAREABLE_GROUPS = {"both"}
 
 
 def _target_from_body(body: dict[str, Any]) -> tuple[str | None, str | None]:
@@ -170,11 +174,19 @@ def _share_decision(
       * The audit row is written by the dispatcher around this call.
     """
     recipient = (body.get("recipient") or "till").lower().strip()
-    if recipient not in _SHAREABLE_PERSONAS:
+    if recipient not in _SHAREABLE_PERSONAS and recipient not in _SHAREABLE_GROUPS:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            f"share_decision recipient must be one of {_SHAREABLE_PERSONAS}",
+            f"share_decision recipient must be one of "
+            f"{sorted(_SHAREABLE_PERSONAS | _SHAREABLE_GROUPS)}",
         )
+    # Resolve fan-out targets: a single persona stays single; "both" expands
+    # into the full _SHAREABLE_PERSONAS set so one request writes one
+    # notification per persona atomically (single DB transaction).
+    if recipient in _SHAREABLE_GROUPS:
+        fanout_recipients = sorted(_SHAREABLE_PERSONAS)
+    else:
+        fanout_recipients = [recipient]
     target_id = body.get("target_id") or body.get("recommendation_id") or body.get("aid")
     if not target_id:
         raise HTTPException(
@@ -186,35 +198,52 @@ def _share_decision(
     note_text = (body.get("note") or "").strip() or None
     link = body.get("link") or f"/action-center?focus=rec-{target_id}"
 
-    recipient_user = (
-        db.query(User)
-        .filter(User.ui_persona_default == recipient, User.disabled.is_(False))
-        .order_by(User.created_at.asc())
-        .first()
-    )
-
-    notification_id: str | None = None
-    if recipient_user is not None:
-        sender_name = getattr(ctx, "name", None) or "Frank"
-        notif = shell_service.notify(
-            db,
-            user_id=recipient_user.id,
-            tone="info",
-            title=f"{sender_name} shared: {headline[:120]}",
-            sub=(
-                note_text
-                if note_text
-                else f"Audit-trail receipt attached · audit_hash {audit_hash[:12]}…"
-            ),
-            link=link,
-            external_id=f"share:{audit_hash[:16]}",
+    sender_name = getattr(ctx, "name", None) or "Frank"
+    fanout_results: list[dict[str, Any]] = []
+    for r in fanout_recipients:
+        recipient_user = (
+            db.query(User)
+            .filter(User.ui_persona_default == r, User.disabled.is_(False))
+            .order_by(User.created_at.asc())
+            .first()
         )
-        notification_id = str(notif.id)
 
-    # Also create a sender-owned note as Frank's record of what was sent.
+        notification_id: str | None = None
+        if recipient_user is not None:
+            notif = shell_service.notify(
+                db,
+                user_id=recipient_user.id,
+                tone="info",
+                title=f"{sender_name} shared: {headline[:120]}",
+                sub=(
+                    note_text
+                    if note_text
+                    else f"Audit-trail receipt attached · audit_hash {audit_hash[:12]}…"
+                ),
+                link=link,
+                # Suffix audit_hash with recipient so fan-out doesn't collide
+                # on the (kind, external_id) idempotency key.
+                external_id=f"share:{audit_hash[:16]}:{r}",
+            )
+            notification_id = str(notif.id)
+
+        fanout_results.append(
+            {
+                "recipient": r,
+                "recipient_user_id": str(recipient_user.id) if recipient_user is not None else None,
+                "recipient_resolved": recipient_user is not None,
+                "notification_id": notification_id,
+            }
+        )
+
+    # Sender-owned note as Frank's record of what was sent (one note per call,
+    # listing all recipients).
+    recipients_label = ", ".join(
+        _PERSONA_FRIENDLY.get(r, r) for r in fanout_recipients
+    )
     sender_note = Note(
         user_id=ctx.user_id,
-        title=f"Shared with {_PERSONA_FRIENDLY.get(recipient, recipient)}: {headline[:160]}",
+        title=f"Shared with {recipients_label}: {headline[:160]}",
         body=(
             (note_text + "\n\n" if note_text else "")
             + f"target: {target_id}\nrecipient: {recipient}\nlink: {link}\n"
@@ -226,14 +255,18 @@ def _share_decision(
     db.commit()
     db.refresh(sender_note)
 
+    # Legacy shape: top-level recipient/user/resolved/notification fields
+    # mirror the FIRST fanout entry (back-compat with existing consumers).
+    primary = fanout_results[0] if fanout_results else {}
     return {
         "recipient": recipient,
-        "recipient_user_id": str(recipient_user.id) if recipient_user is not None else None,
-        "recipient_resolved": recipient_user is not None,
-        "notification_id": notification_id,
+        "recipient_user_id": primary.get("recipient_user_id"),
+        "recipient_resolved": primary.get("recipient_resolved", False),
+        "notification_id": primary.get("notification_id"),
         "note_id": str(sender_note.id),
         "share_link": link,
         "audit_hash": audit_hash,
+        "fanout": fanout_results,
     }
 
 

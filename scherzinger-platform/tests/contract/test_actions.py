@@ -140,6 +140,36 @@ def test_share_decision_rejects_bad_recipient(client: TestClient) -> None:
     assert "recipient" in res.text.lower()
 
 
+def test_share_decision_both_fans_out_atomically(client: TestClient) -> None:
+    """Phase F: recipient='both' fans out into one notification per persona
+    inside a single transaction. Single audit row, single sender note, but
+    the response.fanout array carries one entry per recipient.
+    """
+    res = client.post(
+        "/api/v1/actions/share_decision",
+        headers=_csrf_headers(client, idempotency="share-both-1"),
+        json={
+            "target_id": "rec-200832-E",
+            "recommendation_id": "rec-200832-E",
+            "recipient": "both",
+            "headline": "Article 200832-E peer spread",
+            "note": "Need fast feedback from both CFO and Sales.",
+        },
+    )
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["recipient"] == "both"
+    # Backwards-compat top-level fields mirror the first fanout entry.
+    assert "fanout" in body
+    fanout = body["fanout"]
+    assert isinstance(fanout, list) and len(fanout) == 2
+    recipients = sorted(r["recipient"] for r in fanout)
+    assert recipients == ["heiko", "till"]
+    # Exactly one audit row + one sender note for the whole "both" call.
+    assert body["audit"]["kind"] == "share_decision"
+    assert body["note_id"]
+
+
 def test_audit_recent_lists_actor_rows(client: TestClient) -> None:
     # Write one row so the actor has at least one entry.
     client.post(

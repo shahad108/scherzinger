@@ -100,7 +100,7 @@ describe('ShareDecisionDrawer', () => {
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
   });
 
-  it('Both fans out into two requests (till + heiko)', async () => {
+  it('Both sends a single request with recipient="both" (backend fans out atomically)', async () => {
     const onOpenChange = vi.fn();
     wrap(
       <ShareDecisionDrawer
@@ -115,11 +115,9 @@ describe('ShareDecisionDrawer', () => {
         .querySelector('input')!,
     );
     fireEvent.click(screen.getByTestId('share-decision-submit'));
-    await waitFor(() => expect(shareMutateAsync).toHaveBeenCalledTimes(2));
-    const recipients = shareMutateAsync.mock.calls.map(
-      (call) => (call[0] as { recipient: string }).recipient,
-    );
-    expect(recipients).toEqual(['till', 'heiko']);
+    await waitFor(() => expect(shareMutateAsync).toHaveBeenCalledTimes(1));
+    const call = shareMutateAsync.mock.calls[0][0] as { recipient: string };
+    expect(call.recipient).toBe('both');
   });
 
   it('falls back to articleId as target_id when recommendationId is null', async () => {
