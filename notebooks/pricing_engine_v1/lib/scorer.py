@@ -52,19 +52,28 @@ def _score_at_price(
     customer_alpha: np.ndarray,
     customer_share: np.ndarray,
 ) -> float:
-    """Eq. (2) — cluster score at a single candidate price `p`."""
+    """Eq. (2) — cluster score at a single candidate price `p`.
+
+    Note v1.3 (Fix B): the win-probability multiplier is intentionally NOT
+    applied to the retained-margin term. P_win is the probability of winning
+    a *new* quote at a given price; the existing customer book derived from
+    `_customer_share` does not go through quote-stage selection every period.
+    Price-sensitivity for the existing book is fully captured by (i) volume
+    elasticity, and (ii) the churn-shock function. Multiplying retained
+    margin by P_win additionally would double-count price-driven attrition
+    and systematically under-state contribution by ~3x (the portfolio
+    win-rate). P_win is retained on the WinProbFit object so the UI can
+    still plot the curve, and so v2 can apply it to the prospective-quote
+    sub-population when that data is wired in.
+    """
     ratio = p / max(sku.current_price, 1e-6)
     delta_p = ratio - 1.0
-    pw = float(wp.predict(np.array([p]))[0])
     vol = float(adjusted_volume(sku.expected_volume_12mo, np.array([ratio]), sku.elasticity)[0])
     contribution = max(0.0, p - sku.unit_cost)
 
     retain = p_retain(customer_alpha, np.full_like(customer_alpha, delta_p))
     churn = 1.0 - retain
-    # Per-customer expected margin.
-    # Contribution from retained share of the customer's book.
-    margin_retained = pw * retain * customer_share * vol * contribution
-    # Loss from churn-induced abandonment of remaining LTV at *current* price.
+    margin_retained = retain * customer_share * vol * contribution
     base_contribution = max(0.0, sku.current_price - sku.unit_cost)
     monthly_vol = (customer_share * sku.expected_volume_12mo) / 12.0
     ltv_loss = np.array(

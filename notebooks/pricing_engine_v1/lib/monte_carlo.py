@@ -46,15 +46,18 @@ def run(
     ratio = p_star / max(sku.current_price, 1e-6)
     delta_p = ratio - 1.0
 
-    # Win-probability samples from bootstrap (or fallback if locked).
-    if not wp.locked and wp.boot_slopes.size:
-        idx = rng.integers(0, wp.boot_slopes.size, size=draws)
-        intercepts = wp.boot_intercepts[idx]
-        slopes = wp.boot_slopes[idx]
-        x = np.log(p_star / wp.median_price)
-        pw_samples = 1.0 / (1.0 + np.exp(-(intercepts + slopes * x)))
-    else:
-        pw_samples = np.full(draws, wp.global_win_rate)
+    # v1.3 Fix B: P_win is not applied to retained margin (see scorer._score_at_price).
+    # We retain the sampling code path commented-out so v2 can re-enable when
+    # the prospective-quote sub-population is wired in.
+    # if not wp.locked and wp.boot_slopes.size:
+    #     idx = rng.integers(0, wp.boot_slopes.size, size=draws)
+    #     intercepts = wp.boot_intercepts[idx]
+    #     slopes = wp.boot_slopes[idx]
+    #     x = np.log(p_star / wp.median_price)
+    #     pw_samples = 1.0 / (1.0 + np.exp(-(intercepts + slopes * x)))
+    # else:
+    #     pw_samples = np.full(draws, wp.global_win_rate)
+    _ = wp  # retained for future use
 
     # Cost + volume + alpha samples.
     cost_samples = sku.unit_cost * np.exp(rng.normal(0.0, cost_sigma, size=draws))
@@ -77,9 +80,7 @@ def run(
         contribution = max(0.0, p_star - cost_samples[d])
         retain = p_retain(alpha_samples[d], np.full(customer_alphas.size, delta_p))
         churn = 1.0 - retain
-        margin_retained = (
-            pw_samples[d] * retain * customer_shares * vol_at_p * contribution
-        )
+        margin_retained = retain * customer_shares * vol_at_p * contribution
         monthly_vol = (customer_shares * vol_base_samples[d]) / 12.0
         ltv_loss = np.array(
             [discounted_contribution(mv, base_contribution_cur, horizon_months=12) for mv in monthly_vol]
