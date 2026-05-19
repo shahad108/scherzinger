@@ -143,7 +143,13 @@ export function OptionMarginMicroWaterfall({
         ) : (
           <span className="ws-pocket-label">pocket —</span>
         )}
-        {activeOptionMargin.lineage_ref && (
+        {/* The compact waterfall is rendered INSIDE the option-card
+            <button> in PriceOptions; nesting another <button> here trips
+            the React/HTML "<button> cannot contain a nested <button>"
+            warning. The lineage CTA is still available from the
+            non-compact pocket waterfall surfaces (Compare drawer,
+            Simulation drawer). */}
+        {!compact && activeOptionMargin.lineage_ref && (
           <LineageButton
             lineageRef={activeOptionMargin.lineage_ref}
             subjectTitle="Option pocket waterfall"

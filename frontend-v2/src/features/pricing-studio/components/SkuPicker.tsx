@@ -211,13 +211,44 @@ export function SkuPicker({
                 data-testid={`sku-picker-row-${s.aid}`}
               >
                 <span className="ws-aid">{s.aid}</span>
-                <span className={`ws-marg ${s.marginTone}`}>{s.margin}</span>
+                <span className={`ws-marg ${s.marginTone ?? ''}`}>{s.margin ?? ''}</span>
                 <span className="ws-desc">
-                  {s.productLine} · {s.meta}
-                  <span className={`ws-clu ${s.clusterTone}`}>{s.clusterChip}</span>
+                  {(() => {
+                    // Derive a real description line. Prefer the BFF-supplied
+                    // productLine + meta when present; otherwise fall back to
+                    // the recommendation block (cluster + current → recommended
+                    // price delta) so every row carries context beyond the AID.
+                    const parts: string[] = [];
+                    if (s.productLine) parts.push(s.productLine);
+                    if (s.meta) parts.push(s.meta);
+                    const rec = s.recommendation;
+                    if (parts.length === 0 && rec) {
+                      const cluster = rec.cluster_id ?? s.cluster ?? null;
+                      if (cluster) parts.push(`${cluster} cluster`);
+                      const cur = rec.current_price;
+                      const recd = rec.recommended_price;
+                      if (typeof cur === 'number') {
+                        const curFmt = `€${cur.toFixed(0)}`;
+                        if (typeof recd === 'number' && recd !== cur) {
+                          const pct = ((recd - cur) / cur) * 100;
+                          const sign = pct >= 0 ? '+' : '−';
+                          parts.push(
+                            `${curFmt} → €${recd.toFixed(0)} (${sign}${Math.abs(pct).toFixed(1)}%)`,
+                          );
+                        } else {
+                          parts.push(`${curFmt} · hold`);
+                        }
+                      }
+                    }
+                    if (parts.length === 0 && s.cluster) parts.push(`${s.cluster} cluster`);
+                    return parts.length > 0 ? parts.join(' · ') : 'No pricing signal';
+                  })()}
+                  {s.clusterChip && (
+                    <span className={`ws-clu ${s.clusterTone ?? ''}`}>{s.clusterChip}</span>
+                  )}
                   {s.locked && <span className="ws-locked">🔒 Locked</span>}
                 </span>
-                <span className={`ws-tag ${s.tagTone}`}>{s.tag}</span>
+                {s.tag && <span className={`ws-tag ${s.tagTone ?? ''}`}>{s.tag}</span>}
               </button>
             </div>
           );

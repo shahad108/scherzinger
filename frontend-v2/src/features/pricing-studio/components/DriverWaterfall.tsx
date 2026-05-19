@@ -14,7 +14,7 @@
 //   * collapse to top-5 by default; "Show N more" expander reveals the rest
 
 import { useState } from 'react';
-import type { RecommendationDriver } from '@/types/studio';
+import type { RecommendationDriver, WorkbenchBlockMeta } from '@/types/studio';
 import { LineageButton } from '@/components/LineageButton';
 import { DataMissingBadge } from '@/components/DataMissingBadge';
 import { parseDecimal } from '../lib/decimal';
@@ -31,6 +31,10 @@ interface Props {
   drivers?: RecommendationDriver[];
   /** Apply a thin rose-deep ring to floor_protection driver chip (deep-link source=margin). */
   emphasiseFloor?: boolean;
+  /** ``meta.blocks.drivers`` from the workbench. When ``status === 'degraded'``
+   *  we surface a "heuristic split" pill so the analyst knows the per-driver
+   *  weights were apportioned rather than measured. */
+  blockStatus?: WorkbenchBlockMeta | null;
   className?: string;
 }
 
@@ -50,7 +54,12 @@ const KIND_COLOR: Record<string, string> = {
   floor_protection: 'var(--rose-deep)',
 };
 
-export function DriverWaterfall({ drivers, emphasiseFloor = false, className }: Props) {
+export function DriverWaterfall({
+  drivers,
+  emphasiseFloor = false,
+  blockStatus,
+  className,
+}: Props) {
   const [expanded, setExpanded] = useState(false);
 
   if (!drivers || drivers.length === 0) {
@@ -83,8 +92,17 @@ export function DriverWaterfall({ drivers, emphasiseFloor = false, className }: 
       data-testid="driver-waterfall"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
-        <h5 className="font-display text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--muted)]">
+        <h5 className="flex items-center gap-2 font-display text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--muted)]">
           Drivers
+          {blockStatus?.status === 'degraded' && (
+            <span
+              data-testid="driver-heuristic-badge"
+              title={blockStatus.reason ?? 'Heuristic split'}
+              className="inline-flex items-center gap-1 rounded-full border border-[var(--amber-border)] bg-[var(--amber-bg)] px-2 py-[1px] text-[9.5px] font-bold normal-case tracking-[0.04em] text-[var(--amber-deep)]"
+            >
+              heuristic
+            </span>
+          )}
         </h5>
         <span className="text-[10.5px] text-[var(--muted)]">contribution %</span>
       </div>

@@ -460,6 +460,12 @@ def build_customer_fanout(
     else:
         context_label = "cost-floor"
 
+    summary = _summarise_fanout(
+        rows=rows,
+        proposed_price=proposed_price,
+        aid=aid,
+        db_session=db_session,
+    )
     payload: dict[str, Any] = {
         "aid": aid,
         "proposed_price": (
@@ -467,6 +473,7 @@ def build_customer_fanout(
         ),
         "context_label": context_label,
         "rows": rows,
+        "summary": summary,
         "lineage_ref": str(last_lineage_id) if last_lineage_id is not None else None,
     }
     _CACHE[cache_key] = (now, payload)
@@ -474,3 +481,91 @@ def build_customer_fanout(
     while len(_CACHE) > _CACHE_MAX_ENTRIES:
         _CACHE.popitem(last=False)  # drop oldest (LRU)
     return payload
+
+
+def _summarise_fanout(
+    *,
+    rows: list[dict[str, Any]],
+    proposed_price: Optional[Decimal],
+    aid: str,
+    db_session: Session,
+) -> dict[str, Any]:
+    """Compute the {stay_count, at_risk_count, recovery, loss} summary
+    block for the customer-fan-out response.
+
+    Added in the 2026-05-19 coherence pass — see
+    docs/superpowers/specs/2026-05-19-pricing-studio-coherence-design.md
+    §2.3. The numbers feed the "STAYS / AT RISK" header summary on the
+    customer fan-out card and the recovery-vs-loss line in the rationale
+    memo (§2.4).
+    """
+
+    def _parse(s: Any) -> Decimal:
+        try:
+            if s is None or s == "":
+                return Decimal("0")
+            return Decimal(str(s))
+        except Exception:
+            return Decimal("0")
+
+    stay_count = 0
+    at_risk_count = 0
+    stay_ltm = Decimal("0")
+    at_risk_ltm = Decimal("0")
+    expected_loss = Decimal("0")
+    for row in rows:
+        ltm = _parse(row.get("ltm_eur"))
+        risk = _parse(row.get("risk_if_moved")) or _parse(row.get("churn_p"))
+        tone = (row.get("tone") or "plain").strip()
+        if tone == "alert":
+            at_risk_count += 1
+            at_risk_ltm += ltm
+        else:
+            stay_count += 1
+            stay_ltm += ltm
+        expected_loss += ltm * risk
+
+    # Gross recovery: only meaningful with a proposed price + a current
+    # reference. We pull the current price from price_state lazily — when
+    # missing, recovery stays at zero.
+    recovery = Decimal("0")
+    if proposed_price is not None:
+        try:
+            from sqlalchemy import select  # local to avoid top-level churn
+
+            from backend.models.pricing.pricing_state import PriceStateRow
+
+            price_row = db_session.execute(
+                select(PriceStateRow).where(PriceStateRow.aid == aid)
+            ).scalar_one_or_none()
+            current = (
+                _parse(getattr(price_row, "current_price", None))
+                if price_row is not None
+                else Decimal("0")
+            )
+            if current > 0:
+                delta_pct = (proposed_price - current) / current
+                # Apply uplift to *staying* customers only — at-risk
+                # customers are assumed to leave; the expected_loss
+                # term above already books their downside.
+                recovery = stay_ltm * delta_pct
+        except Exception:
+            logger.exception("pricing:customer_fanout:summary aid=%s", aid)
+
+    net = recovery - expected_loss
+
+    def _eur(v: Decimal) -> str:
+        return str(v.quantize(Decimal("0.01")))
+
+    return {
+        "proposed_price": (
+            str(proposed_price) if proposed_price is not None else None
+        ),
+        "stay_count": stay_count,
+        "at_risk_count": at_risk_count,
+        "stay_ltm_eur": _eur(stay_ltm),
+        "at_risk_ltm_eur": _eur(at_risk_ltm),
+        "expected_loss_eur_yr": _eur(expected_loss),
+        "gross_recovery_eur_yr": _eur(recovery),
+        "net_recovery_eur_yr": _eur(net),
+    }

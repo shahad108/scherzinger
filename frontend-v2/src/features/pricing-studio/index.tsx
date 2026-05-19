@@ -30,20 +30,31 @@ import {
 } from './components/EvidenceTabs';
 import { DecisionFooter } from './components/DecisionFooter';
 import { RationaleMemo } from './components/RationaleMemo';
+// 2026-05-19 coherence pass §3.4 — AI insights pane between Drivers and
+// Alternatives. Reads /briefing/sku/{aid}/insights.
+import { AiInsightsPane } from './components/AiInsightsPane';
+// 2026-05-19 coherence pass §3.2 — Email draft drawer opens from the
+// RationaleMemo "Email to Till" button. POSTs to
+// /briefing/sku/{aid}/email-draft and renders editable subject + body.
+import { EmailDraftDrawer } from './components/EmailDraftDrawer';
 import { CrossLinks } from './components/CrossLinks';
 import { StudioSkeleton } from './components/StudioSkeleton';
 import { DeepLinkBanner } from './components/DeepLinkBanner';
 import { ProposalContextPanel } from './components/ProposalContextPanel';
 // Pricing Studio v3 / Phase 1 — new top-of-workbench surfaces.
 import { RecommendationHero } from './components/RecommendationHero';
-import { RecommendationKpiTiles } from './components/RecommendationKpiTiles';
-import { WtpBandStrip } from './components/WtpBandStrip';
+// RecommendationKpiTiles removed in 2026-05-19 coherence pass — the six
+// tiles duplicated values already shown by RecommendationHero. See
+// docs/superpowers/specs/2026-05-19-pricing-studio-coherence-design.md §1.
+// WtpBandStrip is no longer rendered standalone — the band lives inside
+// the hero's BandStrip with floor/cost/ceiling anchors added.
 import { WinProbCurve } from './components/WinProbCurve';
 import { DriverWaterfall } from './components/DriverWaterfall';
 import { LineageDrawer } from './components/LineageDrawer';
 import { LineageDrawerProvider } from './lineage/LineageDrawerContext';
 import { useLineageUrlSync } from './lineage/useLineageUrlSync';
 import { parseDecimal } from './lib/decimal';
+import type { DecisionData } from '@/types/studio';
 // Pricing Studio v3 / Phase 3 — cost & margin reality.
 import { TriggerBanner } from './components/TriggerBanner';
 import { CostTrajectoryDrawer } from './components/CostTrajectoryDrawer';
@@ -181,6 +192,8 @@ export default function PricingStudioPage() {
   // Pre-fill for the ABTestCard when the user opts in via "Run as A/B"
   // from the SimulationDrawer.
   const [abPrefill, setAbPrefill] = useState<{ variant: string; control: string } | null>(null);
+  // 2026-05-19 coherence pass §3.2 — Email draft drawer state.
+  const [emailDrawerOpen, setEmailDrawerOpen] = useState(false);
 
   // Phase 6 — Batch repricing state. Mode + the staged AID set live on
   // the URL so refresh / deep-link preserves them; the active batch_id
@@ -682,7 +695,7 @@ export default function PricingStudioPage() {
   // see a fully-shaped workbench. This guards against partial/empty
   // BFF payloads tripping the React error boundary.
   const lazyWb = wbQuery.data;
-  const lazyWbReady = Boolean(lazyWb && (lazyWb as { options?: unknown }).options);
+  const lazyWbReady = isWorkbenchReady(lazyWb);
   const wb = (lazyWbReady ? lazyWb : null) ?? selectedSku?.workbench ?? data.workbench;
   // Phase C — non-default SKUs may not carry the legacy `fanout`/`options`
   // blocks if the BFF returned them as empty/locked. Read defensively so
@@ -707,6 +720,50 @@ export default function PricingStudioPage() {
   // current" subtitle on the KPI tiles. Real projected-DB2 at recommended
   // ships in Phase 3 with option_margin.
   const deepLinkSource = params.get('source');
+
+  // Synthesize a minimal DecisionFooter payload ONLY after the user has
+  // explicitly picked a price option. Until then we pass `undefined` so
+  // the DecisionFooter renders its own quiet empty-state card instead of
+  // a persistent "You're proposing …" banner at the bottom of every
+  // session. Phase F lifecycle data is computed on Accept/Reject (see
+  // docs/PRICING-STUDIO-DEFECTS.md #11) — once the BFF lands the real
+  // payload it wins via the first branch below.
+  const decisionForFooter = (() => {
+    const raw = wb?.decision as DecisionData | undefined;
+    if (raw && raw.summary && raw.notifyLabels) return raw;
+    if (!effectiveAid) return undefined;
+    if (!activeOption) return undefined;
+    const recommended = wb?.recommendation?.recommended_price;
+    const proposedPrice = activeOption.price
+      ?? (recommended ? `€${recommended}` : (heroView.currentPrice ?? ''));
+    const margin = heroView.currentMargin ?? '—';
+    let recovery = '—';
+    const cur = currentPriceValue;
+    const rec = recommended ? parseDecimal(recommended) : NaN;
+    if (Number.isFinite(cur) && Number.isFinite(rec) && cur && cur > 0) {
+      const pct = ((rec - cur!) / cur!) * 100;
+      const sign = pct >= 0 ? '+' : '−';
+      recovery = `${sign}${Math.abs(pct).toFixed(1)}% vs today`;
+    }
+    const synth: DecisionData = {
+      summary: {
+        proposedPrice,
+        aid: effectiveAid,
+        margin,
+        recovery,
+        riskLine: 'Draft proposal — adjust before publishing',
+      },
+      effectiveDate: new Date().toISOString().slice(0, 10),
+      notifyDefaults: { sales: false, customers: false, escalate: false, abTest: false },
+      notifyLabels: {
+        sales: 'Notify *sales* on accept',
+        customers: 'Notify *affected customers* on accept',
+        escalate: 'Escalate to *weekly approval queue*',
+        abTest: 'Spin up an *A/B slice* against the current price',
+      },
+    };
+    return synth;
+  })();
 
   return (
     <LineageDrawerProvider>
@@ -804,17 +861,6 @@ export default function PricingStudioPage() {
               source={deepLinkSource}
             />
 
-            <RecommendationKpiTiles
-              aid={effectiveAid}
-              recommendation={wb?.recommendation}
-              winProbCurve={wb?.win_prob_curve}
-              wtp={wb?.wtp}
-              currentPriceLabel={heroView.currentPrice}
-              currentPriceValue={currentPriceValue}
-              currentMarginLabel={heroView.currentMargin}
-              // Phase 3 will wire projectedDb2Label from wb.option_margin.
-            />
-
             <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               <WinProbCurve
                 curve={wb?.win_prob_curve}
@@ -825,16 +871,14 @@ export default function PricingStudioPage() {
               <DriverWaterfall
                 drivers={wb?.recommendation?.drivers}
                 emphasiseFloor={deepLinkSource === 'margin'}
+                blockStatus={wb?.meta?.blocks?.drivers ?? null}
               />
             </div>
 
-            <WtpBandStrip
-              wtp={wb?.wtp}
-              recommendedPrice={wb?.recommendation?.recommended_price}
-              floor={wb?.recommendation?.band?.min}
-              blockStatus={wb?.meta?.blocks?.wtp ?? null}
-              className="mt-3"
-            />
+            {/* 2026-05-19 coherence pass §3.4 — AI insights pane.
+                Reads /briefing/sku/{aid}/insights and renders three
+                tonal cards (gains / risks / watch). */}
+            <AiInsightsPane aid={effectiveAid} />
 
             <PriceOptions
               options={wb?.options}
@@ -948,7 +992,7 @@ export default function PricingStudioPage() {
             />
 
             <DecisionFooter
-              data={wb?.decision}
+              data={decisionForFooter}
               activeOption={activeOption}
               currentPriceLabel={heroView.currentPrice}
               proposalId={latestProposalId}
@@ -964,6 +1008,9 @@ export default function PricingStudioPage() {
               aid={effectiveAid}
               data={wb?.memo}
               blockMeta={wb?.meta?.blocks?.memo ?? null}
+              recommendation={wb?.recommendation}
+              fanoutSummary={fanoutBlock?.summary ?? null}
+              onOpenEmail={() => setEmailDrawerOpen(true)}
             />
 
             {/* Pricing Studio v3 / Phase I1 — Coming soon: locked future-
@@ -1092,6 +1139,19 @@ export default function PricingStudioPage() {
           currentPriceLabel={heroView.currentPrice}
           recommendationId={params.get('recommendation') ?? null}
         />
+        {/* 2026-05-19 coherence pass §3.2 — Email draft drawer.
+            Opens from the RationaleMemo "Email to Till" button. */}
+        <EmailDraftDrawer
+          open={emailDrawerOpen}
+          onOpenChange={setEmailDrawerOpen}
+          aid={effectiveAid}
+          defaultPersona="till"
+          proposedPrice={
+            activeOption?.price
+              ? activeOption.price.replace(/[^\d,.\-]/g, '').replace(',', '.')
+              : undefined
+          }
+        />
       </section>
     </LineageDrawerProvider>
   );
@@ -1102,6 +1162,34 @@ export default function PricingStudioPage() {
 function StudioUrlSyncBridge() {
   useLineageUrlSync();
   return null;
+}
+
+/**
+ * Hotfix sweep — tighten the lazy-workbench gate.
+ *
+ * The studio renders dozens of components that read nested fields off the
+ * workbench (`wb?.options.hold.price`, `wb?.cost.trajectory.materialPoints`,
+ * `wb?.recommendation.confidence_level`, …). When the BFF returns a partial
+ * payload for a non-default aid — e.g. `options` arrives but `cost` is still
+ * locked — falling through to the shell-seed workbench cross-wires the
+ * SKU's identity with another SKU's blocks and trips component-level
+ * guards.
+ *
+ * We therefore require **all three** core blocks (options, cost,
+ * recommendation) before treating the lazy workbench as ready. While the
+ * gate is closed the page either keeps the skeleton up (if the per-aid
+ * query is still loading) or falls back to the bundled workbench. This
+ * is the parent-side counterpart to the per-component empty-state cards
+ * added in the same sweep.
+ */
+function isWorkbenchReady(wb: unknown): boolean {
+  if (!wb || typeof wb !== 'object') return false;
+  const w = wb as {
+    options?: unknown;
+    cost?: unknown;
+    recommendation?: unknown;
+  };
+  return Boolean(w.options && w.cost && w.recommendation);
 }
 
 // Pricing Studio v3 / Phase C5 — gating wrapper for <ComparablePanel>. The

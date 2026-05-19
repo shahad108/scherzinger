@@ -59,7 +59,15 @@ function snoozeUntilISO(preset: SnoozePreset): string {
 type LifecycleState = 'idle' | 'accepted' | 'rejected' | 'snoozed';
 
 interface Props {
-  data: DecisionData;
+  /**
+   * Decision-footer bundle from the workbench. Can be ``undefined`` while
+   * the workbench query is loading OR when the BFF reports a non-live
+   * status for the ``decision`` block — the component renders an
+   * empty-state card in that case rather than crashing on nested
+   * ``data.summary`` / ``data.effectiveDate`` / ``data.notifyDefaults``
+   * access.
+   */
+  data: DecisionData | undefined;
   activeOption: ActiveOptionView | null;
   /** Current catalog price string from the workbench hero (e.g. "€ 4.10"). */
   currentPriceLabel?: string | null;
@@ -92,8 +100,15 @@ export function DecisionFooter({
   onScrollToApproval,
 }: Props) {
   const [params] = useSearchParams();
-  const [effectiveDate, setEffectiveDate] = useState(data.effectiveDate);
-  const [notify, setNotify] = useState(data.notifyDefaults);
+  // Safe defaults so initial render before the workbench `decision` block
+  // arrives doesn't throw on undefined; the early-return below replaces
+  // the visible UI with an empty-state card until the block lands.
+  const [effectiveDate, setEffectiveDate] = useState(
+    data?.effectiveDate ?? new Date().toISOString().slice(0, 10),
+  );
+  const [notify, setNotify] = useState(
+    data?.notifyDefaults ?? { sales: false, customers: false, escalate: false, abTest: false },
+  );
   const [error, setError] = useState<string | null>(null);
   const [publishOpen, setPublishOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -132,9 +147,15 @@ export function DecisionFooter({
     return () => document.removeEventListener('mousedown', onDown);
   }, [snoozeOpen]);
 
-  const proposed = activeOption ? activeOption.price : data.summary.proposedPrice;
+  // Defensive reads — when `data` is undefined (workbench loading / non-live
+  // decision block) the early-return below shows the empty-state card; these
+  // values only matter when `data` is present, but they execute on every
+  // render and must not crash. `?? ''` keeps types narrow downstream.
+  const proposed = activeOption
+    ? activeOption.price
+    : data?.summary?.proposedPrice ?? '';
   const recommendationId = params.get('recommendation') ?? null;
-  const articleId = data.summary.aid;
+  const articleId = data?.summary?.aid ?? '';
 
   const proposedPriceNum = parsePrice(proposed);
   const currentPriceNum = parsePrice(currentPriceLabel ?? null);
@@ -165,8 +186,8 @@ export function DecisionFooter({
         notify,
         proposed_label: proposed,
         current_label: currentPriceLabel ?? null,
-        margin: data.summary.margin,
-        recovery: data.summary.recovery,
+        margin: data?.summary?.margin ?? null,
+        recovery: data?.summary?.recovery ?? null,
       },
     };
   }
@@ -276,6 +297,18 @@ export function DecisionFooter({
   const abControlPrice = priceToDecimal(currentPriceLabel) || '0';
   const abVariantPrice = priceToDecimal(proposed) || abControlPrice;
 
+  // No decision data and no active option yet → render nothing. We used to
+  // surface a dashed "Decision footer unavailable" placeholder card here,
+  // but it added persistent visual noise on every workbench landing. The
+  // parent now only synthesises a footer payload after the user has picked
+  // a price option (see PricingStudioPage), so this branch reliably means
+  // "the user hasn't engaged yet" — keep the canvas clean.
+  // Placed after all hooks so React's hook order stays stable across
+  // renders as the workbench arrives.
+  if (!data || !data.summary || !data.notifyLabels) {
+    return null;
+  }
+
   return (
     <div className="ws-decision">
       {lifecycle !== 'idle' && (
@@ -305,10 +338,14 @@ export function DecisionFooter({
               : 'Snoozed'}
         </div>
       )}
+      {/* Slimmed in the 2026-05-19 coherence pass: projected margin /
+          projected recovery used to repeat KPI-tile values above. They
+          are now owned by the AI Insights pane + RationaleMemo, so the
+          summary line only states what's unique to the footer: the
+          actual proposal + the residual risk callout. */}
       <div className="ws-decision-summary">
-        You're proposing <b>{proposed}</b> on Article <b>{articleId}</b> · projected margin{' '}
-        <b>{data.summary.margin}</b> · projected recovery <b>{data.summary.recovery}</b> ·{' '}
-        <b>{data.summary.riskLine}</b>.
+        You're proposing <b>{proposed}</b> on Article <b>{articleId}</b>.{' '}
+        <span style={{ color: 'var(--ink-2)' }}>{data.summary.riskLine}</span>
       </div>
       {error && (
         <div

@@ -430,9 +430,19 @@ async def build_studio_shell(
                 "reason": f"Recommendation enrichment unavailable ({type(exc).__name__})",
             }
 
-    # Determine the default aid: caller-supplied wins; otherwise the
-    # first SKU in the picker; otherwise None (truly-empty shell).
-    default_aid = aid or (skus[0]["aid"] if skus else None)
+    # Determine the default aid: caller-supplied wins; otherwise prefer
+    # the first SKU that actually carries a recommendation so the
+    # workbench lands on a SKU with real numbers (avoid landing on a
+    # synthetic SCHED-/EPA- SKU that returns an empty fallback payload).
+    # Fall back to the picker's first row, then None.
+    default_aid = aid
+    if not default_aid and skus:
+        for s in skus:
+            if s.get("recommendation") and s.get("aid"):
+                default_aid = s["aid"]
+                break
+        if not default_aid:
+            default_aid = skus[0].get("aid")
 
     # The shell's bundled `workbench` block carries the default-aid
     # workbench for backward-compat with the legacy frontend. Phase A3:

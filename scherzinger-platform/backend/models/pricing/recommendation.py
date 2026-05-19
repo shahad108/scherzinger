@@ -94,5 +94,15 @@ class Recommendation(BaseModel):
     )
     band: RecommendationBand
     drivers: list[Driver] = Field(default_factory=list)
+    drivers_heuristic: bool = Field(
+        default=False,
+        description=(
+            "True when ``drivers[]`` was generated via the degenerate-"
+            "attribution heuristic (one signal swallowed the L1 pie; we "
+            "fell back to a defensible per-driver split). The frontend "
+            "renders a small badge in this case so the analyst knows "
+            "the weights are heuristic rather than measured."
+        ),
+    )
     rationale_md: str
     lineage_ref: Optional[LineageRef] = None

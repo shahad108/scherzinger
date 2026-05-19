@@ -168,6 +168,11 @@ def _attach_phase1_signals(
     """
     block_status: dict[str, dict[str, Any]] = {
         "recommendation": _empty("No recommendation yet for this aid"),
+        # `drivers` mirrors `recommendation` status by default; promoted to
+        # `degraded` when the recommender emits a heuristic split (one
+        # signal swallowed the L1 pie — see services/pricing/recommendation.py
+        # ``_maybe_heuristic_split``).
+        "drivers": _empty("No drivers yet for this aid"),
         "wtp": _empty("No WTP band computed for this aid"),
         "win_prob_curve": _empty("No win-prob curve computed for this aid"),
         "competitor_ref": _locked("Competitor data source not connected"),
@@ -186,6 +191,20 @@ def _attach_phase1_signals(
                 if rec is not None:
                     workbench["recommendation"] = rec.model_dump(mode="json")
                     block_status["recommendation"] = _live()
+                    # Drivers status: degraded when the recommender fell
+                    # back to the heuristic split (one signal would have
+                    # swallowed the L1 pie). Otherwise mirror recommendation
+                    # status.
+                    if getattr(rec, "drivers_heuristic", False):
+                        block_status["drivers"] = _degraded(
+                            "Driver attribution is heuristic — win-prob "
+                            "curve was flat or competitor source locked, "
+                            "so the per-driver shares are apportioned "
+                            "from cost/floor/cluster signals rather than "
+                            "measured."
+                        )
+                    else:
+                        block_status["drivers"] = _live()
             except Exception as exc:
                 logger.exception(
                     "studio:workbench:recommendation aid=%s tier=%s", aid, tier
@@ -865,10 +884,14 @@ def _replace_legacy_blocks(
             material_pct = next(
                 (c["pct"] for c in components if c["key"] == "material"), 0
             )
-            legacy_cost["note"] = (
-                f"Material {material_pct:.0f}% of unit cost · cluster "
-                f"{sku.get('cluster') or '—'}."
-            )
+            sku_cluster = sku.get("cluster")
+            if sku_cluster:
+                legacy_cost["note"] = (
+                    f"Material {material_pct:.0f}% of unit cost · cluster "
+                    f"{sku_cluster}."
+                )
+            else:
+                legacy_cost["note"] = f"Material {material_pct:.0f}% of unit cost."
             block_status["cost"] = _live()
         else:
             legacy_cost["components"] = []
@@ -1189,15 +1212,39 @@ async def build_workbench(
         )
 
     # Start from a minimal scaffold — empty blocks the FE renders as
-    # "empty" until a builder upgrades them to "live".
+    # "empty" until a builder upgrades them to "live". The hero title /
+    # sub / eyebrow are seeded from the SKU + cluster so the dark hero
+    # card on the right of the workbench shows something meaningful even
+    # before the phase-1 builders enrich it with recommendation copy.
+    cluster = str(sku.get("cluster") or "") or None
+    sku_tier = str(sku.get("tier") or "") or None
+    tier_label = sku_tier.upper() if sku_tier else None
+    eyebrow_parts: list[str] = []
+    if tier_label:
+        eyebrow_parts.append(f"Tier {tier_label}")
+    if cluster:
+        eyebrow_parts.append(f"Cluster {cluster}")
+    eyebrow = " · ".join(eyebrow_parts) or "Pricing workbench"
+    sub_parts: list[str] = []
+    if cluster:
+        sub_parts.append(f"Belongs to cluster {cluster}")
+    if tier_label:
+        sub_parts.append(f"tier {tier_label}")
+    sub = ", ".join(sub_parts).capitalize() if sub_parts else (
+        "Live workbench — pick an option below to draft a proposal."
+    )
     workbench: dict[str, Any] = {
         "aid": aid,
         "hero": {
             "aid": aid,
-            "title": "—",
-            "sub": "",
+            "eyebrow": eyebrow,
+            "title": f"Article {aid}",
+            "sub": sub,
+            "chips": [],
+            "meta": "",
             "currentPrice": None,
             "currentMargin": None,
+            "currentMarginTone": "good",
             "targetText": "",
         },
         "options": {},
@@ -1207,7 +1254,6 @@ async def build_workbench(
         "decision": {},
         "memo": {"paragraphs": []},
     }
-    cluster = str(sku.get("cluster") or "") or None
 
     phase1_status = _attach_phase1_signals(
         workbench,
@@ -1230,6 +1276,9 @@ async def build_workbench(
     # the frontend's iteration is deterministic.
     meta_blocks: dict[str, Any] = {
         "recommendation": phase1_status["recommendation"],
+        "drivers": phase1_status.get(
+            "drivers", _empty("No drivers yet for this aid")
+        ),
         "wtp": phase1_status["wtp"],
         "win_prob_curve": phase1_status["win_prob_curve"],
         "competitor_ref": phase1_status["competitor_ref"],

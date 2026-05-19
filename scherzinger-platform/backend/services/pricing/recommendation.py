@@ -339,7 +339,7 @@ def _compute_drivers(
     lineages: dict[str, Optional[LineageRef]],
     cluster: Optional[str] = None,
     customer_id: Optional[str] = None,
-) -> list[Driver]:
+) -> tuple[list[Driver], bool]:
     """Marginal-removal driver attribution.
 
     For each Phase-1 driver, compute the recommended price with that
@@ -443,7 +443,26 @@ def _compute_drivers(
         DriverKind.WIN_PROB_OPTIMUM: lineages.get("curve"),
         DriverKind.FLOOR_PROTECTION: lineages.get("price"),
     }
-    return [
+    # Degenerate-attribution detection (added 2026-05-19 — see
+    # docs/superpowers/specs/2026-05-19-pricing-studio-coherence-design.md
+    # §2.1). When a single driver swallows > 80 % of the L1-normalised
+    # mass *because* the other inputs collapsed to ≈ 0 (flat win-prob
+    # curve, locked competitor source, identical WTP/cluster anchors)
+    # the resulting "100 % / 0 % / 0 % / 0 % / 0 %" pie is misleading
+    # — every other driver still has a defensible non-zero share once
+    # we apportion based on signals that don't depend on the missing
+    # inputs. We replace the L1 weights with a heuristic split in that
+    # case and re-quantise.
+    quantised, is_heuristic = _maybe_heuristic_split(
+        quantised,
+        rec_price=rec_price,
+        cost_floor=cost_floor,
+        wtp=wtp,
+        competitor=competitor,
+        curve=curve,
+        cluster=cluster,
+    )
+    drivers = [
         Driver(
             kind=k,
             label=labels[k],
@@ -458,6 +477,87 @@ def _compute_drivers(
             DriverKind.FLOOR_PROTECTION,
         )
     ]
+    return drivers, is_heuristic
+
+
+def _maybe_heuristic_split(
+    weights: dict["DriverKind", Decimal],
+    *,
+    rec_price: Decimal,
+    cost_floor: Decimal,
+    wtp: Optional["WtpBand"],
+    competitor: Optional["CompetitorRef"],
+    curve: "WinProbCurve",
+    cluster: Optional[str],
+) -> tuple[dict["DriverKind", Decimal], bool]:
+    """Return ``(weights, is_heuristic)``.
+
+    Detects the "one driver swallows ≥ 80 % while the rest are ≤ 1e-3"
+    degenerate state. When detected, returns a heuristic split that
+    apportions defensible weight across all five drivers using signals
+    that don't require live competitor or curve data. Otherwise returns
+    the input weights unchanged.
+    """
+    threshold = Decimal("0.80")
+    near_zero = Decimal("0.001")
+    dominant = max(weights.values()) if weights else Decimal("0")
+    if dominant < threshold:
+        return weights, False
+    minor_zero = sum(1 for v in weights.values() if v <= near_zero)
+    if minor_zero < (len(weights) - 1):
+        return weights, False
+
+    # Build a heuristic, then L1-normalise.
+    def _clamp(x: Decimal, lo: Decimal, hi: Decimal) -> Decimal:
+        return max(lo, min(hi, x))
+
+    # Floor protection share: distance from cost floor to rec price as a
+    # fraction of rec price. The closer rec sits to the floor, the more
+    # we attribute to "we held the line".
+    floor_share = (
+        _clamp(
+            (rec_price - cost_floor) / rec_price if rec_price > 0 else Decimal("0"),
+            Decimal("0.05"),
+            Decimal("0.30"),
+        )
+        if cost_floor is not None
+        else Decimal("0.10")
+    )
+    # Cost trajectory share: in the absence of a historic series, give
+    # it a fixed mid-weight so it shows up in the waterfall.
+    cost_share = Decimal("0.20")
+    # Competitor share: a small floor when no competitor data, larger when
+    # we at least have a competitor ref.
+    competitor_share = Decimal("0.10") if competitor is not None else Decimal("0.05")
+    # Win-prob optimum share: weighted by curve sample size when known.
+    n_deals = getattr(curve, "n_deals", 0) or 0
+    win_share = _clamp(
+        Decimal("0.08") + Decimal(str(min(n_deals, 30))) / Decimal("100"),
+        Decimal("0.08"),
+        Decimal("0.30"),
+    )
+    # Customer-mix share: residual, clamped so it never swallows the pie
+    # again and never drops below a visible 0.05.
+    used = floor_share + cost_share + competitor_share + win_share
+    customer_share = _clamp(Decimal("1") - used, Decimal("0.10"), Decimal("0.50"))
+
+    raw = {
+        DriverKind.COST_TRAJECTORY: cost_share,
+        DriverKind.COMPETITOR_SIGNAL: competitor_share,
+        DriverKind.CUSTOMER_MIX: customer_share,
+        DriverKind.WIN_PROB_OPTIMUM: win_share,
+        DriverKind.FLOOR_PROTECTION: floor_share,
+    }
+    total = sum(raw.values(), Decimal("0"))
+    if total == 0:
+        return weights, False
+    out = {k: (v / total).quantize(Decimal("0.0001")) for k, v in raw.items()}
+    # Cluster awareness is informational; we just nudge customer_mix when
+    # the band was anchored from cluster (already reflected in WTP path),
+    # so the cluster parameter is currently unused here but kept on the
+    # signature for forward compatibility.
+    _ = cluster
+    return out, True
 
 
 # ---------------------------------------------------------------------------
@@ -675,7 +775,7 @@ def build_recommendation(
     band_min = min(band_min, rec_price)
     band_max = max(band_max, rec_price)
 
-    drivers = _compute_drivers(
+    drivers, drivers_is_heuristic = _compute_drivers(
         rec_price=rec_price,
         cost=unit_cost,
         cost_floor=cost_floor,
@@ -706,6 +806,7 @@ def build_recommendation(
         confidence_level=level,
         band=RecommendationBand(min=band_min, target=rec_price, max=band_max),
         drivers=drivers,
+        drivers_heuristic=drivers_is_heuristic,
         rationale_md=rationale,
         lineage_ref=lineages["rec"],
     )

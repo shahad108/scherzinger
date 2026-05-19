@@ -6,22 +6,35 @@ export type Tier = 'A' | 'B' | 'C' | 'D';
 
 export interface SkuListEntry {
   aid: string;
-  margin: string;
-  marginTone: MarginTone;
-  productLine: string;
-  cluster: string;
+  margin: string | null;
+  marginTone: MarginTone | null;
+  productLine: string | null;
+  cluster: string | null;
   meta: string;
-  clusterChip: string;
-  clusterTone: ConfTone;
-  flag: SkuFlag;
-  tag: string;
-  tagTone: SkuTagTone;
+  clusterChip?: string;
+  clusterTone?: ConfTone;
+  flag: SkuFlag | null;
+  tag: string | null;
+  tagTone: SkuTagTone | null;
   locked: boolean;
   isNew: boolean;
   shortHero?: SkuShortHero;
   workbenchPatch?: WorkbenchPatch;
   /** Computed (added by `useStudio` enrichment); not in raw mock JSON. */
   workbench?: WorkbenchData;
+  /** Per-SKU recommendation summary (BFF). Drives the picker subtitle when
+   *  productLine/meta are not seeded server-side. */
+  recommendation?: {
+    article_id: string;
+    current_price: number | null;
+    recommended_price: number | null;
+    floor: number | null;
+    ceiling: number | null;
+    cluster_id: string | null;
+    cluster_confidence?: number | null;
+    movable_share?: number | null;
+    is_movable?: boolean | null;
+  } | null;
 }
 
 export type WorkbenchVariant = 'standard' | 'frame-locked' | 'new-sku';
@@ -72,7 +85,9 @@ export interface PriceOption {
   price: string;
   delta: string;
   impact: string;
-  impactTone: 'pos' | 'neg';
+  /** `pos` = positive € recovery (green), `neg` = annual loss (red),
+   *  `flat`/`violet` = neutral / informational (gray / violet). */
+  impactTone: 'pos' | 'neg' | 'flat' | 'violet';
   risk: string;
 }
 
@@ -345,6 +360,17 @@ export interface RecommendationBlock {
   confidence_level: ConfidenceLevel;
   band: RecommendationBand;
   drivers: RecommendationDriver[];
+  /** True when the per-driver weights were generated via the heuristic
+   *  fallback rather than measured marginal-removal attribution. The
+   *  workbench's ``meta.blocks.drivers.status`` also flips to ``degraded``
+   *  in that case so the FE can render a "heuristic" pill. */
+  drivers_heuristic?: boolean;
+  /** Optional structural reference prices used by BandStrip — when present
+   *  the band plots them as anchor markers so the dots never collapse
+   *  into an unreadable stack. */
+  floor?: string | null;
+  cost?: string | null;
+  ceiling?: string | null;
   rationale_md: string;
   lineage_ref?: LineageRefBlock | null;
 }
@@ -426,6 +452,21 @@ export interface CustomerFanoutRow {
   lineage_ref_id: string | null;
 }
 
+export interface CustomerFanoutSummary {
+  /** Decimal-as-string or null when this is the default (no proposed) summary. */
+  proposed_price: string | null;
+  stay_count: number;
+  at_risk_count: number;
+  stay_ltm_eur: string;
+  at_risk_ltm_eur: string;
+  /** Σ ltm × risk_if_moved across all rows — probabilistic annual loss. */
+  expected_loss_eur_yr: string;
+  /** Σ ltm × delta_pct across staying rows — uplift if they keep buying. */
+  gross_recovery_eur_yr: string;
+  /** gross_recovery − expected_loss. */
+  net_recovery_eur_yr: string;
+}
+
 export interface CustomerFanoutBlock {
   aid: string;
   /** Decimal-as-string or null when this is the default (no proposed) fanout. */
@@ -437,6 +478,8 @@ export interface CustomerFanoutBlock {
    * backwards compat with older BFF builds. */
   context_label?: string;
   rows: CustomerFanoutRow[];
+  /** STAYS / AT-RISK + recovery/loss totals (2026-05-19 coherence pass). */
+  summary?: CustomerFanoutSummary;
   lineage_ref: string | null;
 }
 

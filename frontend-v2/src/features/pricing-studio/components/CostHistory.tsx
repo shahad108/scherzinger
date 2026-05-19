@@ -16,8 +16,14 @@ import { DataMissingBadge } from '@/components/DataMissingBadge';
 interface Props {
   /** Currently selected article — drives the live audit + cost-outlook fetch. */
   aid?: string | null;
-  cost: CostPane;
-  history: HistoryRow[];
+  /**
+   * The cost-pane bundle from the workbench. Can be `undefined` while the
+   * workbench query is loading or when the BFF reports a non-live status
+   * for the `cost` block — the component renders an empty-state card in
+   * that case rather than crashing on missing nested fields.
+   */
+  cost: CostPane | undefined;
+  history: HistoryRow[] | undefined;
   /**
    * Pricing Studio v3 / Phase 3 — live cost-history payload from the BFF.
    * When supplied the bottom sparkline + commodity trajectory render from
@@ -164,6 +170,49 @@ export function CostHistory({
   costHistoryStatus,
   onOpenCostDrawer,
 }: Props) {
+  // Guard against an undefined workbench `cost` block. Every nested-field
+  // access below (cost.components / cost.paneSub) would crash otherwise.
+  // The parent passes `wb?.cost` which is undefined while the workbench is
+  // loading OR when the BFF reports a non-live status for the cost block.
+  // The trajectory sub-block is OPTIONAL — we render composition bars +
+  // foot note without it, and skip the sparkline below. Used to also gate
+  // on `!cost.trajectory` but that hid the composition for every SKU the
+  // BFF doesn't ship trajectory points for (most of them today).
+  if (!cost) {
+    return (
+      <div
+        role="note"
+        data-testid="cost-history-empty"
+        style={{
+          margin: '14px 0',
+          padding: '14px 16px',
+          borderRadius: 12,
+          background: 'var(--surface-sunken)',
+          border: '1px dashed var(--hairline)',
+          color: 'var(--ink-2)',
+          fontSize: 12.5,
+          lineHeight: 1.45,
+        }}
+      >
+        <div
+          style={{
+            fontWeight: 700,
+            color: 'var(--ink)',
+            fontSize: 12,
+            marginBottom: 4,
+          }}
+        >
+          Cost composition unavailable
+        </div>
+        <div>
+          {costHistoryStatus?.reason
+            ? costHistoryStatus.reason
+            : 'Workbench hasn’t resolved a cost breakdown for this SKU yet.'}
+        </div>
+      </div>
+    );
+  }
+
   // Phase C3 — surface BFF block status (locked/degraded/empty) as a
   // DataMissingBadge in the inline summary. The deep-dive drawer fetches
   // /pricing/sku/{aid}/cost-outlook itself, so a locked workbench block
@@ -199,7 +248,7 @@ export function CostHistory({
   const historySource: 'live' | 'fallback' =
     auditQuery.isSuccess && liveHistory !== null ? 'live' : 'fallback';
   const historyRows: HistoryRow[] =
-    historySource === 'live' && liveHistory ? liveHistory : history;
+    historySource === 'live' && liveHistory ? liveHistory : (history ?? []);
 
   // ---- Live cost outlook (composition + commodity trajectory) ---------
   const outlookQuery = useCostOutlook(aid ?? '', 6, {
@@ -235,8 +284,8 @@ export function CostHistory({
     const commodityLine = buildPolyline(commodityValues);
     if (!material && !commodityLine) return null;
     return {
-      material: material || cost.trajectory.materialPoints,
-      quoted: commodityLine || cost.trajectory.quotedPoints,
+      material: material || cost.trajectory?.materialPoints || '',
+      quoted: commodityLine || cost.trajectory?.quotedPoints || '',
     };
   }, [costHistory, cost.trajectory]);
 
@@ -256,9 +305,9 @@ export function CostHistory({
   }, [livePolylines, outlook]);
 
   const materialPoints =
-    livePolylines?.material ?? outlookPolyline ?? cost.trajectory.materialPoints;
+    livePolylines?.material ?? outlookPolyline ?? cost.trajectory?.materialPoints ?? '';
   const quotedPoints =
-    livePolylines?.quoted ?? cost.trajectory.quotedPoints;
+    livePolylines?.quoted ?? cost.trajectory?.quotedPoints ?? '';
 
   // Compute a real "+X% YYYY→YYYY" delta when we have trajectory data.
   const trajectoryDelta = useMemo(() => {
@@ -277,8 +326,15 @@ export function CostHistory({
       const sign = t.monthly_yoy_pct >= 0 ? '+' : '';
       return `${t.commodity} ${sign}${t.monthly_yoy_pct.toFixed(1)}% YoY`;
     }
-    return cost.trajectory.delta;
-  }, [costHistory, outlook, cost.trajectory.delta]);
+    return cost.trajectory?.delta ?? '';
+  }, [costHistory, outlook, cost.trajectory?.delta]);
+
+  // Only show the sparkline section when we have something real to draw —
+  // either a BFF trajectory block, a live cost_history payload that
+  // produced a polyline, or a cost-outlook forecast polyline.
+  const hasTrajectory = Boolean(
+    cost.trajectory || livePolylines || outlookPolyline,
+  );
 
   const compositionSource: 'live' | 'fallback' = outlook
     ? 'live'
@@ -289,7 +345,7 @@ export function CostHistory({
   return (
     <div className="ws-pane">
       <h4>
-        Cost composition <span className="ws-pane-sub">{renderInline(cost.paneSub)}</span>
+        Cost composition <span className="ws-pane-sub">{renderInline(cost.paneSub ?? '')}</span>
         {onOpenCostDrawer && (
           <button
             type="button"
@@ -347,12 +403,13 @@ export function CostHistory({
         </div>
       )}
       <p className="ws-cost-foot">
-        {cost.note} For full cost-vs-price 24-mo trajectory see <a href="#">Margin Intelligence</a>.
+        {cost.note ?? ''} For full cost-vs-price 24-mo trajectory see <a href="#">Margin Intelligence</a>.
       </p>
 
+      {hasTrajectory && (
       <div className="ws-cost-traj">
         <div className="ws-cost-traj-head">
-          <span>{cost.trajectory.title}</span>
+          <span>{cost.trajectory?.title ?? 'Cost trajectory'}</span>
           <span className="delta-bad">{trajectoryDelta}</span>
         </div>
         <button
@@ -391,18 +448,19 @@ export function CostHistory({
               points={quotedPoints}
             />
             <text x="4" y="36" fontSize="8" fill="var(--ink-3)">
-              {cost.trajectory.yearStart}
+              {cost.trajectory?.yearStart ?? ''}
             </text>
             <text x="220" y="36" fontSize="8" fill="var(--ink-3)">
-              {cost.trajectory.yearEnd}
+              {cost.trajectory?.yearEnd ?? ''}
             </text>
           </svg>
         </button>
         <div className="ws-cost-traj-foot">
           <span className="leg-rose">— Material cost</span> ·{' '}
-          <span className="leg-ink">— Quoted price</span> · {cost.trajectory.legend}
+          <span className="leg-ink">— Quoted price</span> · {cost.trajectory?.legend ?? ''}
         </div>
       </div>
+      )}
 
       <h4 className="row2">
         Repricing history{' '}

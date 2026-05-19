@@ -26,10 +26,17 @@ import { renderInline } from './renderInline';
 import { AlertButton } from '@/components/AlertButton';
 
 interface Props {
-  /** Legacy FanoutPane (mock JSON path) — used for the default workbench view. */
-  data: FanoutPane;
+  /**
+   * Legacy FanoutPane (mock JSON path) — used for the default workbench view.
+   *
+   * Can be ``undefined`` while the workbench query is loading OR when the
+   * BFF reports a non-live status for the ``fanout`` block — the component
+   * renders an empty-state card in that case rather than crashing on
+   * nested ``data.clusterNote`` / ``data.rows`` / ``data.footNote`` access.
+   */
+  data: FanoutPane | undefined;
   /** Formatted "€5.10" price headline displayed in the pane header. */
-  fanPrice: string;
+  fanPrice: string | null;
   /** v3 wire-shape block when the BFF attaches it; takes precedence over `data`. */
   block?: CustomerFanoutBlock | null;
   /** Currently selected proposed price (Decimal-as-string) for drill-in URLs. */
@@ -64,11 +71,56 @@ export function CustomerFanout({
 }: Props) {
   const [openCustomer, setOpenCustomer] = useState<CustomerFanoutRow | null>(null);
 
+  // Guard against an undefined workbench `fanout` block. Every nested-field
+  // access below (data.clusterNote / data.rows / data.paneSub / data.footNote)
+  // would crash otherwise. The parent passes `wb?.fanout` which is undefined
+  // while the workbench is loading OR when the BFF reports a non-live status
+  // for the fanout block. We still allow the typed v3 `block` path to render
+  // when present — it carries its own rows + context_label and doesn't need
+  // the legacy FanoutPane seed.
+  const hasBlockRows = Boolean(
+    block && Array.isArray(block.rows) && block.rows.length > 0,
+  );
+  if (!data && !hasBlockRows) {
+    return (
+      <div
+        role="note"
+        data-testid="customer-fanout-missing"
+        style={{
+          margin: '14px 0',
+          padding: '14px 16px',
+          borderRadius: 12,
+          background: 'var(--surface-sunken)',
+          border: '1px dashed var(--hairline)',
+          color: 'var(--ink-2)',
+          fontSize: 12.5,
+          lineHeight: 1.45,
+        }}
+      >
+        <div
+          style={{
+            fontWeight: 700,
+            color: 'var(--ink)',
+            fontSize: 12,
+            marginBottom: 4,
+          }}
+        >
+          Customer fan-out unavailable
+        </div>
+        <div>
+          {blockMeta?.reason
+            ? blockMeta.reason
+            : 'Workbench hasn’t resolved a customer fan-out for this SKU yet.'}
+        </div>
+      </div>
+    );
+  }
+
   // When the BFF v3 block is present render the typed rows; otherwise
   // fall back to the legacy pre-formatted FanoutPane (mock path).
   // `rows` is required on the wire-shape but old workbench mocks may
   // ship a partial object — guard for that.
-  const useBlock = Boolean(block && Array.isArray(block.rows) && block.rows.length > 0);
+  const useBlock = hasBlockRows;
   // Pricing Studio v3 / Phase 11 — empty state when the BFF block is
   // explicitly empty (no rows) AND the legacy data also has no rows.
   // Loading is handled upstream by the studio skeleton — once the page
@@ -78,7 +130,7 @@ export function CustomerFanout({
     block !== undefined &&
     Array.isArray(block.rows) &&
     block.rows.length === 0 &&
-    (!data.rows || data.rows.length === 0);
+    (!data?.rows || data.rows.length === 0);
 
   // SF3 (Phase 2.2.5): prefer the BFF-computed context label so a slider
   // re-score updates the header in lockstep with the row tones. Fall
@@ -86,7 +138,7 @@ export function CustomerFanout({
   // present (mock JSON path).
   const contextLabel =
     (useBlock && block?.context_label) ||
-    data.paneSub.match(/\(([^)]+)\)/)?.[1] ||
+    data?.paneSub?.match(/\(([^)]+)\)/)?.[1] ||
     'cost-floor';
 
   // Phase A — when the BFF marks the fanout block non-live we render an
@@ -142,7 +194,7 @@ export function CustomerFanout({
           label="churn"
         />
       </h4>
-      <p className="cluster-note">{renderInline(data.clusterNote)}</p>
+      <p className="cluster-note">{renderInline(data?.clusterNote ?? '')}</p>
       {blockNonLive && (
         <FanoutStatusCard
           status={blockStatus}
@@ -157,18 +209,18 @@ export function CustomerFanout({
           No customers buy this SKU in the current period — fan-out is empty.
         </div>
       )}
+      {!blockNonLive && useBlock && block?.summary && proposedPriceDecimal && (
+        <FanoutSummaryHeader summary={block.summary} />
+      )}
       {!blockNonLive && (
       <div className="ws-fanout">
         {useBlock
-          ? block!.rows.map((r) => (
-              <BlockRow
-                key={r.customer_id}
-                row={r}
-                proposedPriceDecimal={proposedPriceDecimal ?? block!.proposed_price ?? null}
-                onClick={() => setOpenCustomer(r)}
-              />
-            ))
-          : data.rows.map((r) => (
+          ? renderBlockRowsGrouped(
+              block!.rows,
+              proposedPriceDecimal ?? block!.proposed_price ?? null,
+              setOpenCustomer,
+            )
+          : (data?.rows ?? []).map((r) => (
               <div key={r.customer} className={`ws-fan-row${r.rowTone !== 'plain' ? ` ${r.rowTone}` : ''}`}>
                 <span className={`tier-chip ${r.tier}`}>{r.tier}</span>
                 <span className="ws-fan-cust">
@@ -196,7 +248,7 @@ export function CustomerFanout({
             ))}
       </div>
       )}
-      {!blockNonLive && (
+      {!blockNonLive && data?.footNote && (
         <p className="ws-fan-note">
           {data.footNote} · <a href="#">show all</a>
         </p>
@@ -229,8 +281,18 @@ function BlockRow({ row, proposedPriceDecimal, onClick }: BlockRowProps) {
   // the same row colours land via the existing .ws-fan-row stylesheet.
   // Do NOT re-threshold from churn_p / risk_if_moved / decline_p here.
   const toneClass = row.tone !== 'plain' ? ` ${row.tone}` : '';
-  const churnPct = parseDecimal(row.churn_p);
+  // When a price is being scored, surface `risk_if_moved` (the
+  // price-conditional churn probability for *this customer at this
+  // price*) — that is the number the analyst is asking about with
+  // "at this price, who churns?". Fall back to the static baseline
+  // `churn_p` when no proposed price is active.
+  const priceActive = Boolean(proposedPriceDecimal);
+  const priceRiskNum = parseDecimal(row.risk_if_moved);
+  const baselineNum = parseDecimal(row.churn_p);
+  const useRiskIfMoved = priceActive && Number.isFinite(priceRiskNum);
+  const churnPct = useRiskIfMoved ? priceRiskNum : baselineNum;
   const churnLabel = Number.isFinite(churnPct) ? `${(churnPct * 100).toFixed(0)}%` : '—';
+  const churnPrefix = useRiskIfMoved ? 'at this price' : 'baseline';
   // BFF tone is also the source-of-truth for the churn chip colour —
   // just thread it through as a CSS-class suffix (plain | warn | alert).
   const churnToneClass = row.tone;
@@ -282,9 +344,142 @@ function BlockRow({ row, proposedPriceDecimal, onClick }: BlockRowProps) {
       <PaidBandMicroBar band={row.paid_band} proposed={proposedPriceDecimal} />
 
       <span className={`ws-fan-churn ws-fan-churn-${churnToneClass}`}>
-        <span className="ws-fan-churn-chip" data-tone={row.tone}>churn {churnLabel}</span>
+        <span
+          className="ws-fan-churn-chip"
+          data-tone={row.tone}
+          title={`${churnPrefix} churn ${churnLabel}`}
+        >
+          {churnPrefix} {churnLabel}
+        </span>
       </span>
     </button>
+  );
+}
+
+// --- 2026-05-19 coherence pass — STAYS / AT-RISK groups + summary -----------
+
+import type { CustomerFanoutSummary } from '@/types/studio';
+
+function FanoutSummaryHeader({ summary }: { summary: CustomerFanoutSummary }) {
+  const parseEur = (s: string | null | undefined) => {
+    if (!s) return 0;
+    const n = parseDecimal(s);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const stayLtm = parseEur(summary.stay_ltm_eur);
+  const riskLtm = parseEur(summary.at_risk_ltm_eur);
+  const recovery = parseEur(summary.gross_recovery_eur_yr);
+  const loss = parseEur(summary.expected_loss_eur_yr);
+  const net = parseEur(summary.net_recovery_eur_yr);
+  const netTone = net >= 0 ? 'good' : 'bad';
+  return (
+    <div
+      data-testid="customer-fanout-summary"
+      style={{
+        margin: '8px 0',
+        padding: '10px 12px',
+        borderRadius: 10,
+        background: 'var(--surface-soft)',
+        border: '1px solid var(--hairline)',
+        fontSize: 12,
+        lineHeight: 1.45,
+        color: 'var(--ink-2)',
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 14,
+        alignItems: 'center',
+      }}
+    >
+      <span>
+        <b style={{ color: 'var(--ink)' }}>{summary.stay_count}</b> stay
+        <span style={{ color: 'var(--ink-3)' }}> · LTM {fmt.eur(stayLtm)}</span>
+      </span>
+      <span aria-hidden style={{ color: 'var(--ink-3)' }}>·</span>
+      <span>
+        <b style={{ color: 'var(--rose-deep)' }}>{summary.at_risk_count}</b> at risk
+        <span style={{ color: 'var(--ink-3)' }}> · LTM {fmt.eur(riskLtm)}</span>
+      </span>
+      <span aria-hidden style={{ color: 'var(--ink-3)' }}>·</span>
+      <span>
+        recovery <b style={{ color: 'var(--green-deep)' }}>{fmt.eur(recovery)}/yr</b>
+      </span>
+      <span aria-hidden style={{ color: 'var(--ink-3)' }}>·</span>
+      <span>
+        expected loss <b style={{ color: 'var(--rose-deep)' }}>{fmt.eur(loss)}/yr</b>
+      </span>
+      <span
+        aria-hidden
+        style={{
+          marginLeft: 'auto',
+          padding: '2px 8px',
+          borderRadius: 999,
+          background:
+            netTone === 'good'
+              ? 'color-mix(in oklab, var(--green-bg) 70%, white)'
+              : 'color-mix(in oklab, var(--rose-bg) 70%, white)',
+          color: netTone === 'good' ? 'var(--green-deep)' : 'var(--rose-deep)',
+          fontWeight: 700,
+          fontSize: 11.5,
+        }}
+      >
+        net {net >= 0 ? '+' : ''}
+        {fmt.eur(net)}/yr
+      </span>
+    </div>
+  );
+}
+
+function renderBlockRowsGrouped(
+  rows: CustomerFanoutRow[],
+  proposedPriceDecimal: string | null,
+  setOpenCustomer: (r: CustomerFanoutRow) => void,
+) {
+  const stays = rows.filter((r) => r.tone !== 'alert');
+  const atRisk = rows.filter((r) => r.tone === 'alert');
+  const sectionStyle: React.CSSProperties = {
+    fontSize: 10.5,
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    color: 'var(--ink-3)',
+    margin: '8px 0 4px',
+  };
+  return (
+    <>
+      {stays.length > 0 && (
+        <>
+          <div style={sectionStyle} data-testid="fanout-section-stays">
+            Stays ({stays.length})
+          </div>
+          {stays.map((r) => (
+            <BlockRow
+              key={r.customer_id}
+              row={r}
+              proposedPriceDecimal={proposedPriceDecimal}
+              onClick={() => setOpenCustomer(r)}
+            />
+          ))}
+        </>
+      )}
+      {atRisk.length > 0 && (
+        <>
+          <div
+            style={{ ...sectionStyle, color: 'var(--rose-deep)' }}
+            data-testid="fanout-section-at-risk"
+          >
+            At risk ({atRisk.length})
+          </div>
+          {atRisk.map((r) => (
+            <BlockRow
+              key={r.customer_id}
+              row={r}
+              proposedPriceDecimal={proposedPriceDecimal}
+              onClick={() => setOpenCustomer(r)}
+            />
+          ))}
+        </>
+      )}
+    </>
   );
 }
 

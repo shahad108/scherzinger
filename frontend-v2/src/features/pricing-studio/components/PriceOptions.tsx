@@ -77,6 +77,12 @@ export function PriceOptions({
 }: Props) {
   const [active, setActive] = useState<ActiveOpt>('floor');
   const [customPrice, setCustomPrice] = useState('');
+  // Track whether the user has actually interacted with an option card.
+  // Until then we hold the visual highlight on 'floor' (the recommended
+  // anchor) but suppress `onActiveChange` so downstream consumers — most
+  // importantly the DecisionFooter — don't render an always-on
+  // "You're proposing …" banner before the user has picked anything.
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   // Guard every nested-field access so a non-live `options` block can't
   // crash the page. When the bundle is missing required fields we render
@@ -89,6 +95,7 @@ export function PriceOptions({
 
   useEffect(() => {
     if (!onActiveChange || !hasOptions || !options) return;
+    if (!hasInteracted) return;
     if (active === 'hold') {
       onActiveChange({ id: 'hold', price: options.hold.price, label: 'hold' });
     } else if (active === 'floor') {
@@ -101,7 +108,12 @@ export function PriceOptions({
       const price = customPrice ? `€${customPrice}` : '€—';
       onActiveChange({ id: 'custom', price, label: 'custom' });
     }
-  }, [active, customPrice, options, hasOptions, onActiveChange]);
+  }, [active, customPrice, options, hasOptions, hasInteracted, onActiveChange]);
+
+  const pickOption = (id: ActiveOpt) => {
+    setActive(id);
+    setHasInteracted(true);
+  };
 
   if (!hasOptions || !options) {
     return (
@@ -139,11 +151,18 @@ export function PriceOptions({
     );
   }
 
+  // Empty-state strings are intentionally terse so the Custom card stays
+  // visually balanced with the other three cards. We avoid the stray "·
+  // —" pattern that read as broken/missing data in production audits.
   const customDelta = customPrice
     ? `+€${customPrice.padEnd(1)} · custom`
-    : 'type a value';
-  const customImpact = customPrice ? '€recovery · per-unit' : '€recovery · —';
-  const customRisk = customPrice ? 'churn risk · per-unit modelled' : 'churn risk · —';
+    : 'Type a target price';
+  const customImpact = customPrice
+    ? '€recovery · per-unit'
+    : 'Annual recovery modelled on commit';
+  const customRisk = customPrice
+    ? 'churn risk · per-unit modelled'
+    : 'Churn risk modelled on commit';
 
   return (
     <>
@@ -151,14 +170,10 @@ export function PriceOptions({
         <h4>{compact ? 'Alternatives' : 'Pick a target price'}</h4>
         <span className="ws-opts-sub">
           {optionsSub}
-          {!compact && (
-            <>
-              {' · '}
-              <button type="button" className="link-btn">
-                🔍 Why this price?
-              </button>
-            </>
-          )}
+          {/* "Why this price?" link removed in the 2026-05-19 coherence
+              pass — the same CTA is already on the RecommendationHero
+              (header pill + inline expander). Dropping it here removes
+              the third duplicate. */}
           {onOpenCompare && (
             <>
               {' · '}
@@ -175,142 +190,150 @@ export function PriceOptions({
         </span>
       </div>
       <div className={`ws-options${compact ? ' ws-options--compact' : ''}`}>
-        {/* Phase K5 a11y: SimulateLink (a real <button>) must NOT be
-            nested inside the option <button>. Each option pairs an
-            outer <button> with an optional sibling SimulateLink. The
-            wrapper div carries the .ws-opt visual treatment via a
-            class on the button, while the simulate link sits below. */}
-        <button
-          type="button"
-          aria-pressed={active === 'hold'}
-          className={`ws-opt hold${active === 'hold' ? ' active' : ''}`}
-          onClick={() => setActive('hold')}
-        >
-          <span className="ws-opt-lab">Hold</span>
-          <span className="ws-opt-price">{options.hold.price}</span>
-          <span className="ws-opt-delta">{options.hold.delta}</span>
-          <span className={`ws-opt-impact${options.hold.impactTone === 'neg' ? ' neg' : ''}`}>
-            {options.hold.impact}
-          </span>
-          <span className="ws-opt-risk">
-            {options.hold.risk.split(' · ').map((seg, i, arr) => (
-              <span key={i}>
-                {i === arr.length - 1 ? <i>{seg}</i> : seg}
-                {i < arr.length - 1 ? ' · ' : ''}
-              </span>
-            ))}
-          </span>
-          <OptionMarginMicroWaterfall
-            optionMargin={findOptionMargin(optionMargins, 'hold')}
-            compact={compact}
-            label="Hold"
-          />
-        </button>
-        {onSimulateOption && (
-          <SimulateLink
-            onClick={() => onSimulateOption(parsePriceLabel(options.hold.price))}
-          />
-        )}
+        {/* Phase K5 a11y: SimulateLink (a real <button>) must NOT be nested
+            inside the option <button>. Each option's button and its optional
+            SimulateLink share a `.ws-opt-cell` wrapper so they read as one
+            visual unit (the link sits flush under its card) rather than
+            floating between cards as red orphan text. */}
+        <div className="ws-opt-cell">
+          <button
+            type="button"
+            aria-pressed={active === 'hold'}
+            className={`ws-opt hold${active === 'hold' ? ' active' : ''}`}
+            onClick={() => pickOption('hold')}
+          >
+            <span className="ws-opt-lab">Hold</span>
+            <span className="ws-opt-price">{options.hold.price}</span>
+            <span className="ws-opt-delta">{options.hold.delta}</span>
+            <span className={`ws-opt-impact ${options.hold.impactTone ?? ''}`}>
+              {options.hold.impact}
+            </span>
+            <span className="ws-opt-risk">
+              {options.hold.risk.split(' · ').map((seg, i, arr) => (
+                <span key={i}>
+                  {i === arr.length - 1 ? <i>{seg}</i> : seg}
+                  {i < arr.length - 1 ? ' · ' : ''}
+                </span>
+              ))}
+            </span>
+            <OptionMarginMicroWaterfall
+              optionMargin={findOptionMargin(optionMargins, 'hold')}
+              compact={compact}
+              label="Hold"
+            />
+          </button>
+          {onSimulateOption && (
+            <SimulateLink
+              onClick={() => onSimulateOption(parsePriceLabel(options.hold.price))}
+            />
+          )}
+        </div>
 
-        <button
-          type="button"
-          aria-pressed={active === 'floor'}
-          className={`ws-opt${active === 'floor' ? ' active' : ''}`}
-          onClick={() => setActive('floor')}
-        >
-          <span className="ws-opt-lab">Cost-floor</span>
-          <span className="ws-opt-price">{options.floor.price}</span>
-          <span className="ws-opt-delta">{options.floor.delta}</span>
-          <span className={`ws-opt-impact${options.floor.impactTone === 'neg' ? ' neg' : ''}`}>
-            {options.floor.impact}
-          </span>
-          <span className="ws-opt-risk">
-            {options.floor.risk.split(' · ').map((seg, i, arr) => (
-              <span key={i}>
-                {i === arr.length - 1 ? <i>{seg}</i> : seg}
-                {i < arr.length - 1 ? ' · ' : ''}
-              </span>
-            ))}
-          </span>
-          <OptionMarginMicroWaterfall
-            optionMargin={findOptionMargin(optionMargins, 'floor')}
-            compact={compact}
-            label="Cost-floor"
-          />
-        </button>
-        {onSimulateOption && (
-          <SimulateLink
-            onClick={() => onSimulateOption(parsePriceLabel(options.floor.price))}
-          />
-        )}
+        <div className="ws-opt-cell">
+          <button
+            type="button"
+            aria-pressed={active === 'floor'}
+            className={`ws-opt${active === 'floor' ? ' active' : ''}`}
+            onClick={() => pickOption('floor')}
+          >
+            <span className="ws-opt-lab">Cost-floor</span>
+            <span className="ws-opt-price">{options.floor.price}</span>
+            <span className="ws-opt-delta">{options.floor.delta}</span>
+            <span className={`ws-opt-impact ${options.floor.impactTone ?? ''}`}>
+              {options.floor.impact}
+            </span>
+            <span className="ws-opt-risk">
+              {options.floor.risk.split(' · ').map((seg, i, arr) => (
+                <span key={i}>
+                  {i === arr.length - 1 ? <i>{seg}</i> : seg}
+                  {i < arr.length - 1 ? ' · ' : ''}
+                </span>
+              ))}
+            </span>
+            <OptionMarginMicroWaterfall
+              optionMargin={findOptionMargin(optionMargins, 'floor')}
+              compact={compact}
+              label="Cost-floor"
+            />
+          </button>
+          {onSimulateOption && (
+            <SimulateLink
+              onClick={() => onSimulateOption(parsePriceLabel(options.floor.price))}
+            />
+          )}
+        </div>
 
-        <button
-          type="button"
-          aria-pressed={active === 'market'}
-          className={`ws-opt${active === 'market' ? ' active' : ''}`}
-          onClick={() => setActive('market')}
-        >
-          <span className="ws-opt-lab">Market anchor</span>
-          <span className="ws-opt-price">{options.market.price}</span>
-          <span className="ws-opt-delta">{options.market.delta}</span>
-          <span className={`ws-opt-impact${options.market.impactTone === 'neg' ? ' neg' : ''}`}>
-            {options.market.impact}
-          </span>
-          <span className="ws-opt-risk">
-            {options.market.risk.split(' · ').map((seg, i, arr) => (
-              <span key={i}>
-                {i === arr.length - 1 ? <i>{seg}</i> : seg}
-                {i < arr.length - 1 ? ' · ' : ''}
-              </span>
-            ))}
-          </span>
-          <OptionMarginMicroWaterfall
-            optionMargin={findOptionMargin(optionMargins, 'market')}
-            compact={compact}
-            label="Market anchor"
-          />
-        </button>
-        {onSimulateOption && (
-          <SimulateLink
-            onClick={() => onSimulateOption(parsePriceLabel(options.market.price))}
-          />
-        )}
+        <div className="ws-opt-cell">
+          <button
+            type="button"
+            aria-pressed={active === 'market'}
+            className={`ws-opt${active === 'market' ? ' active' : ''}`}
+            onClick={() => pickOption('market')}
+          >
+            <span className="ws-opt-lab">Market anchor</span>
+            <span className="ws-opt-price">{options.market.price}</span>
+            <span className="ws-opt-delta">{options.market.delta}</span>
+            <span className={`ws-opt-impact ${options.market.impactTone ?? ''}`}>
+              {options.market.impact}
+            </span>
+            <span className="ws-opt-risk">
+              {options.market.risk.split(' · ').map((seg, i, arr) => (
+                <span key={i}>
+                  {i === arr.length - 1 ? <i>{seg}</i> : seg}
+                  {i < arr.length - 1 ? ' · ' : ''}
+                </span>
+              ))}
+            </span>
+            <OptionMarginMicroWaterfall
+              optionMargin={findOptionMargin(optionMargins, 'market')}
+              compact={compact}
+              label="Market anchor"
+            />
+          </button>
+          {onSimulateOption && (
+            <SimulateLink
+              onClick={() => onSimulateOption(parsePriceLabel(options.market.price))}
+            />
+          )}
+        </div>
 
         {/* Phase K5 a11y: the Custom card holds a real <input>, so it
             cannot itself be an interactive element (would be nested-
             interactive). Activation flows from focus / change on the
             input. SimulateLink sits as a sibling below. */}
-        <div
-          className={`ws-opt custom${active === 'custom' ? ' active' : ''}`}
-        >
-          <span className="ws-opt-lab">Custom</span>
-          <label className="ws-custom-input">
-            <span>€</span>
-            <input
-              type="number"
-              step="0.01"
-              aria-label="Custom price"
-              placeholder={options.customPlaceholder}
-              value={customPrice}
-              onFocus={() => setActive('custom')}
-              onChange={(e) => {
-                setCustomPrice(e.target.value);
-                setActive('custom');
-              }}
+        <div className="ws-opt-cell">
+          <div
+            className={`ws-opt custom${active === 'custom' ? ' active' : ''}`}
+          >
+            <span className="ws-opt-lab">Custom</span>
+            <label className="ws-custom-input">
+              <span>€</span>
+              <input
+                type="number"
+                step="0.01"
+                aria-label="Custom price"
+                placeholder={options.customPlaceholder}
+                value={customPrice}
+                onFocus={() => pickOption('custom')}
+                onChange={(e) => {
+                  setCustomPrice(e.target.value);
+                  pickOption('custom');
+                }}
+              />
+            </label>
+            <span className="ws-opt-delta">{customDelta}</span>
+            <span className="ws-opt-impact">{customImpact}</span>
+            <span className="ws-opt-risk">{customRisk}</span>
+            <OptionMarginMicroWaterfall
+              optionMargin={findOptionMargin(optionMargins, 'custom')}
+              compact={compact}
+              label="Custom"
             />
-          </label>
-          <span className="ws-opt-delta">{customDelta}</span>
-          <span className="ws-opt-impact">{customImpact}</span>
-          <span className="ws-opt-risk">{customRisk}</span>
-          <OptionMarginMicroWaterfall
-            optionMargin={findOptionMargin(optionMargins, 'custom')}
-            compact={compact}
-            label="Custom"
-          />
+          </div>
+          {onSimulateOption && customPrice && (
+            <SimulateLink onClick={() => onSimulateOption(customPrice)} />
+          )}
         </div>
-        {onSimulateOption && customPrice && (
-          <SimulateLink onClick={() => onSimulateOption(customPrice)} />
-        )}
       </div>
 
       {aid && (
@@ -347,11 +370,11 @@ function SimulateLink({ onClick }: SimulateLinkProps) {
         e.stopPropagation();
         onClick();
       }}
-      /* Phase K5 a11y: rose-700 meets ≥4.5:1 vs white. */
-      className="ws-opt-sim-link mt-1 text-[10px] uppercase tracking-wide text-rose-700 hover:underline"
+      className="ws-opt-sim-link"
       data-testid="simulate-option"
     >
-      Simulate this option
+      <span aria-hidden="true" className="ws-opt-sim-icon">↗</span>
+      Simulate
     </button>
   );
 }

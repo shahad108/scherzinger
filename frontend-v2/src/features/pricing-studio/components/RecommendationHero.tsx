@@ -100,6 +100,20 @@ export function RecommendationHero({
     return parseDecimal(best.win_prob);
   }, [recommendation, winProbCurve]);
 
+  // D2 — inline "Why this price?" expander state. Hidden when rationale_md
+  // is empty so we never expose an empty disclosure.
+  //
+  // Rules-of-hooks: these hooks live ABOVE the `!recommendation` early
+  // return below. When `recommendation` is undefined on first render and
+  // defined on the next (lazy workbench arrival), keeping the hook order
+  // stable across renders is mandatory — moving useState past the guard
+  // tripped "Rendered more hooks than during the previous render".
+  const [whyOpen, setWhyOpen] = useState(false);
+  const rationaleParagraphs = useMemo(() => {
+    const md = recommendation?.rationale_md ?? '';
+    return md.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  }, [recommendation]);
+
   // Empty / no-recommendation state — render the shell + missing badges so
   // the page layout doesn't collapse.
   if (!recommendation) {
@@ -148,13 +162,8 @@ export function RecommendationHero({
   // swap this check for that flag.
   const movableRevenueIsHeuristic = !recommendation.lineage_ref?.model;
 
-  // D2 — inline "Why this price?" expander state. Hidden when rationale_md is
-  // empty so we never expose an empty disclosure.
-  const [whyOpen, setWhyOpen] = useState(false);
-  const rationaleParagraphs = useMemo(() => {
-    const md = recommendation?.rationale_md ?? '';
-    return md.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
-  }, [recommendation]);
+  // D2 — derived flag for the "Why this price?" expander (state + memo are
+  // declared above the early-return guard so React's hook order stays stable).
   const hasRationale = rationaleParagraphs.length > 0;
 
   const onOpenRecLineage = () =>
@@ -212,8 +221,13 @@ export function RecommendationHero({
         </button>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
-        {/* Left: prices + Δ + confidence + win prob + competitor */}
+      {/* The right-side rationale aside was removed in the 2026-05-19
+          coherence pass (see docs/superpowers/specs/...-coherence-design.md
+          §1) — the full rationale lives in the bottom RationaleMemo
+          which carries persona toggle + Copy/Email/PDF. A 1-paragraph
+          teaser stays inline below as the "Why this price?" expander. */}
+      <div className="grid gap-6 lg:grid-cols-1">
+        {/* Prices + Δ + confidence + win prob + competitor */}
         <div>
           <div className="flex items-baseline gap-3">
             <button
@@ -263,9 +277,59 @@ export function RecommendationHero({
                   data-testid="why-this-price-panel"
                   className="mt-2 space-y-2 rounded-[var(--r-md)] border border-[var(--hairline)] bg-[var(--surface-soft)] px-3 py-2 text-[12.5px] leading-[1.55] text-[var(--ink-2)]"
                 >
-                  {rationaleParagraphs.map((p, i) => (
-                    <p key={i} dangerouslySetInnerHTML={{ __html: renderInlineMd(p) }} />
-                  ))}
+                  {(() => {
+                    // Teaser only — first paragraph (rendered as bullets
+                    // when the BFF wrote it as `Why X? - A - B - C`).
+                    // The full memo lives in <RationaleMemo> at the
+                    // bottom of the workbench so we don't duplicate the
+                    // same body twice on screen.
+                    const first = rationaleParagraphs[0] ?? '';
+                    const parts = first.split(/\s+-\s+(?=\S)/);
+                    let body: React.ReactNode;
+                    if (parts.length >= 3) {
+                      const [lead, ...bullets] = parts;
+                      body = (
+                        <div>
+                          <p
+                            className="font-semibold text-[var(--ink)]"
+                            dangerouslySetInnerHTML={{ __html: renderInlineMd(lead.trim()) }}
+                          />
+                          <ul className="ml-4 mt-1 list-disc space-y-0.5">
+                            {bullets.map((b, j) => (
+                              <li
+                                key={j}
+                                dangerouslySetInnerHTML={{
+                                  __html: renderInlineMd(b.replace(/\s+$/, '')),
+                                }}
+                              />
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    } else {
+                      body = (
+                        <p dangerouslySetInnerHTML={{ __html: renderInlineMd(first) }} />
+                      );
+                    }
+                    return (
+                      <>
+                        {body}
+                        <button
+                          type="button"
+                          data-testid="why-this-price-read-memo"
+                          onClick={() => {
+                            const el = document.querySelector(
+                              '[data-testid="rationale-memo"], .ws-memo',
+                            );
+                            el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }}
+                          className="mt-2 inline-flex items-center gap-1 text-[11.5px] font-semibold text-[var(--rose-deep)] hover:underline"
+                        >
+                          Read full memo ↓
+                        </button>
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -298,12 +362,18 @@ export function RecommendationHero({
             {!wtp && <DataMissingBadge reason="No WTP sample" icon={false} />}
           </div>
 
-          {/* Band strip */}
+          {/* Band strip — also carries floor / cost / ceiling anchors
+              (added in the 2026-05-19 coherence pass §2.2) so the dots
+              never collapse into an unreadable stack and the analyst
+              can read the band against meaningful reference prices. */}
           <div className="mt-5">
             <BandStrip
               band={recommendation.band}
               wtp={wtp}
               recommendedPrice={recommendation.recommended_price}
+              floor={recommendation.floor ?? recommendation.band?.min}
+              cost={recommendation.cost ?? null}
+              ceiling={recommendation.ceiling ?? recommendation.band?.max}
               onClick={onOpenRecLineage}
             />
           </div>
@@ -344,13 +414,6 @@ export function RecommendationHero({
           </div>
         </div>
 
-        {/* Right: rationale memo (markdown -> simple paragraphs) */}
-        <aside className="rounded-[var(--r-md)] border border-[var(--hairline)] bg-[var(--surface-soft)] p-4">
-          <h4 className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--ink-3)]">
-            Rationale
-          </h4>
-          <RationaleSimple md={recommendation.rationale_md} />
-        </aside>
       </div>
     </section>
   );
@@ -360,33 +423,163 @@ interface BandStripProps {
   band: RecommendationBlock['band'];
   wtp?: WtpBlock;
   recommendedPrice: string;
+  floor?: string | null;
+  cost?: string | null;
+  ceiling?: string | null;
   onClick: () => void;
 }
 
-function BandStrip({ band, wtp, recommendedPrice, onClick }: BandStripProps) {
+function BandStrip({
+  band,
+  wtp,
+  recommendedPrice,
+  floor,
+  cost,
+  ceiling,
+  onClick,
+}: BandStripProps) {
   const min = parseDecimal(band.min);
   const target = parseDecimal(band.target);
   const max = parseDecimal(band.max);
   const rec = parseDecimal(recommendedPrice);
   const p10 = wtp ? parseDecimal(wtp.p10) : Number.NaN;
+  const p50 = wtp ? parseDecimal(wtp.p50) : Number.NaN;
   const p90 = wtp ? parseDecimal(wtp.p90) : Number.NaN;
+  const floorN = floor ? parseDecimal(floor) : Number.NaN;
+  const costN = cost ? parseDecimal(cost) : Number.NaN;
+  const ceilingN = ceiling ? parseDecimal(ceiling) : Number.NaN;
+  const anchoredFromCluster = Boolean(
+    (wtp as { anchored_from_cluster?: boolean } | undefined)?.anchored_from_cluster,
+  );
 
-  const all = [min, target, max, rec, p10, p90].filter((v) => Number.isFinite(v));
+  const all = [
+    min,
+    target,
+    max,
+    rec,
+    p10,
+    p50,
+    p90,
+    floorN,
+    costN,
+    ceilingN,
+  ].filter((v) => Number.isFinite(v));
   if (all.length < 2) {
     return <DataMissingBadge reason="No band" icon={false} />;
   }
-  const lo = Math.min(...all);
-  const hi = Math.max(...all);
+  let lo = Math.min(...all);
+  let hi = Math.max(...all);
+  // Enforce a minimum visual spread of ±5 % around the midpoint so a
+  // collapsed band (p10≈p50≈p90 from a small cluster anchor) still
+  // shows a band shape rather than a single stack of dots.
+  const mid = (lo + hi) / 2;
+  const minSpan = Math.max(1e-6, Math.abs(mid) * 0.1);
+  if (hi - lo < minSpan) {
+    lo = mid - minSpan / 2;
+    hi = mid + minSpan / 2;
+  }
   const span = Math.max(0.0001, hi - lo);
   const pos = (v: number) => Math.max(0, Math.min(1, (v - lo) / span));
 
-  const dots: Array<{ key: string; v: number; label: string; rec: boolean }> = [];
-  if (Number.isFinite(min)) dots.push({ key: 'min', v: min, label: 'floor', rec: false });
-  if (Number.isFinite(p10)) dots.push({ key: 'p10', v: p10, label: 'p10', rec: false });
-  if (Number.isFinite(target)) dots.push({ key: 't', v: target, label: 'target', rec: false });
-  if (Number.isFinite(rec)) dots.push({ key: 'rec', v: rec, label: 'rec', rec: true });
-  if (Number.isFinite(p90)) dots.push({ key: 'p90', v: p90, label: 'p90', rec: false });
-  if (Number.isFinite(max)) dots.push({ key: 'max', v: max, label: 'ceil', rec: false });
+  const dots: Array<{
+    key: string;
+    v: number;
+    label: string;
+    rec: boolean;
+    tone?: 'anchor' | 'wtp' | 'rec';
+    title?: string;
+  }> = [];
+  if (Number.isFinite(floorN))
+    dots.push({
+      key: 'floor',
+      v: floorN,
+      label: 'floor',
+      rec: false,
+      tone: 'anchor',
+      title: `Cost floor ${fmt.eurPrecise(floorN)} — band minimum that protects margin.`,
+    });
+  if (Number.isFinite(costN))
+    dots.push({
+      key: 'cost',
+      v: costN,
+      label: 'cost',
+      rec: false,
+      tone: 'anchor',
+      title: `Unit cost ${fmt.eurPrecise(costN)} — below this we lose money on the line.`,
+    });
+  if (Number.isFinite(min) && Math.abs(min - floorN) > minSpan / 100)
+    dots.push({
+      key: 'min',
+      v: min,
+      label: 'band min',
+      rec: false,
+      tone: 'anchor',
+      title: `Band minimum ${fmt.eurPrecise(min)} — lowest price where win-prob ≥ 80%.`,
+    });
+  if (Number.isFinite(p10))
+    dots.push({
+      key: 'p10',
+      v: p10,
+      label: 'p10',
+      rec: false,
+      tone: 'wtp',
+      title: `WTP p10 ${fmt.eurPrecise(p10)} — 10 % of won quotes settled at/under this price.`,
+    });
+  if (Number.isFinite(p50))
+    dots.push({
+      key: 'p50',
+      v: p50,
+      label: 'p50',
+      rec: false,
+      tone: 'wtp',
+      title: `WTP p50 ${fmt.eurPrecise(p50)} — median of won quotes${
+        anchoredFromCluster ? ' (cluster-anchored)' : ''
+      }.`,
+    });
+  if (Number.isFinite(target) && Math.abs(target - rec) > minSpan / 100)
+    dots.push({
+      key: 't',
+      v: target,
+      label: 'target',
+      rec: false,
+      title: `Band target ${fmt.eurPrecise(target)}.`,
+    });
+  if (Number.isFinite(rec))
+    dots.push({
+      key: 'rec',
+      v: rec,
+      label: 'rec',
+      rec: true,
+      tone: 'rec',
+      title: `Recommended ${fmt.eurPrecise(rec)}.`,
+    });
+  if (Number.isFinite(p90))
+    dots.push({
+      key: 'p90',
+      v: p90,
+      label: 'p90',
+      rec: false,
+      tone: 'wtp',
+      title: `WTP p90 ${fmt.eurPrecise(p90)} — 90 % of won quotes settled at/under this price.`,
+    });
+  if (Number.isFinite(ceilingN))
+    dots.push({
+      key: 'ceiling',
+      v: ceilingN,
+      label: 'ceil',
+      rec: false,
+      tone: 'anchor',
+      title: `Ceiling ${fmt.eurPrecise(ceilingN)} — highest defensible price under guardrails.`,
+    });
+  if (Number.isFinite(max) && Math.abs(max - ceilingN) > minSpan / 100)
+    dots.push({
+      key: 'max',
+      v: max,
+      label: 'band max',
+      rec: false,
+      tone: 'anchor',
+      title: `Band maximum ${fmt.eurPrecise(max)} — highest price where win-prob ≥ 50%.`,
+    });
 
   return (
     <button
@@ -414,12 +607,15 @@ function BandStrip({ band, wtp, recommendedPrice, onClick }: BandStripProps) {
               key={d.key}
               className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
               style={{ left: `${pos(d.v) * 100}%` }}
+              title={d.title}
             >
               <div
                 className={
                   d.rec
                     ? 'h-3.5 w-3.5 rounded-full border-2 border-white bg-[var(--rose-deep)] shadow-[0_0_0_2px_var(--rose-deep)]'
-                    : 'h-2.5 w-2.5 rounded-full border-2 border-white bg-[var(--rose)]'
+                    : d.tone === 'anchor'
+                      ? 'h-2 w-2 rounded-sm border border-white bg-[var(--ink-2)]'
+                      : 'h-2.5 w-2.5 rounded-full border-2 border-white bg-[var(--rose)]'
                 }
                 aria-hidden="true"
               />
@@ -428,6 +624,19 @@ function BandStrip({ band, wtp, recommendedPrice, onClick }: BandStripProps) {
         </div>
         <span className="tabular-nums text-[11px] text-[var(--muted)]">{fmt.eur(hi)}</span>
       </div>
+      {anchoredFromCluster && (
+        <div className="mt-1 flex items-center gap-1 text-[10.5px] text-[var(--ink-3)]">
+          <span
+            data-testid="band-cluster-anchored"
+            className="inline-flex items-center gap-1 rounded-full border border-[var(--hairline)] bg-[var(--surface-soft)] px-2 py-[1px] font-semibold uppercase tracking-[0.04em]"
+          >
+            cluster-anchored
+            {typeof (wtp as { n_deals?: number } | undefined)?.n_deals === 'number'
+              ? ` · n=${(wtp as { n_deals?: number }).n_deals}`
+              : ''}
+          </span>
+        </div>
+      )}
       <div className="mt-1 grid grid-cols-[3rem_1fr_3rem] gap-2">
         <span />
         <div className="relative h-3 text-[10px] tracking-wide text-[var(--muted)]">
@@ -509,24 +718,10 @@ function relativeDate(iso: string): string {
   return new Date(t).toISOString().slice(0, 10);
 }
 
-/**
- * Very small markdown renderer — paragraphs and bold only. We deliberately
- * avoid a heavy markdown dep here; the rationale_md from the backend is
- * a short, controlled string and we don't want to expand the bundle.
- */
-function RationaleSimple({ md }: { md: string }) {
-  const paragraphs = useMemo(() => md.split(/\n{2,}/).filter(Boolean), [md]);
-  if (paragraphs.length === 0) {
-    return <DataMissingBadge reason="No rationale" />;
-  }
-  return (
-    <div className="space-y-2 text-[12.5px] leading-[1.55] text-[var(--ink-2)]">
-      {paragraphs.map((p, i) => (
-        <p key={i} dangerouslySetInnerHTML={{ __html: renderInlineMd(p) }} />
-      ))}
-    </div>
-  );
-}
+// `RationaleSimple` was deleted in the 2026-05-19 coherence pass — the
+// hero no longer ships its own rationale aside; the inline expander
+// above only renders the first paragraph as a teaser and the bottom
+// `<RationaleMemo>` owns the full body + persona/copy/email/PDF chrome.
 
 function renderInlineMd(src: string): string {
   // Escape HTML, then upgrade **bold** and `code`.
