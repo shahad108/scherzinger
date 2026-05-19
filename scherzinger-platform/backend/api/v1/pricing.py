@@ -1158,6 +1158,58 @@ def simulate_pricing(
 
 
 # ---------------------------------------------------------------------------
+# Pricing Engine v1.4 — new endpoints (W1)
+# ---------------------------------------------------------------------------
+#
+# These run the validated notebook engine (whitepaper v1.4) against the
+# Scherzinger parquet files. Live alongside the legacy `/simulate` route
+# so the UI can adopt them incrementally without breaking the existing
+# workbench. Promotion to the canonical workbench BFF is Phase W3.
+
+
+class ScoreAtPriceIn(BaseModel):
+    aid: str
+    candidate_price: Decimal
+    as_of: str | None = None
+
+
+@router.get("/v2/score/{aid}")
+def v2_score(
+    aid: str,
+    ctx: AuthContext = Depends(require_auth),  # noqa: ARG001
+    db: Session = Depends(get_db),  # noqa: ARG001 (parquet-backed for v1)
+) -> dict[str, Any]:
+    """Full recommendation packet from the v1.4 engine."""
+    from backend.services.pricing.engine_v2 import score_sku
+
+    try:
+        return score_sku(aid)
+    except Exception as exc:  # noqa: BLE001 — surface the cause to the client
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, f"engine_v2 failed: {exc!s}"
+        ) from exc
+
+
+@router.post("/v2/score_at_price")
+def v2_score_at_price(
+    body: ScoreAtPriceIn,
+    ctx: AuthContext = Depends(require_auth),  # noqa: ARG001
+    db: Session = Depends(get_db),  # noqa: ARG001
+) -> dict[str, Any]:
+    """Score a single candidate price for the Custom-card live preview."""
+    from backend.services.pricing.engine_v2.orchestrator import score_at_custom_price
+
+    try:
+        return score_at_custom_price(
+            body.aid, float(body.candidate_price), as_of=body.as_of
+        )
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, f"engine_v2 failed: {exc!s}"
+        ) from exc
+
+
+# ---------------------------------------------------------------------------
 # Phase 9 — Alerts endpoints
 # ---------------------------------------------------------------------------
 
