@@ -16,6 +16,7 @@ empty list — never a synthesised SKU.
 from __future__ import annotations
 
 import logging
+import os
 import time
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
@@ -421,6 +422,31 @@ async def build_studio_shell(
                 s["recommendation"] = recs.get(str(s.get("aid")))
             if any(s.get("recommendation") for s in skus):
                 recommendation_status = {"status": "live", "reason": None}
+            # Phase W3 (v1.4) — when the engine v2 flag is on, the
+            # recommendation block's `current_price` is the trailing-12mo
+            # invoiced avg (the same number the engine uses internally
+            # for its delta math). Re-derive the picker's margin chip
+            # from that number so the picker meta line ("€X → €Y") and
+            # the picker margin chip ("+22.0%") never disagree with the
+            # hero's "Today €X / Δ %". Cost source is unchanged.
+            if os.environ.get("PRYZM_ENGINE_V2", "off").lower() in ("on", "true", "1"):
+                for s in skus:
+                    aid_ = str(s.get("aid"))
+                    rec = s.get("recommendation") or {}
+                    eng_cur = rec.get("current_price") if isinstance(rec, dict) else None
+                    cr = cost_by_aid.get(aid_)
+                    uc = float(cr.unit_cost) if cr and cr.unit_cost is not None else None
+                    if (
+                        isinstance(eng_cur, (int, float))
+                        and eng_cur > 0
+                        and uc is not None
+                    ):
+                        margin_pct = (float(eng_cur) - uc) / float(eng_cur) * 100
+                        sign = "+" if margin_pct >= 0 else "−"
+                        s["margin"] = f"{sign}{abs(margin_pct):.1f}%"
+                        s["marginTone"] = (
+                            "hi" if margin_pct >= 25 else ("mid" if margin_pct >= 0 else "lo")
+                        )
         except Exception as exc:
             logger.exception("studio:shell:recommendation_enrichment failed")
             for s in skus:
