@@ -10,7 +10,6 @@
 .env
 .env.*
 !.env.example
-!frontend/.env.example
 
 # OS
 .DS_Store
@@ -45,8 +44,8 @@ yarn-error.log*
 # Separate project (force-add tracked files inside)
 scherzinger-platform/
 
-# Legacy code with embedded API keys — rotate and delete
-frontend/src_old/
+# Legacy frontend retired 2026-05-20 — frontend-v2/ is canonical
+frontend/
 
 # Root-level screenshots (all png/jpeg in repo root only).
 # Subdir screenshots (e.g. docs/verification-screens/) are explicitly kept.
