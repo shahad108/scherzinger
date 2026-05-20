@@ -18,10 +18,14 @@ movable-hero pattern.
 """
 from __future__ import annotations
 
+import logging
+import os
 from typing import Any, Iterable
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 
 PASS_THROUGH_RATIO = 0.5      # 50% of cost movement passes through to price
@@ -153,6 +157,15 @@ def get_sku_recommendations_bulk(
     Returns ``{article_id: recommendation_dict}``. Article ids with no
     invoices or cost-trend data are still returned with the heuristic
     set to ``no_signal`` so the UI can render a neutral row.
+
+    Phase W3 promotion: when ``PRYZM_ENGINE_V2`` is set, the
+    `recommended_price` field is overridden per-aid with the calibrated
+    v1.4 engine output (``engine_v2.score_sku(aid)['p_star']``). The
+    heuristic clamp/floor/ceiling fields stay as the legacy pilot values
+    so the picker's downstream chip math is unchanged — only the
+    headline price the FE renders ("€599 → €868 (+45%)") moves to the
+    real engine. This is what closes the "+45% on every SKU" picker
+    behaviour observed in the 2026-05-19 Playwright pass.
     """
     aids = list({a for a in article_ids if a})
     if not aids:
@@ -219,6 +232,23 @@ def get_sku_recommendations_bulk(
                 recommended = current
 
         movable_share = (revenue / total_movable_rev) if (is_movable and total_movable_rev) else 0.0
+
+        # Phase W3 — engine v1.4 override for the per-SKU summary.
+        if os.environ.get("PRYZM_ENGINE_V2", "off").lower() in ("on", "true", "1"):
+            try:
+                from backend.services.pricing.engine_v2 import score_sku as _v2_score
+                v2 = _v2_score(aid)
+                v2_p_star = v2.get("p_star")
+                if isinstance(v2_p_star, (int, float)) and v2_p_star > 0:
+                    recommended = float(v2_p_star)
+                    # Floor/ceiling stay as the pilot guardrail values so
+                    # downstream chip math doesn't reshuffle on flag flip;
+                    # only the recommendation moves.
+                    recommended_was_clamped = bool(v2.get("constraint_active"))
+            except Exception:
+                logger.exception(
+                    "recommendation_service:engine_v2 fallback aid=%s", aid
+                )
 
         out[aid] = {
             "article_id": aid,
