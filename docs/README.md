@@ -5,6 +5,7 @@
 | Path | What lives here |
 |---|---|
 | [`Frank_Vision_and_Workflow.md`](./Frank_Vision_and_Workflow.md) | Canonical product vision and the phase plan (§4.2) that Batches 1–22 executed against. The source of truth for **what** Pryzm builds for Frank. |
+| [`PRODUCT_END_GOAL_AND_ROADMAP.md`](./PRODUCT_END_GOAL_AND_ROADMAP.md) | Product compass: final end-state, screen hierarchy, current-vs-missing gaps, locked future features, and roadmap from MVP to full product. |
 | [`Demo_Claims_Defense.md`](./Demo_Claims_Defense.md) | Per-claim defensibility brief — every demo statement and the data row / formula behind it. |
 | [`Investor_Demo_Script_7min.md`](./Investor_Demo_Script_7min.md) | The seven-minute walkthrough script (Encourage Ventures and similar). |
 | [`mockups/`](./mockups/) | Standalone HTML mockups. `Pryzm_Dashboard_Mockup_Frank.html` is the canonical 2026 design reference; the older `Pryzm_Dashboard_Mockup.html` is kept for diffs. |

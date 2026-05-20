@@ -288,16 +288,46 @@ def test_score_ab_test_returns_z_stat_and_decision_ready(db) -> None:
     )
     db.flush()
 
-    # Setup: control = 10/25 won; variant = 22/25 won → strong signal.
-    _stamp_outcomes(
-        db, test.id,
-        won_control=10, lost_control=15,
-        won_variant=22, lost_variant=3,
+    # Setup: stamp 80% of each arm to clear ``target_sample`` reliably
+    # regardless of the deterministic 50/50 hash split's exact count.
+    from backend.models import AbTestAssignment
+
+    rows = (
+        db.query(AbTestAssignment)
+        .filter(AbTestAssignment.test_id == test.id)
+        .all()
     )
+    arms = {"control": [], "variant": []}
+    for r in rows:
+        arms[r.arm].append(r)
+
+    for r in arms["control"]:
+        r.outcome_ref_type = "lost"
+        r.outcome_margin = Decimal("0.05")
+        r.outcome_revenue = Decimal("100")
+    # Make ~40% of control wins so conversion gap is real.
+    for r in arms["control"][: len(arms["control"]) * 4 // 10]:
+        r.outcome_ref_type = "won"
+        r.outcome_margin = Decimal("0.20")
+        r.outcome_revenue = Decimal("1000")
+
+    # Stamp all of variant; ~90% wins.
+    for r in arms["variant"]:
+        r.outcome_ref_type = "won"
+        r.outcome_margin = Decimal("0.18")
+        r.outcome_revenue = Decimal("1100")
+    for r in arms["variant"][: len(arms["variant"]) // 10]:
+        r.outcome_ref_type = "lost"
+        r.outcome_margin = Decimal("0.0")
+        r.outcome_revenue = Decimal("0")
+    db.flush()
 
     result = score_ab_test(test_id=test.id, db_session=db)
-    assert result.control.n >= 25
-    assert result.variant.n >= 25
+    # Both arms get most of the 50-cap pool — assert at least the
+    # configured target_sample of 25 in each (the cap is 50 so each
+    # arm reliably exceeds 25 after a 50/50 split).
+    assert result.control.n >= test.target_sample
+    assert result.variant.n >= test.target_sample
     assert result.z_stat is not None
     assert result.p_value is not None
     assert result.p_value < 0.10

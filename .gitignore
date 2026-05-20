@@ -60,3 +60,18 @@ reference/
 
 # Playwright cache
 .playwright-mcp/
+
+# Python build artefacts
+**/__pycache__/
+*.pyc
+
+# Notebook checkpoints
+**/.ipynb_checkpoints/
+
+# Local response captures (Playwright debugging snapshots)
+studio-response.json
+snapshot-*.yml
+forecasting-snapshot.yml
+*.png
+!docs/**/*.png
+!notebooks/**/*.png

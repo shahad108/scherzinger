@@ -1,0 +1,73 @@
+{
+  "BKAES": [],
+  "BKAGG": [
+    {
+      "series_id": "DEUPRMNTO01GPSAM",
+      "source": "fred",
+      "name": "Production: Manufacturing: Total Manufacturing for Germany",
+      "metric": "material_per_unit",
+      "lag_months": 2,
+      "pearson": -0.41839110876544666,
+      "spearman": -0.3592998720051375,
+      "rolling_24m_stdev": 0.023726549923498992,
+      "p_value": 0.03739414245062944,
+      "rationale": "Production: Manufacturing: Total Manufacturing for Germany leads BKAGG material_per_unit by 2 month with Pearson -0.42 (rolling-24m stdev 0.02, p=0.0374)."
+    },
+    {
+      "series_id": "DEUPROMANMISMEI",
+      "source": "fred",
+      "name": "Production, Sales, Work Started and Orders: Production Volume: Economic Activity: Manufacturing for Germany",
+      "metric": "material_per_unit",
+      "lag_months": 3,
+      "pearson": 0.41268084513553577,
+      "spearman": 0.5199311482724441,
+      "rolling_24m_stdev": 0.04056808244801651,
+      "p_value": 0.040348150926558884,
+      "rationale": "Production, Sales, Work Started and Orders: Production Volume: Economic Activity: Manufacturing for Germany leads BKAGG material_per_unit by 3 month with Pearson 0.41 (rolling-24m stdev 0.04, p=0.0403)."
+    }
+  ],
+  "BKAIZ": [
+    {
+      "series_id": "EXR.D.CHF.EUR.SP00.A",
+      "source": "ecb",
+      "name": "Swiss franc/Euro ECB reference exchange rate",
+      "metric": "db2_margin",
+      "lag_months": 2,
+      "pearson": -0.5868918494053478,
+      "spearman": -0.5127228541956914,
+      "rolling_24m_stdev": 0.14549670616265423,
+      "p_value": 4.405054649726098e-05,
+      "rationale": "Swiss franc/Euro ECB reference exchange rate leads BKAIZ db2_margin by 2 month with Pearson -0.59 (rolling-24m stdev 0.15, p=4.41e-05)."
+    },
+    {
+      "series_id": "CPIAUCSL",
+      "source": "fred",
+      "name": "Consumer Price Index for All Urban Consumers: All Items in U.S. City Average",
+      "metric": "db2_margin",
+      "lag_months": 2,
+      "pearson": 0.5728483466638477,
+      "spearman": 0.532798509411843,
+      "rolling_24m_stdev": 0.15864014196050877,
+      "p_value": 7.351771464206744e-05,
+      "rationale": "Consumer Price Index for All Urban Consumers: All Items in U.S. City Average leads BKAIZ db2_margin by 2 month with Pearson 0.57 (rolling-24m stdev 0.16, p=7.35e-05)."
+    },
+    {
+      "series_id": "WPU114907",
+      "source": "fred",
+      "name": "Producer Price Index by Commodity: Machinery and Equipment: Industrial Patterns",
+      "metric": "db2_margin",
+      "lag_months": 3,
+      "pearson": 0.5555785178825112,
+      "spearman": 0.3824793091367632,
+      "rolling_24m_stdev": 0.15420988192261378,
+      "p_value": 0.0011760412728364887,
+      "rationale": "Producer Price Index by Commodity: Machinery and Equipment: Industrial Patterns leads BKAIZ db2_margin by 3 month with Pearson 0.56 (rolling-24m stdev 0.15, p=0.00118)."
+    }
+  ],
+  "MBDIV": [],
+  "OFRLMG": [],
+  "OFRSCR": [],
+  "SOPU": [],
+  "SOPUZK": [],
+  "unknown": []
+}
