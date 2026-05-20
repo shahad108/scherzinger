@@ -37,6 +37,8 @@ yarn-error.log*
 *.md
 !README.md
 !VERIFICATION_REPORT.md
+!CLAUDE.md
+!DESIGN.md
 !docs/**/*.md
 !frontend-v2/**/*.md
 !scherzinger-platform/**/*.md
