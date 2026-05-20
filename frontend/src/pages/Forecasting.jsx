@@ -11,6 +11,8 @@ import KPICard from '../components/shared/KPICard';
 import { MiniProgress, MiniRange } from '../components/shared/KPIVisuals';
 import ChartCard from '../components/shared/ChartCard';
 import CustomTooltip from '../components/shared/CustomTooltip';
+import LastUpdated from '../components/shared/LastUpdated';
+import { Info } from 'lucide-react';
 import forecastingData from '../data/forecasting.json';
 import pipelineData from '../data/pipeline.json';
 import { formatEUR } from '../utils/formatters';
@@ -104,6 +106,7 @@ export default function Forecasting() {
   const { t, lang } = useLanguage();
   const [yearRange, setYearRange] = useState('Last 3Y');
   const [methodologyOpen, setMethodologyOpen] = useState(false);
+  const [showFloorInfo, setShowFloorInfo] = useState(false);
 
   const startYear = YEAR_RANGES.find(r => r.label === yearRange)?.startYear || 0;
 
@@ -312,9 +315,50 @@ export default function Forecasting() {
               </button>
             ))}
           </div>
-          <p className="text-xs font-medium" style={{ color: '#737373' }}>
-            {t('forecast.dataThrough')} <span className="font-bold text-slate-700">{new Date(dataThrough).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-          </p>
+          <LastUpdated dashboardKey="forecast" />
+        </div>
+
+        {/* ── 5.2 methodology callout — always visible at top ── */}
+        <div className="p-4 rounded-xl border border-[#0393da]/20" style={{ background: 'linear-gradient(135deg, rgba(3,147,218,0.04), rgba(3,147,218,0.01))' }}>
+          <div className="flex items-start gap-3">
+            <div className="size-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(3,147,218,0.12)' }}>
+              <Info size={16} style={{ color: '#0393da' }} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-slate-800 mb-1">{t('forecast.methodology.title')}</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">{t('forecast.methodology.summary')}</p>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-3 text-[11px]">
+                <div><span className="block text-slate-400 uppercase tracking-wide text-[10px] font-semibold">{t('forecast.methodology.model')}</span><span className="font-semibold text-slate-700">{t('forecast.methodology.model.value')}</span></div>
+                <div><span className="block text-slate-400 uppercase tracking-wide text-[10px] font-semibold">{t('forecast.methodology.inputs')}</span><span className="font-semibold text-slate-700">{t('forecast.methodology.inputs.value')}</span></div>
+                <div><span className="block text-slate-400 uppercase tracking-wide text-[10px] font-semibold">{t('forecast.methodology.error')}</span><span className="font-semibold text-slate-700">{t('forecast.methodology.error.value')}</span></div>
+                <div><span className="block text-slate-400 uppercase tracking-wide text-[10px] font-semibold">{t('forecast.methodology.blindspots')}</span><span className="font-semibold text-slate-700">{t('forecast.methodology.blindspots.value')}</span></div>
+              </div>
+              {/* 5.3 — 60% floor provenance */}
+              <div className="mt-3 pt-3 border-t border-[#0393da]/15 relative">
+                <button
+                  onClick={() => setShowFloorInfo(v => !v)}
+                  className="text-[11px] font-semibold text-[#0393da] hover:underline inline-flex items-center gap-1"
+                >
+                  <Info size={11} />
+                  {t('forecast.floor.trigger')}
+                </button>
+                {showFloorInfo ? (
+                  <div className="absolute top-7 left-0 z-20 w-80 bg-white rounded-lg shadow-xl border border-slate-200 p-4 text-xs">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-bold text-slate-800">{t('forecast.floor.title')}</h4>
+                      <button onClick={() => setShowFloorInfo(false)} className="text-slate-400 hover:text-slate-600">×</button>
+                    </div>
+                    <p className="text-slate-600 mb-2">{t('forecast.floor.body')}</p>
+                    <div className="space-y-1.5 text-[11px]">
+                      <div className="flex justify-between"><span className="text-slate-500">{t('forecast.floor.owner')}</span><span className="font-mono font-semibold">{t('forecast.floor.ownerValue')}</span></div>
+                      <div className="flex justify-between"><span className="text-slate-500">{t('forecast.floor.reviewed')}</span><span className="font-mono">{t('forecast.floor.reviewedValue')}</span></div>
+                      <div className="flex justify-between"><span className="text-slate-500">{t('forecast.floor.trigger2')}</span><span className="font-mono">{t('forecast.floor.triggerValue')}</span></div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── Row 1: KPI Cards ── */}
@@ -496,7 +540,7 @@ export default function Forecasting() {
                   </linearGradient>
                 </defs>
                 <Area type="monotone" dataKey="band" stroke="none" fill="url(#projBandGrad)" fillOpacity={1} animationDuration={1000} />
-                <ReferenceLine y={60} stroke="#EF4444" strokeDasharray="6 3" strokeWidth={1} label={{ value: t('forecast.label.floor'), position: 'insideTopRight', fill: '#EF4444', fontSize: 9 }} />
+                <ReferenceLine y={60} stroke="#EF4444" strokeDasharray="6 3" strokeWidth={1} label={{ value: `${t('forecast.label.floor')} ⓘ`, position: 'insideTopRight', fill: '#EF4444', fontSize: 9 }} />
                 {crossDate && (
                   <ReferenceLine y={60} stroke="none" label={{ value: t('forecast.label.crosses', { when: crossDate }), position: 'insideBottomRight', fill: '#94a3b8', fontSize: 9 }} />
                 )}

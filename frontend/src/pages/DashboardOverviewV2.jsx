@@ -18,9 +18,11 @@ import AlertCardV2 from '../components/v2/AlertCardV2';
 import ActivityGridV2 from '../components/v2/ActivityGridV2';
 import RetentionCardV2 from '../components/v2/RetentionCardV2';
 import InsightSlideOver from '../components/v2/InsightSlideOver';
+import QuotedActualDecompositionPanel from '../components/v2/QuotedActualDecompositionPanel';
 import CustomTooltip from '../components/shared/CustomTooltip';
 import DataTable from '../components/shared/DataTable';
 import PhaseNotice from '../components/shared/PhaseNotice';
+import LastUpdated from '../components/shared/LastUpdated';
 import MeasuredChartContainer from '../components/MeasuredChartContainer';
 import { useUI } from '../context/UIContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -422,43 +424,74 @@ export default function DashboardOverviewV2() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [activeInsight, setActiveInsight] = useState(null);
-  const [timeRange, setTimeRange] = useState('FY');  // FY | QTD | MTD | Custom
-  const lastUpdated = 'Dec 31, 2025 · 18:00 CET';
+  const [timeRange, setTimeRange] = useState('FY');  // FY(=YTD) | QTD | MTD | Custom
+  const [customRange, setCustomRange] = useState({ from: '2024-01-01', to: '2024-12-31' });
+  const [showCustomPicker, setShowCustomPicker] = useState(false);
+  const [commodityFilter, setCommodityFilter] = useState('all');
+  const [showDecomp, setShowDecomp] = useState(false);
+
+  // Available commodity groups for the filter
+  const commodityOptions = useMemo(
+    () => data.commodity_group_revenue.map(c => c.commodity_group).filter(Boolean),
+    []
+  );
 
   const insights = useMemo(() => generateInsights(t), [t]);
   const aiHighlights = useMemo(() => buildAiHighlights(t), [t]);
   const topCustomerColumns = useMemo(() => buildTopCustomerColumns(t), [t]);
 
-  // Derive period-filtered metrics from monthly_revenue (Custom falls back to FY)
+  // Derive period-filtered metrics from monthly_revenue
   const periodMetrics = useMemo(() => {
     const all2025 = data.monthly_revenue.filter((m) => m.Year === 2025);
     const all2024 = data.monthly_revenue.filter((m) => m.Year === 2024);
-    const rangeKey = timeRange === 'Custom' ? 'FY' : timeRange;
 
-    const slices = {
-      FY:  { current: all2025,          prior: all2024,          label: t('dashboard.period.fy', { year: 2025 }),  rangeLabel: t('dashboard.range.yoy') },
-      QTD: { current: all2025.slice(-3), prior: all2024.slice(-3), label: t('dashboard.period.q4', { year: 2025 }), rangeLabel: t('dashboard.range.vsQ4', { year: 2024 }) },
-      MTD: { current: all2025.slice(-1), prior: all2024.slice(-1), label: t('dashboard.period.dec', { year: 2025 }), rangeLabel: t('dashboard.range.vsDec', { year: 2024 }) },
-    };
-    const { current, prior, label, rangeLabel } = slices[rangeKey];
+    let current, prior, label, rangeLabel;
+    if (timeRange === 'Custom') {
+      const from = new Date(customRange.from);
+      const to = new Date(customRange.to);
+      const inRange = (m) => {
+        const d = new Date(m.Year, (m.Month ?? 1) - 1, 1);
+        return d >= from && d <= to;
+      };
+      current = data.monthly_revenue.filter(inRange);
+      prior = []; // no baseline for custom ranges
+      const fmt = (d) => d.toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' });
+      label = `${fmt(from)} – ${fmt(to)}`;
+      rangeLabel = '';
+    } else {
+      const slices = {
+        FY:  { current: all2025,          prior: all2024,          label: t('dashboard.period.fy', { year: 2025 }),  rangeLabel: t('dashboard.range.yoy') },
+        QTD: { current: all2025.slice(-3), prior: all2024.slice(-3), label: t('dashboard.period.q4', { year: 2025 }), rangeLabel: t('dashboard.range.vsQ4', { year: 2024 }) },
+        MTD: { current: all2025.slice(-1), prior: all2024.slice(-1), label: t('dashboard.period.dec', { year: 2025 }), rangeLabel: t('dashboard.range.vsDec', { year: 2024 }) },
+      };
+      ({ current, prior, label, rangeLabel } = slices[timeRange]);
+    }
 
     const sumRev = (arr) => arr.reduce((s, m) => s + (m.revenue_eur || 0), 0);
-    // Revenue-weighted average margin
     const wAvgMargin = (arr) => {
       const totalRev = sumRev(arr);
       if (!totalRev) return 0;
       return arr.reduce((s, m) => s + (m.avg_db2_margin || 0) * (m.revenue_eur || 0), 0) / totalRev;
     };
 
-    const revenue = sumRev(current);
-    const priorRevenue = sumRev(prior);
+    let revenue = sumRev(current);
+    let priorRevenue = sumRev(prior);
     const avgMargin = wAvgMargin(current);
     const priorMargin = wAvgMargin(prior);
+
+    // Scale by commodity share when a specific commodity is selected
+    if (commodityFilter !== 'all') {
+      const match = data.commodity_group_revenue.find(c => c.commodity_group === commodityFilter);
+      const share = match && totalCommodityRevenue ? match.revenue_eur / totalCommodityRevenue : 1;
+      revenue = revenue * share;
+      priorRevenue = priorRevenue * share;
+    }
+
     const revYoyPct = priorRevenue ? ((revenue - priorRevenue) / priorRevenue) * 100 : 0;
     const marginChangePp = (avgMargin - priorMargin) * 100;
 
     return { label, rangeLabel, revenue, avgMargin, revYoyPct, marginChangePp };
-  }, [timeRange, t]);
+  }, [timeRange, customRange, commodityFilter, t]);
 
   return (
     <>
@@ -469,8 +502,8 @@ export default function DashboardOverviewV2() {
         initial="hidden"
         animate="visible"
       >
-        {/* Global Time-Range Header */}
-        <div className="flex items-center justify-between pb-2">
+        {/* Global filter bar */}
+        <div className="flex flex-wrap items-center gap-3 pb-2 relative">
           <div role="group" aria-label={t('dashboard.range.yoy')} className="inline-flex rounded-lg bg-white border border-slate-200 p-1 shadow-sm">
             {[
               { key: 'FY', label: t('dashboard.timeRange.fy') },
@@ -480,7 +513,10 @@ export default function DashboardOverviewV2() {
             ].map((r) => (
               <button
                 key={r.key}
-                onClick={() => setTimeRange(r.key)}
+                onClick={() => {
+                  setTimeRange(r.key);
+                  setShowCustomPicker(r.key === 'Custom');
+                }}
                 aria-pressed={timeRange === r.key}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                   timeRange === r.key
@@ -492,9 +528,55 @@ export default function DashboardOverviewV2() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-500">
-            <Clock size={12} />
-            <span>{t('dashboard.lastUpdated', { date: lastUpdated })}</span>
+
+          {/* Custom date picker popover */}
+          {timeRange === 'Custom' && showCustomPicker ? (
+            <div className="absolute top-12 left-0 z-30 bg-white border border-slate-200 rounded-lg shadow-lg p-4 w-[320px]">
+              <p className="text-[10px] text-slate-400 mb-2">{t('dashboard.timeRange.custom.hint')}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="flex flex-col gap-1">
+                  <span className="text-[10px] font-semibold text-slate-500 uppercase">{t('dashboard.timeRange.custom.from')}</span>
+                  <input
+                    type="date"
+                    min="2023-01-01" max="2025-12-31"
+                    value={customRange.from}
+                    onChange={e => setCustomRange(r => ({ ...r, from: e.target.value }))}
+                    className="text-xs border border-slate-200 rounded-md px-2 py-1"
+                  />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-[10px] font-semibold text-slate-500 uppercase">{t('dashboard.timeRange.custom.to')}</span>
+                  <input
+                    type="date"
+                    min="2023-01-01" max="2025-12-31"
+                    value={customRange.to}
+                    onChange={e => setCustomRange(r => ({ ...r, to: e.target.value }))}
+                    className="text-xs border border-slate-200 rounded-md px-2 py-1"
+                  />
+                </label>
+              </div>
+              <div className="flex justify-end gap-2 mt-3">
+                <button onClick={() => setShowCustomPicker(false)} className="text-[10px] text-slate-500 hover:text-slate-700">{t('common.close')}</button>
+                <button onClick={() => setShowCustomPicker(false)} className="text-[10px] font-semibold text-white bg-[#0393da] rounded px-2 py-1">{t('dashboard.timeRange.custom.apply')}</button>
+              </div>
+            </div>
+          ) : null}
+
+          {/* Commodity filter */}
+          <label className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">{t('dashboard.commodity.filter')}</span>
+            <select
+              value={commodityFilter}
+              onChange={e => setCommodityFilter(e.target.value)}
+              className="text-xs border border-slate-200 rounded-md px-2 py-1 bg-white"
+            >
+              <option value="all">{t('dashboard.commodity.all')}</option>
+              {commodityOptions.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </label>
+
+          <div className="ml-auto">
+            <LastUpdated dashboardKey="overview" />
           </div>
         </div>
         {/* KPI Row */}
@@ -661,10 +743,15 @@ export default function DashboardOverviewV2() {
                 </div>
               }
             >
-              <MeasuredChartContainer className="h-64 min-w-0">
+              <MeasuredChartContainer
+                className="h-64 min-w-0 group cursor-pointer"
+                elementId="quoted-vs-actual-hero"
+                aiLabel={t('dashboard.chart.quotedVsActual')}
+                aiDashboard="overview"
+              >
                 {({ width, height }) => (
                 <ResponsiveContainer width={width} height={height}>
-                  <ComposedChart data={quotedActualTrend}>
+                  <ComposedChart data={quotedActualTrend} onClick={() => setShowDecomp(true)}>
                     <defs>
                       <linearGradient id="gapFill" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#EF4444" stopOpacity={0.25} />
@@ -773,6 +860,8 @@ export default function DashboardOverviewV2() {
                   iconColor: '#0393da',
                   value: String(newQuoteStage.count || 62),
                   label: t('dashboard.activity.new'),
+                  tooltip: t('dashboard.activity.new.tooltip', { n: newQuoteStage.count || 62 }),
+                  onClick: () => navigate('/pricing'),
                 },
                 {
                   icon: Receipt,
@@ -874,6 +963,14 @@ export default function DashboardOverviewV2() {
       <InsightSlideOver
         insight={activeInsight}
         onClose={() => setActiveInsight(null)}
+      />
+
+      {/* Quoted vs Actual Decomposition */}
+      <QuotedActualDecompositionPanel
+        open={showDecomp}
+        onClose={() => setShowDecomp(false)}
+        periodLabel={periodMetrics.label}
+        totalGapPp={Math.abs(((currentGap?.avg_quoted_margin ?? 0) - (currentGap?.avg_actual_margin ?? 0)) * 100)}
       />
     </>
   );

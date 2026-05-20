@@ -5,7 +5,9 @@ import { Sparkles, Send, Square, ChevronDown, ArrowUpRight, Loader, ThumbsUp, Th
 import { useChat } from '../context/ChatContext';
 import { useUI } from '../context/UIContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useAiContext } from '../hooks/useAiContext';
 import renderMarkdown from '../utils/markdownRenderer';
+import StructuredReplyRenderer from './chat/StructuredReplyRenderer';
 import { track, trackChatQuestion, trackChatRating } from '../utils/tracker';
 
 export default function GlobalChatBar() {
@@ -16,7 +18,13 @@ export default function GlobalChatBar() {
     pageContext, newChat,
     conversationHistory, loadConversation, deleteConversation,
   } = useChat();
-  const { selectedItem, slideOver } = useUI();
+  const { selectedItem, slideOver, openCustomerDetail, openSKUDetail } = useUI();
+  const { focus: aiFocus, clearFocus } = useAiContext();
+
+  const handleEntityClick = useCallback(({ entityType, id }) => {
+    if (entityType === 'customer') openCustomerDetail(id);
+    else if (entityType === 'sku' || entityType === 'product') openSKUDetail(id);
+  }, [openCustomerDetail, openSKUDetail]);
   const { t, lang } = useLanguage();
   const [input, setInput] = useState('');
   const [ratings, setRatings] = useState({});
@@ -48,8 +56,11 @@ export default function GlobalChatBar() {
     setIsOpen(true);
     track.chatSend(text);
     trackChatQuestion({ pageContext: location.pathname, source: 'custom_typed', questionText: text });
-    sendMessage(text);
-  }, [input, isStreaming, setIsOpen, sendMessage, location.pathname]);
+    const grounded = aiFocus
+      ? `[Fokus: ${aiFocus.label} (${aiFocus.elementId})${aiFocus.dashboard ? ` · ${aiFocus.dashboard}` : ''}]\n\n${text}`
+      : text;
+    sendMessage(grounded);
+  }, [input, isStreaming, setIsOpen, sendMessage, location.pathname, aiFocus]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -59,13 +70,30 @@ export default function GlobalChatBar() {
   }, [handleSend]);
 
   const handleViewDetailed = useCallback((aiMsgIndex) => {
-    const threadMessages = messages
-      .slice(0, aiMsgIndex + 1)
-      .filter((msg) => msg.content?.trim())
-      .map((msg) => ({ role: msg.role, content: msg.content }));
-
-    const userQuestion = [...threadMessages].reverse().find((msg) => msg.role === 'user')?.content;
+    // Find the user message that triggered this assistant reply.
+    let triggeringUserIdx = aiMsgIndex - 1;
+    while (triggeringUserIdx >= 0 && messages[triggeringUserIdx]?.role !== 'user') {
+      triggeringUserIdx -= 1;
+    }
+    if (triggeringUserIdx < 0) return;
+    const triggeringUserMsg = messages[triggeringUserIdx];
+    const userQuestion = typeof triggeringUserMsg?.content === 'string' ? triggeringUserMsg.content.trim() : '';
     if (!userQuestion) return;
+
+    // History = prior turns only. Exclude the triggering user question AND the
+    // shallow assistant reply the user wants to improve on — otherwise the AI
+    // sees the same question twice (once here, once as the new request) and
+    // responds "you've already asked this."
+    const threadMessages = messages
+      .slice(0, triggeringUserIdx)
+      .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
+      .map((msg) => {
+        if (msg.format === 'structured') {
+          return { role: msg.role, content: JSON.stringify({ blocks: msg.blocks || [] }) };
+        }
+        return { role: msg.role, content: msg.content };
+      })
+      .filter((msg) => typeof msg.content === 'string' && msg.content.trim());
 
     track.chatViewDetailed();
     const handoffData = {
@@ -81,7 +109,7 @@ export default function GlobalChatBar() {
     navigate(`/ai-insights?q=${encodeURIComponent(userQuestion)}`, {
       state: { detailedAnalysisHandoff: handoffData },
     });
-  }, [messages, navigate, setDetailedAnalysisHandoff, setIsOpen]);
+  }, [messages, navigate, setDetailedAnalysisHandoff, setIsOpen, pageContext]);
 
   const handleCollapse = useCallback(() => {
     track.chatClose();
@@ -214,7 +242,68 @@ export default function GlobalChatBar() {
                   ) : (
                     <div key={i} className="flex justify-start">
                       <div className="max-w-[90%] min-w-0">
-                        {msg.content ? (
+                        {msg.format === 'structured' ? (
+                          ((msg.blocks && msg.blocks.length > 0) || msg.finalized) ? (
+                            <>
+                              <div className="bg-slate-50/80 px-3.5 py-2.5 rounded-2xl rounded-tl-md border border-slate-100/60">
+                                <div className="text-[13px] leading-relaxed text-slate-700">
+                                  <StructuredReplyRenderer
+                                    blocks={msg.blocks || []}
+                                    status={msg.status || []}
+                                    finalized={!!msg.finalized}
+                                    onEntityClick={handleEntityClick}
+                                    onSuggestionClick={sendMessage}
+                                    conversationMessages={messages}
+                                    compact={true}
+                                  />
+                                </div>
+                              </div>
+                              {msg.finalized && !(isStreaming && i === messages.length - 1) && (
+                                <div className="flex items-center gap-3 mt-1.5 ml-1">
+                                  <button
+                                    onClick={() => handleViewDetailed(i)}
+                                    className="flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors group"
+                                  >
+                                    {t('chat.viewDetailed')}
+                                    <ArrowUpRight size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                                  </button>
+                                  <span className="text-slate-200">|</span>
+                                  <button
+                                    onClick={() => {
+                                      if (ratings[i] === 'thumbs_up') return;
+                                      setRatings(r => ({ ...r, [i]: 'thumbs_up' }));
+                                      const userQ = [...messages].slice(0, i).reverse().find(m => m.role === 'user')?.content;
+                                      trackChatRating(null, userQ || '', 'thumbs_up');
+                                    }}
+                                    className={`p-1 rounded transition-colors ${ratings[i] === 'thumbs_up' ? 'text-green-500 bg-green-50' : 'text-slate-300 hover:text-green-500 hover:bg-green-50'}`}
+                                    title={t('chat.helpful')}
+                                  >
+                                    <ThumbsUp size={12} />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (ratings[i] === 'thumbs_down') return;
+                                      setRatings(r => ({ ...r, [i]: 'thumbs_down' }));
+                                      const userQ = [...messages].slice(0, i).reverse().find(m => m.role === 'user')?.content;
+                                      trackChatRating(null, userQ || '', 'thumbs_down');
+                                    }}
+                                    className={`p-1 rounded transition-colors ${ratings[i] === 'thumbs_down' ? 'text-red-500 bg-red-50' : 'text-slate-300 hover:text-red-500 hover:bg-red-50'}`}
+                                    title={t('chat.notHelpful')}
+                                  >
+                                    <ThumbsDown size={12} />
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            isStreaming && i === messages.length - 1 && (
+                              <div className="flex items-center gap-2 text-slate-400 text-xs px-1 py-2">
+                                <Loader size={12} className="animate-spin" />
+                                <span>{t('chat.thinking')}</span>
+                              </div>
+                            )
+                          )
+                        ) : msg.content ? (
                           <>
                             <div className="bg-slate-50/80 px-3.5 py-2.5 rounded-2xl rounded-tl-md border border-slate-100/60">
                               <div className="text-[13px] leading-relaxed text-slate-700 [&_strong]:text-slate-900 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-slate-800 [&_h3]:text-[13px] [&_h3]:font-semibold [&_h3]:text-slate-700">
@@ -276,7 +365,13 @@ export default function GlobalChatBar() {
         </AnimatePresence>
 
         {/* Context indicator */}
-        {(selectedItem || slideOver?.type) && (
+        {aiFocus ? (
+          <div className="flex items-center gap-1.5 px-3 py-1 text-[10px] text-[#0393da] truncate" style={{ borderTop: '1px solid rgba(0,0,0,0.04)', background: 'rgba(3,147,218,0.04)' }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0393da] flex-shrink-0" />
+            <span className="truncate flex-1">{t('aiContext.focused', { label: aiFocus.label })}</span>
+            <button onClick={clearFocus} className="text-slate-400 hover:text-slate-600" title={t('common.close')}>×</button>
+          </div>
+        ) : (selectedItem || slideOver?.type) ? (
           <div className="flex items-center gap-1.5 px-3 py-1 text-[10px] text-slate-400 truncate" style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
             <span className="truncate">
@@ -286,7 +381,11 @@ export default function GlobalChatBar() {
                selectedItem ? t('chat.selected', { label: selectedItem.label || selectedItem.id }) : ''}
             </span>
           </div>
-        )}
+        ) : isOpen ? (
+          <div className="px-3 py-1 text-[10px] text-slate-400 italic" style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
+            {t('aiContext.focusHint')}
+          </div>
+        ) : null}
 
         {/* Input area — always visible */}
         <div className={`flex items-end gap-2 px-3 py-2.5 ${isOpen ? 'border-t border-slate-100/80' : ''}`}>

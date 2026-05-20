@@ -1,8 +1,12 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { IS_DEMO } from './utils/brand';
 import { UserProvider } from './context/UserContext';
 import { UIProvider } from './context/UIContext';
 import { ChatProvider } from './context/ChatContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { AiContextProvider } from './hooks/useAiContext';
+import { MeasuresProvider } from './hooks/useMeasures';
 import { isAuthenticated } from './utils/auth';
 import Layout from './components/Layout';
 import DashboardOverviewV2 from './pages/DashboardOverviewV2';
@@ -13,6 +17,8 @@ import Forecasting from './pages/Forecasting';
 import PricingFX from './pages/PricingFX';
 import MLAnalytics from './pages/MLAnalytics';
 import AIInsights from './pages/AIInsights';
+import Measures from './pages/Measures';
+import ChatDebug from './pages/ChatDebug';
 import Login from './pages/Login';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminCommandCenter from './pages/admin/AdminCommandCenter';
@@ -22,6 +28,10 @@ import AdminChatIntel from './pages/admin/AdminChatIntel';
 import AdminSessions from './pages/admin/AdminSessions';
 import AdminHeatmaps from './pages/admin/AdminHeatmaps';
 import AdminAIInsights from './pages/admin/AdminAIInsights';
+
+const DemoOnlyScenarioLab = IS_DEMO
+  ? lazy(() => import(/* @vite-ignore */ './pages/ScenarioLab'))
+  : () => null;
 
 function ProtectedRoute({ children }) {
   if (!isAuthenticated()) {
@@ -36,6 +46,8 @@ export default function App() {
     <UserProvider>
       <UIProvider>
         <ChatProvider>
+          <AiContextProvider>
+          <MeasuresProvider>
           <BrowserRouter basename={import.meta.env.BASE_URL}>
             <Routes>
               <Route path="/login" element={<Login />} />
@@ -58,9 +70,23 @@ export default function App() {
                 <Route path="/pricing-fx" element={<Navigate to="/pricing" replace />} />
                 <Route path="/ml-analytics" element={<MLAnalytics />} />
                 <Route path="/ai-insights" element={<AIInsights />} />
+                <Route path="/measures" element={<Measures />} />
+                <Route path="/chat-debug" element={<ChatDebug />} />
+                {IS_DEMO && (
+                  <Route
+                    path="/scenario-lab"
+                    element={
+                      <Suspense fallback={null}>
+                        <DemoOnlyScenarioLab />
+                      </Suspense>
+                    }
+                  />
+                )}
               </Route>
             </Routes>
           </BrowserRouter>
+          </MeasuresProvider>
+          </AiContextProvider>
         </ChatProvider>
       </UIProvider>
     </UserProvider>

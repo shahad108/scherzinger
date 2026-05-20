@@ -4,15 +4,23 @@ import {
   Send, Bot, Plus, Loader, Square, RotateCcw,
   ChevronDown, ChevronUp, MessageSquare, Lightbulb,
   ThumbsUp, ThumbsDown, PanelLeftClose, PanelLeftOpen, Zap,
-  Trash2, History,
+  Trash2, History, Settings, X, EyeOff,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Header from '../components/Header';
+import LastUpdated from '../components/shared/LastUpdated';
+import MeasureCreateModal from '../components/measures/MeasureCreateModal';
+import { useMeasures } from '../hooks/useMeasures';
 import ChatChart from '../components/ChatChart';
 import IntelligenceFeed from '../components/IntelligenceFeed';
 import InsightReportSlideOver from '../components/InsightReportSlideOver';
-import { useChat } from '../context/ChatContext';
+import { useChat, STRUCTURED_CHAT } from '../context/ChatContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useUI } from '../context/UIContext';
+import { createStreamParser } from '../utils/structuredReply/streamParser';
+import { STRUCTURED_RESPONSE_PROMPT } from '../utils/structuredReply/prompt';
+import StructuredReplyRenderer from '../components/chat/StructuredReplyRenderer';
+import { useUrlFilters } from '../hooks/useUrlFilters';
 import { translations } from '../i18n/translations';
 import { streamChat } from '../utils/openrouter';
 import { SYSTEM_PROMPT } from '../utils/systemPrompt';
@@ -21,6 +29,7 @@ import { generateDynamicPrompts, generateQuickPrompts } from '../utils/dynamicPr
 import { quickChat } from '../utils/openrouter';
 import renderMarkdown from '../utils/markdownRenderer';
 import { colors } from '../utils/designTokensV2';
+import { BRAND, IS_DEMO } from '../utils/brand';
 
 const DETAIL_ANALYSIS_INSTRUCTION = `
 The user opened the dedicated AI Insights screen from "View Detailed Analysis".
@@ -28,7 +37,7 @@ The user opened the dedicated AI Insights screen from "View Detailed Analysis".
 Use any prior mini-chat messages only as hidden context. Do not mention the handoff mechanics.
 Provide a deeper, decision-ready answer to the user's latest question.
 When the question involves comparison, trend, distribution, ranking, forecast, or performance, include exactly one valid \`\`\`chart block.
-End with a numbered list of concrete recommended actions tailored to Scherzinger.
+End with a numbered list of concrete recommended actions tailored to ${BRAND.tailoredTo}.
 `;
 
 // ── Conversation helpers ──
@@ -57,8 +66,14 @@ function buildConversationTitle(text) {
 
 function sanitizeHistoryMessages(messages = []) {
   return messages
-    .filter((m) => (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
-    .map((m) => ({ role: m.role, content: m.content }));
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .map((m) => {
+      if (m.format === 'structured') {
+        return { role: m.role, content: JSON.stringify({ blocks: m.blocks || [] }) };
+      }
+      return { role: m.role, content: m.content };
+    })
+    .filter((m) => typeof m.content === 'string' && m.content.trim());
 }
 
 function loadConversations() {
@@ -78,7 +93,7 @@ function saveConversations(conversations) {
       id: c.id,
       title: c.title,
       createdAt: c.createdAt || Date.now(),
-      messages: c.messages.filter((m) => m.content && m.content.trim()),
+      messages: c.messages.filter((m) => (m.format === 'structured' && Array.isArray(m.blocks)) || (m.content && m.content.trim())),
     }));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
   } catch { /* localStorage full — silently fail */ }
@@ -141,7 +156,46 @@ export default function AIInsights() {
   useEffect(() => { langRef.current = lang; }, [lang]);
 
   // Intelligence feed — re-generate when language changes so titles/summaries follow
-  const feedReports = useMemo(() => generateIntelligenceFeed(t), [t]);
+  const feedReportsAll = useMemo(() => generateIntelligenceFeed(t), [t]);
+
+  // 8.2: topic preferences — muted topic ids persist in localStorage
+  const [mutedTopics, setMutedTopics] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ai-insights-muted-topics') || '[]'); } catch { return []; }
+  });
+  const [showTopicPrefs, setShowTopicPrefs] = useState(false);
+  const [showMeasureFromInsight, setShowMeasureFromInsight] = useState(null);
+  useEffect(() => {
+    try { localStorage.setItem('ai-insights-muted-topics', JSON.stringify(mutedTopics)); } catch {}
+  }, [mutedTopics]);
+  const toggleMuteTopic = useCallback((id) => {
+    setMutedTopics(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }, []);
+
+  // 8.3: measure-linked suppression — hide insights with open measures
+  const { measures, listMeasures } = useMeasures();
+  const insightsWithOpenMeasure = useMemo(() => {
+    const openMeasures = listMeasures().filter(m => m.status !== 'done' && m.status !== 'dismissed');
+    const set = new Set();
+    for (const m of openMeasures) {
+      if (m.sourceDashboard === 'ai-insights' && m.sourceElementId) set.add(m.sourceElementId);
+    }
+    return set;
+  }, [measures, listMeasures]);
+
+  const feedReports = useMemo(() => feedReportsAll.filter(r =>
+    !mutedTopics.includes(r.id) && !insightsWithOpenMeasure.has(r.id)
+  ), [feedReportsAll, mutedTopics, insightsWithOpenMeasure]);
+
+  const suppressedByMeasureCount = useMemo(() =>
+    feedReportsAll.filter(r => insightsWithOpenMeasure.has(r.id)).length,
+    [feedReportsAll, insightsWithOpenMeasure]
+  );
+  const [showSuppressed, setShowSuppressed] = useState(false);
+  const suppressedReports = useMemo(() =>
+    feedReportsAll.filter(r => insightsWithOpenMeasure.has(r.id)),
+    [feedReportsAll, insightsWithOpenMeasure]
+  );
+
   const dynamicPrompts = useMemo(() => generateDynamicPrompts(feedReports, 8, t), [feedReports, t]);
   const quickPrompts = useMemo(() => generateQuickPrompts(feedReports, t), [feedReports, t]);
   const [expandedReport, setExpandedReport] = useState(null);
@@ -241,11 +295,25 @@ export default function AIInsights() {
     if (msgs.length < 2) return;
 
     // Find last user + assistant pair
+    // Structured-mode assistant messages keep text in .raw (or .blocks[].text),
+    // not .content — so fall back across both to cover structured + plain modes.
+    const extractText = (m) => {
+      if (m.content?.trim()) return m.content;
+      if (m.raw?.trim()) return m.raw;
+      if (Array.isArray(m.blocks) && m.blocks.length > 0) {
+        return m.blocks
+          .map((b) => b?.text || b?.title || b?.caption || '')
+          .filter(Boolean)
+          .join(' ');
+      }
+      return '';
+    };
     let lastUser = '';
     let lastAssistant = '';
     for (let i = msgs.length - 1; i >= 0; i--) {
-      if (!lastAssistant && msgs[i].role === 'assistant' && msgs[i].content?.trim()) {
-        lastAssistant = msgs[i].content;
+      if (!lastAssistant && msgs[i].role === 'assistant') {
+        const text = extractText(msgs[i]);
+        if (text) lastAssistant = text;
       }
       if (!lastUser && msgs[i].role === 'user' && msgs[i].content?.trim()) {
         lastUser = msgs[i].content;
@@ -266,7 +334,13 @@ export default function AIInsights() {
     quickChat([
       {
         role: 'system',
-        content: 'You generate follow-up questions for a business analytics conversation at Scherzinger GmbH (German pump manufacturer). Based on the user question and AI answer, suggest exactly 3 short follow-up questions the user might want to ask next. Each question should be specific — reference customer IDs, article numbers, commodity groups, or metrics from the conversation. Return ONLY a JSON array of 3 strings. Example: ["Question 1?","Question 2?","Question 3?"]',
+        content: `You generate follow-up questions for a business analytics conversation at ${BRAND.companyDescriptionShort}. Based on the user question and AI answer, suggest exactly 3 short follow-up questions the user might want to ask next.
+
+HARD RULES:
+- Only reference customer IDs, article numbers, or commodity groups that appear VERBATIM in the conversation text provided below. Copy the exact string (e.g. "101580", "206028-01", "BKAGG").
+- NEVER invent, abbreviate, or guess IDs. If no ID appears in the conversation, use generic wording ("this customer", "diesen Kunden", "diese Artikelgruppe").
+- Match the language of the AI answer (German answer → German questions; English answer → English).
+- Return ONLY a raw JSON array of 3 strings. No prose, no markdown, no code fences. Example: ["Question 1?","Question 2?","Question 3?"]`,
       },
       { role: 'user', content: `User asked: "${lastUser}"\n\nAI responded: "${truncated}"\n\nGenerate 3 follow-up questions:` },
     ], { maxTokens: 250, signal: controller.signal })
@@ -331,7 +405,9 @@ export default function AIInsights() {
         : buildConversationTitle(msg));
 
     const userMessage = { role: 'user', content: msg };
-    const assistantPlaceholder = { role: 'assistant', content: '' };
+    const assistantPlaceholder = STRUCTURED_CHAT
+      ? { role: 'assistant', format: 'structured', blocks: [], status: [], finalized: false, raw: '' }
+      : { role: 'assistant', content: '' };
 
     setInput('');
     setError(null);
@@ -365,8 +441,11 @@ export default function AIInsights() {
 
     const effectiveContext = options.handoffPageContext || pageContext;
     const langDirective = langRef.current === 'de' ? translations.de['ai.directive.de'] : null;
+    const systemPrompt = STRUCTURED_CHAT
+      ? `${SYSTEM_PROMPT}\n\n${STRUCTURED_RESPONSE_PROMPT}`
+      : SYSTEM_PROMPT;
     const apiMessages = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       ...(langDirective ? [{ role: 'system', content: langDirective }] : []),
       ...historyMessages,
       ...(effectiveContext ? [{ role: 'system', content: effectiveContext }] : []),
@@ -374,18 +453,51 @@ export default function AIInsights() {
       userMessage,
     ];
 
+    let fullResponse = '';
+    const parser = STRUCTURED_CHAT ? createStreamParser() : null;
+
     await streamChat(apiMessages, {
       onChunk(chunk) {
-        setConversations((prev) => prev.map((c) => {
-          if (c.id !== conversationId) return c;
-          const msgs = [...c.messages];
-          const last = msgs[msgs.length - 1];
-          if (!last || last.role !== 'assistant') return c;
-          msgs[msgs.length - 1] = { ...last, content: last.content + chunk };
-          return { ...c, messages: msgs };
-        }));
+        fullResponse += chunk;
+        if (STRUCTURED_CHAT) {
+          const r = parser.feed(chunk);
+          setConversations((prev) => prev.map((c) => {
+            if (c.id !== conversationId) return c;
+            const msgs = [...c.messages];
+            const last = msgs[msgs.length - 1];
+            if (!last || last.role !== 'assistant') return c;
+            msgs[msgs.length - 1] = { ...last, blocks: r.blocks, status: r.status, raw: fullResponse };
+            return { ...c, messages: msgs };
+          }));
+        } else {
+          setConversations((prev) => prev.map((c) => {
+            if (c.id !== conversationId) return c;
+            const msgs = [...c.messages];
+            const last = msgs[msgs.length - 1];
+            if (!last || last.role !== 'assistant') return c;
+            msgs[msgs.length - 1] = { ...last, content: last.content + chunk };
+            return { ...c, messages: msgs };
+          }));
+        }
       },
-      onDone() { setIsStreaming(false); isStreamingRef.current = false; abortRef.current = null; },
+      onDone() {
+        setIsStreaming(false); isStreamingRef.current = false; abortRef.current = null;
+        if (STRUCTURED_CHAT && parser) {
+          const r = parser.finalize();
+          setConversations((prev) => prev.map((c) => {
+            if (c.id !== conversationId) return c;
+            const msgs = [...c.messages];
+            const last = msgs[msgs.length - 1];
+            if (!last || last.role !== 'assistant') return c;
+            if (r.ok) {
+              msgs[msgs.length - 1] = { ...last, blocks: r.blocks, status: r.status, finalized: true, raw: r.raw };
+            } else {
+              msgs[msgs.length - 1] = { role: 'assistant', format: 'markdown', content: r.raw || fullResponse, fallback: true };
+            }
+            return { ...c, messages: msgs };
+          }));
+        }
+      },
       onError(err) {
         setIsStreaming(false); isStreamingRef.current = false; abortRef.current = null;
         if (err.name === 'AbortError') return;
@@ -394,8 +506,12 @@ export default function AIInsights() {
           if (c.id !== conversationId) return c;
           const msgs = [...c.messages];
           const last = msgs[msgs.length - 1];
-          if (!last || last.role !== 'assistant' || last.content) return c;
-          msgs[msgs.length - 1] = { ...last, content: '_Unable to generate a response right now. Use Retry to try again._' };
+          if (!last || last.role !== 'assistant') return c;
+          if (STRUCTURED_CHAT && !fullResponse) {
+            msgs[msgs.length - 1] = { role: 'assistant', format: 'markdown', content: '_Unable to generate a response right now. Use Retry to try again._', fallback: true };
+          } else if (!STRUCTURED_CHAT && !last.content) {
+            msgs[msgs.length - 1] = { ...last, content: '_Unable to generate a response right now. Use Retry to try again._' };
+          }
           return { ...c, messages: msgs };
         }));
       },
@@ -499,12 +615,36 @@ export default function AIInsights() {
     handleSend(question);
   }, [handleSend]);
 
+  // Auto-submit ?prompt= from URL (e.g. dashboard drill-through). Fires once per mount.
+  const { filters: urlFilters, clearFilter: clearUrlFilter } = useUrlFilters();
+  const didAutoSubmit = useRef(false);
+  useEffect(() => {
+    if (didAutoSubmit.current) return;
+    if (!urlFilters.prompt) return;
+    // Don't clobber an active conversation
+    if (activeConv?.messages?.length > 0) { clearUrlFilter('prompt'); return; }
+    didAutoSubmit.current = true;
+    const promptText = urlFilters.prompt;
+    const id = setTimeout(() => {
+      handleSend(promptText);
+      clearUrlFilter('prompt');
+    }, 50);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlFilters.prompt]);
+
   const handleChatFeedback = (msgIndex, type) => {
     setChatFeedback((prev) => ({
       ...prev,
       [msgIndex]: prev[msgIndex] === type ? null : type,
     }));
   };
+
+  const { openCustomerDetail, openSKUDetail } = useUI();
+  const handleEntityClick = useCallback(({ entityType, id }) => {
+    if (entityType === 'customer') openCustomerDetail(id);
+    else if (entityType === 'sku' || entityType === 'product') openSKUDetail(id);
+  }, [openCustomerDetail, openSKUDetail]);
 
   return (
     <>
@@ -542,11 +682,34 @@ export default function AIInsights() {
           ) : (
             /* ── Expanded feed ── */
             <>
+              {/* 8.3: suppressed-by-measure counter */}
+              {suppressedByMeasureCount > 0 ? (
+                <div className="px-4 pt-3 pb-1">
+                  <button
+                    onClick={() => setShowSuppressed(v => !v)}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                  >
+                    <EyeOff size={12} />
+                    <span className="flex-1 text-left">{t('ai.suppressed.count', { n: suppressedByMeasureCount })}</span>
+                    <ChevronDown size={12} className={showSuppressed ? 'rotate-180 transition-transform' : 'transition-transform'} />
+                  </button>
+                  {showSuppressed ? (
+                    <div className="mt-2 space-y-1">
+                      {suppressedReports.map(r => (
+                        <div key={r.id} className="text-[10px] text-slate-500 px-2 py-1 rounded bg-white/60">
+                          <span className="font-semibold text-slate-700">{r.type}</span> — {r.title}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               <IntelligenceFeed
                 reports={feedReports}
                 onAskAbout={handleAskAboutReport}
                 onExpandReport={setExpandedReport}
                 onCollapse={toggleFeed}
+                onCreateMeasure={(report) => setShowMeasureFromInsight(report)}
               />
             </>
           )}
@@ -578,14 +741,52 @@ export default function AIInsights() {
                   </span>
                 )}
               </div>
-              <button
-                onClick={handleNewChat}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors flex-shrink-0"
-              >
-                <Plus size={12} />
-                {t('ai.newChat')}
-              </button>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <LastUpdated dashboardKey="ai-insights" />
+                <button
+                  onClick={() => setShowTopicPrefs(v => !v)}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-50 border border-slate-200 transition-colors"
+                  title={t('ai.topicPrefs.open')}
+                  aria-pressed={showTopicPrefs}
+                >
+                  <Settings size={13} />
+                </button>
+                <button
+                  onClick={handleNewChat}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-slate-600 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  <Plus size={12} />
+                  {t('ai.newChat')}
+                </button>
+              </div>
             </div>
+
+            {/* 8.2: Topic preferences panel */}
+            {showTopicPrefs ? (
+              <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-bold text-slate-700">{t('ai.topicPrefs.title')}</h4>
+                  <button onClick={() => setShowTopicPrefs(false)} className="text-slate-400 hover:text-slate-600"><X size={14} /></button>
+                </div>
+                <p className="text-[10px] text-slate-500 mb-3">{t('ai.topicPrefs.subtitle')}</p>
+                <div className="space-y-1.5">
+                  {feedReportsAll.map(r => {
+                    const muted = mutedTopics.includes(r.id);
+                    return (
+                      <label key={r.id} className="flex items-center gap-2 cursor-pointer text-xs py-1">
+                        <input
+                          type="checkbox"
+                          checked={!muted}
+                          onChange={() => toggleMuteTopic(r.id)}
+                          className="rounded border-slate-300 text-[#0393da] focus:ring-[#0393da]"
+                        />
+                        <span className={muted ? 'text-slate-400 line-through' : 'text-slate-700'}>{r.type}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
 
             {/* Collapsible Recent Chats */}
             <AnimatePresence>
@@ -659,6 +860,35 @@ export default function AIInsights() {
                       {prompt}
                     </button>
                   ))}
+                  {IS_DEMO && [
+                    lang === 'de'
+                      ? 'Führe einen Materialschock von +5% auf die Warengruppe PW aus'
+                      : 'Run a +5% material shock on commodity group PW',
+                    lang === 'de'
+                      ? 'Welche Kunden haben einen CLV > 1 Mio. € und eine Verbleiberate < 80%?'
+                      : 'Which customers have CLV > €1M and retention < 80%?',
+                    lang === 'de'
+                      ? 'Zeige mir die Top 5 Artikel unterhalb der Preisuntergrenze'
+                      : 'Show me the top 5 SKUs below their floor price',
+                    lang === 'de'
+                      ? 'Erkläre, warum die Gewinnquote in PW letzte Woche gefallen ist'
+                      : 'Explain why win rate dropped in PW last week',
+                    lang === 'de'
+                      ? 'Was ist das Break-even-Volumen für PS-2241 bei aktuellen Kosten?'
+                      : 'What is the break-even volume for PS-2241 at current cost?',
+                    lang === 'de'
+                      ? 'Zeige alle Anomalien der letzten 24 Stunden mit hoher Schwere'
+                      : 'List all anomalies from the last 24 hours with severity high',
+                  ].map((prompt) => (
+                    <button
+                      key={prompt}
+                      onClick={() => handleSend(prompt)}
+                      disabled={isStreaming}
+                      className="block w-full text-left px-3 py-2 rounded-lg bg-slate-50 hover:bg-blue-50 hover:text-blue-700 transition-all text-xs text-slate-600 disabled:opacity-50 truncate"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
@@ -676,7 +906,49 @@ export default function AIInsights() {
                     <Bot size={12} style={{ color: colors.primary }} />
                   </div>
                   <div className="max-w-[88%] min-w-0">
-                    {msg.content ? (
+                    {msg.format === 'structured' ? (
+                      ((msg.blocks && msg.blocks.length > 0) || msg.finalized) ? (
+                        <>
+                          <div className="prose-chat text-xs">
+                            <StructuredReplyRenderer
+                              blocks={msg.blocks || []}
+                              status={msg.status || []}
+                              finalized={!!msg.finalized}
+                              onEntityClick={handleEntityClick}
+                              onSuggestionClick={handleSend}
+                              conversationMessages={activeConv?.messages || []}
+                            />
+                          </div>
+                          {msg.finalized && !isStreaming && (
+                            <div className="flex items-center gap-1 mt-1.5">
+                              <button
+                                onClick={() => handleChatFeedback(i, 'up')}
+                                className={`p-0.5 rounded transition-colors ${
+                                  chatFeedback[i] === 'up' ? 'text-green-600' : 'text-slate-300 hover:text-slate-400'
+                                }`}
+                              >
+                                <ThumbsUp size={10} />
+                              </button>
+                              <button
+                                onClick={() => handleChatFeedback(i, 'down')}
+                                className={`p-0.5 rounded transition-colors ${
+                                  chatFeedback[i] === 'down' ? 'text-red-500' : 'text-slate-300 hover:text-slate-400'
+                                }`}
+                              >
+                                <ThumbsDown size={10} />
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        isStreaming && i === activeConv.messages.length - 1 && (
+                          <div className="flex items-center gap-2 text-slate-400 text-xs">
+                            <Loader size={12} className="animate-spin" />
+                            {t('ai.thinking')}
+                          </div>
+                        )
+                      )
+                    ) : msg.content ? (
                       <>
                         {parseMessageContent(msg.content).map((part, j) => (
                           part.type === 'chart' ? (
@@ -687,7 +959,6 @@ export default function AIInsights() {
                             </div>
                           )
                         ))}
-                        {/* Per-response feedback */}
                         {msg.content && !isStreaming && (
                           <div className="flex items-center gap-1 mt-1.5">
                             <button
@@ -771,7 +1042,14 @@ export default function AIInsights() {
                     followUpSuggestions.map((q, i) => (
                       <button
                         key={i}
-                        onClick={() => handleSend(q)}
+                        onClick={() => {
+                          // Clear the pill-bar first so React can unmount it cleanly
+                          // before handleSend flips isStreaming and re-renders the tree.
+                          // Without this the motion AnimatePresence + Recharts ResponsiveContainer
+                          // race on the same commit and throw NotFoundError removeChild.
+                          setFollowUpSuggestions([]);
+                          requestAnimationFrame(() => handleSend(q));
+                        }}
                         className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[10px] text-slate-600 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-colors text-left leading-snug"
                       >
                         {q}
@@ -844,6 +1122,17 @@ export default function AIInsights() {
           />
         )}
       </AnimatePresence>
+
+      {/* 8.3: Measure-from-insight modal — sourceElementId=insight.id
+          suppresses the insight from default feed until the measure closes */}
+      <MeasureCreateModal
+        open={!!showMeasureFromInsight}
+        onClose={() => setShowMeasureFromInsight(null)}
+        sourceDashboard="ai-insights"
+        sourceElementId={showMeasureFromInsight?.id}
+        sourceKpi={showMeasureFromInsight?.type}
+        defaultTitle={showMeasureFromInsight?.title || ''}
+      />
     </>
   );
 }

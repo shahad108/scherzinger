@@ -13,6 +13,10 @@ import {
   updateConversationTitle,
   deleteConversation as deleteConversationDb,
 } from '../utils/supabaseService';
+import { createStreamParser } from '../utils/structuredReply/streamParser';
+import { STRUCTURED_RESPONSE_PROMPT } from '../utils/structuredReply/prompt';
+
+export const STRUCTURED_CHAT = true; // feature flag
 
 const ChatContext = createContext(null);
 
@@ -73,12 +77,32 @@ export function ChatProvider({ children }) {
   const loadConversation = useCallback(async (convoId) => {
     const msgs = await getConversationMessages(convoId);
     setConversationId(convoId);
-    setMessages(msgs.map(m => ({
-      role: m.role,
-      content: m.content,
-      contextLabel: m.context_label,
-      dbId: m.id,
-    })));
+    setMessages(msgs.map(m => {
+      if (m.role === 'assistant' && typeof m.content === 'string' && m.content.trim().startsWith('{')) {
+        try {
+          const parsed = JSON.parse(m.content);
+          if (parsed && Array.isArray(parsed.blocks)) {
+            return {
+              role: 'assistant',
+              format: 'structured',
+              blocks: parsed.blocks,
+              status: parsed.blocks.map(() => 'ready'),
+              finalized: true,
+              raw: m.content,
+              contextLabel: m.context_label,
+              dbId: m.id,
+            };
+          }
+        } catch { /* fall through */ }
+      }
+      return {
+        role: m.role,
+        format: 'markdown',
+        content: m.content,
+        contextLabel: m.context_label,
+        dbId: m.id,
+      };
+    }));
     setIsOpen(true);
   }, []);
 
@@ -100,7 +124,6 @@ export function ChatProvider({ children }) {
     const username = session?.username || 'anonymous';
     const contextLabel = pageContextLabelRef.current || null;
 
-    // Create conversation in Supabase if first message
     let activeConvoId = conversationId;
     if (!activeConvoId) {
       const convo = await createConversation(
@@ -116,12 +139,13 @@ export function ChatProvider({ children }) {
     }
 
     const userMsg = { role: 'user', content: msg, contextLabel };
-    const assistantMsg = { role: 'assistant', content: '' };
+    const assistantMsg = STRUCTURED_CHAT
+      ? { role: 'assistant', format: 'structured', blocks: [], status: [], finalized: false, raw: '' }
+      : { role: 'assistant', format: 'markdown', content: '' };
 
     setMessages(prev => [...prev, userMsg, assistantMsg]);
     setIsStreaming(true);
 
-    // Save user message to Supabase
     if (activeConvoId) {
       saveMessage(activeConvoId, 'user', msg, contextLabel).catch(() => {});
     }
@@ -130,34 +154,82 @@ export function ChatProvider({ children }) {
     abortRef.current = controller;
 
     const history = [...messagesRef.current, userMsg]
-      .filter(m => m.content && m.content.trim())
-      .map(m => ({ role: m.role, content: m.content }));
+      .filter(m => (m.content && m.content.trim()) || m.format === 'structured')
+      .map(m => {
+        if (m.format === 'structured') {
+          return { role: m.role, content: JSON.stringify({ blocks: m.blocks }) };
+        }
+        return { role: m.role, content: m.content };
+      });
+
     const currentContext = pageContextRef.current;
     const currentLang = langRef.current;
     const langDirective = currentLang === 'de' ? translations.de['ai.directive.de'] : null;
+    const systemPrompt = STRUCTURED_CHAT
+      ? `${SYSTEM_PROMPT_MINI}\n\n${STRUCTURED_RESPONSE_PROMPT}`
+      : SYSTEM_PROMPT_MINI;
     const apiMessages = [
-      { role: 'system', content: SYSTEM_PROMPT_MINI },
+      { role: 'system', content: systemPrompt },
       ...(langDirective ? [{ role: 'system', content: langDirective }] : []),
       ...(currentContext ? [{ role: 'system', content: currentContext }] : []),
       ...history,
     ];
 
     let fullResponse = '';
+    const parser = STRUCTURED_CHAT ? createStreamParser() : null;
 
     await streamChat(apiMessages, {
       onChunk(chunk) {
         fullResponse += chunk;
-        setMessages(prev => {
-          const updated = [...prev];
-          const last = updated[updated.length - 1];
-          updated[updated.length - 1] = { ...last, content: last.content + chunk };
-          return updated;
-        });
+        if (STRUCTURED_CHAT) {
+          const r = parser.feed(chunk);
+          setMessages(prev => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            updated[updated.length - 1] = {
+              ...last,
+              blocks: r.blocks,
+              status: r.status,
+              raw: fullResponse,
+            };
+            return updated;
+          });
+        } else {
+          setMessages(prev => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            updated[updated.length - 1] = { ...last, content: last.content + chunk };
+            return updated;
+          });
+        }
       },
       onDone() {
         setIsStreaming(false);
         abortRef.current = null;
-        // Save assistant message to Supabase
+        if (STRUCTURED_CHAT) {
+          const r = parser.finalize();
+          setMessages(prev => {
+            const updated = [...prev];
+            const last = updated[updated.length - 1];
+            if (r.ok) {
+              updated[updated.length - 1] = {
+                ...last,
+                blocks: r.blocks,
+                status: r.status,
+                finalized: true,
+                raw: r.raw,
+              };
+            } else {
+              updated[updated.length - 1] = {
+                role: 'assistant',
+                format: 'markdown',
+                content: r.raw || fullResponse,
+                fallback: true,
+              };
+            }
+            return updated;
+          });
+        }
         if (activeConvoId && fullResponse) {
           saveMessage(activeConvoId, 'assistant', fullResponse).catch(() => {});
         }
@@ -166,15 +238,16 @@ export function ChatProvider({ children }) {
         setIsStreaming(false);
         abortRef.current = null;
         if (err.name === 'AbortError') return;
-        const errorMsg = fullResponse || '_Something went wrong. Please try again._';
+        const errorText = fullResponse || '_Something went wrong. Please try again._';
         setMessages(prev => {
           const updated = [...prev];
-          const last = updated[updated.length - 1];
-          updated[updated.length - 1] = { ...last, content: errorMsg };
+          updated[updated.length - 1] = {
+            role: 'assistant', format: 'markdown', content: errorText, fallback: true,
+          };
           return updated;
         });
-        if (activeConvoId && errorMsg) {
-          saveMessage(activeConvoId, 'assistant', errorMsg).catch(() => {});
+        if (activeConvoId && errorText) {
+          saveMessage(activeConvoId, 'assistant', errorText).catch(() => {});
         }
       },
       signal: controller.signal,
@@ -193,6 +266,7 @@ export function ChatProvider({ children }) {
       historyLoaded,
       loadConversation,
       deleteConversation,
+      structuredMode: STRUCTURED_CHAT,
     }}>
       {children}
     </ChatContext.Provider>
