@@ -1,0 +1,77 @@
+# Local development stack for the Scherzinger ↔ frontend-v2 migration.
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up
+#   docker compose -f docker-compose.dev.yml up --build  # rebuild after deps change
+#   docker compose -f docker-compose.dev.yml down -v     # tear down + drop volumes
+#
+# After bring-up:
+#   - Postgres : localhost:5432  (pryzm / pryzm_dev)
+#   - API      : http://localhost:8000  (FastAPI, /docs, /health)
+#   - Frontend : http://localhost:5173  (Vite dev server)
+#
+# Frontend env (set inside this compose) points VITE_SCHERZINGER_API at the
+# api service via VITE_ALLOW_MOCK_FALLBACK=1 so unimplemented BFF endpoints
+# fall back to bundled mocks while Phase 1 ships.
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: pryzm
+      POSTGRES_PASSWORD: pryzm_dev
+      POSTGRES_DB: scherzinger_margin_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pryzm -d scherzinger_margin_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: ./scherzinger-platform
+      dockerfile: Dockerfile
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      DATABASE_URL: postgresql://pryzm:pryzm_dev@postgres:5432/scherzinger_margin_db
+      API_HOST: 0.0.0.0
+      API_PORT: "8000"
+      CORS_ORIGINS: "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5174,http://127.0.0.1:5173"
+    volumes:
+      - ./scherzinger-platform:/app
+      - ./Data:/app/data
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/health\")' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      VITE_SCHERZINGER_API: "http://localhost:8000/api/v1/screens"
+      VITE_ALLOW_MOCK_FALLBACK: "1"
+      VITE_API_VERSION: v1
+      VITE_DEFAULT_USER: frank
+    volumes:
+      - ./frontend-v2:/app
+      - frontend-node-modules:/app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+volumes:
+  pgdata-dev:
+  frontend-node-modules:

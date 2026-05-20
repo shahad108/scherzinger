@@ -1,0 +1,267 @@
+// Phase 12 mutation hooks for /api/v1/actions/{kind} + /audit/recent.
+//
+// Every state-changing call from the UI funnels through `runAction(kind, body)`.
+// An idempotency key derived from (kind, target_id) goes in the
+// `x-pryzm-idempotency-key` header so retries from React Query never produce
+// duplicate audit rows. Per-screen invalidation lives in the per-kind wrappers
+// at the bottom of this file.
+
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryKey,
+} from '@tanstack/react-query';
+
+import { apiFetch, postJson } from '@/lib/api/client';
+import { qk } from '@/lib/api/queryKeys';
+
+export type ActionKind =
+  | 'accept_recommendation'
+  | 'decline_recommendation'
+  | 'partial_accept'
+  | 'snooze_recommendation'
+  | 'queue_renewal'
+  | 'start_ab_test'
+  | 'stop_ab_test'
+  | 'hold_ab_test'
+  | 'promote_ab_test'
+  | 'quote_approve'
+  | 'quote_counter'
+  | 'quote_decline'
+  | 'quote_hold'
+  | 'quote_bulk'
+  | 'studio_accept'
+  | 'briefing_forward'
+  | 'briefing_pdf'
+  | 'briefing_email'
+  | 'guardrail_edit_request'
+  | 'guardrail_apply'
+  | 'forecast_override'
+  | 'notification_read'
+  | 'section_save'
+  | 'section_remove'
+  | 'share_decision';
+
+export interface ActionBody {
+  target_type?: string;
+  target_id?: string;
+  aid?: string;
+  delta_pp?: number;
+  before?: Record<string, unknown>;
+  after?: Record<string, unknown>;
+  // Per-kind extras (slice_pct, control_price, …) live here.
+  [key: string]: unknown;
+}
+
+export interface AuditRow {
+  id: string;
+  actor: string;
+  actor_persona: string;
+  kind: ActionKind | string;
+  target_type: string | null;
+  target_id: string | null;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  delta_pp: number | null;
+  audit_hash: string;
+  created_at: string | null;
+}
+
+export interface AbSimulationSummary {
+  stage: 'pre_launch' | 'mid_run' | string;
+  recommendation: 'launch' | 'hold' | 'block' | string;
+  detected_lift_pp?: number | null;
+  detected_lift_pct?: number | null;
+  p_value?: number | null;
+  observed_arms?: { control_n?: number | null; treatment_n?: number | null };
+  blockers?: string[];
+  warnings?: string[];
+  [key: string]: unknown;
+}
+
+export interface ActionResponse {
+  replay: boolean;
+  audit: AuditRow;
+  // start_ab_test / stop_ab_test / notification_read attach extras.
+  ab_test_id?: string;
+  aid?: string;
+  status?: string;
+  decision_state?: string;
+  simulation_status?: string;
+  simulation_summary?: AbSimulationSummary;
+  launch_readiness?: 'ready' | 'blocked' | string;
+  blockers?: string[];
+  notification_id?: string;
+  unread?: boolean;
+  // share_decision extras (Phase 11).
+  recipient?: 'till' | 'heiko' | string;
+  recipient_user_id?: string | null;
+  recipient_resolved?: boolean;
+  note_id?: string;
+  share_link?: string;
+  audit_hash?: string;
+}
+
+/** Default idempotency key generator: stable per (kind, target). */
+function defaultIdempotencyKey(kind: ActionKind, body: ActionBody): string {
+  const target = body.target_id ?? body.aid ?? 'na';
+  return `${kind}:${target}`;
+}
+
+// Pricing Studio v3 / Phase C2 — the sessionStorage synthetic-proposal
+// store has been removed. Mock-mode now returns only the action audit
+// payload; proposal lifecycle state is owned exclusively by the BFF.
+
+export async function runAction(
+  kind: ActionKind,
+  body: ActionBody = {},
+  options?: { idempotencyKey?: string },
+): Promise<ActionResponse> {
+  const key = options?.idempotencyKey ?? defaultIdempotencyKey(kind, body);
+  return postJson<ActionResponse>(`/actions/${kind}`, body, {
+    headers: { 'x-pryzm-idempotency-key': key },
+    mockResolve: () => {
+      const base: ActionResponse = {
+        replay: false,
+        audit: {
+          id: 'mock-' + key,
+          actor: 'mock-user',
+          actor_persona: 'frank',
+          kind,
+          target_type: body.target_type ?? null,
+          target_id: body.target_id ?? body.aid ?? null,
+          before: null,
+          after: null,
+          delta_pp: body.delta_pp ?? null,
+          audit_hash: 'mock' + Math.random().toString(16).slice(2, 14),
+          created_at: new Date().toISOString(),
+        },
+      };
+      if (kind === 'share_decision') {
+        const recipient = (body.recipient as string | undefined) ?? 'till';
+        const target = (body.target_id as string | undefined) ?? (body.aid as string | undefined) ?? '—';
+        base.recipient = recipient;
+        base.recipient_user_id = `mock-user-${recipient}`;
+        base.recipient_resolved = true;
+        base.notification_id = `mock-notif-${key}`;
+        base.note_id = `mock-note-${key}`;
+        base.share_link = (body.link as string | undefined) ?? `/action-center?focus=rec-${target}`;
+        base.audit_hash = base.audit.audit_hash;
+      }
+      if (kind === 'start_ab_test') {
+        // Mock-mode parity for Phase 7 — surface the same simulation
+        // shape the live FastAPI dispatcher returns so the AbSetupForm
+        // confirmation panel works without a backend.
+        const slicePct = (body.slice_pct as number | undefined) ?? 0.1;
+        const ctrl = (body.control_price as number | undefined) ?? 0;
+        const treat = (body.treatment_price as number | undefined) ?? 0;
+        const liftPp = ctrl > 0 ? ((treat - ctrl) / ctrl) * 100 : 0;
+        const blockers: string[] = [];
+        if (slicePct > 0.4) blockers.push('Slice exceeds 40% — capacity risk');
+        if (ctrl > 0 && treat > 0 && Math.abs(liftPp) > 20) {
+          blockers.push(`Price move ${liftPp.toFixed(1)}pp outside ±20pp guardrail`);
+        }
+        const ready = blockers.length === 0;
+        base.ab_test_id = 'mock-abt-' + key;
+        base.aid = (body.aid as string | undefined) ?? null ?? undefined;
+        base.status = 'running';
+        base.decision_state = 'running';
+        base.simulation_status = 'pre_launch_ok';
+        base.launch_readiness = ready ? 'ready' : 'blocked';
+        base.blockers = blockers;
+        base.simulation_summary = {
+          stage: 'pre_launch',
+          recommendation: ready ? 'launch' : 'block',
+          detected_lift_pp: liftPp,
+          detected_lift_pct: liftPp,
+          p_value: null,
+          observed_arms: { control_n: null, treatment_n: null },
+          blockers,
+          warnings: [],
+        };
+      }
+      return base;
+    },
+  });
+}
+
+/** Generic mutation hook — pass the screen's query key as `invalidate`. */
+function useActionMutation(
+  kind: ActionKind,
+  invalidate: QueryKey | QueryKey[] | undefined,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ActionBody) => runAction(kind, body),
+    onSuccess: () => {
+      if (invalidate) {
+        const keys = Array.isArray(invalidate[0]) ? (invalidate as QueryKey[]) : [invalidate as QueryKey];
+        for (const k of keys) qc.invalidateQueries({ queryKey: k });
+      }
+      qc.invalidateQueries({ queryKey: qk.auditTrail('30d') });
+      qc.invalidateQueries({ queryKey: qk.shell() });
+    },
+  });
+}
+
+// ---------- per-kind wrappers ----------
+
+export const useAcceptDecision = () =>
+  useActionMutation('accept_recommendation', [qk.actionCenter(), qk.studio()]);
+export const useDeclineDecision = () =>
+  useActionMutation('decline_recommendation', [qk.actionCenter(), qk.studio()]);
+export const usePartialAccept = () =>
+  useActionMutation('partial_accept', qk.actionCenter());
+// Phase F (F3) — snooze a recommendation. The backend's
+// `snooze_recommendation` kind expects `target_id` + optional `payload.until`.
+export const useSnoozeDecision = () =>
+  useActionMutation('snooze_recommendation', [qk.actionCenter(), qk.studio()]);
+// Phase F (F4) — share a Pricing-Studio decision with Till or Heiko (or
+// both). The backend's _share_decision helper accepts `recipient` in
+// {till, heiko, both}; when "both" is passed the server fans out into one
+// notification per persona inside a single transaction (see backend commit
+// 91ca502), so the FE makes exactly ONE mutation per click.
+export const useShareDecision = () =>
+  useActionMutation('share_decision', [qk.actionCenter(), qk.studio()]);
+
+export const useStartAbTest = () =>
+  useActionMutation('start_ab_test', [qk.actionCenter(), qk.studio()]);
+export const useStopAbTest = () =>
+  useActionMutation('stop_ab_test', [qk.actionCenter(), qk.studio()]);
+
+export const useApproveQuote = () => useActionMutation('quote_approve', qk.quotes());
+export const useCounterQuote = () => useActionMutation('quote_counter', qk.quotes());
+export const useDeclineQuote = () => useActionMutation('quote_decline', qk.quotes());
+export const useHoldQuote = () => useActionMutation('quote_hold', qk.quotes());
+export const useBulkQuoteAction = () => useActionMutation('quote_bulk', qk.quotes());
+
+export const useStudioAccept = () => useActionMutation('studio_accept', qk.studio());
+
+export const useForwardBriefing = () => useActionMutation('briefing_forward', qk.ai());
+export const useExportBriefingPdf = () => useActionMutation('briefing_pdf', qk.ai());
+export const useEmailBriefing = () => useActionMutation('briefing_email', qk.ai());
+
+export const useEditGuardrailRequest = () =>
+  useActionMutation('guardrail_edit_request', qk.quotes());
+export const useApplyGuardrail = () => useActionMutation('guardrail_apply', qk.quotes());
+
+export const useForecastOverride = () => useActionMutation('forecast_override', qk.forecast());
+
+// ---------- audit-trail read ----------
+
+export interface AuditTrailResponse {
+  items: AuditRow[];
+}
+
+export function useAuditTrail(since = '30d', enabled = true) {
+  return useQuery({
+    queryKey: qk.auditTrail(since),
+    queryFn: () =>
+      apiFetch<AuditTrailResponse>('/audit/recent', {
+        params: { since, limit: 50 },
+      }),
+    enabled,
+    staleTime: 60_000,
+  });
+}

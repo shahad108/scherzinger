@@ -1,0 +1,229 @@
+"""Phase 9 contract — composed AI Briefing."""
+from __future__ import annotations
+
+import os
+
+from fastapi.testclient import TestClient
+
+URL = "/api/v1/screens/ai"
+
+
+def test_ai_top_level_shape(client: TestClient) -> None:
+    res = client.get(URL)
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert set(body.keys()) == {"header", "memo", "sideCards", "crossLinks"}
+    assert isinstance(body["sideCards"], list) and body["sideCards"]
+
+
+def test_ai_persona_till_404(client: TestClient) -> None:
+    res = client.get(URL, params={"persona": "till"})
+    assert res.status_code == 404
+    assert "Phase 10" in res.json()["detail"]["message"]
+
+
+def test_ai_persona_heiko_404(client: TestClient) -> None:
+    res = client.get(URL, params={"persona": "heiko"})
+    assert res.status_code == 404
+    assert "Phase 11" in res.json()["detail"]["message"]
+
+
+def test_ai_memo_carries_persona(client: TestClient) -> None:
+    body = client.get(URL).json()
+    assert body["memo"].get("persona") == "frank"
+    assert body["memo"].get("scope") == "monday_briefing"
+
+
+def test_ai_template_provider_is_deterministic(client: TestClient) -> None:
+    from backend.services.ai_briefing.providers import draft_memo
+
+    a = draft_memo(scope="monday_briefing", persona="frank", lang=None)
+    b = draft_memo(scope="monday_briefing", persona="frank", lang=None)
+    assert a == b
+
+
+def test_ai_llm_provider_falls_back_when_key_missing(monkeypatch) -> None:
+    """Phase 13: LLM provider degrades gracefully without ANTHROPIC_API_KEY."""
+    from backend.services.ai_briefing.providers import draft_memo
+
+    monkeypatch.setenv("BRIEFING_PROVIDER", "llm")
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    memo = draft_memo(scope="monday_briefing", persona="frank", lang=None)
+    # Falls back to template — no provider stamp, deterministic body.
+    assert memo.get("provider") != "llm"
+    assert memo["scope"] == "monday_briefing"
+    assert memo["persona"] == "frank"
+
+
+def test_ai_etag_round_trip(client: TestClient) -> None:
+    first = client.get(URL)
+    etag = first.headers.get("etag")
+    assert etag
+    second = client.get(URL, headers={"If-None-Match": etag})
+    assert second.status_code == 304
+
+
+def test_ai_lang_en_returns_en_seed(client: TestClient) -> None:
+    """Phase 13: ?lang=en swaps the provider's seed file."""
+    de = client.get(URL).json()
+    en = client.get(URL, params={"lang": "en"}).json()
+    # The signatures differ by the (EN) marker injected into the en seed.
+    assert "(EN)" in en["memo"]["signature"]
+    assert "(EN)" not in de["memo"]["signature"]
+    assert en["memo"]["lang"] == "en"
+
+
+def test_ai_phase10_memo_paragraphs_carry_citations(client: TestClient) -> None:
+    """Phase 10: every memo paragraph mentioning Article/Customer/Cluster
+    carries a citations[] array with deep-link jumpTo paths."""
+    body = client.get(URL).json()
+    paragraphs = body["memo"]["paragraphs"]
+    with_cites = [p for p in paragraphs if p.get("citations")]
+    assert with_cites, "expected at least one paragraph with citations"
+    all_cites = [c for p in paragraphs for c in p.get("citations", [])]
+    kinds = {c["kind"] for c in all_cites}
+    assert "article" in kinds
+    assert "customer" in kinds
+    assert "cluster" in kinds
+    for c in all_cites:
+        assert {"kind", "target_id", "anchor", "label", "jumpTo"} <= set(c.keys())
+        assert c["jumpTo"].startswith("/"), c
+        assert c["target_id"], c
+    # Side cards mirror the same shape on bullets / body.
+    bullet_cites = [c for sc in body["sideCards"] for b in (sc.get("bullets") or []) for c in (b.get("citations") or [])]
+    body_cites = [c for sc in body["sideCards"] for c in (sc.get("citations") or [])]
+    assert bullet_cites or body_cites, "expected at least one side-card citation"
+
+
+def test_bedrock_falls_back_when_boto3_missing(monkeypatch) -> None:
+    """Phase 21: bedrock provider degrades gracefully without boto3."""
+    import sys
+    from backend.services.ai_briefing import providers
+    from backend.services.ai_briefing.providers import draft_memo
+
+    monkeypatch.setenv("BRIEFING_PROVIDER", "bedrock")
+    # Force the import to fail inside _bedrock by hiding boto3 from sys.modules
+    # AND making the next import attempt raise.
+    monkeypatch.setitem(sys.modules, "boto3", None)
+
+    memo = draft_memo(scope="monday_briefing", persona="frank", lang=None)
+    assert memo.get("provider") != "bedrock"
+    assert memo["scope"] == "monday_briefing"
+    assert memo["persona"] == "frank"
+    # Sanity: providers module exposes _bedrock.
+    assert hasattr(providers, "_bedrock")
+
+
+def test_bedrock_falls_back_when_client_raises(monkeypatch) -> None:
+    """Phase 21: any runtime error from Bedrock degrades to template."""
+    import types
+    import sys
+    from backend.services.ai_briefing.providers import draft_memo
+
+    # Inject a fake boto3 whose client.converse always raises.
+    class _FakeClient:
+        def converse(self, **kwargs):
+            raise RuntimeError("simulated AWS credential error")
+
+    fake_boto3 = types.ModuleType("boto3")
+    fake_boto3.client = lambda *args, **kwargs: _FakeClient()  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "boto3", fake_boto3)
+    monkeypatch.setenv("BRIEFING_PROVIDER", "bedrock")
+
+    memo = draft_memo(scope="monday_briefing", persona="frank", lang=None)
+    # Failure path: still a usable memo, no provider stamp.
+    assert memo.get("provider") != "bedrock"
+    assert memo["paragraphs"]
+
+
+def test_bedrock_returns_provider_stamp_on_success(monkeypatch) -> None:
+    """Phase 21: happy path stamps provider=bedrock + carries model_id."""
+    import types
+    import sys
+    from backend.services.ai_briefing.providers import draft_memo
+
+    class _FakeClient:
+        def converse(self, **kwargs):
+            return {
+                "output": {
+                    "message": {
+                        "content": [
+                            {
+                                "text": (
+                                    "<p>Cluster <b>BKAGG</b> drifted. Article 200832-E "
+                                    "moved on customer 102330.</p>"
+                                    "<p>Recommendation #1 ready for approval.</p>"
+                                )
+                            }
+                        ]
+                    }
+                }
+            }
+
+    fake_boto3 = types.ModuleType("boto3")
+    fake_boto3.client = lambda *args, **kwargs: _FakeClient()  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "boto3", fake_boto3)
+    monkeypatch.setenv("BRIEFING_PROVIDER", "bedrock")
+    monkeypatch.setenv("BEDROCK_MODEL_ID", "anthropic.claude-haiku-4-5-20251001-v1:0")
+
+    memo = draft_memo(scope="monday_briefing", persona="frank", lang=None)
+    assert memo["provider"] == "bedrock"
+    assert memo["model_id"] == "anthropic.claude-haiku-4-5-20251001-v1:0"
+    # Citation extractor runs over the LLM output — at least one citation lands.
+    all_cites = [c for p in memo["paragraphs"] for c in p.get("citations", [])]
+    assert all_cites, "expected citation extractor to pick up Article/Cluster/Customer"
+
+
+def test_bedrock_defaults_to_eu_frankfurt(monkeypatch) -> None:
+    """Phase 22: when BEDROCK_REGION / BEDROCK_MODEL_ID are unset, the
+    bedrock provider must construct the client against eu-central-1
+    (Frankfurt) and pick the EU cross-region inference profile so
+    Scherzinger demo traffic stays inside EU data residency."""
+    import types
+    import sys
+    from backend.services.ai_briefing.providers import draft_memo
+
+    captured: dict[str, object] = {}
+
+    class _FakeClient:
+        def converse(self, **kwargs):
+            captured["model_id"] = kwargs.get("modelId")
+            return {
+                "output": {
+                    "message": {"content": [{"text": "<p>ok</p>"}]}
+                }
+            }
+
+    def _fake_client_factory(service: str, region_name: str | None = None, **_kw):
+        captured["service"] = service
+        captured["region"] = region_name
+        return _FakeClient()
+
+    fake_boto3 = types.ModuleType("boto3")
+    fake_boto3.client = _fake_client_factory  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "boto3", fake_boto3)
+    monkeypatch.setenv("BRIEFING_PROVIDER", "bedrock")
+    monkeypatch.delenv("BEDROCK_REGION", raising=False)
+    monkeypatch.delenv("BEDROCK_MODEL_ID", raising=False)
+
+    memo = draft_memo(scope="monday_briefing", persona="frank", lang=None)
+    assert memo["provider"] == "bedrock"
+    assert captured["service"] == "bedrock-runtime"
+    assert captured["region"] == "eu-central-1", captured
+    assert captured["model_id"] == "eu.anthropic.claude-haiku-4-5-20251001-v1:0", captured
+    # The provider exposes the resolved model id on the memo so the UI /
+    # audit trail can show which model actually answered.
+    assert memo["model_id"].startswith("eu."), memo["model_id"]
+
+
+def test_sanitize_html_strips_scripts_and_attributes() -> None:
+    """Phase 13: bleach-style allow-list keeps <b>/<p>, drops <script>+ attrs."""
+    from backend.services.ai_briefing.providers import sanitize_html
+
+    out = sanitize_html('<p onclick="x">hi <b class="x">there</b><script>bad()</script></p>')
+    assert "<script>" not in out
+    assert "onclick" not in out
+    # The allow-listed tags survive.
+    assert "<b>" in out and "</b>" in out
+    assert "there" in out

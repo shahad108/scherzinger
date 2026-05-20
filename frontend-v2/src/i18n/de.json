@@ -1,0 +1,34 @@
+{
+  "app": { "title": "Pryzm" },
+  "nav": {
+    "actionCenter": "Aktionszentrale",
+    "margin": "Margen-Cockpit",
+    "quotes": "Angebote",
+    "forecasting": "Forecast",
+    "pricing": "Preisstudio",
+    "ai": "KI-Briefing",
+    "settings": "Einstellungen"
+  },
+  "topbar": {
+    "addPerson": "Person hinzufügen",
+    "notifications": "Benachrichtigungen",
+    "create": "Erstellen"
+  },
+  "rail": {
+    "seeAll": "Alle Benachrichtigungen anzeigen",
+    "notes": "Notizen",
+    "reviewers": "Zugewiesene Prüfer",
+    "sections": "Abschnitte",
+    "addSection": "Abschnitt hinzufügen",
+    "add": "Hinzufügen"
+  },
+  "common": {
+    "search": "Suchen",
+    "filter": "Filter",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "more": "Mehr",
+    "loading": "Lädt…",
+    "error": "Fehler"
+  }
+}

@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-demo
+.DS_Store
+*.log
+.env.local
+.env
+.vite
+coverage
+*.tsbuildinfo
+# Playwright (Phase 7) — keep specs + snapshot baselines, drop run artefacts.
+playwright-report
+test-results
+blob-report
+.playwright

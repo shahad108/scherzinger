@@ -1,0 +1,25 @@
+series_id,source,name,unit,freq,first_ts,last_ts,row_count,missing_pct
+CPIAUCSL,fred,Consumer Price Index for All Urban Consumers: All Items in U.S. City Average,Index 1982-1984=100,M,2018-01-31,2026-04-30,100,1.0
+DCOILBRENTEU,fred,Crude Oil Prices: Brent - Europe,Dollars per Barrel,M,2018-01-31,2026-05-31,101,0.0
+DEUPPDMMINMEI,fred,Producer Prices Index: Economic Activities: Manufacturing: Domestic for Germany,Index 2015=100,M,2018-01-31,2022-12-31,60,0.0
+DEUPRINTO01GYSAM,fred,Production: Industry: Total Industry Excluding Construction for Germany,Growth rate same period previous year,M,2018-01-31,2023-12-31,72,0.0
+DEUPRMNTO01GPSAM,fred,Production: Manufacturing: Total Manufacturing for Germany,Growth rate previous period,M,2018-01-31,2024-01-31,73,0.0
+DEUPROINDMISMEI,fred,"Production, Sales, Work Started and Orders: Production Volume: Economic Activity: Industry (Except Construction) for Germany",Index 2015=100,M,2018-01-31,2024-03-31,75,0.0
+DEUPROMANMISMEI,fred,"Production, Sales, Work Started and Orders: Production Volume: Economic Activity: Manufacturing for Germany",Index 2015=100,M,2018-01-31,2024-01-31,73,0.0
+DEXUSEU,fred,U.S. Dollars to Euro Spot Exchange Rate,U.S. Dollars to One Euro,M,2018-01-31,2026-05-31,101,0.0
+ELEC.PRICE.US-ALL.M,eia,all sectors,cents per kilowatt-hour,M,2001-01-31,2026-02-28,302,0.0
+EXR.D.CHF.EUR.SP00.A,ecb,Swiss franc/Euro ECB reference exchange rate,CHF,M,2018-01-31,2026-05-31,101,0.0
+EXR.D.GBP.EUR.SP00.A,ecb,Pound sterling/Euro ECB reference exchange rate,GBP,M,2018-01-31,2026-05-31,101,0.0
+EXR.D.USD.EUR.SP00.A,ecb,US dollar/Euro ECB reference exchange rate,USD,M,2018-01-31,2026-05-31,101,0.0
+ICP.M.U2.N.000000.4.ANR,ecb,HICP - Overall index,PCCH,M,2018-01-31,2025-12-31,96,0.0
+INDPRO,fred,Industrial Production: Total Index,Index 2017=100,M,2018-01-31,2026-03-31,99,0.0
+IRLTLT01DEM156N,fred,Interest Rates: Long-Term Government Bond Yields: 10-Year: Main (Including Benchmark) for Germany,Percent,M,2018-01-31,2026-03-31,99,0.0
+NG.RNGWHHD.D,eia,Henry Hub Natural Gas Spot Price (Dollars per Million Btu),$/MMBTU,M,2006-07-31,2026-05-31,239,0.0
+PALUMUSDM,fred,Global price of Aluminum,U.S. Dollars per Metric Ton,M,2018-01-31,2026-03-31,99,0.0
+PCOPPUSDM,fred,Global price of Copper,U.S. Dollars per Metric Ton,M,2018-01-31,2026-03-31,99,0.0
+PET.RBRTE.D,eia,Europe Brent Spot Price FOB (Dollars per Barrel),$/BBL,M,2006-08-31,2026-05-31,238,0.0
+PNRGINDEXM,fred,Global price of Energy index,Index 2016 = 100,M,2018-01-31,2026-03-31,99,0.0
+STEO.WTIPUUS.M,eia,West Texas Intermediate Crude Oil Price,dollars per barrel,M,1990-01-31,2027-12-31,456,0.0
+WPU101,fred,Producer Price Index by Commodity: Metals and Metal Products: Iron and Steel,Index 1982=100,M,2018-01-31,2026-04-30,100,0.0
+WPU114,fred,Producer Price Index by Commodity: Machinery and Equipment: General Purpose Machinery and Equipment,Index 1982=100,M,2018-01-31,2026-04-30,100,0.0
+WPU114907,fred,Producer Price Index by Commodity: Machinery and Equipment: Industrial Patterns,Index Dec 1984=100,M,2018-01-31,2025-01-31,85,12.94

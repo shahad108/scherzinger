@@ -1,0 +1,533 @@
+<!doctype html>
+<html><head><meta charset='utf-8'><title>Scherzinger Forecast + Churn Summary</title>
+<style>
+body { font-family: -apple-system, system-ui, sans-serif; max-width: 1080px; margin: 2rem auto; color: #1a1a1a; }
+h1, h2 { color: #0e3b5c; }
+table { border-collapse: collapse; margin: 1rem 0; width: 100%; }
+th, td { padding: 6px 10px; border-bottom: 1px solid #e5e7eb; text-align: right; }
+th { background: #f8fafc; text-align: left; }
+td:first-child, th:first-child { text-align: left; }
+.kpi { display: inline-block; padding: 1rem 1.5rem; margin: 0.25rem; background: #f1f5f9; border-radius: 8px; }
+.kpi .v { font-size: 1.4rem; font-weight: 700; color: #0e3b5c; }
+.kpi .l { font-size: 0.85rem; color: #475569; }
+</style></head><body>
+<h1>Scherzinger - Forecast &amp; Churn Summary</h1>
+<p>Generated 2026-05-13 13:02 UTC. Scoring as-of 2025-12-31.</p>
+
+<div>
+  <div class='kpi'><div class='v'>34%</div><div class='l'>Series meeting &lt;=12% MAPE</div></div>
+  <div class='kpi'><div class='v'>408</div><div class='l'>Customers scored for churn</div></div>
+  <div class='kpi'><div class='v'>284</div><div class='l'>Customers with &gt;=50% 4Q churn prob</div></div>
+  <div class='kpi'><div class='v'>EUR 629,514</div><div class='l'>Total 4Q at-risk revenue</div></div>
+</div>
+
+<h2>Top 20 churn-risk customers (4Q horizon)</h2>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>customer_id</th>
+      <th>name</th>
+      <th>p_churn_4q</th>
+      <th>at_risk_revenue_4q</th>
+      <th>top_skus_12m</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>105134</td>
+      <td></td>
+      <td>0.992</td>
+      <td></td>
+      <td>201790</td>
+    </tr>
+    <tr>
+      <td>104786</td>
+      <td></td>
+      <td>0.989</td>
+      <td></td>
+      <td>201230</td>
+    </tr>
+    <tr>
+      <td>101720</td>
+      <td></td>
+      <td>0.988</td>
+      <td></td>
+      <td>200851-A</td>
+    </tr>
+    <tr>
+      <td>105045</td>
+      <td></td>
+      <td>0.982</td>
+      <td></td>
+      <td>201446</td>
+    </tr>
+    <tr>
+      <td>101617</td>
+      <td></td>
+      <td>0.982</td>
+      <td></td>
+      <td>200409</td>
+    </tr>
+    <tr>
+      <td>105079</td>
+      <td></td>
+      <td>0.980</td>
+      <td></td>
+      <td>201147</td>
+    </tr>
+    <tr>
+      <td>105117</td>
+      <td></td>
+      <td>0.977</td>
+      <td></td>
+      <td>200802-A</td>
+    </tr>
+    <tr>
+      <td>101855</td>
+      <td></td>
+      <td>0.977</td>
+      <td></td>
+      <td>201451</td>
+    </tr>
+    <tr>
+      <td>104766</td>
+      <td></td>
+      <td>0.976</td>
+      <td></td>
+      <td>205690-A</td>
+    </tr>
+    <tr>
+      <td>101614</td>
+      <td></td>
+      <td>0.975</td>
+      <td></td>
+      <td>205345-A</td>
+    </tr>
+    <tr>
+      <td>104929</td>
+      <td></td>
+      <td>0.973</td>
+      <td></td>
+      <td>201851-A</td>
+    </tr>
+    <tr>
+      <td>102645</td>
+      <td></td>
+      <td>0.970</td>
+      <td></td>
+      <td>201352-B</td>
+    </tr>
+    <tr>
+      <td>105072</td>
+      <td></td>
+      <td>0.968</td>
+      <td></td>
+      <td>203076-A</td>
+    </tr>
+    <tr>
+      <td>102635</td>
+      <td></td>
+      <td>0.966</td>
+      <td></td>
+      <td>201790</td>
+    </tr>
+    <tr>
+      <td>100805</td>
+      <td></td>
+      <td>0.965</td>
+      <td></td>
+      <td>201430</td>
+    </tr>
+    <tr>
+      <td>101603</td>
+      <td></td>
+      <td>0.965</td>
+      <td></td>
+      <td>205183</td>
+    </tr>
+    <tr>
+      <td>105062</td>
+      <td></td>
+      <td>0.962</td>
+      <td></td>
+      <td>201166-B</td>
+    </tr>
+    <tr>
+      <td>105044</td>
+      <td></td>
+      <td>0.961</td>
+      <td></td>
+      <td>200906</td>
+    </tr>
+    <tr>
+      <td>101736</td>
+      <td></td>
+      <td>0.961</td>
+      <td></td>
+      <td>205345-A</td>
+    </tr>
+    <tr>
+      <td>105132</td>
+      <td></td>
+      <td>0.960</td>
+      <td></td>
+      <td>300113</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Quarterly revenue forecast by commodity group (P50, EUR)</h2>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>commodity_group</th>
+      <th>quarter</th>
+      <th>p50_revenue</th>
+      <th>p80_low</th>
+      <th>p80_high</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>BKAES</td>
+      <td>2026 Qq</td>
+      <td>1,029,208</td>
+      <td>868,039</td>
+      <td>1,190,366</td>
+    </tr>
+    <tr>
+      <td>BKAES</td>
+      <td>2026 Qq</td>
+      <td>1,042,769</td>
+      <td>880,206</td>
+      <td>1,213,728</td>
+    </tr>
+    <tr>
+      <td>BKAES</td>
+      <td>2026 Qq</td>
+      <td>934,430</td>
+      <td>779,811</td>
+      <td>1,095,597</td>
+    </tr>
+    <tr>
+      <td>BKAES</td>
+      <td>2026 Qq</td>
+      <td>996,554</td>
+      <td>833,061</td>
+      <td>1,160,771</td>
+    </tr>
+    <tr>
+      <td>BKAGG</td>
+      <td>2026 Qq</td>
+      <td>347,431</td>
+      <td>246,067</td>
+      <td>447,368</td>
+    </tr>
+    <tr>
+      <td>BKAGG</td>
+      <td>2026 Qq</td>
+      <td>347,233</td>
+      <td>243,229</td>
+      <td>454,404</td>
+    </tr>
+    <tr>
+      <td>BKAGG</td>
+      <td>2026 Qq</td>
+      <td>342,227</td>
+      <td>231,025</td>
+      <td>452,386</td>
+    </tr>
+    <tr>
+      <td>BKAGG</td>
+      <td>2026 Qq</td>
+      <td>345,257</td>
+      <td>238,494</td>
+      <td>453,476</td>
+    </tr>
+    <tr>
+      <td>BKAIZ</td>
+      <td>2026 Qq</td>
+      <td>74,791</td>
+      <td>30,000</td>
+      <td>116,610</td>
+    </tr>
+    <tr>
+      <td>BKAIZ</td>
+      <td>2026 Qq</td>
+      <td>115,176</td>
+      <td>44,977</td>
+      <td>185,267</td>
+    </tr>
+    <tr>
+      <td>BKAIZ</td>
+      <td>2026 Qq</td>
+      <td>67,201</td>
+      <td>16,450</td>
+      <td>115,326</td>
+    </tr>
+    <tr>
+      <td>BKAIZ</td>
+      <td>2026 Qq</td>
+      <td>118,583</td>
+      <td>37,143</td>
+      <td>197,637</td>
+    </tr>
+    <tr>
+      <td>MBDIV</td>
+      <td>2026 Qq</td>
+      <td>10,507</td>
+      <td>-13,040</td>
+      <td>33,722</td>
+    </tr>
+    <tr>
+      <td>MBDIV</td>
+      <td>2026 Qq</td>
+      <td>10,461</td>
+      <td>-13,699</td>
+      <td>35,356</td>
+    </tr>
+    <tr>
+      <td>MBDIV</td>
+      <td>2026 Qq</td>
+      <td>9,298</td>
+      <td>-16,534</td>
+      <td>34,887</td>
+    </tr>
+    <tr>
+      <td>MBDIV</td>
+      <td>2026 Qq</td>
+      <td>10,001</td>
+      <td>-14,799</td>
+      <td>35,140</td>
+    </tr>
+    <tr>
+      <td>SOPU</td>
+      <td>2023 Qq</td>
+      <td>11,822</td>
+      <td>-14,646</td>
+      <td>39,968</td>
+    </tr>
+    <tr>
+      <td>SOPU</td>
+      <td>2023 Qq</td>
+      <td>17,476</td>
+      <td>-16,518</td>
+      <td>53,443</td>
+    </tr>
+    <tr>
+      <td>SOPU</td>
+      <td>2024 Qq</td>
+      <td>17,228</td>
+      <td>-18,323</td>
+      <td>51,735</td>
+    </tr>
+    <tr>
+      <td>SOPU</td>
+      <td>2024 Qq</td>
+      <td>17,960</td>
+      <td>-14,826</td>
+      <td>49,633</td>
+    </tr>
+    <tr>
+      <td>SOPU</td>
+      <td>2024 Qq</td>
+      <td>5,385</td>
+      <td>-15,186</td>
+      <td>25,425</td>
+    </tr>
+    <tr>
+      <td>SOPUZK</td>
+      <td>2023 Qq</td>
+      <td>1,817</td>
+      <td>-858</td>
+      <td>4,435</td>
+    </tr>
+    <tr>
+      <td>SOPUZK</td>
+      <td>2024 Qq</td>
+      <td>5,433</td>
+      <td>716</td>
+      <td>10,203</td>
+    </tr>
+    <tr>
+      <td>SOPUZK</td>
+      <td>2024 Qq</td>
+      <td>5,573</td>
+      <td>928</td>
+      <td>10,438</td>
+    </tr>
+    <tr>
+      <td>SOPUZK</td>
+      <td>2024 Qq</td>
+      <td>5,347</td>
+      <td>502</td>
+      <td>10,362</td>
+    </tr>
+    <tr>
+      <td>SOPUZK</td>
+      <td>2024 Qq</td>
+      <td>3,699</td>
+      <td>-349</td>
+      <td>7,306</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Open-pipeline expected booked revenue by quarter</h2>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>quarter</th>
+      <th>expected_revenue</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2025Q3</td>
+      <td>87,426</td>
+    </tr>
+    <tr>
+      <td>2025Q4</td>
+      <td>362,257</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Multi-grain forecast accuracy</h2>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>metric</th>
+      <th>grain</th>
+      <th>error_metric</th>
+      <th>target_pct</th>
+      <th>eligible_series</th>
+      <th>median_error</th>
+      <th>meeting_target</th>
+      <th>meeting_share</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>db2_margin</td>
+      <td>article</td>
+      <td>MAPE</td>
+      <td>12.00</td>
+      <td>40</td>
+      <td>3.60</td>
+      <td>34</td>
+      <td>0.85</td>
+    </tr>
+    <tr>
+      <td>db2_margin</td>
+      <td>business_unit</td>
+      <td>MAPE</td>
+      <td>12.00</td>
+      <td>1</td>
+      <td>2.18</td>
+      <td>1</td>
+      <td>1.00</td>
+    </tr>
+    <tr>
+      <td>db2_margin</td>
+      <td>commodity_group</td>
+      <td>MAPE</td>
+      <td>12.00</td>
+      <td>3</td>
+      <td>7.81</td>
+      <td>3</td>
+      <td>1.00</td>
+    </tr>
+    <tr>
+      <td>db2_margin</td>
+      <td>customer</td>
+      <td>MAPE</td>
+      <td>12.00</td>
+      <td>36</td>
+      <td>9.85</td>
+      <td>27</td>
+      <td>0.75</td>
+    </tr>
+    <tr>
+      <td>quantity</td>
+      <td>article</td>
+      <td>WAPE</td>
+      <td>25.00</td>
+      <td>40</td>
+      <td>58.42</td>
+      <td>4</td>
+      <td>0.10</td>
+    </tr>
+    <tr>
+      <td>quantity</td>
+      <td>business_unit</td>
+      <td>WAPE</td>
+      <td>25.00</td>
+      <td>1</td>
+      <td>24.92</td>
+      <td>1</td>
+      <td>1.00</td>
+    </tr>
+    <tr>
+      <td>quantity</td>
+      <td>commodity_group</td>
+      <td>WAPE</td>
+      <td>25.00</td>
+      <td>3</td>
+      <td>37.66</td>
+      <td>1</td>
+      <td>0.33</td>
+    </tr>
+    <tr>
+      <td>quantity</td>
+      <td>customer</td>
+      <td>WAPE</td>
+      <td>25.00</td>
+      <td>36</td>
+      <td>55.55</td>
+      <td>1</td>
+      <td>0.03</td>
+    </tr>
+    <tr>
+      <td>revenue</td>
+      <td>article</td>
+      <td>WAPE</td>
+      <td>25.00</td>
+      <td>40</td>
+      <td>57.75</td>
+      <td>4</td>
+      <td>0.10</td>
+    </tr>
+    <tr>
+      <td>revenue</td>
+      <td>business_unit</td>
+      <td>WAPE</td>
+      <td>25.00</td>
+      <td>1</td>
+      <td>15.80</td>
+      <td>1</td>
+      <td>1.00</td>
+    </tr>
+    <tr>
+      <td>revenue</td>
+      <td>commodity_group</td>
+      <td>WAPE</td>
+      <td>25.00</td>
+      <td>3</td>
+      <td>34.42</td>
+      <td>1</td>
+      <td>0.33</td>
+    </tr>
+    <tr>
+      <td>revenue</td>
+      <td>customer</td>
+      <td>WAPE</td>
+      <td>25.00</td>
+      <td>36</td>
+      <td>55.78</td>
+      <td>3</td>
+      <td>0.08</td>
+    </tr>
+  </tbody>
+</table>
+</body></html>

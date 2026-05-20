@@ -1,0 +1,6 @@
+{
+  "name": "Chronos-bolt-base (univariate)",
+  "model_id": "amazon/chronos-bolt-base",
+  "trained_on": "2022-01..2025-12 (48 months)",
+  "decision": "Best units forecaster \u2014 confirmed by 2025 walk-forward + 7-fold CV."
+}

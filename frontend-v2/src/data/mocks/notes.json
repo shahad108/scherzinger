@@ -1,0 +1,20 @@
+{
+  "items": [
+    {
+      "id": "demo-note-1",
+      "title": "BKAES — week 18 notes",
+      "body": "Three deals priced 6-9% below guardrail. Reviewed with Heiko on Mon — agreed to push back via guardrail apply by Thu.",
+      "pinned": true,
+      "created_at": "2026-05-04T08:00:00Z",
+      "updated_at": "2026-05-04T14:30:00Z"
+    },
+    {
+      "id": "demo-note-2",
+      "title": null,
+      "body": "Customer 101580: churn signal still active. Order frequency -40%. Retention offer still pending — chase Sales by Friday.",
+      "pinned": false,
+      "created_at": "2026-05-02T11:15:00Z",
+      "updated_at": "2026-05-02T11:15:00Z"
+    }
+  ]
+}

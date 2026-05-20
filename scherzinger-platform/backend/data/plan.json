@@ -1,0 +1,17 @@
+{
+  "fiscal_year": 2026,
+  "rows": [
+    { "month": "2026-01", "mode": "revenue", "cluster": null, "value": 510000, "reset_log": [] },
+    { "month": "2026-02", "mode": "revenue", "cluster": null, "value": 545000, "reset_log": [] },
+    { "month": "2026-03", "mode": "revenue", "cluster": null, "value": 470000, "reset_log": [] },
+    { "month": "2026-04", "mode": "revenue", "cluster": null, "value": 530000, "reset_log": [{ "at": "2026-02-12T09:00:00Z", "by": "Manuel", "reason": "Steel S355 spike priced in", "prior_value": 510000 }] },
+    { "month": "2026-05", "mode": "revenue", "cluster": null, "value": 555000, "reset_log": [] },
+    { "month": "2026-06", "mode": "revenue", "cluster": null, "value": 600000, "reset_log": [] },
+    { "month": "2026-07", "mode": "revenue", "cluster": null, "value": 580000, "reset_log": [] },
+    { "month": "2026-08", "mode": "revenue", "cluster": null, "value": 595000, "reset_log": [] },
+    { "month": "2026-09", "mode": "revenue", "cluster": null, "value": 620000, "reset_log": [] },
+    { "month": "2026-10", "mode": "revenue", "cluster": null, "value": 640000, "reset_log": [] },
+    { "month": "2026-11", "mode": "revenue", "cluster": null, "value": 615000, "reset_log": [] },
+    { "month": "2026-12", "mode": "revenue", "cluster": null, "value": 650000, "reset_log": [] }
+  ]
+}

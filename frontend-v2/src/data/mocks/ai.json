@@ -1,0 +1,57 @@
+{
+  "header": {
+    "crumbTrail": ["Cockpit", "Pricing Analyst · Frank", "AI Briefing"],
+    "title": "Monday Briefing",
+    "subPills": ["Pryzm, in the voice of a 10-year senior pricing manager"],
+    "subStats": [
+      { "label": "06:02 CET", "value": "Generated" },
+      { "label": "5,565 invoices · 4,605 quotes", "value": "Sources" }
+    ],
+    "actions": [
+      { "id": "forward", "label": "Forward to MD", "toast": "Briefing forwarded to Till (MD)" },
+      { "id": "pdf",     "label": "Save as PDF",    "toast": "Branded PDF · Scherzinger corporate design · audit hash attached" },
+      { "id": "email",   "label": "Email weekly →", "toast": "Briefing emailed to Frank + cross-functional pricing panel", "primary": true }
+    ]
+  },
+  "memo": {
+    "title": "Monday Briefing — Pricing Manager — Week of Apr 27, 2026",
+    "fromLine": "From: Pryzm · To: M. Weber · Generated 06:02 CET · Sources: 5,565 invoices, 4,605 quotes",
+    "paragraphs": [
+      { "html": "Margin gap on DB2 deals widened <b>0.4pp</b> last week, driven primarily by the BKAGG region — three deals were priced 6–9% below guardrail. Recommend immediate review of BKAGG quote pipeline before Friday: sales team has 4 open quotes that will compound the gap if approved at current levels." },
+      { "html": "The biggest open opportunity remains <b>Article 200832-E</b>. Same article was sold to Customer 102330 at <b>€6.80</b> vs Customer 101580 at <b>€4.10</b> — same volume tier, same month. <b>€18,600/year recoverable</b> if 101580 pricing is aligned to the peer benchmark." },
+      { "html": "Next week, watch the Customer 101580 churn signal. Order frequency is down 40% and the retention offer hasn't been sent yet. If frequency doesn't recover by end of week 18, treat as confirmed churn and reroute to account management." }
+    ],
+    "signature": "— Pryzm, in the voice of a 10-year senior pricing manager"
+  },
+  "sideCards": [
+    {
+      "id": "changed",
+      "kind": "changed",
+      "title": "What changed this week",
+      "bullets": [
+        { "html": "Margin gap on DB2 deals: <b style='color:var(--red)'>+0.4pp</b> (worsening)" },
+        { "html": "3 BKAGG deals breached guardrail" },
+        { "html": "Article 200832-E discrepancy first detected" }
+      ]
+    },
+    {
+      "id": "selfCorrection",
+      "kind": "selfCorrection",
+      "title": "Self-correction notes",
+      "tag": { "label": "Pryzm flagged itself", "tone": "amber" },
+      "body": "Recommendation #128 (raise Article 220011-A by 8%) backfired — Customer 101900 reduced order volume by 22%. Suggested rollback to original price. Investigation ongoing."
+    },
+    {
+      "id": "voice",
+      "kind": "voice",
+      "title": "Voice & framing",
+      "body": "\"This briefing is generated from your data, in the voice of a 10-year senior pricing manager. Replaces the previous AI Insights page.\"",
+      "bodyItalic": true
+    }
+  ],
+  "crossLinks": [
+    { "label": "Action queue · Action Center", "jumpTo": "/action-center" },
+    { "label": "Margin trajectory · Margin Intelligence", "jumpTo": "/margin" },
+    { "label": "Forecast · 12-mo band", "jumpTo": "/forecasting" }
+  ]
+}

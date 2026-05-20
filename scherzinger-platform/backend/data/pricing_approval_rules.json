@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "updated": "2026-05-17",
+  "rules": [
+    {
+      "id": "delta-over-5pct",
+      "condition": { ">": [{ "var": "delta_pct" }, 5] },
+      "route_to": ["md"],
+      "note": "Delta > 5% requires MD sign-off. v3 simplification — a future ``manuel`` intermediate-approver role can be added once that role is seeded; today the only authority above analyst that's actually provisioned is ``md``."
+    },
+    {
+      "id": "tier-a-customer",
+      "condition": { "==": [{ "var": "tier" }, "A"] },
+      "route_to": ["md"],
+      "note": "Any change touching a Tier-A customer routes to MD."
+    },
+    {
+      "id": "small-delta-tier-cd-auto-approve",
+      "condition": {
+        "and": [
+          { "<=": [{ "var": "delta_pp" }, 2] },
+          { "or": [
+            { "==": [{ "var": "tier" }, "C"] },
+            { "==": [{ "var": "tier" }, "D"] }
+          ]}
+        ]
+      },
+      "route_to": [],
+      "auto_approve": true,
+      "note": "Delta ≤ 2pp on Tier C/D auto-approves."
+    },
+    {
+      "id": "lead-time-too-short",
+      "condition": { "<": [{ "var": "effective_in_hours" }, 24] },
+      "route_to": ["needs_lead_time"],
+      "block": true,
+      "note": "Effective date < 24h from now is blocked (needs_lead_time)."
+    }
+  ]
+}

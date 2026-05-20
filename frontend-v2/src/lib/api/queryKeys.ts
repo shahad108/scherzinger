@@ -1,0 +1,131 @@
+// Typed query-key factory.
+//
+// Every screen / cross-cutting hook MUST use this factory so cache keys are
+// uniform and invalidations stay predictable. Each entry exposes:
+//   - a base key (no params) for invalidation roots
+//   - an optional callable that mixes in params for fine-grained keys
+//
+// Param objects are intentionally narrow: only fields the BFF reads as query
+// strings. Adding a new param requires updating the factory AND the hook AND
+// the OpenAPI param list.
+
+import type { Persona } from '@/types';
+
+export type ShellParams = { persona?: Persona; lang?: 'de' | 'en' };
+
+export type ActionCenterParams = ShellParams & {
+  week?: string;
+  cluster?: string;
+  hide_locked?: boolean;
+  /**
+   * Max row count for the paginated list blocks (rejections; extended to
+   * decisions/sku_table in follow-up phases). Default 5 / max 200 — the
+   * "Show all" pill bumps it to 200 on demand.
+   */
+  limit?: number;
+};
+
+export type MarginCockpitParams = ShellParams & {
+  period?: string;
+  cluster?: string;
+  family?: string;
+  tier?: string;
+  customer_id?: string;
+};
+
+export type QuotesParams = ShellParams & {
+  period?: string;
+  week?: string;
+  rep?: string;
+  customer_id?: string;
+  family?: string;
+  tier?: string;
+};
+
+export type ForecastParams = ShellParams & {
+  cluster?: string;
+  family?: string;
+  tier?: 'A' | 'B' | 'C' | 'D';
+  mode?: 'revenue' | 'margin' | 'volume';
+  horizon?: number;
+  scenario_id?: string;
+};
+
+// Phase 1 — simulator surface (tornado + per-entity distributions).
+export type SimulatorParams = {
+  entity_type?: 'commodity_group' | 'customer' | 'business_unit';
+  metric?: 'margin' | 'revenue' | 'quantity' | 'volume';
+  horizon_months?: number;
+};
+
+export type StudioParams = ShellParams & {
+  aid?: string;
+  filter?: string;
+  hide_locked?: boolean;
+  // Phase 21 — deep-link filter quartet. Each is optional and round-trips
+  // through both `useStudio()` and the backend `/screens/studio` endpoint.
+  tier?: string;
+  family?: string;
+  cluster?: string;
+  scenario_id?: string;
+  // Pricing Studio v3 / Phase 3 — deep-link trigger context. The BFF
+  // reads (source, reason) and returns `workbench.trigger_context` for
+  // the banner. Recognised tuples (e.g. forecasting+cost-spike,
+  // margin+erosion, action-center+leakage) come back populated;
+  // unknown tuples return null and the banner is suppressed.
+  source?: string;
+  reason?: string;
+  // Pricing Studio plan B3/B4 — when Action Center routes the user with
+  // a customer scope or a queue chip, the BFF filters `shell.skus[]`
+  // accordingly. These params are forwarded as `customer_id` + `queue`
+  // query strings to `GET /screens/studio`.
+  customer_id?: string;
+  queue?: 'churn' | 'cost_riser' | 'margin_erosion';
+};
+
+export type AiParams = ShellParams;
+
+export const qk = {
+  shell: (params?: ShellParams) =>
+    params ? (['shell', params] as const) : (['shell'] as const),
+
+  actionCenter: (params?: ActionCenterParams) =>
+    params ? (['action-center', params] as const) : (['action-center'] as const),
+
+  marginCockpit: (params?: MarginCockpitParams) =>
+    params ? (['margin-cockpit', params] as const) : (['margin-cockpit'] as const),
+
+  quotes: (params?: QuotesParams) =>
+    params ? (['quotes', params] as const) : (['quotes'] as const),
+
+  forecast: (params?: ForecastParams) =>
+    params ? (['forecast', params] as const) : (['forecast'] as const),
+
+  // Phase 1 — simulator surface; separate cache keys so mode-toggle invalidates
+  // tornado + distributions independently of the screen-wide BFF cache.
+  forecastTornado: (params?: SimulatorParams) =>
+    params ? (['forecast-tornado', params] as const) : (['forecast-tornado'] as const),
+  forecastDistributions: (params?: SimulatorParams) =>
+    params
+      ? (['forecast-distributions', params] as const)
+      : (['forecast-distributions'] as const),
+
+  studio: (params?: StudioParams) =>
+    params ? (['studio', params] as const) : (['studio'] as const),
+  studioWorkbench: (aid: string) => ['studio-workbench', aid] as const,
+  studioComparable: (aid: string) => ['studio-comparable', aid] as const,
+
+  ai: (params?: AiParams) => (params ? (['ai', params] as const) : (['ai'] as const)),
+
+  // Cross-cutting.
+  me: ['me'] as const,
+  version: ['screens-version'] as const,
+  auditTrail: (since: string) => ['audit-trail', since] as const,
+
+  // Phase 2 — recommendation lookup for deep-link banners.
+  recommendation: (ref: string) => ['recommendation', ref] as const,
+
+  // Pricing Studio v3 / Phase 9 — alerts engine surfaces.
+  pricingAlerts: () => ['pricing-alerts'] as const,
+  pricingAlertsInbox: () => ['pricing-alerts-inbox'] as const,
+} as const;

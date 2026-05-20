@@ -1,0 +1,9 @@
+{
+  "name": "Volume \u00d7 seasonal price (Ship combo)",
+  "components": {
+    "volume": "Chronos-bolt-base",
+    "price": "seasonal-naive(12)"
+  },
+  "trained_on": "2022-01..2025-12 (48 months)",
+  "decision": "Hierarchically consistent with Chronos volume path."
+}

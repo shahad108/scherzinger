@@ -1,0 +1,589 @@
+{
+  "header": {
+    "greeting": "Revenue Forecast — Next 12 Months",
+    "subPill": "Predictive Portfolio Pricing",
+    "stats": [
+      { "label": "Updated", "value": "Mon 06:14" },
+      { "label": "Band", "value": "+€8K WoW" }
+    ],
+    "modeLabel": "Revenue mode",
+    "filters": [
+      { "label": "Tier · All ▾" },
+      { "label": "Family · All ▾" },
+      { "label": "Cluster lens · All ▾" }
+    ]
+  },
+  "hero": {
+    "caption": "Walk-forward · solid line = primary · shaded = envelope",
+    "series": [
+      { "month": "May", "primary": 5.92, "low": 5.78, "high": 6.06, "actual": 5.95 },
+      { "month": "Jun", "primary": 6.05, "low": 5.90, "high": 6.20, "actual": 6.04 },
+      { "month": "Jul", "primary": 6.10, "low": 5.94, "high": 6.26, "actual": 6.12 },
+      { "month": "Aug", "primary": 7.20, "low": 6.95, "high": 7.45, "actual": 7.31 },
+      { "month": "Sep", "primary": 6.55, "low": 6.30, "high": 6.80 },
+      { "month": "Oct", "primary": 6.30, "low": 6.05, "high": 6.55 },
+      { "month": "Nov", "primary": 6.10, "low": 5.85, "high": 6.35 },
+      { "month": "Dec", "primary": 4.55, "low": 4.25, "high": 4.85 },
+      { "month": "Jan", "primary": 5.70, "low": 5.40, "high": 6.00 },
+      { "month": "Feb", "primary": 6.05, "low": 5.75, "high": 6.35 },
+      { "month": "Mar", "primary": 7.10, "low": 6.78, "high": 7.42 },
+      { "month": "Apr", "primary": 6.60, "low": 6.25, "high": 6.95 }
+    ],
+    "movers": [
+      { "label": "Band", "value": "+€8K WoW", "tone": "green", "sub": "Driven by 102330 frame uplift, offset by 101900 cancellations" },
+      { "label": "Steel PPI", "value": "+1.2pp WoW", "tone": "red", "sub": "Trajectory steepening (was +5.2% → now +6.8% by Q3)" },
+      { "label": "101900 conf.", "value": "High → Medium", "tone": "amber", "sub": "2 customers re-tiered" }
+    ],
+    "movableLockedSplit": {
+      "label": "Movable / Locked",
+      "value": "62% / 38%",
+      "movablePct": 62,
+      "sub": "€3.88M movable · €2.37M locked (multi-year contracts absorb cost shock)"
+    },
+    "whyBandMoves": {
+      "title": "Why the band moves",
+      "sub": "seasonality annotations · 14 sources",
+      "rows": [
+        { "label": "Aug", "value": "+22%", "tone": "green", "sub": "Industrial maintenance cycle peak — top 5 customers restock heavy (VDMA / EuroBlech)" },
+        { "label": "Dec", "value": "−31%", "tone": "red", "sub": "Plant winter shutdowns — orders drop last 3 weeks" },
+        { "label": "Mar", "value": "+18%", "tone": "green", "sub": "German fiscal-year-end inventory builds (IFO-correlated)" }
+      ]
+    }
+  },
+  "clusters": [
+    { "id": "BKAES", "ltm": "LTM €12.3M", "forecast": "€12.7M", "bandText": "band ±6% · next 12mo", "confidence": "BKAES 82%", "tone": "status" },
+    { "id": "BKAGG", "ltm": "LTM €5.3M",  "forecast": "€5.4M",  "bandText": "band ±9% · next 12mo", "confidence": "BKAGG 74%", "tone": "amber" },
+    { "id": "BKAIZ", "ltm": "LTM €564K",  "forecast": "€581K",  "bandText": "band ±12% · next 12mo","confidence": "BKAIZ 64%", "tone": "amber" },
+    { "id": "SOPU",  "ltm": "LTM €170K · low-n", "forecast": "€165K", "bandText": "band ±22% · next 12mo", "confidence": "SOPU 38%", "tone": "red" }
+  ],
+  "walkForward": {
+    "series": [
+      { "month": "May'25", "mape": 5.4 },
+      { "month": "Jun'25", "mape": 5.1 },
+      { "month": "Jul'25", "mape": 4.9 },
+      { "month": "Aug'25", "mape": 4.8 },
+      { "month": "Sep'25", "mape": 4.7 },
+      { "month": "Oct'25", "mape": 4.9 },
+      { "month": "Nov'25", "mape": 4.6 },
+      { "month": "Dec'25", "mape": 4.5 },
+      { "month": "Jan'26", "mape": 4.4 },
+      { "month": "Feb'26", "mape": 4.6 },
+      { "month": "Mar'26", "mape": 4.5 },
+      { "month": "Apr'26", "mape": 4.7 }
+    ],
+    "target": 5.0,
+    "kpis": [
+      { "label": "Latest MAPE (April)", "value": "4.7%", "caption": "below target" },
+      { "label": "Avg trailing 6mo",   "value": "4.6%", "caption": "stable" },
+      { "label": "Best month (Jan)",   "value": "4.4%", "caption": "peak accuracy" },
+      { "label": "YoY trend",          "value": "−2.1pp", "caption": "improving" }
+    ]
+  },
+  "inputCost": {
+    "tiles": [
+      {
+        "label": "Steel S355 / S275",
+        "value": "€1,180",
+        "unit": "/t",
+        "capRich": { "tone": "red", "arrow": "↑ +6.8%", "main": "by Q3 → €1,260 · 62% pass-through · WoW", "rest": "+1.6pp accelerating" }
+      },
+      {
+        "label": "Alloys (Cr-Mo, Ni)",
+        "value": "€2,840",
+        "unit": "/t",
+        "capRich": { "tone": "ink-3", "arrow": "→ +0.4%", "main": "stable · 28% pass-through · WoW", "rest": "−0.2pp easing" }
+      },
+      {
+        "label": "Copper",
+        "value": "€8,420",
+        "unit": "/t",
+        "capRich": { "tone": "amber", "arrow": "↑ +3.1%", "main": "by Q4 → €8,680 · 15% pass-through · WoW", "rest": "+0.2pp drift" }
+      },
+      {
+        "label": "Energy (industrial kWh)",
+        "value": "€0.184",
+        "unit": "/kWh",
+        "capRich": { "tone": "green", "arrow": "↓ −2.4%", "main": "by Q2 → €0.180 · 0% pass-through (absorbed) · WoW", "rest": "−0.6pp easing" }
+      }
+    ],
+    "stress": {
+      "title": "Stress test",
+      "sub": "worst-case steel +10%",
+      "bullets": [
+        "Compresses margin by **€42K** across 47 SKUs. Floors auto-recalibrate per SKU.",
+        "Headroom on alloys absorbs partially; energy buffer holds."
+      ],
+      "centralLabel": "Central case",
+      "centralValue": "€18–28K",
+      "centralCaption": "compression next quarter (38% of revenue is fixed-price, no pass-through)"
+    }
+  },
+  "pareto": {
+    "customer": {
+      "rows": [
+        {
+          "customerId": "101580", "tier": "A", "cluster": { "label": "BKAES 82%", "conf": "green" },
+          "ltm": "€487,000", "bookedPct": 30, "bookedText": "€120K / 30%",
+          "forecast": "€398,000", "band": "band ±9% · €362K–434K",
+          "trendDir": "down", "trendLabel": "↓ −18%", "vpVol": "Vol −14%", "vpPrc": "Price −4%",
+          "conf": "m", "confLabel": "Medium", "renewal": "Q2 2026 · churn flag",
+          "drillTitle": "SKU mix · forecast €398K = 4 articles",
+          "drill": [
+            { "aid": "200832-E", "desc": "Zahnradpumpe (Precision shaft)", "fc": "€185K", "share": "46% of cust" },
+            { "aid": "211094-C", "desc": "Bearing housing", "fc": "€87K", "share": "22%" },
+            { "aid": "205415-B", "desc": "Coupling A", "fc": "€78K", "share": "20%" },
+            { "aid": "218750-D", "desc": "Sleeve", "fc": "€48K", "share": "12%" }
+          ]
+        },
+        {
+          "customerId": "102330", "tier": "A", "cluster": { "label": "BKAES 82%", "conf": "green" },
+          "ltm": "€312,000", "bookedPct": 50, "bookedText": "€180K / 50%",
+          "forecast": "€358,000", "band": "band ±5% · €340K–376K",
+          "trendDir": "up", "trendLabel": "↑ +15%", "vpVol": "Vol +10%", "vpPrc": "Price +5%",
+          "conf": "h", "confLabel": "High", "renewal": "Annual · Q4"
+        },
+        {
+          "customerId": "103044", "tier": "B", "cluster": { "label": "BKAGG 74%", "conf": "amber" },
+          "ltm": "€198,000", "bookedPct": 19, "bookedText": "€38K / 19%",
+          "forecast": "€214,000", "band": "band ±6% · €201K–227K",
+          "trendDir": "up", "trendLabel": "↑ +8%", "vpVol": "Vol +6%", "vpPrc": "Price +2%",
+          "conf": "h", "confLabel": "High", "renewal": "Q3 2026"
+        },
+        {
+          "customerId": "101582", "tier": "C", "cluster": { "label": "BKAES 82%", "conf": "green" },
+          "ltm": "€176,000", "bookedPct": 50, "bookedText": "€88K / 50%",
+          "forecast": "€182,000", "band": "band ±7% · €169K–195K",
+          "trendDir": "flat", "trendLabel": "→ +3%", "vpVol": "Vol +1%", "vpPrc": "Price +2%",
+          "conf": "h", "confLabel": "High", "renewal": "Annual · Jul 15"
+        },
+        {
+          "customerId": "101900", "tier": "D", "cluster": { "label": "SOPU 38%", "conf": "red" },
+          "ltm": "€164,000", "bookedPct": 12, "bookedText": "€20K / 12%",
+          "forecast": "€128,000", "band": "band ±15% · €109K–147K",
+          "trendDir": "down", "trendLabel": "↓ −22%", "vpVol": "Vol −19%", "vpPrc": "Price −3%",
+          "conf": "t", "confLabel": "Thin data", "renewal": "Q3 2026", "belowBand": true
+        },
+        {
+          "customerId": "102801", "tier": "B", "cluster": { "label": "BKAGG 74%", "conf": "amber" },
+          "ltm": "€142,000", "bookedPct": 21, "bookedText": "€30K / 21%",
+          "forecast": "€151,000", "band": "band ±8% · €139K–163K",
+          "trendDir": "up", "trendLabel": "↑ +6%", "vpVol": "Vol +4%", "vpPrc": "Price +2%",
+          "conf": "m", "confLabel": "Medium", "renewal": "Q1 2027"
+        },
+        {
+          "customerId": "104210", "tier": "B", "cluster": { "label": "BKAES 82%", "conf": "green" },
+          "ltm": "€118,000", "bookedPct": 48, "bookedText": "€57K / 48%",
+          "forecast": "€124,000", "band": "band ±11% · €110K–138K",
+          "trendDir": "flat", "trendLabel": "→ +5%", "vpVol": "Vol +3%", "vpPrc": "Price +2%",
+          "conf": "h", "confLabel": "High", "renewal": "Annual · Sep"
+        }
+      ],
+      "footnote": "Top 7 of 10 · show all 10 · 80.4% of revenue (Pareto)"
+    },
+    "sku": {
+      "rows": [
+        { "aid": "200832-E", "cluster": { "label": "BKAES 82%", "conf": "green" }, "desc": "Precision shaft", "ltmVolume": "4,200", "forecastVolume": "4,400", "band": "band ±8%", "margin": "22% (target 25%)", "marginPos": true, "conf": "h", "confLabel": "High", "topCustomer": "101580 + 102330", "primary": true },
+        { "aid": "218750-D", "cluster": { "label": "BKAES 82%", "conf": "green" }, "desc": "Sleeve", "ltmVolume": "6,400", "forecastVolume": "6,800", "band": "band ±5%", "margin": "28%", "marginPos": true, "conf": "h", "confLabel": "High", "topCustomer": "102801" },
+        { "aid": "205415-B", "cluster": { "label": "BKAES 82%", "conf": "green" }, "desc": "Coupling A", "ltmVolume": "1,840", "forecastVolume": "2,100", "band": "band ±10%", "margin": "30%", "marginPos": true, "conf": "m", "confLabel": "Medium", "topCustomer": "101582" },
+        { "aid": "211094-C", "cluster": { "label": "BKAGG 74%", "conf": "amber" }, "desc": "Bearing housing", "ltmVolume": "980", "forecastVolume": "920", "band": "band ±18%", "margin": "24%", "conf": "t", "confLabel": "Thin data", "topCustomer": "103044 + 101900", "primary": true, "queue": true },
+        { "aid": "205418-A", "cluster": { "label": "BKAES 82%", "conf": "green" }, "desc": "Coupling B", "ltmVolume": "2,100", "forecastVolume": "2,200", "band": "band ±7%", "margin": "31%", "marginPos": true, "conf": "h", "confLabel": "High", "topCustomer": "101582", "abTest": true },
+        { "aid": "201104-G", "cluster": { "label": "BKAES 82%", "conf": "green" }, "desc": "Coupling C", "ltmVolume": "540", "forecastVolume": "620", "band": "band ±12%", "margin": "34%", "marginPos": true, "conf": "m", "confLabel": "Medium", "topCustomer": "102330" }
+      ],
+      "footnote": "Top 6 of 10 · show all 10"
+    }
+  },
+  "priceFloor": [
+    { "tier": "A", "customerId": "101580", "article": "200832-E", "currentPrice": "€4.20", "floor": "€5.10 minimum", "floorPos": true, "headroom": "below floor by €0.90", "headroomTone": "neg", "movableShare": "100% movable", "movableTone": "pos", "cluster": { "label": "BKAES 82%", "conf": "green" }, "next": "Quote #12848 · review now", "nextLink": "quotes", "belowFloor": true, "primary": true, "queue": true },
+    { "tier": "A", "customerId": "102330", "article": "201104-G", "currentPrice": "€18.40", "floor": "€16.20 minimum", "headroom": "€2.20 / 12% room", "headroomTone": "pos", "movableShare": "100% movable", "movableTone": "pos", "cluster": { "label": "BKAES 82%", "conf": "green" }, "next": "Quote #12847 · this week" },
+    { "tier": "B", "customerId": "103044", "article": "205415-B", "currentPrice": "€5.10", "floor": "€4.40 minimum", "headroom": "€0.70 / 14% room", "headroomTone": "pos", "movableShare": "100% movable", "movableTone": "pos", "cluster": { "label": "BKAGG 74%", "conf": "amber" }, "next": "Quote #12849 · this week" },
+    { "tier": "C", "customerId": "101582", "article": "205418-A", "currentPrice": "€4.10", "floor": "€3.90 minimum", "headroom": "€0.20 / 5% room", "headroomTone": "pos", "movableShare": "100% movable", "movableTone": "pos", "cluster": { "label": "BKAES 82%", "conf": "green" }, "next": "Annual contract · Jul 15" },
+    { "tier": "D", "customerId": "101900", "article": "211094-C", "currentPrice": "€13.80", "floor": "€14.40 minimum", "floorPos": true, "headroom": "below floor by €0.60", "headroomTone": "neg", "movableShare": "100% movable", "movableTone": "pos", "cluster": { "label": "BKAGG 74%", "conf": "amber" }, "next": "Quote #12850 · marginal", "belowFloor": true, "primary": true, "queue": true },
+    { "tier": "B", "customerId": "102801", "article": "218750-D", "currentPrice": "€2.60", "floor": "€2.45 minimum", "headroom": "€0.15 / 6% room", "headroomTone": "pos", "movableShare": "100% movable", "movableTone": "pos", "cluster": { "label": "BKAES 82%", "conf": "green" }, "next": "Quote #12851 · this week" },
+    { "tier": "B", "customerId": "104210", "article": "205169", "currentPrice": "€7.40 (locked)", "floor": "— floor n/a", "headroom": "no headroom (locked)", "headroomTone": "muted", "movableShare": "0% · Locked Q3'26", "movableTone": "neg", "cluster": { "label": "BKAES 82%", "conf": "green" }, "next": "Multi-year contract · expires Q3 2026", "renewalNote": true, "locked": true }
+  ],
+  "priceFloorFootnote": "**2 quotes below floor this week** · €1.50/unit at risk on 1,680 units.",
+  "newProduct": {
+    "stats": [
+      { "num": "203", "label": "new SKUs (last 12mo)" },
+      { "num": "€1.5M", "label": "revenue" },
+      { "num": "8.3%", "label": "of total" }
+    ],
+    "series": [
+      { "month": "May", "value": 92 }, { "month": "Jun", "value": 105 }, { "month": "Jul", "value": 118 },
+      { "month": "Aug", "value": 137 }, { "month": "Sep", "value": 122 }, { "month": "Oct", "value": 134 },
+      { "month": "Nov", "value": 142 }, { "month": "Dec", "value": 96 },  { "month": "Jan", "value": 121 },
+      { "month": "Feb", "value": 138 }, { "month": "Mar", "value": 156 }, { "month": "Apr", "value": 148 }
+    ],
+    "cards": [
+      { "rank": 1, "title": "218812-K · Sleeve variant", "description": "cluster **BKAES** (n=627) · forecast €42K ± 18%", "cluster": "BKAES", "tone": "status", "confidence": "BKAES 76%", "primaryLabel": "Assign to cluster →", "primaryAction": "assign", "secondaryLabel": "View cluster average" },
+      { "rank": 2, "title": "220114-A · Bearing housing variant", "description": "cluster **BKAGG** (n=370) · forecast €28K ± 24%", "cluster": "BKAGG", "tone": "amber", "confidence": "BKAGG 68%", "primaryLabel": "Assign to cluster →", "primaryAction": "assign", "secondaryLabel": "View cluster average" },
+      { "rank": 3, "title": "221305 · Custom pump", "description": "cluster **SOPU** (n=6) · forecast €11K ± 38% · ⚠ low-n cluster, manual review", "cluster": "SOPU", "tone": "red", "confidence": "SOPU 38%", "primaryLabel": "Manual review →", "primaryAction": "manual", "secondaryLabel": "View cluster sample" }
+    ]
+  },
+  "mode": {
+    "active": "revenue",
+    "horizonMonths": 12
+  },
+  "tornado": {
+    "computedAt": "2026-05-13T06:14:00Z",
+    "metric": "margin",
+    "horizonMonths": 12,
+    "entityType": "commodity_group",
+    "n_simulations": 1000,
+    "shockMode": "bootstrap",
+    "source": "seed",
+    "bars": [
+      {
+        "inputName": "Steel S355 / S275",
+        "unit": "€/t",
+        "perturbationSize": 1.0,
+        "deltaPositive": -4.2,
+        "deltaNegative": 5.1,
+        "p5": 44.6,
+        "p95": 85.5,
+        "deltaUnit": "pp margin",
+        "clusterBreakdown": [
+          { "cluster": "BKAES", "delta": -4.6 },
+          { "cluster": "BKAGG", "delta": -3.8 },
+          { "cluster": "BKAIZ", "delta": -3.1 },
+          { "cluster": "SOPU",  "delta": -5.2 }
+        ]
+      },
+      {
+        "inputName": "List-price uplift",
+        "unit": "%",
+        "perturbationSize": 1.0,
+        "deltaPositive": 3.6,
+        "deltaNegative": -4.0,
+        "p5": 47.1,
+        "p95": 81.0,
+        "deltaUnit": "pp margin",
+        "clusterBreakdown": [
+          { "cluster": "BKAES", "delta": 4.2 },
+          { "cluster": "BKAGG", "delta": 3.3 },
+          { "cluster": "BKAIZ", "delta": 2.9 },
+          { "cluster": "SOPU",  "delta": 3.8 }
+        ]
+      },
+      {
+        "inputName": "Pass-through %",
+        "unit": "%",
+        "perturbationSize": 1.0,
+        "deltaPositive": 2.9,
+        "deltaNegative": -3.2,
+        "p5": 48.6,
+        "p95": 79.4,
+        "deltaUnit": "pp margin",
+        "clusterBreakdown": [
+          { "cluster": "BKAES", "delta": 3.1 },
+          { "cluster": "BKAGG", "delta": 2.7 },
+          { "cluster": "BKAIZ", "delta": 2.3 },
+          { "cluster": "SOPU",  "delta": 3.4 }
+        ]
+      },
+      {
+        "inputName": "Demand growth %",
+        "unit": "%",
+        "perturbationSize": 1.0,
+        "deltaPositive": 2.5,
+        "deltaNegative": -2.9,
+        "p5": 49.0,
+        "p95": 78.2,
+        "deltaUnit": "pp margin",
+        "clusterBreakdown": [
+          { "cluster": "BKAES", "delta": 2.6 },
+          { "cluster": "BKAGG", "delta": 2.3 },
+          { "cluster": "BKAIZ", "delta": 2.1 },
+          { "cluster": "SOPU",  "delta": 2.9 }
+        ]
+      },
+      {
+        "inputName": "EUR / USD",
+        "unit": "FX",
+        "perturbationSize": 1.0,
+        "deltaPositive": 1.9,
+        "deltaNegative": -2.0,
+        "p5": 51.2,
+        "p95": 76.8,
+        "deltaUnit": "pp margin",
+        "clusterBreakdown": [
+          { "cluster": "BKAES", "delta": 2.0 },
+          { "cluster": "BKAGG", "delta": 1.6 },
+          { "cluster": "BKAIZ", "delta": 1.4 },
+          { "cluster": "SOPU",  "delta": 2.3 }
+        ]
+      },
+      {
+        "inputName": "Alloys (Cr-Mo, Ni)",
+        "unit": "€/t",
+        "perturbationSize": 1.0,
+        "deltaPositive": -1.4,
+        "deltaNegative": 1.5,
+        "p5": 52.4,
+        "p95": 75.6,
+        "deltaUnit": "pp margin",
+        "clusterBreakdown": [
+          { "cluster": "BKAES", "delta": -1.5 },
+          { "cluster": "BKAGG", "delta": -1.2 },
+          { "cluster": "BKAIZ", "delta": -1.1 },
+          { "cluster": "SOPU",  "delta": -1.8 }
+        ]
+      },
+      {
+        "inputName": "Energy (kWh)",
+        "unit": "€/kWh",
+        "perturbationSize": 1.0,
+        "deltaPositive": -0.9,
+        "deltaNegative": 1.0,
+        "p5": 53.4,
+        "p95": 74.5,
+        "deltaUnit": "pp margin",
+        "clusterBreakdown": [
+          { "cluster": "BKAES", "delta": -0.9 },
+          { "cluster": "BKAGG", "delta": -0.8 },
+          { "cluster": "BKAIZ", "delta": -0.7 },
+          { "cluster": "SOPU",  "delta": -1.2 }
+        ]
+      },
+      {
+        "inputName": "Copper",
+        "unit": "€/t",
+        "perturbationSize": 1.0,
+        "deltaPositive": -0.6,
+        "deltaNegative": 0.7,
+        "p5": 53.9,
+        "p95": 73.8,
+        "deltaUnit": "pp margin",
+        "clusterBreakdown": [
+          { "cluster": "BKAES", "delta": -0.7 },
+          { "cluster": "BKAGG", "delta": -0.5 },
+          { "cluster": "BKAIZ", "delta": -0.4 },
+          { "cluster": "SOPU",  "delta": -0.9 }
+        ]
+      }
+    ]
+  },
+  "methodology": {
+    "lastReviewedAt": "2026-05-13T06:14:00Z",
+    "validationReportMd": "# Forecasting Notebook Validation Report\n\nGenerated: 2026-05-13T20:41:20Z\n\n## Baseline accuracy gate (db2_margin × commodity_group)\n- Eligible series: 3\n- Target MAPE: ≤ 8.0%\n- Meeting target share: 66.67%\n\n## Multi-grain forecast accuracy\nPrimary gate (aggregate grains): MAPE ≤ 12% for ratios, WAPE ≤ 25% for monetary.\n12 eligible series · 66.67% meeting target · Pass: **True**.\n\nInformational (customer / article): per-account monthly cadence is bursty;\nconsume quarterly aggregates for planning, monthly for ranking.\n",
+    "sources": [
+      { "name": "invoices (Scherzinger ERP)", "kind": "internal", "description": "Monthly DB2-margin, revenue, quantity per article × customer × commodity_group.", "lastFetchedAt": "2026-05-13T20:41:20Z" },
+      { "name": "monte_carlo_results", "kind": "internal", "description": "387 persisted bootstrap scenarios (43 entities × 3 metrics × 3 horizons).", "lastFetchedAt": "2026-05-13T20:41:20Z" },
+      { "name": "Steel HRC (Eurofer)", "kind": "external", "description": "Hot-rolled coil index, monthly.", "lastFetchedAt": "2026-05-11T00:00:00Z" },
+      { "name": "EUR/USD (ECB)", "kind": "external", "description": "Daily reference rate; resampled monthly.", "lastFetchedAt": "2026-05-12T00:00:00Z" },
+      { "name": "ifo Business Climate", "kind": "external", "description": "Monthly German industrial leading indicator.", "lastFetchedAt": "2026-04-28T00:00:00Z" },
+      { "name": "VDMA / EuroBlech cycle calendar", "kind": "external", "description": "Industrial-maintenance + trade-show seasonality overlay.", "lastFetchedAt": "2026-05-01T00:00:00Z" }
+    ],
+    "assumptions": [
+      { "label": "Growth-rate prior", "value": "+3.4% YoY", "note": "M3 nested CV walk-forward — recomputed monthly." },
+      { "label": "Pass-through %", "value": "62% (steel) · 28% (alloys) · 15% (copper)", "note": "Backed out from invoiced-vs-raw-material trajectory (M5)." },
+      { "label": "Seasonality", "value": "3-year monthly indices from seasonal_patterns table", "note": "Aug peak · Dec trough · Mar fiscal-year-end bump." },
+      { "label": "Cost-trend method", "value": "4-quarter weighted MA + residual stdev band", "note": "M11 leak-free residuals." },
+      { "label": "Win rate (Quote-to-Revenue)", "value": "62.4% trailing 90d", "note": "Computed over quote_invoice_links table." },
+      { "label": "Data-through", "value": "2025-12-17", "note": "Latest invoice / market series ingest." }
+    ],
+    "models": [
+      { "modelName": "margin_walk_forward_v3", "version": "v3.2", "trainedAt": "2026-05-10T08:00:00Z", "holdoutMonths": 6, "entityType": "commodity_group", "metric": "mape_db2_margin", "metricValue": 0.0688, "nObservations": 36, "notes": "M3 nested CV + M9 customer-grouped CV." },
+      { "modelName": "churn_classifier_v2", "version": "v2.1", "trainedAt": "2026-05-09T08:00:00Z", "holdoutMonths": 12, "entityType": "customer", "metric": "auc_roc", "metricValue": 0.93, "nObservations": 482, "notes": "M8 revenue-decline classifier + GroupKFold." },
+      { "modelName": "monte_carlo_simulator_v2", "version": "v2.0", "trainedAt": "2026-05-12T16:00:00Z", "holdoutMonths": 12, "entityType": "commodity_group", "metric": "calibration_p80_hit", "metricValue": 0.81, "nObservations": 1000, "notes": "Bootstrap shocks; 387 scenarios persisted." }
+    ],
+    "limitations": [
+      "SOPU cluster has n<30; ranges are quoted but Frank should defer to manual review.",
+      "Monthly per-customer point forecasts are bursty; use quarterly aggregates.",
+      "External market series refresh nightly; intraday moves are not reflected."
+    ]
+  },
+  "marginTrajectory": {
+    "historical": [
+      { "quarter": "Q2 23", "margin": 67.4 },
+      { "quarter": "Q3 23", "margin": 66.8 },
+      { "quarter": "Q4 23", "margin": 65.1 },
+      { "quarter": "Q1 24", "margin": 64.9 },
+      { "quarter": "Q2 24", "margin": 64.2 },
+      { "quarter": "Q3 24", "margin": 63.5 },
+      { "quarter": "Q4 24", "margin": 63.1 },
+      { "quarter": "Q1 25", "margin": 62.4 },
+      { "quarter": "Q2 25", "margin": 61.7 },
+      { "quarter": "Q3 25", "margin": 61.0 },
+      { "quarter": "Q4 25", "margin": 60.4 },
+      { "quarter": "Q1 26", "margin": 59.8 }
+    ],
+    "projected": [
+      { "quarter": "Q2 26", "margin": 59.1, "low": 56.5, "high": 61.7 },
+      { "quarter": "Q3 26", "margin": 58.4, "low": 55.5, "high": 61.3 },
+      { "quarter": "Q4 26", "margin": 57.7, "low": 54.4, "high": 61.0 },
+      { "quarter": "Q1 27", "margin": 57.0, "low": 53.3, "high": 60.7 }
+    ],
+    "floor": 60.0,
+    "crossesFloorAt": "Q3 26",
+    "methodologyNote": "4-quarter weighted MA (0.4/0.3/0.2/0.1) + residual stdev × 1.28 band. At the smoothed trend, margin crosses the 60% floor in Q3 26."
+  },
+  "costDecomposition": {
+    "quarters": ["Q2 23", "Q3 23", "Q4 23", "Q1 24", "Q2 24", "Q3 24", "Q4 24", "Q1 25", "Q2 25", "Q3 25", "Q4 25", "Q1 26"],
+    "layers": [
+      {
+        "name": "Material % of revenue",
+        "values": [33.1, 33.4, 33.0, 32.6, 32.2, 32.0, 31.6, 31.3, 31.0, 30.7, 30.4, 30.1],
+        "trendDirection": "down",
+        "insight": "Material costs declining 3pp over 3y — successful procurement program."
+      },
+      {
+        "name": "Direct manufacturing % of revenue",
+        "values": [21.0, 21.3, 21.6, 22.0, 22.4, 22.6, 23.0, 23.4, 23.8, 24.1, 24.5, 24.9],
+        "trendDirection": "up",
+        "insight": "Direct labor + setup costs rising 4pp — investigate capacity utilization."
+      },
+      {
+        "name": "Full manufacturing % of revenue",
+        "values": [42.9, 43.3, 43.7, 44.1, 44.6, 45.0, 45.5, 46.0, 46.5, 47.0, 47.6, 48.2],
+        "trendDirection": "up",
+        "insight": "Full cost rising 5pp despite material savings → fixed overhead growing. Material savings absorbed by capacity drag; revisit allocation model."
+      }
+    ]
+  },
+  "seasonalOverlay": {
+    "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    "indices": [94.2, 96.0, 105.3, 100.8, 102.1, 98.5, 92.6, 118.4, 103.6, 99.5, 96.2, 81.8],
+    "currentMonthLabel": "May",
+    "currentMonthExpected": 102.1,
+    "currentMonthActual": 105.3,
+    "deviationPct": 3.1,
+    "deviationTone": "green",
+    "note": "Indices derived from 3 years of monthly revenue (seasonal_patterns table). Aug peak driven by VDMA/EuroBlech maintenance cycles; Dec trough by plant shutdowns."
+  },
+  "marketDirection": {
+    "source": "seed",
+    "tiles": [
+      { "name": "Steel HRC (Eurofer)", "value": 1180, "unit": "€/t", "wowPct": 1.2, "tone": "red", "context": "Trajectory steepening — +6.8% by Q3." },
+      { "name": "EUR / USD", "value": 1.08, "unit": "FX", "wowPct": -0.3, "tone": "amber", "context": "USD strength on rate-divergence narrative." },
+      { "name": "Alloys (Cr-Mo, Ni)", "value": 2840, "unit": "€/t", "wowPct": 0.4, "tone": "ink-3", "context": "Stable — 28% pass-through coverage." },
+      { "name": "Copper LME", "value": 8420, "unit": "€/t", "wowPct": 3.1, "tone": "amber", "context": "China demand pulse + supply chatter." },
+      { "name": "Energy (DE industrial)", "value": 0.184, "unit": "€/kWh", "wowPct": -2.4, "tone": "green", "context": "Mild April + storage levels easing." },
+      { "name": "ifo Business Climate", "value": 87.2, "unit": "idx", "wowPct": 0.8, "tone": "green", "context": "Slight improvement; below 5y avg." },
+      { "name": "German PMI", "value": 49.6, "unit": "idx", "wowPct": -0.4, "tone": "amber", "context": "Still contraction (<50); inventories drawing." },
+      { "name": "VDMA orders (3mo MA)", "value": -3.2, "unit": "% YoY", "wowPct": 0.0, "tone": "amber", "context": "Recovery delayed — orders flat MoM." }
+    ],
+    "digest": {
+      "wow": "Mixed: copper +3.1%, energy −2.4%; steel still up.",
+      "mom": "Steel HRC +2.8%, ifo +1.4pp, German PMI flat.",
+      "yoy": "Energy −18%, steel +9%, FX −3% (vs USD).",
+      "notes": "Watch copper next 2 weeks — China stimulus headline risk."
+    }
+  },
+  "quoteToRevenue": {
+    "source": "seed",
+    "horizons": [
+      { "horizonDays": 30, "openQuotes": 38, "openPipelineEur": 699200, "winRate": 0.624, "avgMargin": 0.187, "expectedRevenue": 436301, "expectedGrossProfit": 81588, "breakdown": { "byTier": [{ "tier": "A", "share": 0.42, "expectedRevenue": 183246 }, { "tier": "B", "share": 0.34, "expectedRevenue": 148342 }, { "tier": "C", "share": 0.18, "expectedRevenue": 78534 }, { "tier": "D", "share": 0.06, "expectedRevenue": 26178 }] } },
+      { "horizonDays": 60, "openQuotes": 71, "openPipelineEur": 1221200, "winRate": 0.604, "avgMargin": 0.183, "expectedRevenue": 737605, "expectedGrossProfit": 134982, "breakdown": { "byTier": [] } },
+      { "horizonDays": 90, "openQuotes": 104, "openPipelineEur": 1747200, "winRate": 0.591, "avgMargin": 0.179, "expectedRevenue": 1032595, "expectedGrossProfit": 184834, "breakdown": { "byTier": [] } }
+    ]
+  },
+  "calibration": {
+    "nominalBand": 80,
+    "source": "seed",
+    "rows": [
+      { "clusterId": "BKAES", "actualHitRatePct": 81, "nBacktests": 18, "tone": "green" },
+      { "clusterId": "BKAGG", "actualHitRatePct": 76, "nBacktests": 18, "tone": "amber" },
+      { "clusterId": "BKAIZ", "actualHitRatePct": 72, "nBacktests": 18, "tone": "amber" },
+      { "clusterId": "SOPU",  "actualHitRatePct": 58, "nBacktests": 12, "tone": "red" }
+    ]
+  },
+  "customers": {
+    "topAtRisk": [
+      { "customerId": "101487", "customerName": "Customer 101487 (alloys distributor)", "lastActualRevenue": 412000, "median12moRevenue": 308000, "p5Revenue": 248000, "p95Revenue": 388000, "pBelow80pctOfCurrent": 78.4, "pChurn4Q": 0.61, "pMajorDecline": 0.74, "riskTier": "high" },
+      { "customerId": "104447", "customerName": "Customer 104447 (German OEM tier-2)", "lastActualRevenue": 295000, "median12moRevenue": 226000, "p5Revenue": 178000, "p95Revenue": 286000, "pBelow80pctOfCurrent": 71.2, "pChurn4Q": 0.48, "pMajorDecline": 0.66, "riskTier": "high" },
+      { "customerId": "100924", "customerName": "Customer 100924 (industrial pump assembler)", "lastActualRevenue": 234000, "median12moRevenue": 196000, "p5Revenue": 152000, "p95Revenue": 245000, "pBelow80pctOfCurrent": 58.9, "pChurn4Q": 0.43, "pMajorDecline": 0.57, "riskTier": "high" },
+      { "customerId": "101154", "customerName": "Customer 101154 (specialty bearings)", "lastActualRevenue": 198000, "median12moRevenue": 174000, "p5Revenue": 138000, "p95Revenue": 218000, "pBelow80pctOfCurrent": 49.1, "pChurn4Q": 0.37, "pMajorDecline": 0.51, "riskTier": "medium" },
+      { "customerId": "100702", "customerName": "Customer 100702 (precision-shaft customer)", "lastActualRevenue": 176000, "median12moRevenue": 158000, "p5Revenue": 122000, "p95Revenue": 198000, "pBelow80pctOfCurrent": 42.6, "pChurn4Q": 0.32, "pMajorDecline": 0.46, "riskTier": "medium" }
+    ],
+    "allCount": 43,
+    "methodology": {
+      "churnModel": "churn_classifier_v2",
+      "revenueDeclineModel": "revenue_decline_m8",
+      "windowMonths": 12,
+      "thresholdRule": "high if p_churn≥0.5 OR p_major_decline≥0.5; medium if either ≥0.3"
+    }
+  },
+  "commodityTrajectories": {
+    "quarters": ["Q2 23", "Q3 23", "Q4 23", "Q1 24", "Q2 24", "Q3 24", "Q4 24", "Q1 25", "Q2 25", "Q3 25", "Q4 25", "Q1 26"],
+    "groups": [
+      { "id": "BKAES", "name": "BKAES · Frame & shafts",  "series": [70.2, 69.8, 69.1, 68.4, 67.9, 67.3, 66.8, 66.2, 65.7, 65.2, 64.7, 64.4], "slopePerYear": -2.2 },
+      { "id": "BKAGG", "name": "BKAGG · Bearings",        "series": [64.5, 63.9, 63.1, 62.4, 61.8, 61.0, 60.3, 59.6, 59.0, 58.3, 57.7, 57.4], "slopePerYear": -2.7 },
+      { "id": "BKAIZ", "name": "BKAIZ · Couplings",       "series": [58.2, 57.5, 56.6, 55.7, 54.9, 54.0, 53.1, 52.3, 51.5, 50.7, 50.2, 50.1], "slopePerYear": -2.9 },
+      { "id": "SOPU",  "name": "SOPU · Specials (low-n)", "series": [54.0, 51.8, 49.5, 48.0, 47.2, 46.6, 45.9, 44.7, 43.8, 43.0, 42.4, 41.5], "slopePerYear": -4.3 }
+    ]
+  },
+  "distributions": {
+    "computedAt": "2026-05-13T06:14:00Z",
+    "metric": "margin",
+    "horizonMonths": 12,
+    "entityType": "commodity_group",
+    "source": "seed",
+    "rows": [
+      {
+        "entityId": "BKAES",
+        "entityName": "BKAES · Frame & shafts",
+        "lastActual": 65.2,
+        "median": 64.4,
+        "mean": 64.1,
+        "p5": 44.6,
+        "p25": 56.2,
+        "p75": 73.8,
+        "p95": 85.5,
+        "pBelowThreshold": 11.8,
+        "thresholdValue": 50.0,
+        "thresholdKind": "margin_below_pct",
+        "shockMode": "bootstrap",
+        "nSimulations": 1000
+      },
+      {
+        "entityId": "BKAGG",
+        "entityName": "BKAGG · Bearings",
+        "lastActual": 58.9,
+        "median": 57.4,
+        "mean": 57.1,
+        "p5": 38.2,
+        "p25": 49.6,
+        "p75": 65.3,
+        "p95": 77.8,
+        "pBelowThreshold": 18.4,
+        "thresholdValue": 50.0,
+        "thresholdKind": "margin_below_pct",
+        "shockMode": "bootstrap",
+        "nSimulations": 1000
+      },
+      {
+        "entityId": "BKAIZ",
+        "entityName": "BKAIZ · Couplings",
+        "lastActual": 51.3,
+        "median": 50.1,
+        "mean": 49.8,
+        "p5": 31.6,
+        "p25": 42.4,
+        "p75": 58.0,
+        "p95": 71.2,
+        "pBelowThreshold": 32.7,
+        "thresholdValue": 50.0,
+        "thresholdKind": "margin_below_pct",
+        "shockMode": "bootstrap",
+        "nSimulations": 1000
+      },
+      {
+        "entityId": "SOPU",
+        "entityName": "SOPU · Specials (low-n)",
+        "lastActual": 42.1,
+        "median": 41.5,
+        "mean": 40.8,
+        "p5": 18.3,
+        "p25": 31.0,
+        "p75": 52.6,
+        "p95": 68.4,
+        "pBelowThreshold": 56.2,
+        "thresholdValue": 50.0,
+        "thresholdKind": "margin_below_pct",
+        "shockMode": "bootstrap",
+        "nSimulations": 1000
+      }
+    ]
+  }
+}

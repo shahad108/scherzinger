@@ -1,0 +1,9 @@
+{
+  "n_skus": 22,
+  "median_lift_pct": 11.440017441258316,
+  "mean_lift_pct": 39.11398332338183,
+  "ci_coverage": 0.18181818181818182,
+  "share_p_positive_ge_80": 0.7727272727272727,
+  "share_realised_positive": 1.0,
+  "share_constraint_active": 0.045454545454545456
+}

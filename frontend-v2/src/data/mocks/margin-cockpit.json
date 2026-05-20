@@ -1,0 +1,295 @@
+{
+  "header": {
+    "crumbTrail": ["Cockpit", "Pricing Analyst · Frank", "Margin Intelligence"],
+    "title": "Margin Intelligence",
+    "subPills": ["Predictive Portfolio Pricing", "Diagnostics"],
+    "subStats": [
+      { "label": "refreshed today", "value": "LTM" },
+      { "label": "invoices · 4,605 quotes", "value": "5,565" }
+    ],
+    "auditTag": "Audit-ready · hash-signed",
+    "filters": [
+      { "label": "Cluster", "value": "All" },
+      { "label": "Family", "value": "All" },
+      { "label": "Tier", "value": "All" }
+    ]
+  },
+  "briefing": {
+    "title": "Margin briefing · auto-drafted, editable · audit-ready",
+    "paragraphs": [
+      { "html": "<b>Subject:</b> Margin position by cluster · YTD Apr 2026" },
+      { "html": "YTD margin <b>24.1%</b>, <b>3.9pp below plan</b> (industry typical 27–30% for VDMA precision pumps). Total leakage <b>−€187K</b> across 5,565 invoices." },
+      { "html": "<b>Margin by cluster:</b> BKAES <b>25%</b> (target 28%, conf 82%) · BKAGG <b>21%</b> (target 26%, conf 74%) · BKAIZ <b>18%</b> (low-n, conf 64%) · SOPU <b>14%</b> (⚠ low-n, conf 38%, do not auto-act)." },
+      { "html": "<b>Movable lens:</b> Of the −€187K YTD leakage, ~<b>€116K (62%)</b> sits on movable revenue and is actionable this cycle. ~<b>€71K (38%)</b> is locked under frame contracts and belongs in Till's renegotiation queue." },
+      { "html": "<b>Three buckets account for 92% of the leak:</b> cost not passed through <b>€150K</b> (7 of 18 indexed contracts un-triggered — 4 movable, 3 locked), discounting <b>€117K</b> (47 below-guardrail breaches across 12 reps — 78% concentrated in 3 reps; Heiko coordinating), customer-mix shift <b>€64K</b> (more tier-C/D revenue, less tier-A growth)." },
+      { "html": "<b>Lost-quote margin differential:</b> Won quotes carried <b>70.6%</b> margin vs <b>72.4%</b> on lost (diff <b>+1.8pp</b>, p=0.006, n=1,313). The lost-quote margin is <b>higher</b> than won — we lose disproportionately on the high-margin end. Different problem from the leakage waterfall, different fix (qualification/negotiation, not pass-through). Shared with Heiko in Deal Empowerment." },
+      { "html": "<b>What shifted vs last month:</b> Cost-not-passed-through <b style=\"color:var(--red)\">+€18K</b> (steel +1.6pp WoW), Discounting <b>flat</b>, Cross-customer-spread <b style=\"color:var(--green)\">−€4K</b> (one fix shipped after 21-day A/B confirmed +2.4pp lift, p=0.018). <b>Net −€14K worse.</b>" },
+      { "html": "<b>Recovery via Pryzm:</b> €147K captured YTD across 38 implemented actions — all hash-signed, 12 went through A/B tracker before broad rollout. Closable gap in the pipeline: <b>€280K</b> (€180K within my authority · €100K needs Till's sign-off)." }
+    ],
+    "signature": "— Frank, Pricing Analyst / Head of Controlling · drafted by Pryzm · please review before forwarding to Till.",
+    "auditHash": "m4r9bx"
+  },
+  "health": [
+    {
+      "id": "score",
+      "label": "Margin health score",
+      "value": "Watch",
+      "sub": "−4 vs last month · 3.9pp gap to plan",
+      "scoreRing": 76,
+      "scoreVerdict": "Watch",
+      "scoreTone": "amber"
+    },
+    {
+      "id": "actual",
+      "label": "YTD Actual margin",
+      "value": "24.1%",
+      "trend": "↓ −1.9pp",
+      "trendTone": "down",
+      "sub": "vs 26.0% plan · 3.7pp narrower than 2024",
+      "benchmark": "Industry typical <b>27–30%</b> · VDMA precision pumps"
+    },
+    {
+      "id": "belowPlan",
+      "label": "€ below plan YTD",
+      "value": "−€187,000",
+      "sub": "across 5,565 invoices · 4 product families"
+    },
+    {
+      "id": "closable",
+      "label": "Closable gap (in pipeline)",
+      "value": "€280,000",
+      "sub": "via 24 open Pryzm actions",
+      "authSplit": { "yours": "€180K your authority", "needsMd": "€100K needs MD" },
+      "jumpTo": "/action-center"
+    }
+  ],
+  "clusters": [
+    { "code": "BKAES", "margin": "25%", "target": "target 28%", "conf": "82%", "tone": "green", "filterToast": "Filtering Margin Intelligence to BKAES (627 SKUs)" },
+    { "code": "BKAGG", "margin": "21%", "target": "target 26%", "conf": "74%", "tone": "amber", "filterToast": "Filtering Margin Intelligence to BKAGG (370 SKUs)" },
+    { "code": "BKAIZ", "margin": "18%", "target": "target 26%", "conf": "64%", "tone": "amber", "filterToast": "Filtering Margin Intelligence to BKAIZ (13 SKUs)" },
+    { "code": "SOPU", "margin": "14%", "target": "target 25%", "conf": "38%", "tone": "red", "warning": "⚠ low-n", "filterToast": "SOPU is low-n (n=6) — manual review required, do not auto-act" }
+  ],
+  "shifted": {
+    "title": "What shifted in the leak vs last month",
+    "rows": [
+      { "dotTone": "red", "text": "Cost not passed through · steel +1.6pp WoW · 7 contracts still un-triggered", "delta": { "value": "+€18K", "tone": "up" }, "jumpLabel": "→ Cost trajectory", "jumpTo": { "kind": "route", "to": "/forecasting" } },
+      { "dotTone": "muted", "text": "Discounting · 47 breaches across 12 reps · top 3 = 78%", "delta": { "value": "flat", "tone": "flat" }, "jumpLabel": "→ By-rep", "jumpTo": { "kind": "route", "to": "/quotes" } },
+      { "dotTone": "green", "text": "Cross-customer spread · 1 fix shipped (Article 205418-A · Customer 101582) · 21-day A/B confirmed +2.4pp lift, p=0.018", "delta": { "value": "−€4K", "tone": "down" }, "jumpLabel": "→ Cross-customer", "jumpTo": { "kind": "tab", "tab": "cross" } },
+      { "dotTone": "amber", "text": "List-price erosion · 24 SKUs > 9 months stale", "delta": { "value": "+€2K", "tone": "up" }, "jumpLabel": "→ Erosion", "jumpTo": { "kind": "tab", "tab": "erode" } }
+    ],
+    "netLine": "Net month-over-month: <b>−€14K worse</b> · driven by steel pass-through gap."
+  },
+  "waterfall": {
+    "title": "Where the 3.9pp gap came from",
+    "subtitle": "Every PP of margin gap mapped to a cause bucket. Three account for 92% of the leak.",
+    "totalChip": "€417K total leakage",
+    "infoPanel": [
+      "Every PP of margin gap is mapped to a cause bucket. <b>Three buckets account for 92% of the leak.</b>",
+      "Each bucket is a doorway — click any bucket to drill into the actionable view (sales-rep breaches, contract pass-through, segment pivot, or list erosion)."
+    ],
+    "buckets": [
+      { "id": "target",   "name": "Target margin",   "endpoint": "green-start", "pct": "28.0%", "eur": "plan" },
+      { "id": "mix",      "name": "Customer mix shift", "pct": "−0.6pp", "eur": "€64K",  "source": "More tier-C/D revenue · less tier-A growth · cluster mix BKAES/BKAGG conf <b>78%</b>", "delta": { "label": "flat MoM", "tone": "flat" }, "jumpLabel": "→ Tier pivot", "jumpTo": { "kind": "tab", "tab": "seg", "segTab": "tier" } },
+      { "id": "discount", "name": "Discounting (sales below guardrail)", "pct": "−1.1pp", "eur": "€117K", "source": "47 breaches Q1 · 12 reps · top 3 = 78% · cluster spread BKAES 82%, BKAGG 74%", "delta": { "label": "flat MoM", "tone": "flat" }, "jumpLabel": "→ By-rep", "jumpTo": { "kind": "route", "to": "/quotes" } },
+      { "id": "cost",     "name": "Cost not passed through", "pct": "−1.4pp", "eur": "€150K", "source": "7 of 18 indexed contracts un-triggered · <b>4 movable, 3 locked</b> · cluster mix BKAES/BKAGG conf 78%", "delta": { "label": "↑ +€18K MoM", "tone": "up" }, "jumpLabel": "→ Cost trajectory", "jumpTo": { "kind": "route", "to": "/forecasting" } },
+      { "id": "rebate",   "name": "Rebate over-accrual", "pct": "−0.5pp", "eur": "€54K",  "source": "3 customers above committed tier · cluster BKAGG conf 74%", "delta": { "label": "flat MoM", "tone": "flat" }, "jumpLabel": "→ Review", "jumpTo": { "kind": "route", "to": "/action-center" } },
+      { "id": "erosion",  "name": "List-price erosion", "pct": "−0.3pp", "eur": "€32K",  "source": "11mo avg list lag across 24 SKUs · cluster BKAES 82% · BKAIZ 64%", "delta": { "label": "↑ +€2K MoM", "tone": "up" }, "jumpLabel": "→ Erosion", "jumpTo": { "kind": "tab", "tab": "erode" } },
+      { "id": "actual",   "name": "Actual margin",   "endpoint": "green-end", "pct": "24.1%", "eur": "−€417K" }
+    ],
+    "chart": [
+      { "label": "Target",   "cumulative": 28.0, "delta": 28.0, "kind": "endpoint" },
+      { "label": "Mix",      "cumulative": 27.4, "delta": -0.6, "kind": "loss" },
+      { "label": "Discount", "cumulative": 26.3, "delta": -1.1, "kind": "loss" },
+      { "label": "Cost",     "cumulative": 24.9, "delta": -1.4, "kind": "loss" },
+      { "label": "Rebate",   "cumulative": 24.4, "delta": -0.5, "kind": "loss" },
+      { "label": "Erosion",  "cumulative": 24.1, "delta": -0.3, "kind": "loss" },
+      { "label": "Actual",   "cumulative": 24.1, "delta": 24.1, "kind": "endpoint" }
+    ],
+    "movableLocked": {
+      "totalLeakage": "€417K",
+      "movable": { "label": "Movable €260K (62%)", "pct": 62 },
+      "locked":  { "label": "Locked €157K (38%)", "pct": 38 },
+      "source": "Pilot estimate · derived from <code>price_governance.price_rules</code> + frame-contract dates"
+    }
+  },
+  "lostQuote": {
+    "title": "Lost-quote margin differential — why we lose at the high-margin end",
+    "subtitle": "The lost-quote average margin is higher than the won-quote average. Different fix from leakage waterfall.",
+    "significance": "p = 0.006 · statistically significant",
+    "tiles": [
+      { "id": "won",  "label": "Won quotes · avg margin",  "value": "70.6%", "sub": "n = 928 won quotes" },
+      { "id": "lost", "label": "Lost quotes · avg margin", "value": "72.4%", "sub": "n = 385 lost quotes" },
+      { "id": "diff", "label": "Differential",             "value": "+1.8pp","sub": "Welch's t-test · p = 0.006 (significant)" }
+    ],
+    "interpretationHtml": "<b>Plain-language interpretation:</b> The lost-quote average margin is <b>higher</b> than the won-quote average. We are losing disproportionately on the high-margin end — the pricing model is leaving high-margin business on the table. This is a <b>different problem</b> than the leakage waterfall above and needs a <b>different fix</b>: qualification + negotiation arguments + price-anchor coaching, not pass-through.",
+    "sourceHtml": "Source · <code>pricing_analysis.price_sensitivity</code> · <span style=\"color:var(--violet);font-weight:600\">Shared with Heiko (Sales)</span> — appears in Deal Empowerment as lost-deal analytics. Same finding shared with Till in monthly briefing."
+  },
+  "costVsPrice": {
+    "title": "Input cost vs realized price · last 24 months",
+    "subtitle": "When the cost line rises faster than the price line, your margin is compressing — visible here before it shows up in the P&L.",
+    "indexedTag": "Indexed Apr 2024 = 100",
+    "infoPanel": [
+      "When the cost line rises faster than the price line, your margin is compressing — visible here <b>before</b> it shows up in the P&L.",
+      "Forward 12-mo cost trajectory feeds from Forecast → Input cost trajectory. This view is the trailing 24-mo backward look."
+    ],
+    "series": [
+      { "month": "2024-04", "cost": 100.0, "price": 100.0 },
+      { "month": "2024-05", "cost": 100.6, "price": 100.2 },
+      { "month": "2024-06", "cost": 101.4, "price": 100.5 },
+      { "month": "2024-07", "cost": 102.1, "price": 100.8 },
+      { "month": "2024-08", "cost": 102.9, "price": 101.0 },
+      { "month": "2024-09", "cost": 103.6, "price": 101.3 },
+      { "month": "2024-10", "cost": 104.4, "price": 101.6 },
+      { "month": "2024-11", "cost": 105.0, "price": 101.9 },
+      { "month": "2024-12", "cost": 105.7, "price": 102.2 },
+      { "month": "2025-01", "cost": 106.5, "price": 102.5 },
+      { "month": "2025-02", "cost": 107.2, "price": 102.8 },
+      { "month": "2025-03", "cost": 107.9, "price": 103.0 },
+      { "month": "2025-04", "cost": 108.6, "price": 103.3 },
+      { "month": "2025-05", "cost": 109.2, "price": 103.6 },
+      { "month": "2025-06", "cost": 109.9, "price": 103.9 },
+      { "month": "2025-07", "cost": 110.6, "price": 104.2 },
+      { "month": "2025-08", "cost": 111.3, "price": 104.5 },
+      { "month": "2025-09", "cost": 112.0, "price": 104.8 },
+      { "month": "2025-10", "cost": 112.8, "price": 105.1 },
+      { "month": "2025-11", "cost": 113.5, "price": 105.5 },
+      { "month": "2025-12", "cost": 114.2, "price": 105.8 },
+      { "month": "2026-01", "cost": 114.9, "price": 106.1 },
+      { "month": "2026-02", "cost": 115.6, "price": 106.4 },
+      { "month": "2026-03", "cost": 116.3, "price": 106.7 }
+    ],
+    "passThrough": {
+      "label": "Cost pass-through completion",
+      "value": "61%",
+      "pct": 61,
+      "sub": "<b>11 of 18</b> indexed contracts triggered YTD · 7 un-triggered = €150K leakage",
+      "breakdownHtml": "Of the 7 un-triggered: <b style=\"color:var(--green)\">4 movable</b> (Frank can renegotiate index trigger this cycle) · <b style=\"color:var(--ink-3)\">3 locked</b> (Till to take to MD review at frame renewal)."
+    },
+    "recovery": {
+      "label": "YTD margin recovery via Pryzm",
+      "value": "€147K",
+      "sub": "From 38 implemented actions · cumulative · 12 went through A/B tracker before broad rollout · all hash-signed",
+      "spark": [8, 17, 28, 41, 56, 72, 89, 105, 118, 130, 140, 147]
+    }
+  },
+  "tabs": {
+    "cross": {
+      "description": "Same article, same volume tier, different customers — sorted by spread.",
+      "infoPanel": [
+        "This is the data layer no Excel can build. Cross-checks <b>5,565 invoices</b> against <b>4,605 quotes</b>, normalizes for tier and quarter, flags pairs where the spread can't be justified by volume or contract terms."
+      ],
+      "rows": [
+        { "article": "200832-E", "cluster": { "code": "BKAGG", "conf": "74%", "tone": "amber" }, "customerA": "101580", "priceA": "€4.10", "customerB": "102330", "priceB": "€6.80", "tier": "Tier 2", "spreadPct": "66%", "highlight": true,  "studioLabel": "Open in Studio →" },
+        { "article": "205415-B", "cluster": { "code": "BKAGG", "conf": "74%", "tone": "amber" }, "customerA": "101582", "priceA": "€4.10", "customerB": "102801", "priceB": "€5.50", "tier": "Tier 1", "spreadPct": "34%", "studioLabel": "Open in Studio →" },
+        { "article": "211094-C", "cluster": { "code": "BKAES", "conf": "82%", "tone": "green" }, "customerA": "103044", "priceA": "€12.20","customerB": "101900", "priceB": "€15.40","tier": "Tier 3", "spreadPct": "26%", "studioLabel": "Open in Studio →" }
+      ],
+      "footerNote": "<b>Cluster note:</b> Spreads in low-n clusters (SOPU n=6, conf 38%) are flagged ⚠ — review manually before raising in Studio. None in this view.",
+      "tabFooterText": "3 actions / 90d · 1 implemented (A/B-confirmed) · <b>€8,400 captured</b>"
+    },
+    "leak": {
+      "description": "SKU-level margin leakage · quoted vs invoiced.",
+      "infoPanel": [
+        "Feeds the <b>Discounting bucket</b> in the waterfall above (€117K of €417K total leakage). The gap between quoted margin and actual margin = price erosion at invoice time."
+      ],
+      "rows": [
+        { "article": "200832-E", "description": "Precision shaft", "volume": "4,200", "quotedMargin": "25%", "actualMargin": "8%",  "gapPp": "−17pp", "opportunityEur": "€18,600", "abStatus": "—", "auditHash": "a3f9c1", "primary": true },
+        { "article": "205415-B", "description": "Coupling A",      "volume": "1,840", "quotedMargin": "32%", "actualMargin": "24%", "gapPp": "−8pp",  "opportunityEur": "€12,400", "abStatus": "—", "auditHash": "—" },
+        { "article": "211094-C", "description": "Bearing housing", "volume": "980",   "quotedMargin": "28%", "actualMargin": "22%", "gapPp": "−6pp",  "opportunityEur": "€7,200",  "abStatus": "🧪 running 3/14", "auditHash": "—" },
+        { "article": "218750-D", "description": "Sleeve",          "volume": "6,400", "quotedMargin": "30%", "actualMargin": "26%", "gapPp": "−4pp",  "opportunityEur": "€4,800",  "abStatus": "—", "auditHash": "—" },
+        { "article": "205418-A", "description": "Coupling B",      "volume": "2,100", "quotedMargin": "31%", "actualMargin": "29%", "gapPp": "−2pp",  "opportunityEur": "€1,400",  "abStatus": "🧪 running 9/21", "auditHash": "7e21bd" }
+      ],
+      "tabFooterText": "11 actions / 90d · 6 implemented (all hash-signed) · 4 went through A/B before broad rollout · <b>€44,200 captured YTD</b>"
+    },
+    "seg": {
+      "description": "Slice along 4 dimensions to find where the leak concentrates.",
+      "infoPanel": [
+        "Each cut surfaces a different fix: family-level pricing reset, tier-level renegotiation, deal-size guardrail tightening, or regional rep coaching.",
+        "Feeds the <b>Customer mix shift bucket</b> in the waterfall above (€64K)."
+      ],
+      "subPanes": [
+        {
+          "id": "family", "label": "By product family",
+          "headers": ["Product family", "Revenue (LTM)", "Target margin", "Actual margin", "Gap (pp)", "€ Impact", "Trend"],
+          "rows": [
+            { "label": "Precision shafts", "cells": ["€3,420,000", "28%", "19%", "−9pp", "−€308K", "↓ widening"], "trendTone": "down" },
+            { "label": "Couplings",        "cells": ["€2,890,000", "26%", "25%", "−1pp", "−€29K",  "→ stable"],   "trendTone": "flat" },
+            { "label": "Bearing housings", "cells": ["€2,140,000", "26%", "23%", "−3pp", "−€64K",  "↓ widening"], "trendTone": "down" },
+            { "label": "Sleeves",          "cells": ["€2,250,000", "28%", "28%", "0pp",  "€0",     "↑ improving"], "trendTone": "up" }
+          ],
+          "storyHtml": "<b>Story:</b> Precision shafts (Article 200832-E family) are the biggest single drag — 74% of total margin gap concentrated here. Sleeves are healthy."
+        },
+        {
+          "id": "tier", "label": "By customer tier",
+          "headers": ["Customer tier", "Revenue (LTM)", "Target margin", "Actual margin", "Gap (pp)", "# Customers", "Notes"],
+          "rows": [
+            { "label": "Strategic",   "tier": "A", "cells": ["€799,000", "26%", "22%", "−4pp",  "2", "101580 dragging tier; 102330 healthy"] },
+            { "label": "Standard",    "tier": "B", "cells": ["€458,000", "28%", "27%", "−1pp",  "3", "Performing on plan"] },
+            { "label": "Volume",      "tier": "C", "cells": ["€176,000", "22%", "24%", "+2pp",  "1", "101582 above plan — possible to monetize further"] },
+            { "label": "Problematic", "tier": "D", "cells": ["€164,000", "25%", "14%", "−11pp", "1", "101900 — raise price even at attrition risk"] }
+          ],
+          "storyHtml": "<b>Story:</b> Strategic tier is leaking 4pp because of one customer (101580). Problematic tier should be repriced — 11pp gap is structural, not relationship-driven."
+        },
+        {
+          "id": "size", "label": "By deal size",
+          "headers": ["Deal size band", "# Quotes (LTM)", "Revenue", "Target margin", "Actual margin", "Gap (pp)"],
+          "rows": [
+            { "label": "Large (>€100K)",      "cells": ["42",    "€5,840,000", "26%", "22%", "−4pp"] },
+            { "label": "Medium (€20–100K)",   "cells": ["218",   "€3,420,000", "28%", "25%", "−3pp"] },
+            { "label": "Small (<€20K)",       "cells": ["1,640", "€1,440,000", "28%", "28%", "0pp"]  }
+          ],
+          "storyHtml": "<b>Story:</b> Counterintuitively, large deals leak the most (4pp gap). Sales discounting concentrates on big-customer negotiations — exactly where guardrails should bite hardest."
+        },
+        {
+          "id": "region", "label": "By region",
+          "headers": ["Region", "Revenue (LTM)", "Target margin", "Actual margin", "Gap (pp)", "Notes"],
+          "rows": [
+            { "label": "DACH",                  "cells": ["€7,820,000", "27%", "25%", "−2pp", "Healthy core market"] },
+            { "label": "BKAGG (problem region)","cells": ["€1,640,000", "26%", "19%", "−7pp", "3 sales reps consistently breaching guardrails"] },
+            { "label": "Rest of EU",            "cells": ["€780,000",   "28%", "28%", "0pp",  "Stable"] },
+            { "label": "Export (non-EU)",       "cells": ["€460,000",   "30%", "29%", "−1pp", "FX exposure muted"] }
+          ],
+          "storyHtml": "<b>Story:</b> BKAGG is the single biggest regional drag (−7pp · €115K leakage). The Monday Briefing already flagged this — sales-rep level intervention needed, not a pricing change.",
+          "caveatHtml": "<b>⚠ Naming caveat (Frank's note):</b> \"BKAGG\" here is a <i>regional sales label</i> — not the BKAGG <i>commodity cluster</i>. The two share the abbreviation by historical accident. Disambiguation pending in the next data-model update; treat them as distinct dimensions."
+        }
+      ],
+      "tabFooterText": "Feeds <b>Customer mix shift</b> bucket · €64K"
+    },
+    "erode": {
+      "description": "Stale list prices · cost vs list movement.",
+      "infoPanel": [
+        "List prices erode silently when cost moves up faster than the price book gets refreshed. The September price-book question, answered every Monday.",
+        "Avg list-update lag across portfolio: <b style=\"color:var(--amber)\">11 months</b> (industry best-practice: 6 months). Feeds <b>List-price erosion</b> bucket · €32K."
+      ],
+      "rows": [
+        { "article": "200832-E", "cluster": { "code": "BKAGG", "conf": "74%", "tone": "amber" }, "lastUpdateMonths": 14, "lastUpdateLabel": "14 mo", "costChange": "+6.2%", "listChange": "+1.0%", "effectiveErosion": "−5.2pp", "marginCompression": "−9pp",  "authorHash": "Frank · a3f9c1",   "actionLabel": "Open in Studio →", "isAction": true,  "primary": true },
+        { "article": "205415-B", "cluster": { "code": "BKAGG", "conf": "74%", "tone": "amber" }, "lastUpdateMonths": 11, "lastUpdateLabel": "11 mo", "costChange": "+3.8%", "listChange": "+0.5%", "effectiveErosion": "−3.3pp", "marginCompression": "−4pp",  "authorHash": "Frank · 7e21bd",   "actionLabel": "Open in Studio →", "isAction": true },
+        { "article": "211094-C", "cluster": { "code": "BKAES", "conf": "82%", "tone": "green" }, "lastUpdateMonths": 8,  "lastUpdateLabel": "8 mo",  "costChange": "+2.1%", "listChange": "+0.0%", "effectiveErosion": "−2.1pp", "marginCompression": "−2pp",  "authorHash": "F. Bauer · 19f4a8","actionLabel": "Open in Studio →", "isAction": true },
+        { "article": "218750-D", "cluster": { "code": "BKAES", "conf": "82%", "tone": "green" }, "lastUpdateMonths": 3,  "lastUpdateLabel": "3 mo",  "costChange": "+0.4%", "listChange": "+1.5%", "effectiveErosion": "+1.1pp", "marginCompression": "0pp",   "authorHash": "Frank · c882e0",   "actionLabel": "healthy · no action", "isAction": false },
+        { "article": "205418-A", "cluster": { "code": "BKAGG", "conf": "74%", "tone": "amber" }, "lastUpdateMonths": 1,  "lastUpdateLabel": "1 mo",  "costChange": "+0.2%", "listChange": "+6.0%", "effectiveErosion": "+5.8pp", "marginCompression": "+2pp",  "authorHash": "Frank · 4d2b8f",   "actionLabel": "recent raise · 🧪 A/B 9/21", "isAction": false }
+      ],
+      "cycleNote": "<b>Cycle output:</b> Triggering the price-book cycle auto-generates a <b>Branded PDF</b> (Scherzinger corporate design) with all 24 SKUs · audit-hash signed · routed to Till for sign-off.",
+      "cycleButtonLabel": "⚡ Trigger price-book cycle (24 SKUs)",
+      "tabFooterText": "Feeds <b>List-price erosion</b> bucket · €32K · 24 SKUs > 9 months stale"
+    },
+    "cust": {
+      "description": "Customer margin trajectory · last 12 months.",
+      "infoPanel": [
+        "Status pill flags accounts needing intervention vs. healthy ones. Trend shows YoY margin movement (12-mo rolling).",
+        "Use the <b>Drill</b> button on any row to open the per-month trajectory + cohort comparison; <b>Open action</b> routes the customer into your weekly queue."
+      ],
+      "rows": [
+        { "customer": "101580", "ytdRevenue": "€487,000", "ytdMargin": "18%", "trend": "↓ −6pp", "trendTone": "down", "status": "action",  "statusLabel": "Action",  "primaryAction": { "label": "Open action →", "jumpTo": "/action-center" }, "drillLabel": "Drill →" },
+        { "customer": "102330", "ytdRevenue": "€312,000", "ytdMargin": "26%", "trend": "↓ −2pp", "trendTone": "down", "status": "watch",   "statusLabel": "Watch",   "drillLabel": "Drill →" },
+        { "customer": "103044", "ytdRevenue": "€198,000", "ytdMargin": "31%", "trend": "→ flat", "trendTone": "flat", "status": "healthy", "statusLabel": "Healthy", "drillLabel": "Drill →" },
+        { "customer": "101582", "ytdRevenue": "€176,000", "ytdMargin": "24%", "trend": "↑ +1pp", "trendTone": "up",   "status": "healthy", "statusLabel": "Healthy", "drillLabel": "Drill →" }
+      ],
+      "tabFooterText": "1 churn-risk action open · 101580 · 5 days old"
+    }
+  },
+  "crossLinks": [
+    { "label": "Action queue · Action Center",   "jumpTo": "/action-center" },
+    { "label": "Cluster forecast · Forecast",    "jumpTo": "/forecasting" },
+    { "label": "SKU drill · Pricing Studio",     "jumpTo": "/pricing" },
+    { "label": "Approval flow · Quotes & Guardrails", "jumpTo": "/quotes" }
+  ]
+}

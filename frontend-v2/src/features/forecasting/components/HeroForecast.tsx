@@ -1,0 +1,858 @@
+import { useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  Area,
+  ComposedChart,
+  Line,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ReferenceLine,
+  Scatter,
+} from 'recharts';
+import type { ForecastHero, ForecastIntervals, ForecastMode } from '@/types/forecast';
+import { useForecastOverrides } from '@/data/api/useForecastOverrides';
+import { useForecastAnnotations } from '@/data/api/useForecastAnnotations';
+import { ActualEntryPanel } from './ActualEntryPanel';
+import { AnnotationPopover } from './AnnotationPopover';
+
+interface Props {
+  hero: ForecastHero;
+  /**
+   * Phase 4.5 audit fix: the hero used to render its OWN Revenue/Margin/Volume
+   * tabs that only re-labelled the axis without swapping series. Those tabs are
+   * gone — the chart now follows the page-level ModeToggle. The BFF re-runs
+   * the composer when `?mode=` changes, so `hero.series` is already in the
+   * right metric. We use `mode` here purely for axis formatting + heading copy.
+   */
+  mode: ForecastMode;
+  /**
+   * Phase 3 (forecast redesign v2) — click-to-edit hook. When provided, P50
+   * active dots become clickable and the tooltip shows a "Click to enter
+   * actual →" hint. Phase 4 will wire this to the ActualEntryPanel. Optional
+   * so existing call sites (AggregateViewV1) continue to compile.
+   */
+  onPointClick?: (month: string) => void;
+  /**
+   * Phase 8 review — only V2 contexts should open the ActualEntryPanel. V1
+   * keeps the hero read-only. When this flag is false (default), the click
+   * handler, tooltip hint, and panel are all suppressed regardless of any
+   * internal state. AggregateViewV2 sets this to true.
+   */
+  enableActualEntry?: boolean;
+  /**
+   * Phase 9 fix: when a cluster filter is active on the page (?cluster=BKAES),
+   * the active cluster is threaded down here so that overrides created via
+   * the hero chart are attributed to that cluster rather than the aggregate.
+   * Diamond markers are also filtered by this cluster (an aggregate override
+   * doesn't belong on a cluster-filtered chart, and vice versa). `null` means
+   * "aggregate view".
+   */
+  cluster?: string | null;
+}
+
+type BandMode = 'p80' | 'p80+p95';
+
+const MODE_TITLE: Record<ForecastMode, string> = {
+  revenue: 'Revenue forecast',
+  margin: 'Margin forecast',
+  volume: 'Volume forecast',
+};
+
+function formatY(mode: ForecastMode, v: number): string {
+  if (mode === 'margin') {
+    // Backend ships margin as ratio (0..1). Render as percent.
+    const pct = v <= 1.5 ? v * 100 : v;
+    return `${pct.toFixed(1)}%`;
+  }
+  if (mode === 'volume') {
+    if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+    if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
+    return v.toFixed(0);
+  }
+  // revenue (EUR)
+  if (Math.abs(v) >= 1_000_000) return `€${(v / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(v) >= 1_000) return `€${(v / 1_000).toFixed(0)}K`;
+  return `€${v.toFixed(0)}`;
+}
+
+/**
+ * Phase 9 security fix: render mover sub-text safely without
+ * dangerouslySetInnerHTML. Bolds the numeric portions of the string
+ * (matches the same pattern the old inline regex used) but does so via
+ * real <strong> nodes so server text can never inject markup. Exported
+ * for unit tests.
+ */
+export function renderMoverSub(text: string): ReactNode[] {
+  // Match either a 6-digit number (e.g. customer ID) or a +€NK delta.
+  // Mirrors the legacy pre-Phase-9 regex but renders as React nodes rather
+  // than raw HTML so server text can never inject markup.
+  const RE = /(\d{6}|\+€\d+K)/g;
+  const out: ReactNode[] = [];
+  let last = 0;
+  let i = 0;
+  for (const m of text.matchAll(RE)) {
+    const start = m.index ?? 0;
+    if (start > last) out.push(text.slice(last, start));
+    out.push(<strong key={i++}>{m[0]}</strong>);
+    last = start + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
+function formatTooltip(mode: ForecastMode, v: number): string {
+  if (mode === 'margin') {
+    const pct = v <= 1.5 ? v * 100 : v;
+    return `${pct.toFixed(2)}%`;
+  }
+  if (mode === 'volume') {
+    if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M units`;
+    if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(1)}K units`;
+    return `${v.toFixed(0)} units`;
+  }
+  if (Math.abs(v) >= 1_000_000) return `€${(v / 1_000_000).toFixed(2)}M`;
+  if (Math.abs(v) >= 1_000) return `€${(v / 1_000).toFixed(1)}K`;
+  return `€${v.toFixed(0)}`;
+}
+
+export function HeroForecast({
+  hero,
+  mode,
+  onPointClick,
+  enableActualEntry = false,
+  cluster = null,
+}: Props) {
+  const [bandMode, setBandMode] = useState<BandMode>('p80+p95');
+  const showP95 = bandMode === 'p80+p95';
+  // Phase 4 (forecast redesign v2) — clicking a forecast point opens the
+  // ActualEntryPanel for that month. Only active when `enableActualEntry` is
+  // true (V2 contexts); V1 keeps the chart read-only.
+  const [editingMonth, setEditingMonth] = useState<string | null>(null);
+  const handlePointClick = (month: string) => {
+    if (!enableActualEntry) {
+      // Still let V1 callers wire analytics via onPointClick, but don't open
+      // the panel.
+      onPointClick?.(month);
+      return;
+    }
+    setEditingMonth(month);
+    onPointClick?.(month);
+  };
+  // Phase 3 (forecast redesign v2): cap history to 6mo by default. Frank told
+  // us the early history months were eating screen real estate without adding
+  // signal. Toggle restores the full series on demand.
+  const [showFullHistory, setShowFullHistory] = useState(false);
+
+  // Phase H (v2.2) — annotation popover state. Right-clicking a month on the
+  // chart opens a small popover scoped to that month. A keyboard-accessible
+  // "Add note" button on the most-recently-hovered month is the non-mouse
+  // fallback (Phase K accessibility audit hooks into this).
+  const [annotation, setAnnotation] = useState<
+    | { month: string; anchor: { x: number; y: number } }
+    | null
+  >(null);
+  const [hoverMonth, setHoverMonth] = useState<string | null>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+
+  // Pull all annotations once; we filter to months for the pin glyphs and pass
+  // the active month through to the popover so it can re-filter and refresh.
+  const { data: annotationsData } = useForecastAnnotations({});
+  const annotatedMonths = useMemo(() => {
+    const items = annotationsData?.items ?? [];
+    return new Set(
+      items
+        .filter((a) => a.target.kind === 'month')
+        .map((a) => a.target.value),
+    );
+  }, [annotationsData]);
+
+  // Phase 3.4 — fetch saved overrides and project them as diamond glyphs onto
+  // the chart. Filtered to the active mode (a margin override doesn't belong
+  // on a revenue chart). Hook tolerates a missing/empty backend (returns
+  // `{ items: [] }`).
+  const { data: overridesData } = useForecastOverrides({});
+  const overrideMonths = useMemo(() => {
+    const items = overridesData?.items ?? [];
+    // Phase 9 fix: filter by both mode AND active cluster so an aggregate
+    // override doesn't bleed into a cluster-filtered view (and vice versa).
+    return new Set(
+      items
+        .filter((o) => o.mode === mode && (o.cluster ?? null) === (cluster ?? null))
+        .map((o) => o.month),
+    );
+  }, [overridesData, mode, cluster]);
+
+  // Round 4 fix: backend now ships REAL per-mode series sourced from invoices
+  // (real_hero.py). No heuristic rescale needed. Identity function.
+  const scale = useMemo(() => (v: number) => v, []);
+  const isApprox = false;
+
+  // Tuple-array Area gives a true range-band between bounds without
+  // forcing a 0-baseline, so we can keep the y-domain tight.
+  const fullChartData = useMemo(
+    () =>
+      hero.series.map((p) => {
+        const p80Low = scale(p.p80Low ?? p.low);
+        const p80High = scale(p.p80High ?? p.high);
+        const p95Low = scale(p.p95Low ?? p.low);
+        const p95High = scale(p.p95High ?? p.high);
+        return {
+          month: p.month,
+          p80: [p80Low, p80High] as [number, number],
+          p95: [p95Low, p95High] as [number, number],
+          primary: scale(p.p50 ?? p.primary),
+          actual: p.actual != null ? scale(p.actual) : undefined,
+          // v2.1 — pipeline-implied P50 (open-quote book × win_prob).
+          // Optional; renders only where the backend supplied it.
+          pipelineP50: p.pipelineP50 != null ? scale(p.pipelineP50) : undefined,
+        };
+      }),
+    [hero.series, scale],
+  );
+
+  // Phase 3.2 — trim to last 6 months of history + everything forward.
+  // The series mixes history (actual != null) and forecast (actual == null);
+  // we find the first forecast index and slice back 6 from there.
+  const firstForecastIdx = useMemo(() => {
+    const idx = fullChartData.findIndex((p) => p.actual == null);
+    return idx === -1 ? fullChartData.length : idx;
+  }, [fullChartData]);
+
+  const chartData = useMemo(() => {
+    if (showFullHistory) return fullChartData;
+    if (firstForecastIdx <= 6) return fullChartData;
+    return fullChartData.slice(Math.max(0, firstForecastIdx - 6));
+  }, [fullChartData, firstForecastIdx, showFullHistory]);
+
+  const firstForecastMonth = useMemo(() => {
+    const idxInTrimmed = chartData.findIndex((p) => p.actual == null);
+    return idxInTrimmed === -1 ? null : chartData[idxInTrimmed].month;
+  }, [chartData]);
+
+  // Diamond glyphs for months that have a saved override. We pin them to the
+  // chart's own p50 line so they snap to the visible band regardless of where
+  // the user's actual landed (the actual value already shows via the actual
+  // dot — the diamond is the "this month was overridden" signal).
+  // Phase H — annotation pin markers (one per annotated month visible on the
+  // chart). Pinned to the same Y position as override diamonds so they share
+  // the visible band.
+  const annotationMarkers = useMemo(
+    () =>
+      chartData
+        .filter((p) => annotatedMonths.has(p.month))
+        .map((p) => ({
+          month: p.month,
+          annotationY: p.actual ?? p.primary,
+        })),
+    [chartData, annotatedMonths],
+  );
+
+  const overrideMarkers = useMemo(
+    () =>
+      chartData
+        .filter((p) => overrideMonths.has(p.month))
+        .map((p) => ({
+          month: p.month,
+          overrideY: p.actual ?? p.primary,
+        })),
+    [chartData, overrideMonths],
+  );
+
+  const lowestBound = useMemo(
+    () => Math.min(...hero.series.map((p) => scale(p.p95Low ?? p.low))),
+    [hero.series, scale],
+  );
+  const highestBound = useMemo(
+    () => Math.max(...hero.series.map((p) => scale(p.p95High ?? p.high))),
+    [hero.series, scale],
+  );
+  // Round 4: scale-aware padding now that the series is real per mode.
+  // Margin comes back as ratio 0..1 (so 0.05 = 5pp); revenue/volume in absolute units.
+  const span = Math.max(highestBound - lowestBound, 1e-9);
+  const pad = span * 0.08; // 8% headroom on each side
+  // Revenue and volume cannot be physically negative. Margin (a ratio) can
+  // be negative in theory but the chart clamps at 0 for the historical floor.
+  // Revenue/volume must also clamp at 0 so the Y-axis never opens a phantom
+  // negative band — the BFF already clamps the data, this is the FE safety net.
+  const yMin =
+    mode === 'margin' || mode === 'revenue' || mode === 'volume'
+      ? Math.max(0, lowestBound - pad)
+      : lowestBound - pad;
+  const yMax = highestBound + pad;
+
+  const movablePct = hero.movableLockedSplit.movablePct;
+
+  return (
+    <div className="hero-card" style={{ marginTop: 14 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: 14,
+          flexWrap: 'wrap',
+          marginBottom: 14,
+        }}
+      >
+        {/*
+          Phase 4.5: internal mode tabs removed — they only swapped labels, not
+          data. The page-level ModeToggle is the single source of truth.
+        */}
+        <div>
+          <div
+            style={{
+              fontFamily: "'Manrope', sans-serif",
+              fontSize: 14,
+              fontWeight: 700,
+              color: 'var(--ink)',
+              letterSpacing: '-0.01em',
+            }}
+            data-testid="hero-title"
+          >
+            {MODE_TITLE[mode]}
+            {isApprox && (
+              <span
+                data-testid="hero-approx-badge"
+                style={{
+                  marginLeft: 8,
+                  display: 'inline-block',
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: 'var(--muted)',
+                  background: 'var(--surface-soft)',
+                  border: '1px solid var(--hairline)',
+                  letterSpacing: '0.02em',
+                  textTransform: 'uppercase',
+                }}
+                title="Series approximated from revenue. Backend will ship distinct margin/volume series soon."
+              >
+                approximate
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+            Walk-forward · solid line = P50 · shaded = envelope
+            {isApprox && ' · series approximated from revenue scale'}
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setShowFullHistory((v) => !v)}
+            aria-pressed={showFullHistory}
+            data-testid="hero-history-toggle"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--hairline)',
+              borderRadius: 6,
+              padding: '4px 10px',
+              fontSize: 11,
+              fontWeight: 600,
+              color: 'var(--muted)',
+              cursor: 'pointer',
+              letterSpacing: '0.02em',
+              textTransform: 'uppercase',
+              fontFamily: 'inherit',
+            }}
+          >
+            {showFullHistory ? 'Trim history' : 'Show full history'}
+          </button>
+          {hero.intervals && (
+            <div
+              role="tablist"
+              aria-label="Prediction interval bands"
+              style={{
+                display: 'inline-flex',
+                gap: 2,
+                padding: 2,
+                borderRadius: 8,
+                background: 'var(--surface-soft)',
+                border: '1px solid var(--hairline)',
+              }}
+            >
+              {(['p80', 'p80+p95'] as BandMode[]).map((bm) => (
+                <button
+                  key={bm}
+                  type="button"
+                  onClick={() => setBandMode(bm)}
+                  className="band-toggle-btn"
+                  style={{
+                    border: 'none',
+                    background: bandMode === bm ? 'var(--surface)' : 'transparent',
+                    color: bandMode === bm ? 'var(--ink)' : 'var(--muted)',
+                    boxShadow: bandMode === bm ? 'var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.06))' : 'none',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    padding: '4px 10px',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {bm === 'p80' ? 'P50 + P80' : 'P50 + P80 + P95'}
+                </button>
+              ))}
+            </div>
+          )}
+          <span className="tag-chip">{hero.caption}</span>
+        </div>
+      </div>
+
+      <div
+        ref={chartContainerRef}
+        style={{ height: 340, position: 'relative' }}
+        onContextMenu={(e) => {
+          // Phase H — right-click anywhere on the chart opens the annotation
+          // popover for the currently-hovered month. We suppress the OS
+          // context menu so the popover replaces it cleanly.
+          if (!hoverMonth) return;
+          e.preventDefault();
+          setAnnotation({ month: hoverMonth, anchor: { x: e.clientX, y: e.clientY } });
+        }}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={chartData}
+            margin={{ top: 12, right: 16, left: 0, bottom: 8 }}
+            onMouseMove={(state: { activeLabel?: string } | undefined) => {
+              const m = state?.activeLabel ?? null;
+              if (m !== hoverMonth) setHoverMonth(m);
+            }}
+            onMouseLeave={() => setHoverMonth(null)}
+          >
+            <defs>
+              {/*
+                Phase 3 (forecast redesign v2) — moved bands from the legacy
+                blue (#5a7da3) to the rose design language. Two stacked bands:
+                P80 darker on top, P95 lighter underneath.
+              */}
+              <linearGradient id="p80Gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--rose-deep, #a04055)" stopOpacity={0.26} />
+                <stop offset="100%" stopColor="var(--rose-deep, #a04055)" stopOpacity={0.18} />
+              </linearGradient>
+              <linearGradient id="p95Gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--rose-deep, #a04055)" stopOpacity={0.12} />
+                <stop offset="100%" stopColor="var(--rose-deep, #a04055)" stopOpacity={0.06} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke="#eaedf1" vertical={false} />
+            <XAxis
+              dataKey="month"
+              stroke="#7d8693"
+              tick={{ fontSize: 11, fill: '#7d8693' }}
+              tickLine={false}
+              axisLine={{ stroke: '#dde1e7' }}
+            />
+            <YAxis
+              stroke="#7d8693"
+              tick={{ fontSize: 11, fill: '#7d8693' }}
+              tickLine={false}
+              axisLine={false}
+              width={48}
+              tickFormatter={(v: number) => formatY(mode, v)}
+              domain={[yMin, yMax]}
+            />
+            <Tooltip
+              cursor={{ stroke: '#c8cdd4', strokeDasharray: '3 3' }}
+              contentStyle={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 11,
+                fontSize: 12,
+                boxShadow: 'var(--shadow-pop)',
+              }}
+              formatter={(value, name) => {
+                const n = String(name);
+                if ((n === 'p80' || n === 'p95') && Array.isArray(value)) {
+                  const [lo, hi] = value as [number, number];
+                  return [
+                    `${formatTooltip(mode, lo)} – ${formatTooltip(mode, hi)}`,
+                    n.toUpperCase(),
+                  ];
+                }
+                if (typeof value !== 'number') return [String(value ?? ''), n];
+                if (n === 'primary') return [formatTooltip(mode, value), 'P50'];
+                if (n === 'actual')  return [formatTooltip(mode, value), 'Actual'];
+                if (n === 'overrideY') return [formatTooltip(mode, value), 'Override'];
+                if (n === 'pipelineP50') return [formatTooltip(mode, value), 'Pipeline P50'];
+                return [formatTooltip(mode, value), n];
+              }}
+              // Phase 3.3 — show the "Click to enter actual" hint only when
+              // the chart is actually interactive (V2 contexts). V1 keeps the
+              // hero read-only, so showing the hint there was misleading.
+              labelFormatter={(label) => (
+                <span>
+                  {label}
+                  {enableActualEntry && (
+                    <span
+                      data-testid="hero-tooltip-click-hint"
+                      style={{
+                        display: 'block',
+                        marginTop: 2,
+                        fontSize: 10,
+                        fontWeight: 500,
+                        color: 'var(--muted)',
+                      }}
+                    >
+                      Click to enter actual →
+                    </span>
+                  )}
+                </span>
+              )}
+            />
+            {firstForecastMonth && (
+              <ReferenceLine
+                x={firstForecastMonth}
+                stroke="var(--hairline, #dde1e7)"
+                strokeDasharray="3 3"
+                label={{ value: 'Now', position: 'top', fill: 'var(--muted)', fontSize: 10 }}
+              />
+            )}
+            {showP95 && (
+              <Area
+                type="monotone"
+                dataKey="p95"
+                stroke="none"
+                fill="url(#p95Gradient)"
+                isAnimationActive={false}
+              />
+            )}
+            <Area
+              type="monotone"
+              dataKey="p80"
+              stroke="none"
+              fill="url(#p80Gradient)"
+              isAnimationActive={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="primary"
+              stroke="#5a7da3"
+              strokeWidth={2}
+              strokeLinecap="round"
+              dot={false}
+              activeDot={{
+                r: 5,
+                fill: '#3e5d80',
+                cursor: 'pointer',
+                // Recharts passes the dot payload (including `month`) as the
+                // second arg of `onClick`. We tolerate both shapes — some
+                // Recharts versions pass it on the event target's `payload`
+                // property.
+                onClick: (_evt: unknown, payload: unknown) => {
+                  const p = payload as { payload?: { month?: string }; month?: string } | undefined;
+                  const month = p?.payload?.month ?? p?.month;
+                  if (month) handlePointClick(month);
+                },
+              }}
+              isAnimationActive={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="actual"
+              stroke="transparent"
+              dot={{ r: 3.5, fill: '#3e5d80', stroke: '#fff', strokeWidth: 1.5 }}
+              activeDot={{ r: 5, fill: '#3e5d80' }}
+              connectNulls={false}
+              isAnimationActive={false}
+            />
+            {overrideMarkers.length > 0 && (
+              <Scatter
+                data={overrideMarkers}
+                dataKey="overrideY"
+                shape={DiamondShape}
+                isAnimationActive={false}
+                name="Override"
+              />
+            )}
+            {/* Phase H — annotation pin glyphs. Visually distinct from the
+                override diamond (small inverted triangle, rose accent) so the
+                two layers can co-exist without confusion. */}
+            {annotationMarkers.length > 0 && (
+              <Scatter
+                data={annotationMarkers}
+                dataKey="annotationY"
+                shape={PinShape}
+                isAnimationActive={false}
+                name="Annotation"
+              />
+            )}
+            {/* v2.1 — pipeline-implied P50 (open-quote book × win_prob).
+                Lighter rose, dashed, no dots. Renders only where the
+                backend supplied a value; connectNulls=false keeps the
+                line broken across missing months. style.pointerEvents=none
+                so it never competes with the primary line for activeDot
+                hover detection. */}
+            <Line
+              type="monotone"
+              dataKey="pipelineP50"
+              stroke="var(--rose-soft, #f9b8c2)"
+              strokeWidth={1.5}
+              strokeDasharray="6 4"
+              dot={false}
+              activeDot={false}
+              connectNulls={false}
+              isAnimationActive={false}
+              name="Pipeline P50"
+              style={{ pointerEvents: 'none' }}
+            />
+
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Phase H — keyboard-reachable annotation entry point. Right-click on
+          the chart is the discoverable path; this button is the accessible
+          fallback. Disabled until the user has hovered a month so the action
+          has an unambiguous target. */}
+      <div
+        style={{
+          marginTop: 6,
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <button
+          type="button"
+          data-testid="hero-add-annotation"
+          onClick={(e) => {
+            if (!hoverMonth) return;
+            const rect = chartContainerRef.current?.getBoundingClientRect();
+            setAnnotation({
+              month: hoverMonth,
+              anchor: {
+                x: e.clientX || (rect ? rect.right - 320 : 0),
+                y: e.clientY || (rect ? rect.bottom : 0),
+              },
+            });
+          }}
+          disabled={!hoverMonth}
+          aria-label={hoverMonth ? `Add note for ${hoverMonth}` : 'Hover a month to add a note'}
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--hairline)',
+            borderRadius: 6,
+            padding: '3px 9px',
+            fontSize: 10.5,
+            fontWeight: 600,
+            color: hoverMonth ? 'var(--ink-2)' : 'var(--muted)',
+            cursor: hoverMonth ? 'pointer' : 'not-allowed',
+            letterSpacing: '0.02em',
+            fontFamily: 'inherit',
+          }}
+        >
+          + Add note {hoverMonth ? `(${hoverMonth})` : ''}
+        </button>
+      </div>
+
+      {annotation && (
+        <AnnotationPopover
+          anchor={annotation.anchor}
+          target={{ kind: 'month', value: annotation.month }}
+          onClose={() => setAnnotation(null)}
+        />
+      )}
+
+      {hero.intervals && <IntervalsPanel intervals={hero.intervals} showP95={showP95} />}
+
+      <div className="signal-with-trend" style={{ marginTop: 18 }}>
+        <div className="signal-pane">
+          <div className="ttl">
+            What changed since last week
+            <span className="ttl-sub">— top 3 movers</span>
+          </div>
+          <div className="fact-list">
+            {hero.movers.map((m) => (
+              <div className="fact-row" key={m.label}>
+                <div className="fact-l">{m.label}</div>
+                <div className="fact-mid">
+                  <div className={`fact-v ${m.tone}`}>{m.value}</div>
+                  <div className="fact-s">{renderMoverSub(m.sub)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="trend-pane">
+          <div className="lab">{hero.movableLockedSplit.label}</div>
+          <div className="v">{hero.movableLockedSplit.value}</div>
+          <div
+            style={{
+              display: 'flex',
+              height: 6,
+              borderRadius: 4,
+              overflow: 'hidden',
+              marginTop: 10,
+              background: 'var(--surface-soft)',
+            }}
+          >
+            <div style={{ flex: `0 0 ${movablePct}%`, background: 'var(--rose)' }} />
+            <div style={{ flex: 1, background: 'var(--ink-3)', opacity: 0.35 }} />
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, lineHeight: 1.4 }}>
+            {hero.movableLockedSplit.sub}
+          </div>
+        </div>
+      </div>
+
+      <div className="lq-card" style={{ marginTop: 14, padding: '18px 20px' }}>
+        <div className="ttl">
+          {hero.whyBandMoves.title}
+          <span className="ttl-sub">— {hero.whyBandMoves.sub}</span>
+        </div>
+        <div className="fact-list">
+          {hero.whyBandMoves.rows.map((r) => (
+            <div className="fact-row" key={r.label}>
+              <div className="fact-l">{r.label}</div>
+              <div className="fact-mid">
+                <div className={`fact-v ${r.tone}`}>{r.value}</div>
+                <div className="fact-s">{r.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/*
+        Phase 4 (forecast redesign v2) — ActualEntryPanel. The panel is fixed
+        on the right edge and lifts out of normal flow, but rendering it here
+        keeps the component tree co-located with the chart that owns the
+        `editingMonth` state.
+      */}
+      {enableActualEntry && editingMonth &&
+        (() => {
+          const pt = hero.series.find((p) => p.month === editingMonth);
+          if (!pt) return null;
+          const p50 = pt.p50 ?? pt.primary ?? 0;
+          const p80Low = pt.p80Low ?? pt.low ?? p50;
+          const p80High = pt.p80High ?? pt.high ?? p50;
+          const p95Low = pt.p95Low ?? pt.low ?? p50;
+          const p95High = pt.p95High ?? pt.high ?? p50;
+          return (
+            <ActualEntryPanel
+              month={editingMonth}
+              cluster={cluster ?? null}
+              mode={mode}
+              modelP50={p50}
+              band80={[p80Low, p80High]}
+              band95={[p95Low, p95High]}
+              onClose={() => setEditingMonth(null)}
+            />
+          );
+        })()}
+    </div>
+  );
+}
+
+// Phase 3.4 — diamond glyph drawn at the override actual on the P50 line.
+// Rendered via a Recharts `<Scatter>` with this custom `shape`.
+function DiamondShape(props: { cx?: number; cy?: number }) {
+  const { cx, cy } = props;
+  if (cx == null || cy == null) return null;
+  return (
+    <polygon
+      points={`${cx},${cy - 6} ${cx + 6},${cy} ${cx},${cy + 6} ${cx - 6},${cy}`}
+      fill="var(--rose-deep, #a04055)"
+      stroke="#fff"
+      strokeWidth={1.5}
+      data-testid="hero-override-diamond"
+    />
+  );
+}
+
+// Phase H — annotation pin glyph. Rendered above the override diamonds when
+// both exist on the same month (they offset visually by virtue of being
+// drawn on slightly different y-targets via the Scatter dataKey).
+function PinShape(props: { cx?: number; cy?: number }) {
+  const { cx, cy } = props;
+  if (cx == null || cy == null) return null;
+  // Pin sits 12px above the line — small filled head + short stem so it reads
+  // as a separate layer from the override diamonds.
+  const headY = cy - 14;
+  return (
+    <g data-testid="hero-annotation-pin">
+      <line
+        x1={cx}
+        y1={cy}
+        x2={cx}
+        y2={headY + 2}
+        stroke="var(--rose-deep, #a04055)"
+        strokeWidth={1.5}
+      />
+      <circle
+        cx={cx}
+        cy={headY}
+        r={4}
+        fill="var(--rose-deep, #a04055)"
+        stroke="#fff"
+        strokeWidth={1.5}
+      />
+    </g>
+  );
+}
+
+function IntervalsPanel({ intervals, showP95 }: { intervals: ForecastIntervals; showP95: boolean }) {
+  const [heuristicOpen, setHeuristicOpen] = useState(false);
+  const visibleBands = intervals.bands.filter((b) => showP95 || b.id !== 'p95');
+  return (
+    <div
+      style={{
+        marginTop: 14,
+        borderRadius: 11,
+        border: '1px solid var(--hairline)',
+        background: 'var(--surface-soft)',
+        padding: '12px 14px',
+      }}
+      aria-label="Prediction interval calibration"
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{intervals.title}</div>
+        <div style={{ fontSize: 11, color: 'var(--muted)' }}>{intervals.calibration.footnote}</div>
+      </div>
+      <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: `repeat(${visibleBands.length}, minmax(0, 1fr))`, gap: 10 }}>
+        {visibleBands.map((b) => (
+          <div key={b.id} style={{ borderLeft: '3px solid var(--rose)', paddingLeft: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)' }}>{b.name}</div>
+            <div style={{ marginTop: 2, fontSize: 10.5, color: 'var(--ink-2)', lineHeight: 1.45 }}>{b.desc}</div>
+            {b.calibration && (
+              <div style={{ marginTop: 4, fontSize: 10.5, fontWeight: 600, color: 'var(--ink-2)', fontVariantNumeric: 'tabular-nums' }}>
+                {b.calibration}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <p style={{ marginTop: 8, fontSize: 11, color: 'var(--ink-2)', lineHeight: 1.5 }}>{intervals.disclosure}</p>
+      <button
+        type="button"
+        onClick={() => setHeuristicOpen((v) => !v)}
+        aria-expanded={heuristicOpen}
+        style={{
+          marginTop: 4,
+          background: 'transparent',
+          border: '1px solid var(--hairline)',
+          borderRadius: 5,
+          padding: '2px 7px',
+          fontSize: 10.5,
+          fontWeight: 600,
+          color: 'var(--ink-2)',
+          cursor: 'pointer',
+        }}
+      >
+        {intervals.heuristic.label} {heuristicOpen ? '▾' : '▸'}
+      </button>
+      {heuristicOpen && (
+        <p style={{ marginTop: 6, fontSize: 10.5, fontStyle: 'italic', color: 'var(--muted)', lineHeight: 1.45 }}>
+          {intervals.heuristic.rule}
+          {intervals.heuristic.qualifier && <span style={{ fontStyle: 'normal' }}> · {intervals.heuristic.qualifier}</span>}
+        </p>
+      )}
+    </div>
+  );
+}

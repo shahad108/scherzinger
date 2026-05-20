@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# Husky pre-commit hook for frontend-v2.
+# Runs lint-staged against the frontend-v2 working tree only.
+
+cd frontend-v2 && npx lint-staged

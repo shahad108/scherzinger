@@ -1,0 +1,224 @@
+import { Plus } from 'lucide-react';
+import { cn } from '@/lib/cn';
+import { Badge } from '@/components/ui/Badge';
+import type { AbTestCard, Tone } from '@/types';
+import type { ActionIntent } from '@/types/uiActions';
+import { EmptyBlock } from './EmptyBlock';
+
+function toneToBadge(t: Tone): React.ComponentProps<typeof Badge>['tone'] {
+  if (t === 'rose') return 'rose';
+  return t;
+}
+
+const liftClass: Record<Tone, string> = {
+  positive: 'text-[var(--green)]',
+  negative: 'text-[var(--red)]',
+  warning: 'text-[var(--amber)]',
+  info: 'text-[var(--primary-deep)]',
+  rose: 'text-[var(--rose)]',
+  neutral: 'text-[var(--ink)]',
+};
+
+export function AbTestList({
+  tests,
+  onAction,
+}: {
+  tests: AbTestCard[];
+  onAction?: (intent: ActionIntent) => void;
+}) {
+  if (!tests || tests.length === 0) {
+    return (
+      <EmptyBlock
+        title="A/B Test Tracker"
+        hint="No live tests right now. Decisions slice into A/B tests on demand."
+      />
+    );
+  }
+  return (
+    <>
+      <div className="mb-3 flex items-end justify-between">
+        <div>
+          <h2 className="font-display text-lg font-bold tracking-tight text-[var(--ink)]">
+            A/B Test Tracker
+          </h2>
+          <p className="mt-0.5 text-xs text-[var(--muted)]">
+            Test before broad rollout. Frank's first-class workflow.
+          </p>
+        </div>
+        <button
+          type="button"
+            onClick={() =>
+              onAction?.({
+                drawer: {
+                  title: 'Start A/B test',
+                  description: 'Slice a measured price test against an article. Pre-fill the article id from a SKU row if you have one in mind.',
+                  formKind: 'ab_setup',
+                  context: { sourceScreen: 'action-center' },
+                },
+                requiredPermission: 'act.start_ab_test',
+                permissionDeniedReason: 'You are not allowed to start A/B tests from this workspace.',
+              })
+            }
+          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--grey-bg)]"
+        >
+          <Plus size={12} />
+          Start new A/B test
+        </button>
+      </div>
+      <div className="flex flex-col gap-3">
+        {tests.map((t) => (
+          <div
+            key={t.id}
+            className="rounded-xl border border-[var(--hairline)] bg-white p-5 shadow-[var(--shadow)]"
+          >
+            <div className="flex flex-wrap items-start gap-3">
+              <div className="grid h-9 w-9 place-items-center rounded-lg bg-[var(--ink)] font-display text-sm font-bold text-white">
+                {t.rank}
+              </div>
+              <div className="flex-1">
+                <div className="font-display text-[14px] font-bold text-[var(--ink)]">
+                  {t.title}
+                </div>
+                <div className="text-xs text-[var(--muted)]">{t.subtitle}</div>
+              </div>
+              <Badge tone={toneToBadge(t.trendTone)}>{t.trend}</Badge>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-[var(--hairline)] pt-4 md:grid-cols-4">
+              <div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+                  Pre margin
+                </div>
+                <div className="mt-0.5 font-display text-base font-bold tabular-nums text-[var(--ink)]">
+                  {t.preMargin}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+                  Post margin
+                </div>
+                <div className="mt-0.5 font-display text-base font-bold tabular-nums text-[var(--green)]">
+                  {t.postMargin}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+                  Lift
+                </div>
+                <div
+                  className={cn(
+                    'mt-0.5 font-display text-base font-bold tabular-nums',
+                    liftClass[t.liftTone],
+                  )}
+                >
+                  {t.lift}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+                  Status
+                </div>
+                <div className="mt-0.5 font-display text-base font-bold tabular-nums text-[var(--ink)]">
+                  {t.status}
+                </div>
+              </div>
+            </div>
+            {(t.simulation || t.significance || (t.promotionBlockers && t.promotionBlockers.length > 0)) && (
+              <div
+                data-testid="ab-simulation-strip"
+                className="mt-4 border-t border-[var(--hairline)] pt-3 text-xs"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  {t.simulation?.label && (
+                    <Badge tone={toneToBadge(t.simulation.tone ?? 'neutral')}>
+                      {t.simulation.label}
+                    </Badge>
+                  )}
+                  {t.significance && (
+                    <span className="text-[var(--muted)]">· {t.significance}</span>
+                  )}
+                  {typeof t.simulation?.downsideProbability === 'number' && (
+                    <span className="text-[var(--muted)]">
+                      · downside {(t.simulation.downsideProbability * 100).toFixed(0)}%
+                    </span>
+                  )}
+                  {t.promotionEligible && (
+                    <Badge tone="positive">promotion ready</Badge>
+                  )}
+                </div>
+                {((t.simulation?.blockers && t.simulation.blockers.length > 0) ||
+                  (t.promotionBlockers && t.promotionBlockers.length > 0)) && (
+                  <ul className="mt-2 list-disc pl-4 text-[var(--red)]">
+                    {[...(t.simulation?.blockers ?? []), ...(t.promotionBlockers ?? [])].map(
+                      (b, i) => (
+                        <li key={i}>{b}</li>
+                      ),
+                    )}
+                  </ul>
+                )}
+              </div>
+            )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  onAction?.(
+                    t.actions?.hold ?? {
+                      drawer: {
+                        title: `Hold A/B test · ${t.title}`,
+                        description: 'Pause the experiment without ending it.',
+                        formKind: 'ab_hold',
+                        context: { abTestId: t.id, articleId: t.title, headline: `A/B test ${t.title}` },
+                      },
+                      requiredPermission: 'act.start_ab_test',
+                    },
+                  )
+                }
+                className="rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--grey-bg)]"
+              >
+                Hold
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  onAction?.(
+                    t.actions?.stop ?? {
+                      kind: 'stop_ab_test',
+                      targetType: 'ab_test',
+                      targetId: t.id,
+                      body: { test_id: t.id, aid: t.title },
+                      requiredPermission: 'act.start_ab_test',
+                      toast: `${t.id} stopped.`,
+                      toastSeverity: 'warning',
+                    },
+                  )
+                }
+                className="rounded-md border border-[var(--hairline)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink-2)] transition-colors hover:bg-[var(--grey-bg)]"
+              >
+                Stop test
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  onAction?.(
+                    t.actions?.promote ?? {
+                      drawer: {
+                        title: `Promote A/B test · ${t.title}`,
+                        description: 'Promote the treatment to a rollout proposal.',
+                        formKind: 'ab_promote',
+                        context: { abTestId: t.id, articleId: t.title, headline: `A/B test ${t.title}` },
+                      },
+                      requiredPermission: 'act.start_ab_test',
+                    },
+                  )
+                }
+                className="ml-auto rounded-md bg-[var(--rose)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--rose-deep)]"
+              >
+                Promote to full rollout →
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}

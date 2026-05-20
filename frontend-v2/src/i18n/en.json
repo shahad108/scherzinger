@@ -1,0 +1,34 @@
+{
+  "app": { "title": "Pryzm" },
+  "nav": {
+    "actionCenter": "Action Center",
+    "margin": "Margin Cockpit",
+    "quotes": "Quotes",
+    "forecasting": "Forecasting",
+    "pricing": "Pricing Studio",
+    "ai": "AI Briefing",
+    "settings": "Settings"
+  },
+  "topbar": {
+    "addPerson": "Add person",
+    "notifications": "Notifications",
+    "create": "Create"
+  },
+  "rail": {
+    "seeAll": "See all notifications",
+    "notes": "Notes",
+    "reviewers": "Assigned reviewers",
+    "sections": "Sections",
+    "addSection": "Add section",
+    "add": "Add"
+  },
+  "common": {
+    "search": "Search",
+    "filter": "Filter",
+    "save": "Save",
+    "cancel": "Cancel",
+    "more": "More",
+    "loading": "Loading…",
+    "error": "Error"
+  }
+}
