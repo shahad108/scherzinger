@@ -711,10 +711,30 @@ export default function PricingStudioPage() {
   // existing heroView.currentPrice is a pre-formatted string ("€118.00").
   // We strip non-digits + parse so the new tiles can compute one delta
   // without forcing the BFF to ship a parallel numeric field.
+  //
+  // Phase W3 (v1.4): when the engine_v2 packet is present, prefer its
+  // `current_price` (trailing 12mo volume-weighted unit price — the same
+  // figure the engine uses as the denominator for its delta and the same
+  // figure the picker shows in its meta row "€X → €Y"). Without this
+  // override the hero falls back to PriceState.current_price (the list
+  // price) and the hero's Δ% disagrees with the picker's Δ% — the bug
+  // surfaced in the 2026-05-20 screenshot review.
   const currentPriceValue = (() => {
+    if (wb?.engine_v2?.current_price && wb.engine_v2.current_price > 0) {
+      return wb.engine_v2.current_price;
+    }
     const cleaned = (heroView.currentPrice ?? '').replace(/[^\d,.\-]/g, '').replace(',', '.');
     const n = parseDecimal(cleaned);
     return Number.isFinite(n) ? n : undefined;
+  })();
+  // Pre-formatted current-price label, also overridden to match the engine
+  // so the "Today €X" line below the hero price matches the delta math.
+  const currentPriceLabelForHero = (() => {
+    if (wb?.engine_v2?.current_price && wb.engine_v2.current_price > 0) {
+      const v = wb.engine_v2.current_price;
+      return `€${v.toFixed(2)}`;
+    }
+    return heroView.currentPrice;
   })();
   // Pre-formatted current margin (string) — used as the "Projected DB2 at
   // current" subtitle on the KPI tiles. Real projected-DB2 at recommended
@@ -867,7 +887,7 @@ export default function PricingStudioPage() {
               wtp={wb?.wtp}
               winProbCurve={wb?.win_prob_curve}
               competitorRef={wb?.competitor_ref}
-              currentPriceLabel={heroView.currentPrice}
+              currentPriceLabel={currentPriceLabelForHero}
               currentPriceValue={currentPriceValue}
               lastTickAt={live.lastTickAt}
               source={deepLinkSource}
