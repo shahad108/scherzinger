@@ -1,14 +1,31 @@
 # Pryzm Design System — 2026
 
-Canonical reference for every visual decision in the Pryzm pricing-decision
-cockpit. The source of truth for **what we do and don't ship**. Read this
-file before writing any UI code. Every claim in this document is enforced
-in `frontend-v2/src/styles/tokens.css`, `frontend-v2/src/styles/globals.css`,
-and the reference implementation in `Pryzm_Dashboard_Mockup_Frank.html`.
+> **Version 1.1 — 2026-05-20.** Canonical reference for every visual decision
+> in the Pryzm pricing-decision cockpit. The source of truth for **what we do
+> and don't ship**. Read this file before writing any UI code. Every claim
+> here is enforced in `frontend-v2/src/styles/tokens.css`,
+> `frontend-v2/src/styles/globals.css`, and the reference implementation in
+> `Pryzm_Dashboard_Mockup_Frank.html`. When a value differs between this doc
+> and `tokens.css`, **`tokens.css` wins** and this doc is wrong — file an
+> issue and update.
 
-> Bake into your reflexes: rounded rectangle by default, hairline borders,
-> warm-cool neutral surface, steel-blue rose accent, Manrope display +
-> Inter body, no AI slop, no decorative gradients, no purple buttons.
+## TL;DR (the 30-second skim)
+
+| Topic | Rule |
+|---|---|
+| **Brand colour** | Steel-blue rose `#5a7da3` (NOT pink). Hover `#3e5d80`. Soft bg `#edf3f9`. |
+| **Surface stack** | Canvas `#cdd5de` → shell `#eef1f5` → surface `#ffffff` → soft `#f3f5f8` → sunken `#e7eaef`. |
+| **Type** | Manrope (display, 500–800) + Inter (body, 400–700). Never Inter as display. |
+| **Body size** | 13.5px / 1.5 / -0.005em / Inter. |
+| **Radius rule** | Default to **rounded rectangle**, NOT pills, NOT `rounded-2xl`. Buttons `8/11/12`. Cards `14`. Chips `7`. Full-pill (`9999`) only for topbar persona/search/lang/avatar circles. |
+| **Popover rule** | Three exits, every time: ✕ button **+** Escape **+** click-outside. |
+| **Memo rule** | Wording (`exceeds`, `is below`) is conditional on the sign of the number. Never hardcode a comparator. |
+| **Numeric coherence** | If a number ("current price", "delta %") appears in two places on one screen, they must agree. Single source via `engine_v2.current_price` when the flag is on. |
+| **No AI slop** | No gradients, no purple CTAs, no 3-column icon grids, no decorative blobs, no centered-everything, no emoji as design. |
+| **Min viewport** | 1280×800 (desktop-first). Below that = degraded warning state, not a layout. |
+
+Read full sections below for rationale and edge cases. The Decisions Log (§13)
+timestamps every rule change.
 
 ---
 
@@ -43,6 +60,51 @@ and the reference implementation in `Pryzm_Dashboard_Mockup_Frank.html`.
   (the source of truth for components). Frontend implementation:
   `frontend-v2/`.
 
+### 2a. First impression — what Frank feels in the first 5 seconds
+
+When Frank opens Pryzm on Monday morning, the visual hierarchy delivers a
+specific emotion: **calm authority**. Three concrete moves produce it:
+
+1. **The hero price is the loudest thing on screen.** 40px Manrope, rose,
+   tabular-nums. Everything else (chips, eyebrows, body text) is in the
+   11.5–13.5px range. The eye lands on the number, not the chrome.
+2. **Borders are hairlines, not edges.** `1px` `--hairline` on every card
+   and every table row. No drop shadows on standard cards (`--shadow-card`
+   is a 1-pixel grounding hint, not a lift). The page feels engraved, not
+   stacked.
+3. **No marketing copy.** Section headings name what an area *is* or *does*
+   ("Recommendation", "Win probability vs price", "Alternatives"). They
+   never say "Welcome to Pricing Studio" or "Make better pricing decisions
+   with AI". Utility language only.
+
+### 2b. AI slop blacklist (NEVER ship)
+
+Even with sharp principles it's easy to drift into AI-generated default
+patterns. The following are banned outright in Pryzm UI:
+
+1. **Purple/violet/indigo gradient backgrounds** or blue-to-purple colour schemes.
+2. **The 3-column icon-grid feature row** (icon-in-coloured-circle + bold
+   title + 2-line description, repeated 3x). The single most recognisable
+   AI layout.
+3. **Icons in coloured circles** as decorative section anchors.
+4. **Centered-everything** layouts (text-align: center on all headings + cards).
+5. **Uniform large border-radius** on every element ("everything is `rounded-2xl`").
+6. **Decorative blobs, floating circles, wavy SVG dividers.** If a section
+   feels empty, the content is the problem, not the decoration.
+7. **Emojis as design elements** (rockets, sparkles, bullet point pictograms).
+   We use occasional emoji in *content* (e.g., a 🔒 prefix on Locked cards)
+   but never as a styling device.
+8. **Coloured left-border on cards** (`border-left: 3px solid <accent>`) as
+   a generic "status indicator" pattern.
+9. **Generic hero copy** ("Welcome to [X]", "Unlock the power of...", "Your
+   all-in-one solution for...").
+10. **Hover-flip cards, animated gradients, cookie-cutter section rhythm**
+    (hero → 3 features → testimonials → CTA, every section same height).
+
+Source: gstack design methodology + OpenAI "Designing Delightful Frontends"
+(Mar 2026). When in doubt, ask "would a generic AI scaffolding ship this
+exact pattern?" If yes, don't.
+
 ## 3. Typography
 
 - **Display / Hero:** `Manrope` (Google Fonts, weights 500–800). Used
@@ -54,8 +116,8 @@ and the reference implementation in `Pryzm_Dashboard_Mockup_Frank.html`.
   applied to any numeric column. Never use proportional digits in
   data tables.
 - **Code (rare — lineage refs, IDs):** `JetBrains Mono`.
-- **Loading:** Google Fonts via `<link>` in `index.html`. Self-hosting
-  is acceptable but not required for v2.
+- **Loading:** Google Fonts via `<link>` in `frontend-v2/index.html`.
+  Self-hosting is acceptable but not required for v2.
 - **Default size:** body 13.5px / 1.5 line-height / -0.005em letter-spacing,
   antialiased. Display headings -0.022em letter-spacing, 700 weight.
 - **Modular scale:**
@@ -139,7 +201,7 @@ and dilute the editorial mood.
   - 2xl: 48px (page top margin, hero block separator)
   - 3xl: 64px (rare — used for large empty states only)
 
-## 6. Layout
+## 6. Layout & Responsive Behaviour
 
 - **Approach:** Grid-disciplined for the workbench, lightly editorial
   for the Action Center hero. The app lives inside a single rounded
@@ -163,6 +225,37 @@ and dilute the editorial mood.
     rectangle?" is RECTANGLE.** The only fully-round things are:
     avatar circles, status dots, topbar search/persona/lang/notification
     icon buttons.
+
+### 6a. Responsive breakpoints
+
+Pryzm is **desktop-first by design**. Frank's primary surface is a 27" monitor;
+Till's is a 14–15" MacBook in meetings; Heiko's is occasionally an iPad on
+the factory floor. Mobile is out-of-scope for v2.
+
+| Breakpoint | Min width | Behaviour |
+|---|---|---|
+| **xl-desktop** | 1440px+ | Default. Full shell, two rails open, picker visible. |
+| **desktop** | 1280–1439px | Default minus 8px gutters. Picker still visible. |
+| **narrow-desktop** | 1024–1279px | Right-rail (Notifications, AI Briefing) collapses to icon-only. Picker stays. |
+| **tablet** | 768–1023px | Left workspace nav collapses to icon-rail. Picker rail collapses to a top dropdown ("13 SKUs flagged for repricing ▾"). Hero + workbench full-width. |
+| **mobile** | <768px | **Block with a warning state**, not a layout. "Pryzm is optimised for desktop. Open this on a laptop or tablet (≥768px wide)." Single-screen, branded, with a "Take me back to the previous page" CTA. **Never** ship a degraded mobile experience that pretends to work. |
+
+**Sidebar collapse rules:**
+- Left workspace nav: full at ≥1024px, icon-only with tooltip on hover at 768–1023px.
+- Right notifications rail: full at ≥1440px, hidden behind a bell icon at <1440px.
+- SKU picker: full at ≥1024px, top-dropdown at 768–1023px.
+
+**Content rules:**
+- Cards never go below 280px wide. If two columns can't both fit ≥280px,
+  stack to one column.
+- Tables get horizontal scroll inside their own scroll container before the
+  parent overflows. Never let a table cause page-level horizontal scroll.
+- The hero recommendation block: stays 2-column (price | drivers) down to
+  1024px. Single-column below.
+
+**Touch targets** (tablet): all interactive elements ≥44×44px. Chip-buttons
+on tablet expand their hit area via padding on the wrapper, not by changing
+visual size.
 
 ## 7. Motion
 
@@ -210,6 +303,41 @@ and dilute the editorial mood.
 - **Forbidden:** gradients on any button, colored shadows except the
   steel-rose glow, fully-rounded primary buttons, all-caps button labels
   (chips and eyebrows do that, not buttons).
+
+### 8a. Interaction states (normative)
+
+Every interactive component MUST implement every applicable state. Missing
+a state is a bug, not "we'll add it later."
+
+| Component | Default | Hover | Focus-visible | Active / Pressed | Disabled | Loading | Error |
+|---|---|---|---|---|---|---|---|
+| **Dark CTA / `btn-primary`** | `#101418` bg, white text | `#252a33` bg, no scale change | 2px `--rose` outline, 1px offset | `#000` bg, 1px translate-Y | `opacity: 0.5`, `cursor: not-allowed`, no hover | inline spinner replaces leading icon, label stays | n/a (errors live in toasts/banners) |
+| **Primary rose / `btn-primary-rose`** | `--rose` bg | `--rose-deep` bg + soft glow `0 6px 16px -8px rgba(90,125,163,.55)` | 2px `--rose-deep` outline, 1px offset | `--rose-deep` bg, no glow | `opacity: 0.5`, no hover, no glow | inline spinner, label stays | n/a |
+| **Secondary outlined / `btn-secondary`** | white bg, `1px solid --border` | `#f7f9fb` bg, no border change | 2px `--rose` outline, 1px offset | `--surface-soft` bg | `opacity: 0.5`, no hover | inline spinner | n/a |
+| **Ghost / tertiary** | transparent | `--surface-soft` bg with `--hairline` border | 2px `--rose` outline | `--surface-sunken` bg | `opacity: 0.5` | spinner | n/a |
+| **Icon button** | transparent or `--surface-sunken` | `--surface-sunken` (or darker by 5%) | 2px `--rose` outline | 1px translate-Y | `opacity: 0.4` | spinner replaces icon | n/a |
+| **Chip / tag-chip** | bg per status, ink text | slight darken (5% via `color-mix`) | 2px `--rose` outline, no offset | n/a (chips aren't pressed) | `opacity: 0.5` | n/a | n/a |
+| **Input (text, number)** | white bg, `1px solid --border` | n/a | 2px `--rose` outline, no border change | n/a | `--surface-soft` bg, `--muted` text | n/a (debounce is silent) | `1px solid --red`, helper text in `--red-deep` |
+| **Drawer** | n/a | n/a | first focusable inside the drawer auto-focuses | n/a | n/a | full-drawer skeleton with hero-shape placeholders | inline rose banner at top: "Couldn't load · Retry" |
+| **Popover** | n/a | n/a | first focusable inside the popover auto-focuses | n/a | n/a | inline skeleton in the popover body | inline error row, retry button |
+| **Custom-card live engine preview** | placeholder strings | n/a | input receives focus ring | n/a | input disabled if no SKU selected | "Simulating…" replaces impact + risk lines | "Engine unavailable" in `--muted`, never red (this is exploratory) |
+| **Score curve / WinProbCurve** | live chart | n/a | n/a (non-interactive) | n/a | n/a | skeleton with axis ticks but no line | DataMissingBadge with reason |
+| **Recommendation hero** | live price | price is button, underline on hover | 2px `--rose` outline around price | n/a | n/a | skeleton: rect for price, lines for sub-text | DataMissingBadge replacing the price |
+
+**Loading pattern rule:** use skeletons that match the eventual shape, not
+spinners, for any content that takes >300ms to load. Spinners only in
+buttons (inline) and in the SimulationDrawer body while running MC draws
+(>1s genuinely "computing", not just fetching).
+
+**Error pattern rule:** never show a generic "Something went wrong." Errors
+must name what failed and offer one action (Retry, Reload, Escalate). See
+the v1.4 SimulationDrawer engine-v2 banner pattern in
+`frontend-v2/src/features/pricing-studio/components/SimulationDrawer.tsx`.
+
+**Disabled rule:** never disable a button silently. Always pair `disabled`
+with a `title` or adjacent helper text explaining why (e.g., "Save the
+proposal first — PDF is tied to a proposal id."). See
+`DecisionFooter.tsx:573-578` for the canonical pattern.
 
 ## 9. Components — Chips, Pills, Tags
 
@@ -292,6 +420,79 @@ and dilute the editorial mood.
   Carlo band, the recommendation surfaces as "Review required" not
   "Accept".
 
+## 12a. Accessibility
+
+Pryzm targets WCAG 2.1 AA. The token system enforces colour contrast;
+this section governs the rest.
+
+### Keyboard navigation
+
+- Every interactive element is keyboard-reachable. Tab order follows DOM
+  order, which follows visual order, which follows reading order. Never
+  use `tabindex` greater than 0.
+- **Skip-to-content link:** first focusable element on every page, hidden
+  visually until focused, jumps to the main content landmark.
+- **Escape** closes the topmost drawer / popover / modal. Multiple stacked
+  overlays close one at a time (LIFO).
+- **Enter** activates the focused button/link. **Space** activates buttons
+  (not links).
+- **Arrow keys** navigate within composite widgets (SKU picker rows, tab
+  groups, segmented controls). Up/Down for vertical lists, Left/Right
+  for horizontal segmented controls.
+- **/** opens the global search (topbar). **Escape** in the search box
+  clears + closes.
+
+### Focus rings
+
+- **Token:** `--focus-ring: 2px solid var(--rose); --focus-offset: 1px;`
+  Applied universally via `:focus-visible`.
+- **Never** disable the focus ring without a custom replacement of
+  equal or better visibility. `outline: none` without a replacement is
+  a bug.
+- Form inputs use the focus ring inside the existing border, not as an
+  outer outline (avoid layout shift).
+
+### ARIA & semantics
+
+- Landmarks: every page has `<header role="banner">`, `<nav
+  role="navigation">`, `<main role="main">`, `<aside role="complementary">`
+  where applicable. Skip-link target is the `<main>`.
+- Icon-only buttons require `aria-label`. The `<Drawer>` X close already
+  enforces this (see `frontend-v2/src/components/ui/Drawer.tsx:55`); other
+  icon buttons must follow.
+- Drawers: `role="dialog"`, `aria-modal="true"`, `aria-labelledby` pointing
+  to the visually-hidden title. Radix Dialog handles this automatically.
+- Charts (WinProbCurve, fan-band, drivers waterfall) ship a screen-reader
+  summary `<p class="sr-only">` describing the trend in one sentence.
+- Status indicators: combine colour + icon + label. Never colour-only.
+  Status dots have an adjacent text label or `aria-label`.
+
+### Touch targets
+
+- 44×44px minimum on tablet (768–1023px). Below that we render the
+  unsupported-viewport block (§6a).
+- Chip-buttons may render visually at 28–32px tall but expand their
+  click hit-area to 44px via padding on the parent.
+
+### Motion preferences
+
+- All entrance / exit animations honour `@media (prefers-reduced-motion: reduce)`.
+- **Reduced-motion fallback:** cross-fade only (opacity 0 → 1 over 100ms).
+  No slide, no scale, no spring. The drawer still slides for keyboard
+  predictability but with `transition-duration: 0ms`.
+- Tween counters (animating numbers): snap to the final value when reduced
+  motion is on.
+
+### Screen-reader content rules
+
+- Live regions: toast notifications use `role="status"` (polite) or
+  `role="alert"` (assertive for errors).
+- Loading states: announce "Loading [X]" once, then "[X] loaded" when
+  complete. Never announce on every skeleton frame.
+- Numerical reveals (the hero price, the simulator scores): announce as
+  "Recommended price: 688 euros 85 cents — fifteen percent above current."
+  Use `aria-live="polite"` on the container.
+
 ## 13. Decisions Log
 
 | Date | Decision | Rationale |
@@ -307,3 +508,10 @@ and dilute the editorial mood.
 | 2026-05-20 | One canonical "current price" source per UI region | Picker (€837) and hero (€798) disagreed. All surfaces now read from `engine_v2.current_price` when the flag is on. |
 | 2026-05-20 | Picker margin chip reads from `engine_v2.current_price` too | Closes the last coherence gap so picker meta, picker margin, hero price, hero delta, and hero "Today €X" all derive from the same baseline. |
 | 2026-05-20 | DESIGN.md formalized as the single canonical source | Earlier rules lived in two memory files + tokens.css + globals.css + Frank mockup. Now one file, one read. |
+| 2026-05-20 | v1.1 — TL;DR header added | Initial review scored Info Architecture 6/10. A skim-first reader needs brand + radius + popover rules in 30 seconds; full sections are for reference. |
+| 2026-05-20 | v1.1 — Interaction states table (§8a) added | Initial review scored State Coverage 3/10. Engineers were inventing loading/focus/disabled patterns per component. Table is normative. |
+| 2026-05-20 | v1.1 — Responsive section (§6a) added with explicit mobile-block strategy | Initial review scored Responsive 2/10. Mobile is now explicitly out-of-scope with a branded block-state, not a degraded layout. Tablet (≥768px) gets first-class collapse rules. |
+| 2026-05-20 | v1.1 — Accessibility section (§12a) added | Initial review scored a11y 2/10. Focus ring is now a token (`--focus-ring`), keyboard nav is spec'd, ARIA roles enumerated, motion-reduction fallback defined. |
+| 2026-05-20 | v1.1 — AI slop blacklist (§2b) added | Initial review scored AI Slop Risk 9/10 but the 3-column icon grid ban was implicit; now explicit alongside the 10 canonical slop patterns. |
+| 2026-05-20 | v1.1 — First-impression paragraph (§2a) added | Frank's 5-second mood ("calm authority") is now traceable to 3 concrete moves (hero typography, hairline borders, no marketing copy) rather than vibe. |
+| 2026-05-20 | v1.1 — `tokens.css` wins over DESIGN.md prose if values drift | Original doc duplicated 30+ hex values across CSS and prose. Drift risk acknowledged; tokens.css is the tiebreaker. |
